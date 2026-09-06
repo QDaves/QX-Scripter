@@ -1,0 +1,35 @@
+{
+  "version": 1,
+  "dependencies": {
+    "net10.0": {
+      "SharpCompress": {
+        "type": "Transitive",
+        "resolved": "0.50.0",
+        "contentHash": "EzoWIzA31rb/kADwHkcmdT1rzqnT91kR/Df8X/gqd3qvXhgMbCzyKIWH6M3LTDwPIr0uLoXfX9fvThidXHBdyQ=="
+      },
+      "flazzy": {
+        "type": "Project"
+      },
+      "qx.clientheaders": {
+        "type": "Project"
+      },
+      "qx.flashheaders": {
+        "type": "Project",
+        "dependencies": {
+          "Flazzy": "[0.1.0, )",
+          "SharpCompress": "[0.50.0, )"
+        }
+      },
+      "qx.protocol": {
+        "type": "Project",
+        "dependencies": {
+          "QX.Wire": "[0.1.0, )"
+        }
+      },
+      "qx.wire": {
+        "type": "Project"
+      }
+    },
+    "net10.0/win-x64": {}
+  }
+}

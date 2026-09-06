@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>Qx</RootNamespace>
+    <AssemblyName>QX.Core</AssemblyName>
+    <IsAotCompatible>true</IsAotCompatible>
+  </PropertyGroup>
+
+</Project>

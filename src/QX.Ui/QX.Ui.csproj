@@ -1,0 +1,35 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <RootNamespace>Qx.Ui</RootNamespace>
+    <AssemblyName>QX</AssemblyName>
+    <IncludeMaterialDesignFont>false</IncludeMaterialDesignFont>
+    <ApplicationIcon>Assets\qx.ico</ApplicationIcon>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Resource Include="Assets\qx.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="MaterialDesignThemes" Version="5.3.2" ExcludeAssets="contentFiles;build" />
+    <PackageReference Include="RoslynPad.Editor.Windows" Version="5.0.0" />
+    <PackageReference Include="RoslynPad.Roslyn.Windows" Version="5.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Flazzy\Flazzy.csproj" />
+    <ProjectReference Include="..\QX.Core\QX.Core.csproj" />
+    <ProjectReference Include="..\QX.Interception\QX.Interception.csproj" />
+    <ProjectReference Include="..\QX.Game\QX.Game.csproj" />
+    <ProjectReference Include="..\QX.Hosting\QX.Hosting.csproj" />
+    <ProjectReference Include="..\QX.Model\QX.Model.csproj" />
+    <ProjectReference Include="..\QX.Protocol\QX.Protocol.csproj" />
+    <ProjectReference Include="..\QX.Scripting\QX.Scripting.csproj" />
+    <ProjectReference Include="..\QX.Mcp\QX.Mcp.csproj" />
+  </ItemGroup>
+
+</Project>

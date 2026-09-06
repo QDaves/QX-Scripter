@@ -1,0 +1,26 @@
+<Project>
+  <Target Name="ResolveQxBuildVersion" BeforeTargets="GetAssemblyVersion">
+    <Exec Condition="'$(QxBuildVersion)' == '' and Exists('$(MSBuildThisFileDirectory).git')"
+          Command="git rev-parse --is-shallow-repository"
+          WorkingDirectory="$(MSBuildThisFileDirectory)"
+          ConsoleToMSBuild="true" StandardOutputImportance="Low">
+      <Output TaskParameter="ConsoleOutput" PropertyName="_QxShallowHistory" />
+    </Exec>
+    <Error Condition="'$(_QxShallowHistory)' == 'true'"
+           Text="Version calculation requires complete Git history. Fetch with git fetch --unshallow or supply QxBuildVersion explicitly." />
+    <Exec Condition="'$(QxBuildVersion)' == '' and Exists('$(MSBuildThisFileDirectory).git')"
+          Command="git rev-list --first-parent --count HEAD"
+          WorkingDirectory="$(MSBuildThisFileDirectory)"
+          ConsoleToMSBuild="true" StandardOutputImportance="Low">
+      <Output TaskParameter="ConsoleOutput" PropertyName="_QxCommitCount" />
+    </Exec>
+    <PropertyGroup>
+      <QxBuildVersion Condition="'$(QxBuildVersion)' == '' and '$(_QxCommitCount)' != ''">$(QxVersionSeries).$(_QxCommitCount)</QxBuildVersion>
+      <QxBuildVersion Condition="'$(QxBuildVersion)' == ''">$(VersionPrefix)</QxBuildVersion>
+      <FileVersion>$(QxBuildVersion).0</FileVersion>
+      <InformationalVersion>$(QxBuildVersion)</InformationalVersion>
+    </PropertyGroup>
+    <Error Condition="!$([System.Text.RegularExpressions.Regex]::IsMatch('$(QxBuildVersion)', '^0\.0\.[1-9][0-9]*$'))"
+           Text="QxBuildVersion must be a version in the 0.0 series, starting at 0.0.1." />
+  </Target>
+</Project>

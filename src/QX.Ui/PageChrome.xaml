@@ -1,0 +1,781 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:local="clr-namespace:Qx.Ui"
+                    xmlns:sys="clr-namespace:System;assembly=System.Runtime"
+                    xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes">
+
+    <!-- Every page is laid out on the same measurements. A page that picks its own width centres on
+         a different axis than the one before it, so the heading slides sideways as you move between
+         them; a page that picks its own header margin starts its content a couple of pixels off, and
+         nothing below it ever lines up again. These four values are the whole agreement. -->
+    <sys:Double x:Key="PageContentWidth">1180</sys:Double>
+    <Thickness x:Key="PageOuterMargin">26,20,26,20</Thickness>
+    <Thickness x:Key="PageHeaderMargin">2,0,2,14</Thickness>
+    <Thickness x:Key="PageToolbarMargin">12,12,12,8</Thickness>
+
+    <!-- The strip a page's tabs sit in: a little room around them and a rule underneath, so the
+         content below starts against a line rather than against the tabs themselves. -->
+    <Style x:Key="PageTabStrip" TargetType="TabControl">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="ClipToBounds" Value="False" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="TabControl">
+                    <DockPanel ClipToBounds="False">
+                        <!-- Nothing here trims what a tab draws. A count sits above the corner of a
+                             tab's glyph and a selected tab fills a rounded box; both reach past the
+                             text they belong to, and any ancestor left to clip by default takes a
+                             slice off the top and the right of them. -->
+                        <Border x:Name="tab_guard" DockPanel.Dock="Top" Padding="10,10,18,8"
+                                ClipToBounds="False"
+                                BorderThickness="0,0,0,1"
+                                BorderBrush="{DynamicResource MaterialDesign.Brush.Divider}">
+                            <StackPanel x:Name="tab_host" IsItemsHost="True" Panel.ZIndex="1"
+                                        Orientation="Horizontal" ClipToBounds="False" />
+                        </Border>
+                        <ContentPresenter ContentSource="SelectedContent" />
+                    </DockPanel>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- A tab is a pill that fills when it is the one open. No underline: a rule under the tab
+         draws a second horizontal line right where the content already starts one, which is what
+         made the strip look busy. -->
+    <Style x:Key="PageTab" TargetType="TabItem">
+        <Setter Property="MinHeight" Value="32" />
+        <Setter Property="Padding" Value="14,0" />
+        <Setter Property="Margin" Value="0,0,4,0" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="FontSize" Value="12.5" />
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        <Setter Property="Foreground" Value="{DynamicResource QxTextMutedBrush}" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="TabItem">
+                    <Border x:Name="pill" Background="Transparent" CornerRadius="8"
+                            Padding="{TemplateBinding Padding}" SnapsToDevicePixels="True"
+                            Margin="1" ClipToBounds="False">
+                        <ContentPresenter ContentSource="Header" VerticalAlignment="Center"
+                                          ClipToBounds="False" />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="pill" Property="Background"
+                                    Value="{DynamicResource QxSurfaceSubtleBrush}" />
+                            <Setter Property="Foreground"
+                                    Value="{DynamicResource MaterialDesign.Brush.Foreground}" />
+                        </Trigger>
+                        <Trigger Property="IsSelected" Value="True">
+                            <Setter TargetName="pill" Property="Background"
+                                    Value="{DynamicResource QxAccentSoftBrush}" />
+                            <Setter Property="Foreground"
+                                    Value="{DynamicResource MaterialDesign.Brush.Foreground}" />
+                            <Setter Property="FontWeight" Value="Medium" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="QxDataGridTextElement" TargetType="TextBlock">
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+    </Style>
+
+    <!--
+        A choice between a handful of options, shaped like the tab strip above it.
+
+        Written rather than taken from the theme. The theme's own segmented radio keeps a ring around
+        whatever was clicked last and holds it until the focus moves on, which leaves a square sitting
+        on the page long after the click that caused it. That ring lives inside its template, where no
+        setter reaches it, so the way to be rid of it is not to use that template.
+    -->
+    <Style x:Key="PageChoice" TargetType="RadioButton">
+        <Setter Property="MinHeight" Value="32" />
+        <Setter Property="Padding" Value="16,0" />
+        <Setter Property="Margin" Value="0,0,4,0" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="FontSize" Value="12.5" />
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        <Setter Property="Foreground" Value="{DynamicResource QxTextMutedBrush}" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="RadioButton">
+                    <Border x:Name="pill" Background="Transparent" CornerRadius="8"
+                            Padding="{TemplateBinding Padding}" SnapsToDevicePixels="True">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="pill" Property="Background"
+                                    Value="{DynamicResource QxSurfaceSubtleBrush}" />
+                            <Setter Property="Foreground"
+                                    Value="{DynamicResource MaterialDesign.Brush.Foreground}" />
+                        </Trigger>
+                        <Trigger Property="IsChecked" Value="True">
+                            <Setter TargetName="pill" Property="Background"
+                                    Value="{DynamicResource QxAccentSoftBrush}" />
+                            <Setter Property="Foreground"
+                                    Value="{DynamicResource MaterialDesign.Brush.Foreground}" />
+                            <Setter Property="FontWeight" Value="Medium" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- A named action next to a filter box: refresh, unban, capture. Sized to its content and the
+         same height as the filter it stands beside, so a toolbar reads as one line. -->
+    <Style x:Key="PageActionButton" TargetType="Button">
+        <Setter Property="Height" Value="30" />
+        <Setter Property="Padding" Value="11,0" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="Background" Value="{DynamicResource QxSurfaceSubtleBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource MaterialDesign.Brush.Divider}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="Foreground" Value="{DynamicResource QxTextSecondaryBrush}" />
+        <Setter Property="HorizontalContentAlignment" Value="Center" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="shell" Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="{DynamicResource RadiusMedium}"
+                            Padding="{TemplateBinding Padding}">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Border>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+        <Style.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="Background" Value="{DynamicResource QxAccentSoftBrush}" />
+                <Setter Property="Foreground" Value="{DynamicResource MaterialDesign.Brush.Foreground}" />
+            </Trigger>
+            <Trigger Property="IsPressed" Value="True">
+                <Setter Property="Opacity" Value="0.78" />
+            </Trigger>
+            <Trigger Property="IsEnabled" Value="False">
+                <Setter Property="Cursor" Value="Arrow" />
+                <Setter Property="Opacity" Value="0.4" />
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <!-- The search box every page carries. Same shape everywhere so it is found without looking. -->
+    <Style x:Key="PageFilterBox" TargetType="Border">
+        <Setter Property="Height" Value="30" />
+        <Setter Property="Padding" Value="10,0" />
+        <Setter Property="CornerRadius" Value="{DynamicResource RadiusMedium}" />
+        <Setter Property="Background" Value="{DynamicResource QxSurfaceSubtleBrush}" />
+    </Style>
+
+    <!-- Every text box that sits inside a filter box. The theme's own draws a coloured rule under
+         itself and thickens it on focus, which put a hard line across the middle of a rounded pill
+         and made the search look like a form field dropped into it. -->
+    <Style x:Key="PageFilterText" TargetType="TextBox">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="FontSize" Value="12.5" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+        <Setter Property="Foreground" Value="{DynamicResource MaterialDesign.Brush.Foreground}" />
+        <Setter Property="CaretBrush" Value="{DynamicResource QxAccentBrush}" />
+        <Setter Property="SelectionBrush" Value="{DynamicResource QxAccentBrush}" />
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="TextBox">
+                    <Grid>
+                        <!-- What the box is for, said in the box, from Tag: an empty field beside a
+                             magnifying glass tells the reader it can be searched and nothing about
+                             what searching it would look through. -->
+                        <TextBlock x:Name="hint" Text="{TemplateBinding Tag}"
+                                   Visibility="Collapsed" IsHitTestVisible="False"
+                                   VerticalAlignment="Center" Margin="4,0,0,0"
+                                   FontSize="{TemplateBinding FontSize}"
+                                   Foreground="{DynamicResource QxTextMutedBrush}" />
+                        <ScrollViewer x:Name="PART_ContentHost" VerticalAlignment="Center"
+                                      HorizontalScrollBarVisibility="Hidden"
+                                      VerticalScrollBarVisibility="Hidden" />
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="Text" Value="">
+                            <Setter TargetName="hint" Property="Visibility" Value="Visible" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="PageHeading" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="19" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+
+    <Style x:Key="PageSubheading" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="Margin" Value="0,3,0,0" />
+        <Setter Property="Foreground" Value="{DynamicResource QxTextMutedBrush}" />
+    </Style>
+
+    <Style x:Key="PageSection" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="10.5" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Margin" Value="0,0,0,8" />
+        <Setter Property="Foreground" Value="{DynamicResource QxTextMutedBrush}" />
+    </Style>
+
+    <!-- A label and its value, stacked. Reads down a column rather than across a row, so three of
+         them sit side by side in the width a single label-and-value pair used to take. -->
+    <Style x:Key="StatCaption" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="10" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Margin" Value="0,0,0,2" />
+        <Setter Property="Opacity" Value="0.55" />
+    </Style>
+
+    <Style x:Key="StatValue" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="12.5" />
+        <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+    </Style>
+
+    <Style x:Key="PageEmptyNotice" TargetType="StackPanel">
+        <Setter Property="HorizontalAlignment" Value="Center" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="Opacity" Value="0.55" />
+    </Style>
+
+    <!-- A row on any of the game pages. Rounded, quiet until hovered, and tall enough that an
+         avatar head can hang over both edges without the rows touching. -->
+    <Style x:Key="GameRow" TargetType="ListBoxItem">
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="Margin" Value="0,1" />
+        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ListBoxItem">
+                    <Border x:Name="row" Background="Transparent" MinHeight="44" Padding="10,4"
+                            CornerRadius="{DynamicResource RadiusMedium}">
+                        <ContentPresenter VerticalAlignment="Center" />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="row" Property="Background"
+                                    Value="{DynamicResource QxSurfaceSubtleBrush}" />
+                        </Trigger>
+                        <Trigger Property="IsSelected" Value="True">
+                            <Setter TargetName="row" Property="Background"
+                                    Value="{DynamicResource QxAccentSoftBrush}" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+
+    <!-- The row is what is selected, so the cell draws nothing of its own: no border, no focus
+         rectangle, no separate highlight. A single cell picked out inside a selected row is the
+         thing that made the selection look broken. -->
+    <Style x:Key="QxDataGridCell" TargetType="DataGridCell">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        <Setter Property="IsTabStop" Value="False" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+        <Setter Property="Foreground" Value="{DynamicResource MaterialDesign.Brush.Foreground}" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="DataGridCell">
+                    <ContentPresenter Margin="10,0"
+                                      VerticalAlignment="{TemplateBinding VerticalContentAlignment}" />
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+        <!-- The row paints the selection, not the cells. Left alone the theme fills each cell
+             separately, and the seam between two fills reads as a wall down the middle of a list
+             that has no lines anywhere else. -->
+        <Style.Triggers>
+            <Trigger Property="IsSelected" Value="True">
+                <Setter Property="Background" Value="Transparent" />
+                <Setter Property="BorderBrush" Value="Transparent" />
+                <Setter Property="Foreground"
+                        Value="{DynamicResource MaterialDesign.Brush.Foreground}" />
+            </Trigger>
+            <Trigger Property="IsKeyboardFocusWithin" Value="True">
+                <Setter Property="Background" Value="Transparent" />
+                <Setter Property="BorderBrush" Value="Transparent" />
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <!-- A cell that holds a picture rather than words. No padding: the ten pixels either side that
+         make text readable are ten pixels taken off an icon, which is why they were arriving with
+         their sides shaved off. -->
+    <Style x:Key="QxIconCell" TargetType="DataGridCell" BasedOn="{StaticResource QxDataGridCell}">
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="DataGridCell">
+                    <ContentPresenter HorizontalAlignment="Center"
+                                      VerticalAlignment="{TemplateBinding VerticalContentAlignment}" />
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style TargetType="DataGridCell" BasedOn="{StaticResource QxDataGridCell}" />
+
+    <!--
+        The row draws itself and nothing else does.
+
+        Hovering already looked right because the hover fill is painted by the row, in one piece
+        across its whole width. Selecting did not, because the theme's own row template hands the
+        selection down to each cell and lets every cell paint its own patch: between two patches sits
+        the cell boundary, unpainted, and a column of those reads as a wall down a list that has no
+        lines anywhere else. Overriding the setters could not reach it — the painting happens inside
+        the template — so the template is replaced by a single border with the cells laid on top of
+        it, and the fill is one rectangle in both states.
+    -->
+    <Style x:Key="QxDataGridRow" TargetType="DataGridRow">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="BorderBrush" Value="Transparent" />
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        <Setter Property="SnapsToDevicePixels" Value="True" />
+        <Setter Property="UseLayoutRounding" Value="True" />
+        <Setter Property="ClipToBounds" Value="True" />
+        <!-- Tall enough for a furni icon to sit in whole. A row the height of a line of text cuts
+             the top and bottom off every picture in the first column. -->
+        <Setter Property="MinHeight" Value="40" />
+        <Setter Property="Foreground" Value="{DynamicResource MaterialDesign.Brush.Foreground}" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="DataGridRow">
+                    <Border x:Name="fill" Background="{TemplateBinding Background}"
+                            SnapsToDevicePixels="True">
+                        <SelectiveScrollingGrid>
+                            <SelectiveScrollingGrid.RowDefinitions>
+                                <RowDefinition Height="*" />
+                                <RowDefinition Height="Auto" />
+                            </SelectiveScrollingGrid.RowDefinitions>
+                            <DataGridCellsPresenter
+                                SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
+                            <DataGridDetailsPresenter Grid.Row="1"
+                                Visibility="{TemplateBinding DetailsVisibility}" />
+                        </SelectiveScrollingGrid>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="fill" Property="Background"
+                                    Value="{DynamicResource QxSurfaceSubtleBrush}" />
+                        </Trigger>
+                        <Trigger Property="IsSelected" Value="True">
+                            <Setter TargetName="fill" Property="Background"
+                                    Value="{DynamicResource QxSelectionBrush}" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- The header carries the sort arrow and nothing else: no separators, no raised look. -->
+    <Style x:Key="QxDataGridHeader" TargetType="DataGridColumnHeader">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Foreground" Value="{DynamicResource QxTextMutedBrush}" />
+        <Setter Property="FontSize" Value="10.5" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Height" Value="30" />
+        <Setter Property="SeparatorVisibility" Value="Collapsed" />
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="DataGridColumnHeader">
+                    <Grid>
+                        <Border x:Name="fill" Background="{TemplateBinding Background}" Padding="10,0">
+                            <DockPanel>
+                                <Path x:Name="arrow" DockPanel.Dock="Right" Width="8" Height="5"
+                                      Margin="6,0,0,0" VerticalAlignment="Center"
+                                      Visibility="Collapsed" Stretch="Fill"
+                                      Fill="{DynamicResource QxAccentBrush}"
+                                      Data="M 0,0 L 8,0 L 4,5 Z" />
+                                <ContentPresenter VerticalAlignment="Center" />
+                            </DockPanel>
+                        </Border>
+                        <Thumb x:Name="PART_RightHeaderGripper" HorizontalAlignment="Right"
+                               Width="6" Cursor="SizeWE" Opacity="0">
+                            <Thumb.Template>
+                                <ControlTemplate TargetType="Thumb">
+                                    <Border Background="Transparent" />
+                                </ControlTemplate>
+                            </Thumb.Template>
+                        </Thumb>
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="fill" Property="Background"
+                                    Value="{DynamicResource QxSurfaceSubtleBrush}" />
+                            <Setter Property="Foreground"
+                                    Value="{DynamicResource MaterialDesign.Brush.Foreground}" />
+                        </Trigger>
+                        <Trigger Property="SortDirection" Value="Ascending">
+                            <Setter TargetName="arrow" Property="Visibility" Value="Visible" />
+                            <Setter TargetName="arrow" Property="RenderTransform">
+                                <Setter.Value>
+                                    <RotateTransform Angle="180" CenterX="4" CenterY="2.5" />
+                                </Setter.Value>
+                            </Setter>
+                        </Trigger>
+                        <Trigger Property="SortDirection" Value="Descending">
+                            <Setter TargetName="arrow" Property="Visibility" Value="Visible" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="QxDataGrid" TargetType="DataGrid">
+        <Setter Property="AutoGenerateColumns" Value="False" />
+        <Setter Property="CanUserAddRows" Value="False" />
+        <Setter Property="CanUserDeleteRows" Value="False" />
+        <Setter Property="CanUserReorderColumns" Value="True" />
+        <Setter Property="CanUserResizeColumns" Value="True" />
+        <Setter Property="CanUserResizeRows" Value="False" />
+        <Setter Property="CanUserSortColumns" Value="True" />
+        <Setter Property="IsReadOnly" Value="True" />
+        <Setter Property="SelectionMode" Value="Extended" />
+        <Setter Property="SelectionUnit" Value="FullRow" />
+        <Setter Property="HeadersVisibility" Value="Column" />
+        <Setter Property="GridLinesVisibility" Value="None" />
+        <Setter Property="HorizontalGridLinesBrush" Value="Transparent" />
+        <Setter Property="VerticalGridLinesBrush" Value="Transparent" />
+        <Setter Property="SnapsToDevicePixels" Value="True" />
+        <Setter Property="UseLayoutRounding" Value="True" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="RowBackground" Value="Transparent" />
+        <Setter Property="FontSize" Value="12.5" />
+        <Setter Property="EnableRowVirtualization" Value="True" />
+        <Setter Property="VirtualizingPanel.VirtualizationMode" Value="Recycling" />
+        <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Auto" />
+        <Setter Property="CellStyle" Value="{StaticResource QxDataGridCell}" />
+        <!-- Every column's text down the middle of the row. Left alone, a text column pins its
+             content to the top and only the templated columns look centred, which is what made the
+             tile, the index and the id sit above the name beside them. -->
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+        <Setter Property="RowStyle" Value="{StaticResource QxDataGridRow}" />
+        <Setter Property="ColumnHeaderStyle" Value="{StaticResource QxDataGridHeader}" />
+    </Style>
+
+    <Style x:Key="PageCard" TargetType="Border">
+        <Setter Property="Padding" Value="0,0,0,16" />
+        <Setter Property="CornerRadius" Value="0" />
+        <Setter Property="BorderThickness" Value="0,0,0,1" />
+        <Setter Property="Margin" Value="0,0,0,18" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderBrush" Value="{DynamicResource MaterialDesign.Brush.Divider}" />
+    </Style>
+
+    <!-- A checkbox of our own: a rounded square that fills with the accent and shows a tick. The
+         framework default is a hard grey box that belongs to a different decade and to a different
+         application than everything around it. -->
+    <Style x:Key="PageSwitch" TargetType="CheckBox">
+        <Setter Property="Margin" Value="0,0,0,4" />
+        <Setter Property="Padding" Value="9,0,0,0" />
+        <Setter Property="FontSize" Value="12.5" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="Foreground" Value="{DynamicResource QxTextSecondaryBrush}" />
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="CheckBox">
+                    <Border x:Name="hit" Background="Transparent" Padding="4,5"
+                            CornerRadius="{DynamicResource RadiusSmall}">
+                        <DockPanel>
+                            <Border x:Name="box" DockPanel.Dock="Left" Width="16" Height="16"
+                                    CornerRadius="4" BorderThickness="1.4"
+                                    VerticalAlignment="Center"
+                                    Background="Transparent"
+                                    BorderBrush="{DynamicResource QxTextMutedBrush}">
+                                <Path x:Name="tick" Width="9" Height="7" Stretch="Fill"
+                                      Opacity="0" Margin="0,0.5,0,0"
+                                      Stroke="White" StrokeThickness="1.8"
+                                      StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                                      StrokeLineJoin="Round"
+                                      Data="M 0,3.2 L 3.1,6.2 L 9,0.6" />
+                            </Border>
+                            <ContentPresenter Margin="{TemplateBinding Padding}"
+                                              VerticalAlignment="Center" RecognizesAccessKey="True" />
+                        </DockPanel>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsChecked" Value="True">
+                            <Setter TargetName="box" Property="Background"
+                                    Value="{DynamicResource QxAccentBrush}" />
+                            <Setter TargetName="box" Property="BorderBrush"
+                                    Value="{DynamicResource QxAccentBrush}" />
+                            <Setter TargetName="tick" Property="Opacity" Value="1" />
+                            <Setter Property="Foreground"
+                                    Value="{DynamicResource MaterialDesign.Brush.Foreground}" />
+                        </Trigger>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="hit" Property="Background"
+                                    Value="{DynamicResource QxSurfaceSubtleBrush}" />
+                            <Setter Property="Foreground"
+                                    Value="{DynamicResource MaterialDesign.Brush.Foreground}" />
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Opacity" Value="0.4" />
+                            <Setter Property="Cursor" Value="Arrow" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- A small round action that lives on a tile and only appears while the pointer is over it. -->
+    <Style x:Key="TileIconButton" TargetType="Button">
+        <Setter Property="Width" Value="26" />
+        <Setter Property="Height" Value="26" />
+        <Setter Property="Margin" Value="2,0" />
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="Background" Value="{DynamicResource MaterialDesign.Brush.Background}" />
+        <Setter Property="Foreground" Value="{DynamicResource QxTextSecondaryBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource MaterialDesign.Brush.Divider}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="shell" Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="13">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="shell" Property="Background"
+                                    Value="{DynamicResource QxAccentSoftBrush}" />
+                            <Setter Property="Foreground"
+                                    Value="{DynamicResource MaterialDesign.Brush.Foreground}" />
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter Property="Opacity" Value="0.75" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- A caption over its value. Shared, because the room's info tab, the settings page and the
+         about page all lay facts out the same way and there is no reason for three of these. -->
+    <DataTemplate x:Key="StatCell">
+        <StackPanel Margin="0,0,16,12">
+            <TextBlock Text="{Binding Caption}" Style="{StaticResource StatCaption}" />
+            <TextBlock Text="{Binding Value}" Style="{StaticResource StatValue}"
+                       ToolTip="{Binding Value}" />
+        </StackPanel>
+    </DataTemplate>
+
+    <Style x:Key="PageHint" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="11" />
+        <Setter Property="TextWrapping" Value="Wrap" />
+        <Setter Property="Margin" Value="0,0,0,10" />
+        <Setter Property="Foreground" Value="{DynamicResource QxTextMutedBrush}" />
+    </Style>
+
+    <Style TargetType="local:PageSection">
+        <Setter Property="Margin" Value="0,0,0,6" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderBrush" Value="{DynamicResource MaterialDesign.Brush.Divider}" />
+        <Setter Property="BorderThickness" Value="0,1,0,0" />
+        <Setter Property="Foreground" Value="{DynamicResource MaterialDesign.Brush.Foreground}" />
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="local:PageSection">
+                    <Border Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="0"
+                            SnapsToDevicePixels="True">
+                        <DockPanel>
+                            <Grid DockPanel.Dock="Top">
+                                <Button x:Name="PART_Head" Cursor="Hand" FocusVisualStyle="{x:Null}">
+                                    <Button.Template>
+                                        <ControlTemplate TargetType="Button">
+                                            <Border x:Name="row" Background="Transparent" Height="38"
+                                                    CornerRadius="0" />
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter TargetName="row" Property="Background"
+                                                            Value="{DynamicResource QxSurfaceSubtleBrush}" />
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Button.Template>
+                                </Button>
+
+                                <!-- Drawn over the button and taking no clicks, so the row stays one
+                                     target however much is written on it. -->
+                                <DockPanel IsHitTestVisible="False" Margin="14,0">
+                                    <Path x:Name="chevron" DockPanel.Dock="Right"
+                                          Width="9" Height="6" Stretch="Fill"
+                                          VerticalAlignment="Center"
+                                          Fill="{DynamicResource QxTextMutedBrush}"
+                                          Data="M 0,0 L 9,0 L 4.5,6 Z"
+                                          RenderTransformOrigin="0.5,0.5" />
+                                    <Border x:Name="note" DockPanel.Dock="Right" Margin="8,0,10,0"
+                                            MinWidth="20" Height="18" Padding="6,0"
+                                            VerticalAlignment="Center" Background="Transparent">
+                                        <TextBlock Text="{TemplateBinding Note}" FontSize="11"
+                                                   HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                   Foreground="{DynamicResource QxTextSecondaryBrush}" />
+                                    </Border>
+                                    <ContentPresenter ContentSource="Header"
+                                                      HorizontalAlignment="Left"
+                                                      VerticalAlignment="Center" />
+                                </DockPanel>
+                            </Grid>
+
+                            <Border x:Name="body" Visibility="Collapsed" Padding="12,2,12,12">
+                                <ContentPresenter />
+                            </Border>
+                        </DockPanel>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsLocked" Value="True">
+                            <Setter TargetName="chevron" Property="Visibility" Value="Collapsed" />
+                            <Setter TargetName="PART_Head" Property="Cursor" Value="Arrow" />
+                            <Setter TargetName="PART_Head" Property="IsHitTestVisible" Value="False" />
+                        </Trigger>
+                        <Trigger Property="IsOpen" Value="True">
+                            <Setter TargetName="body" Property="Visibility" Value="Visible" />
+                            <Setter TargetName="chevron" Property="RenderTransform">
+                                <Setter.Value>
+                                    <RotateTransform Angle="180" />
+                                </Setter.Value>
+                            </Setter>
+                        </Trigger>
+                        <Trigger Property="Note" Value="{x:Null}">
+                            <Setter TargetName="note" Property="Visibility" Value="Collapsed" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- The word in front of a row of switches: "Anti  [ ] idle  [ ] trade". Reads as a sentence
+         rather than as a column of unrelated boxes. -->
+    <Style x:Key="RowLabel" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="Margin" Value="0,0,10,0" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="Foreground" Value="{DynamicResource QxTextMutedBrush}" />
+    </Style>
+
+    <!-- A switch on a line with others, so it takes only the width of its own words. -->
+    <Style x:Key="InlineSwitch" TargetType="CheckBox" BasedOn="{StaticResource PageSwitch}">
+        <Setter Property="Margin" Value="0,0,14,0" />
+        <Setter Property="FontSize" Value="12" />
+    </Style>
+
+    <Style x:Key="InlineChoice" TargetType="RadioButton">
+        <Setter Property="Margin" Value="0,0,14,0" />
+        <Setter Property="Padding" Value="7,0,0,0" />
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+        <Setter Property="Foreground" Value="{DynamicResource QxTextSecondaryBrush}" />
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="RadioButton">
+                    <Border x:Name="hit" Background="Transparent" Padding="3,5"
+                            CornerRadius="{DynamicResource RadiusSmall}">
+                        <DockPanel>
+                            <Grid DockPanel.Dock="Left" Width="15" Height="15" VerticalAlignment="Center">
+                                <Ellipse x:Name="ring" StrokeThickness="1.4"
+                                         Stroke="{DynamicResource QxTextMutedBrush}" />
+                                <Ellipse x:Name="dot" Width="7" Height="7" Opacity="0"
+                                         Fill="{DynamicResource QxAccentBrush}" />
+                            </Grid>
+                            <ContentPresenter Margin="{TemplateBinding Padding}"
+                                              VerticalAlignment="Center" />
+                        </DockPanel>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsChecked" Value="True">
+                            <Setter TargetName="ring" Property="Stroke"
+                                    Value="{DynamicResource QxAccentBrush}" />
+                            <Setter TargetName="dot" Property="Opacity" Value="1" />
+                            <Setter Property="Foreground"
+                                    Value="{DynamicResource MaterialDesign.Brush.Foreground}" />
+                        </Trigger>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="hit" Property="Background"
+                                    Value="{DynamicResource QxSurfaceSubtleBrush}" />
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Opacity" Value="0.4" />
+                            <Setter Property="Cursor" Value="Arrow" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- A small number typed into a line of prose: "mute for [ 5 ] minutes". -->
+    <Style x:Key="InlineNumber" TargetType="TextBox" BasedOn="{StaticResource PageFilterText}">
+        <Setter Property="Width" Value="34" />
+        <Setter Property="TextAlignment" Value="Center" />
+        <Setter Property="FontSize" Value="12" />
+    </Style>
+
+    <Style x:Key="InlineNumberBox" TargetType="Border">
+        <Setter Property="Height" Value="24" />
+        <Setter Property="Padding" Value="6,0" />
+        <Setter Property="Margin" Value="0,0,8,0" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="CornerRadius" Value="{DynamicResource RadiusSmall}" />
+        <Setter Property="Background" Value="{DynamicResource MaterialDesign.Brush.Background}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="BorderBrush" Value="{DynamicResource MaterialDesign.Brush.Divider}" />
+    </Style>
+
+    <Style x:Key="SwitchRow" TargetType="WrapPanel">
+        <Setter Property="Orientation" Value="Horizontal" />
+        <Setter Property="Margin" Value="0,0,0,2" />
+    </Style>
+
+    <!-- The hairline between two groups of filters on one line. Grouping by spacing alone needs more
+         room than a filter row has, and without it four questions read as one long one. -->
+    <Style x:Key="FilterRule" TargetType="Border">
+        <Setter Property="Width" Value="1" />
+        <Setter Property="Height" Value="15" />
+        <Setter Property="Margin" Value="2,0,14,0" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="Background" Value="{DynamicResource MaterialDesign.Brush.Divider}" />
+    </Style>
+
+</ResourceDictionary>

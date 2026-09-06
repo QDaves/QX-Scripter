@@ -1,0 +1,151 @@
+<local:GamePage x:Class="Qx.Ui.LoggingPage"
+                xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+                xmlns:local="clr-namespace:Qx.Ui"
+                Background="{DynamicResource MaterialDesign.Brush.Background}">
+    <Grid MaxWidth="{StaticResource PageContentWidth}" Margin="{StaticResource PageOuterMargin}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0" Margin="{StaticResource PageHeaderMargin}">
+            <TextBlock Text="Application log" Style="{StaticResource PageHeading}" />
+            <TextBlock Text="Connection, protocol and runtime events that do not belong to a script."
+                       Style="{StaticResource PageSubheading}" />
+        </StackPanel>
+
+        <DockPanel Grid.Row="1" Margin="0,0,0,12" LastChildFill="False">
+            <Border DockPanel.Dock="Left" Width="280" Style="{StaticResource PageFilterBox}">
+                <DockPanel>
+                    <materialDesign:PackIcon Kind="Magnify" Width="15" Height="15"
+                                             Margin="0,0,8,0" VerticalAlignment="Center"
+                                             Foreground="{DynamicResource QxTextMutedBrush}" />
+                    <TextBox x:Name="FilterBox" Style="{StaticResource PageFilterText}"
+                             Tag="Filter messages or categories"
+                             TextChanged="FilterChanged"
+                             AutomationProperties.Name="Filter application log" />
+                </DockPanel>
+            </Border>
+
+            <ToggleButton x:Name="ProblemsButton" DockPanel.Dock="Left"
+                          Style="{StaticResource ViewModeToggle}"
+                          Height="30" Margin="8,0,0,0" Padding="10,0"
+                          Click="ProblemsChanged"
+                          ToolTip="Show only warnings and errors"
+                          AutomationProperties.Name="Show only application log warnings and errors">
+                <StackPanel Orientation="Horizontal">
+                    <materialDesign:PackIcon Kind="AlertCircleOutline" Width="15" Height="15"
+                                             Margin="0,0,6,0" VerticalAlignment="Center" />
+                    <TextBlock Text="Problems" VerticalAlignment="Center" />
+                </StackPanel>
+            </ToggleButton>
+
+            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                <TextBlock x:Name="CountText" Margin="0,0,10,0"
+                           VerticalAlignment="Center" FontSize="11.5"
+                           Foreground="{DynamicResource QxTextMutedBrush}"
+                           AutomationProperties.LiveSetting="Polite" />
+                <Button Style="{StaticResource OutputActionButton}" Height="30"
+                        Click="CopyLog" ToolTip="Copy visible log entries"
+                        AutomationProperties.Name="Copy visible application log entries">
+                    <materialDesign:PackIcon Kind="ContentCopy" Width="15" Height="15" />
+                </Button>
+                <Button Style="{StaticResource OutputActionButton}" Height="30" Margin="4,0,0,0"
+                        Click="ClearLog" ToolTip="Clear application log"
+                        AutomationProperties.Name="Clear application log">
+                    <materialDesign:PackIcon Kind="DeleteSweepOutline" Width="16" Height="16" />
+                </Button>
+            </StackPanel>
+        </DockPanel>
+
+        <Border Grid.Row="2" Style="{StaticResource PageCard}" Padding="0" Margin="0">
+            <Grid>
+                <ListBox x:Name="LogBox" BorderThickness="0" Background="Transparent"
+                         Padding="8,8,10,10" SelectionMode="Extended"
+                         ScrollViewer.CanContentScroll="True"
+                         ScrollViewer.VerticalScrollBarVisibility="Auto"
+                         ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                         VirtualizingPanel.IsVirtualizing="True"
+                         VirtualizingPanel.VirtualizationMode="Recycling"
+                         KeyDown="LogKeyDown"
+                         AutomationProperties.Name="Application log entries">
+                    <ListBox.ItemContainerStyle>
+                        <Style TargetType="ListBoxItem">
+                            <Setter Property="Padding" Value="0" />
+                            <Setter Property="Margin" Value="0" />
+                            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="ListBoxItem">
+                                        <Border x:Name="row" Background="Transparent" Padding="8,4"
+                                                CornerRadius="{DynamicResource RadiusSmall}">
+                                            <ContentPresenter />
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter TargetName="row" Property="Background"
+                                                        Value="{DynamicResource QxSurfaceSubtleBrush}" />
+                                            </Trigger>
+                                            <Trigger Property="IsSelected" Value="True">
+                                                <Setter TargetName="row" Property="Background"
+                                                        Value="{DynamicResource QxSelectionBrush}" />
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                        </Style>
+                    </ListBox.ItemContainerStyle>
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="58" />
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="{Binding Time}"
+                                           FontFamily="{StaticResource FontCode}" FontSize="11"
+                                           Foreground="{DynamicResource QxTextMutedBrush}"
+                                           VerticalAlignment="Top" />
+                                <TextBlock x:Name="prefix" Grid.Column="1" Text="{Binding Prefix}"
+                                           MinWidth="56" Margin="0,0,10,0"
+                                           FontFamily="{StaticResource FontCode}" FontSize="11.5"
+                                           Foreground="{DynamicResource QxTextMutedBrush}"
+                                           VerticalAlignment="Top" />
+                                <TextBlock x:Name="message" Grid.Column="2" Text="{Binding Message}"
+                                           FontFamily="{StaticResource FontCode}" FontSize="12"
+                                           Foreground="{DynamicResource MaterialDesign.Brush.Foreground}" />
+                            </Grid>
+                            <DataTemplate.Triggers>
+                                <DataTrigger Binding="{Binding Severity}" Value="Warning">
+                                    <Setter TargetName="prefix" Property="Foreground"
+                                            Value="{DynamicResource QxWarningBrush}" />
+                                    <Setter TargetName="message" Property="Foreground"
+                                            Value="{DynamicResource QxWarningBrush}" />
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding Severity}" Value="Error">
+                                    <Setter TargetName="prefix" Property="Foreground"
+                                            Value="{DynamicResource QxDangerBrush}" />
+                                    <Setter TargetName="message" Property="Foreground"
+                                            Value="{DynamicResource QxDangerBrush}" />
+                                </DataTrigger>
+                            </DataTemplate.Triggers>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+
+                <StackPanel x:Name="EmptyState" Style="{StaticResource PageEmptyNotice}"
+                            IsHitTestVisible="False">
+                    <materialDesign:PackIcon Kind="TextBoxOutline" Width="32" Height="32"
+                                             HorizontalAlignment="Center" Margin="0,0,0,8" />
+                    <TextBlock x:Name="EmptyText" Text="No application events yet."
+                               FontSize="12.5" HorizontalAlignment="Center" />
+                </StackPanel>
+            </Grid>
+        </Border>
+    </Grid>
+</local:GamePage>

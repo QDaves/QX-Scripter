@@ -1,0 +1,38 @@
+<Project>
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RuntimeIdentifiers>win-x64</RuntimeIdentifiers>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <Deterministic>true</Deterministic>
+    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(MSBuildProjectName)' == 'Flazzy'">
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <QxVersionSeries>0.0</QxVersionSeries>
+    <VersionPrefix>$(QxVersionSeries).1</VersionPrefix>
+    <AssemblyVersion>$(QxVersionSeries).0.0</AssemblyVersion>
+    <Product>QX Scripter</Product>
+    <Company>QX</Company>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <QxDebug Condition="'$(QxDebug)' == '' and '$(Configuration)' == 'Debug'">true</QxDebug>
+    <QxDebug Condition="'$(QxDebug)' == ''">false</QxDebug>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(QxDebug)' == 'true'">
+    <DefineConstants>$(DefineConstants);QX_DEBUG</DefineConstants>
+  </PropertyGroup>
+</Project>

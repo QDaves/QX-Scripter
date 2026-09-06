@@ -1,0 +1,13 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- The mark, as geometry rather than as two bitmaps. One shape painted with a themed brush
+         cannot fall out of step with the theme, needs no second file for the light variant, and
+         stays sharp at any size the window is scaled to.
+
+         The path is the artwork's own coordinate space, in which the Y axis points the other way.
+         Whatever draws it flips it back with a ScaleY of -1; the scale and the offset the SVG
+         also carries do not matter, because the shape is stretched to fit wherever it is put. -->
+    <Geometry x:Key="QxMarkGeometry">M978 2670 c-296 -53 -507 -267 -574 -580 -26 -124 -25 -354 3 -476 75 -322 280 -512 613 -566 l85 -14 12 -65 c34 -190 151 -307 341 -340 70 -12 359 -6 422 9 l35 8 3 137 3 137 -24 0 c-13 0 -59 -9 -103 -20 -158 -41 -285 4 -345 122 -27 53 -24 76 17 136 153 228 454 707 450 718 -3 7 -78 129 -168 271 -90 142 -197 311 -237 375 -72 115 -74 118 -125 134 -59 19 -332 28 -408 14z m316 -314 c141 -69 216 -241 216 -496 0 -144 -17 -237 -59 -324 -39 -84 -91 -140 -159 -173 -49 -24 -69 -28 -143 -28 -75 0 -92 4 -145 30 -79 41 -143 124 -181 238 -25 76 -27 95 -28 247 0 144 3 175 23 246 27 93 84 188 139 230 92 70 230 82 337 30z M1640 2630 c6 -12 115 -186 242 -388 127 -202 231 -371 231 -377 0 -9 -189 -307 -378 -595 -45 -69 -92 -142 -104 -162 l-23 -38 219 0 218 0 58 98 c103 172 236 385 245 394 6 6 67 -86 162 -241 l152 -251 225 0 c254 0 238 -7 179 83 -18 29 -93 147 -166 262 -73 116 -169 265 -212 333 -43 68 -78 127 -78 132 0 8 174 280 421 660 l68 105 -216 3 c-167 2 -219 -1 -225 -10 -44 -71 -180 -292 -225 -366 -31 -51 -60 -91 -64 -90 -5 2 -71 107 -147 233 l-138 230 -227 3 -228 2 11 -20z</Geometry>
+
+</ResourceDictionary>

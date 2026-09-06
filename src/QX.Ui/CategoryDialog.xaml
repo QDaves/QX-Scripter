@@ -1,0 +1,60 @@
+<Window x:Class="Qx.Ui.CategoryDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+        Title="Category" SizeToContent="Height" Width="420"
+        WindowStyle="None" ResizeMode="NoResize" WindowStartupLocation="CenterOwner"
+        Background="{DynamicResource MaterialDesign.Brush.Card.Background}"
+        TextElement.Foreground="{DynamicResource MaterialDesign.Brush.Foreground}"
+        TextElement.FontFamily="{StaticResource FontUI}" TextElement.FontSize="13"
+        ShowInTaskbar="False" UseLayoutRounding="True"
+        PreviewKeyDown="OnPreviewKeyDown">
+    <Border BorderThickness="1" BorderBrush="{DynamicResource MaterialDesign.Brush.Divider}">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <Border Grid.Row="0" BorderThickness="0,0,0,1"
+                    BorderBrush="{DynamicResource MaterialDesign.Brush.Divider}"
+                    MouseLeftButtonDown="OnHeaderMouseLeftButtonDown">
+                <Grid Margin="20,11,10,11">
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <materialDesign:PackIcon Kind="LabelOutline" Width="20" Height="20"
+                                                 VerticalAlignment="Center"
+                                                 Foreground="{DynamicResource QxAccentBrush}" />
+                        <TextBlock x:Name="TitleText" Text="Category" FontSize="16" FontWeight="SemiBold"
+                                   Margin="10,0,0,0" VerticalAlignment="Center" />
+                    </StackPanel>
+                    <Button HorizontalAlignment="Right" Width="32" Height="32" Padding="0"
+                            Style="{StaticResource MaterialDesignIconButton}"
+                            Click="OnCancel" ToolTip="Close"
+                            AutomationProperties.Name="Close category dialog">
+                        <materialDesign:PackIcon Kind="Close" Width="17" Height="17" />
+                    </Button>
+                </Grid>
+            </Border>
+
+            <StackPanel Grid.Row="1" Margin="20,18,20,18">
+                <TextBlock Text="CATEGORY" Style="{StaticResource SectionLabel}" Margin="2,0,0,7" />
+                <ComboBox x:Name="CategoryBox" IsEditable="True" MaxDropDownHeight="220"
+                          Style="{StaticResource MaterialDesignOutlinedComboBox}"
+                          materialDesign:HintAssist.Hint="Category"
+                          AutomationProperties.Name="Script category"
+                          AutomationProperties.HelpText="Pick an existing category or type a new one. Leave empty for none." />
+                <TextBlock Text="Pick an existing category or type a new one. Leave it empty for none."
+                           Style="{StaticResource HintText}" Margin="2,7,0,0" />
+
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
+                    <Button Content="Cancel" Style="{StaticResource MaterialDesignFlatButton}"
+                            Click="OnCancel" Margin="0,0,8,0" IsCancel="True"
+                            AutomationProperties.Name="Cancel" />
+                    <Button Content="Save" Style="{StaticResource MaterialDesignRaisedButton}"
+                            Click="OnSave" IsDefault="True"
+                            AutomationProperties.Name="Save category" />
+                </StackPanel>
+            </StackPanel>
+        </Grid>
+    </Border>
+</Window>

@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>Qx.Game</RootNamespace>
+    <AssemblyName>QX.Game</AssemblyName>
+    <IsAotCompatible>true</IsAotCompatible>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\QX.Core\QX.Core.csproj" />
+    <ProjectReference Include="..\QX.Interception\QX.Interception.csproj" />
+    <ProjectReference Include="..\QX.Model\QX.Model.csproj" />
+    <ProjectReference Include="..\QX.Protocol\QX.Protocol.csproj" />
+  </ItemGroup>
+
+</Project>

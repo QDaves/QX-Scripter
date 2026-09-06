@@ -1,0 +1,237 @@
+﻿using System.Runtime.InteropServices;
+using System.Text;
+
+using Flazzy.IO;
+
+namespace Flazzy.ABC;
+
+public class ASMethod : IFlashItem, IAS3Item
+{
+    public ABCFile ABC { get; set; }
+
+    public int NameIndex { get; set; }
+    public string? Name => ABC.Pool.Strings[NameIndex];
+
+    public int ReturnTypeIndex { get; set; }
+    public ASMultiname? ReturnType => ABC.Pool.Multinames[ReturnTypeIndex];
+
+    public MethodFlags Flags { get; set; }
+    public List<ASParameter> Parameters { get; }
+
+    public ASTrait? Trait { get; internal set; }
+    public ASMethodBody? Body { get; internal set; }
+    public bool IsConstructor { get; internal set; }
+    public ASContainer? Container { get; internal set; }
+    public bool IsAnonymous => Trait == null && !IsConstructor;
+
+    public ASMethod(ABCFile abc)
+    {
+        ABC = abc;
+        Parameters = new List<ASParameter>();
+    }
+    public ASMethod(ABCFile abc, ref SpanFlashReader input)
+        : this(abc)
+    {
+        Parameters.Capacity = input.ReadEncodedInt();
+        ReturnTypeIndex = input.ReadEncodedInt();
+
+        for (int i = 0; i < Parameters.Capacity; i++)
+        {
+            Parameters.Add(new ASParameter(this)
+            {
+                TypeIndex = input.ReadEncodedInt()
+            });
+        }
+
+        NameIndex = input.ReadEncodedInt();
+        Flags = (MethodFlags)input.ReadByte();
+
+        if (Flags.HasFlag(MethodFlags.HasOptional))
+        {
+            int optionalParamCount = input.ReadEncodedInt();
+            foreach (var parameter in CollectionsMarshal.AsSpan(Parameters)
+                .Slice(Parameters.Count - optionalParamCount))
+            {
+                parameter.IsOptional = true;
+                parameter.ValueIndex = input.ReadEncodedInt();
+                parameter.ValueKind = (ConstantKind)input.ReadByte();
+            }
+        }
+
+        if (Flags.HasFlag(MethodFlags.HasParamNames))
+        {
+            foreach (var parameter in Parameters)
+            {
+                parameter.NameIndex = input.ReadEncodedInt();
+            }
+        }
+    }
+
+    public int GetSize()
+    {
+        int size = 0;
+        size += SpanFlashWriter.GetEncodedIntSize(Parameters.Count);
+        size += SpanFlashWriter.GetEncodedIntSize(ReturnTypeIndex);
+
+        int optionalParamCount = 0;
+        if (Parameters.Count > 0)
+        {
+            foreach (var parameter in Parameters)
+            {
+                size += SpanFlashWriter.GetEncodedIntSize(parameter.TypeIndex);
+
+                // One named parameter is enough to attain this flag.
+                if (!string.IsNullOrWhiteSpace(parameter.Name))
+                {
+                    Flags |= MethodFlags.HasParamNames;
+                }
+
+                // Just one optional parameter is enough to attain this flag.
+                if (parameter.IsOptional)
+                {
+                    optionalParamCount++;
+                    Flags |= MethodFlags.HasOptional;
+                }
+            }
+        }
+
+        size += SpanFlashWriter.GetEncodedIntSize(NameIndex);
+        size += sizeof(byte);
+        if (Flags.HasFlag(MethodFlags.HasOptional))
+        {
+            size += SpanFlashWriter.GetEncodedIntSize(optionalParamCount);
+            foreach (var parameter in CollectionsMarshal.AsSpan(Parameters)
+                .Slice(Parameters.Count - optionalParamCount))
+            {
+                size += SpanFlashWriter.GetEncodedIntSize(parameter.ValueIndex);
+            }
+            size += optionalParamCount * sizeof(byte);
+        }
+
+        if (Flags.HasFlag(MethodFlags.HasParamNames))
+        {
+            foreach (var parameter in Parameters)
+            {
+                size += SpanFlashWriter.GetEncodedIntSize(parameter.NameIndex);
+            }
+        }
+        return size;
+    }
+    public void WriteTo(ref SpanFlashWriter output)
+    {
+        output.WriteEncodedInt(Parameters.Count);
+        output.WriteEncodedInt(ReturnTypeIndex);
+
+        // TODO: This logic is pretty fragile.
+        // I think we should make Flags a getter-only and manage/validate the state some other way.
+        int optionalParamCount = 0;
+        if (Parameters.Count > 0)
+        {
+            foreach (var parameter in Parameters)
+            {
+                output.WriteEncodedInt(parameter.TypeIndex);
+
+                // One named parameter is enough to attain this flag.
+                if (!string.IsNullOrWhiteSpace(parameter.Name))
+                {
+                    Flags |= MethodFlags.HasParamNames;
+                }
+
+                // Just one optional parameter is enough to attain this flag.
+                if (parameter.IsOptional)
+                {
+                    optionalParamCount++;
+                    Flags |= MethodFlags.HasOptional;
+                }
+            }
+        }
+
+        output.WriteEncodedInt(NameIndex);
+        output.Write((byte)Flags);
+        if (Flags.HasFlag(MethodFlags.HasOptional))
+        {
+            output.WriteEncodedInt(optionalParamCount);
+            foreach (var parameter in CollectionsMarshal.AsSpan(Parameters)
+                .Slice(Parameters.Count - optionalParamCount))
+            {
+                output.WriteEncodedInt(parameter.ValueIndex);
+                output.Write((byte)parameter.ValueKind);
+            }
+        }
+
+        if (Flags.HasFlag(MethodFlags.HasParamNames))
+        {
+            foreach (var parameter in Parameters)
+            {
+                output.WriteEncodedInt(parameter.NameIndex);
+            }
+        }
+    }
+
+    public string ToAS3()
+    {
+        var builder = new StringBuilder();
+
+        ASMultiname? qName = Trait?.QName ?? Container?.QName;
+        if (qName != null)
+        {
+            if (Trait?.Attributes.HasFlag(TraitAttributes.Override) == true)
+            {
+                builder.Append("override ");
+            }
+            builder.Append(qName.Namespace?.GetAS3Modifiers());
+            if (builder.Length > 0)
+            {
+                builder.Append(' ');
+            }
+            if (!IsConstructor && Trait?.IsStatic == true)
+            {
+                builder.Append("static ");
+            }
+            builder.Append("function ");
+            if (Trait?.Kind == TraitKind.Getter)
+            {
+                builder.Append("get ");
+            }
+            if (Trait?.Kind == TraitKind.Setter)
+            {
+                builder.Append("set ");
+            }
+            builder.Append(qName.Name);
+        }
+        else if (IsAnonymous) builder.Append("function");
+
+        builder.Append('('); // Parameters Start
+        if (Parameters.Count > 0)
+        {
+            for (int i = 0; i < Parameters.Count; i++)
+            {
+                Parameters[i].Append(builder, i + 1);
+                builder.Append(", ");
+            }
+            builder.Length -= 2;
+        }
+
+        if (Flags.HasFlag(MethodFlags.NeedRest))
+        {
+            builder.Append("... param");
+            builder.Append(Parameters.Count + 1);
+        }
+        builder.Append(')'); // Parameters End
+        if (ReturnType != null)
+        {
+            builder.Append(':');
+            if (ReturnType.Kind == MultinameKind.TypeName)
+            {
+                builder.Append(ReturnType.QName?.Name);
+                builder.Append(".<");
+                builder.Append(string.Join(',', ReturnType.GetTypes().Select(type => type?.Name ?? "*")));
+                builder.Append('>');
+            }
+            else builder.Append(ReturnType.Name);
+        }
+        return builder.ToString();
+    }
+
+    public override string ToString() => ToAS3();
+}

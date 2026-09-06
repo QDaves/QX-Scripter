@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>Qx.Model</RootNamespace>
+    <AssemblyName>QX.Model</AssemblyName>
+    <IsAotCompatible>true</IsAotCompatible>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\QX.Wire\QX.Wire.csproj" />
+  </ItemGroup>
+
+</Project>

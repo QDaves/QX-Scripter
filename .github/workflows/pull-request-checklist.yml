@@ -1,0 +1,43 @@
+name: Pull request checklist
+
+on:
+  pull_request:
+    branches:
+      - main
+    types:
+      - opened
+      - edited
+      - synchronize
+      - reopened
+      - ready_for_review
+
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  checklist:
+    name: Checklist
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Validate required items
+        shell: pwsh
+        run: |
+          $event = Get-Content -Raw $env:GITHUB_EVENT_PATH | ConvertFrom-Json
+          $body = [string]$event.pull_request.body
+          $required = @(
+              'Flash and Unity parity is preserved or not affected.'
+              'Desktop, CLI, scripting, and MCP are covered together or not affected.'
+              'Generated message definitions and dependency lock files are current or not affected.'
+              'Verification is documented above or not required.'
+          )
+          $missing = @($required | Where-Object {
+              $body -notmatch "(?im)^\s*-\s*\[[x]\]\s*$([regex]::Escape($_))\s*$"
+          })
+          if ($missing.Count -gt 0)
+          {
+              throw "Unchecked required PR items: $($missing -join ' | ')"
+          }

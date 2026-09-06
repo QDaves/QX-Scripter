@@ -1,0 +1,60 @@
+﻿using Flazzy.IO;
+
+namespace Flazzy.ABC.AVM2.Instructions;
+
+public sealed class CallSuperVoidIns : ASInstruction
+{
+    public int MethodNameIndex { get; set; }
+    public ASMultiname MethodName => GetMultiname(MethodNameIndex, nameof(MethodName));
+
+    public int ArgCount { get; set; }
+
+    public CallSuperVoidIns(ABCFile abc)
+        : base(OPCode.CallSuperVoid, abc)
+    { }
+    public CallSuperVoidIns(ABCFile abc, ref SpanFlashReader input)
+        : this(abc)
+    {
+        MethodNameIndex = input.ReadEncodedInt();
+        ArgCount = input.ReadEncodedInt();
+    }
+    public CallSuperVoidIns(ABCFile abc, int methodNameIndex)
+        : this(abc)
+    {
+        MethodNameIndex = methodNameIndex;
+    }
+    public CallSuperVoidIns(ABCFile abc, int methodNameIndex, int argCount)
+        : this(abc)
+    {
+        MethodNameIndex = methodNameIndex;
+        ArgCount = argCount;
+    }
+
+    public override int GetPopCount()
+    {
+        return ArgCount + ResolveMultinamePops(MethodName) + 1;
+    }
+    public override int GetPushCount() => 0;
+    public override void Execute(ASMachine machine)
+    {
+        for (int i = 0; i < ArgCount; i++)
+        {
+            machine.Values.Pop();
+        }
+        ResolveMultiname(machine, MethodName);
+        object? receiver = machine.Values.Pop();
+    }
+
+    protected override int GetBodySize()
+    {
+        int size = 0;
+        size += SpanFlashWriter.GetEncodedIntSize(MethodNameIndex);
+        size += SpanFlashWriter.GetEncodedIntSize(ArgCount);
+        return size;
+    }
+    protected override void WriteValuesTo(ref SpanFlashWriter output)
+    {
+        output.WriteEncodedInt(MethodNameIndex);
+        output.WriteEncodedInt(ArgCount);
+    }
+}

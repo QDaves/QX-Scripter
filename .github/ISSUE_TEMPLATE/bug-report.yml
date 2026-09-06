@@ -1,0 +1,22 @@
+name: Bug report
+description: Report a problem with QX Scripter
+title: "[Bug] "
+labels:
+  - bug
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: Tell us what you did, what you expected, and what happened instead.
+      placeholder: Describe the problem and how to reproduce it.
+    validations:
+      required: true
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: Diagnostics
+      description: Reports opened from QX Scripter fill this automatically. Review it before sending.
+      render: text
+    validations:
+      required: false

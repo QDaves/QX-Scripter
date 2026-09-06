@@ -1,0 +1,113 @@
+<local:GamePage x:Class="Qx.Ui.SettingsPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:local="clr-namespace:Qx.Ui"
+             Background="{DynamicResource MaterialDesign.Brush.Background}">
+    <Grid MaxWidth="{StaticResource PageContentWidth}" Margin="{StaticResource PageOuterMargin}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0" Margin="{StaticResource PageHeaderMargin}">
+            <TextBlock Text="Settings" Style="{StaticResource PageHeading}" />
+            <TextBlock Style="{StaticResource PageSubheading}"
+                       Text="Appearance, storage and connections." />
+        </StackPanel>
+
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="0,0,6,0">
+            <StackPanel MaxWidth="760" HorizontalAlignment="Left">
+                <Border Style="{StaticResource PageCard}">
+                    <StackPanel>
+                        <TextBlock Text="APPEARANCE" Style="{StaticResource PageSection}" />
+                        <StackPanel Orientation="Horizontal">
+                            <RadioButton x:Name="DarkOption" Content="Dark"
+                                         Style="{StaticResource PageChoice}"
+                                         Margin="0,0,8,0" Checked="OnDark"
+                                         AutomationProperties.Name="Use dark theme" />
+                            <RadioButton x:Name="LightOption" Content="Light"
+                                         Style="{StaticResource PageChoice}"
+                                         Checked="OnLight"
+                                         AutomationProperties.Name="Use light theme" />
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <Border Style="{StaticResource PageCard}">
+                    <StackPanel>
+                        <TextBlock Text="ON START" Style="{StaticResource PageSection}" />
+                        <CheckBox x:Name="RestoreSessionOption" Style="{StaticResource PageSwitch}"
+                                  Content="Reopen the scripts I had open"
+                                  Click="OnRestoreSessionChanged"
+                                  AutomationProperties.Name="Reopen previously open scripts on start" />
+                    </StackPanel>
+                </Border>
+
+                <Border Style="{StaticResource PageCard}">
+                    <StackPanel>
+                        <TextBlock Text="SCRIPTS FOLDER" Style="{StaticResource PageSection}" />
+                        <DockPanel>
+                            <Button DockPanel.Dock="Right" Margin="10,0,0,0"
+                                    Style="{StaticResource PageActionButton}"
+                                    Click="OpenFolder"
+                                    AutomationProperties.Name="Open scripts folder">
+                                <TextBlock Text="Open" />
+                            </Button>
+                            <TextBlock x:Name="FolderText" VerticalAlignment="Center"
+                                       FontSize="12" TextTrimming="CharacterEllipsis"
+                                       Foreground="{DynamicResource QxTextSecondaryBrush}"
+                                       AutomationProperties.Name="Scripts folder path" />
+                        </DockPanel>
+                    </StackPanel>
+                </Border>
+
+                <Border Style="{StaticResource PageCard}">
+                    <StackPanel>
+                        <TextBlock Text="MCP SERVER" Style="{StaticResource PageSection}" />
+                        <DockPanel Margin="0,0,0,6">
+                            <Button x:Name="CopyMcpButton" DockPanel.Dock="Right" Margin="10,0,0,0"
+                                    Style="{StaticResource PageActionButton}"
+                                    Click="CopyMcpUrl"
+                                    ToolTip="Copy the client URL, access token included"
+                                    AutomationProperties.Name="Copy MCP client URL with token">
+                                <TextBlock Text="Copy" />
+                            </Button>
+                            <TextBlock x:Name="McpText" VerticalAlignment="Center"
+                                       FontFamily="{StaticResource FontCode}" FontSize="12"
+                                       TextTrimming="CharacterEllipsis"
+                                       Foreground="{DynamicResource QxTextSecondaryBrush}"
+                                       AutomationProperties.Name="MCP server address" />
+                        </DockPanel>
+                        <TextBlock x:Name="McpHint" Style="{StaticResource PageHint}" />
+                        <CheckBox x:Name="AllowExecuteOption" Style="{StaticResource PageSwitch}"
+                                  Content="Let clients compile and run scripts"
+                                  Click="OnCapabilityChanged" />
+                        <CheckBox x:Name="AllowFileWriteOption" Style="{StaticResource PageSwitch}"
+                                  Content="Let clients create, rename and delete scripts"
+                                  Click="OnCapabilityChanged" />
+                        <CheckBox x:Name="AllowEditorOption" Style="{StaticResource PageSwitch}"
+                                  Content="Let clients read and edit open tabs"
+                                  Click="OnCapabilityChanged" />
+                        <TextBlock x:Name="CapabilityHint" Style="{StaticResource PageHint}"
+                                   Margin="0,2,0,0" />
+                    </StackPanel>
+                </Border>
+
+                <Border Style="{StaticResource PageCard}">
+                    <StackPanel>
+                        <TextBlock Text="CONNECTION" Style="{StaticResource PageSection}" />
+                        <ItemsControl x:Name="ConnectionFields"
+                                      ItemTemplate="{StaticResource StatCell}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <UniformGrid Columns="2" />
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                        </ItemsControl>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</local:GamePage>

@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>Qx.Interception</RootNamespace>
+    <AssemblyName>QX.Interception</AssemblyName>
+    <IsAotCompatible>true</IsAotCompatible>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\QX.Wire\QX.Wire.csproj" />
+    <ProjectReference Include="..\QX.Core\QX.Core.csproj" />
+    <ProjectReference Include="..\QX.Protocol\QX.Protocol.csproj" />
+  </ItemGroup>
+
+</Project>

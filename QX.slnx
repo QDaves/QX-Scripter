@@ -1,0 +1,22 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Flazzy/Flazzy.csproj" />
+    <Project Path="src/QX.App/QX.App.csproj" />
+    <Project Path="src/QX.ClientCatalog/QX.ClientCatalog.csproj" />
+    <Project Path="src/QX.ClientHeaders/QX.ClientHeaders.csproj" />
+    <Project Path="src/QX.Core/QX.Core.csproj" />
+    <Project Path="src/QX.FlashHeaders/QX.FlashHeaders.csproj" />
+    <Project Path="src/QX.Game/QX.Game.csproj" />
+    <Project Path="src/QX.Hosting/QX.Hosting.csproj" />
+    <Project Path="src/QX.Interception/QX.Interception.csproj" />
+    <Project Path="src/QX.Mcp/QX.Mcp.csproj" />
+    <Project Path="src/QX.Model/QX.Model.csproj" />
+    <Project Path="src/QX.Protocol/QX.Protocol.csproj" />
+    <Project Path="src/QX.Scripting/QX.Scripting.csproj" />
+    <Project Path="src/QX.Ui/QX.Ui.csproj" />
+    <Project Path="src/QX.Wire/QX.Wire.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/QX.Tests.csproj" />
+  </Folder>
+</Solution>

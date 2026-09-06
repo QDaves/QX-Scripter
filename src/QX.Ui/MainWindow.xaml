@@ -1,0 +1,864 @@
+<Window x:Class="Qx.Ui.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+        xmlns:local="clr-namespace:Qx.Ui"
+        Title="QX Scripter" Height="780" Width="1120" MinHeight="520" MinWidth="820"
+        Icon="Assets/qx.ico"
+        WindowStyle="None" WindowStartupLocation="CenterScreen"
+        Background="{DynamicResource MaterialDesign.Brush.Background}"
+        TextElement.Foreground="{DynamicResource MaterialDesign.Brush.Foreground}"
+        TextElement.FontFamily="{StaticResource FontUI}"
+        TextElement.FontWeight="Regular" TextElement.FontSize="13"
+        TextOptions.TextFormattingMode="Ideal" TextOptions.TextRenderingMode="Auto"
+        UseLayoutRounding="True"
+        AllowDrop="True" DragOver="OnWindowDragOver" Drop="OnWindowDrop">
+
+    <WindowChrome.WindowChrome>
+        <WindowChrome CaptionHeight="40" ResizeBorderThickness="6" CornerRadius="0" GlassFrameThickness="0" />
+    </WindowChrome.WindowChrome>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="40" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <Grid Grid.Row="0" Background="{DynamicResource MaterialDesign.Brush.Background}">
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="13,0,0,0">
+                <!-- The mark already reads as QX, so the word is not repeated beside it. -->
+                <Viewbox Width="19" Height="19" VerticalAlignment="Center"
+                         AutomationProperties.Name="QX Scripter">
+                    <Path Data="{StaticResource QxMarkGeometry}"
+                          Fill="{DynamicResource MaterialDesign.Brush.Foreground}">
+                        <Path.LayoutTransform>
+                            <ScaleTransform ScaleY="-1" />
+                        </Path.LayoutTransform>
+                    </Path>
+                </Viewbox>
+                <TextBlock Text="Scripter" FontSize="14" FontWeight="Light" Margin="6,0,0,8" VerticalAlignment="Center" Opacity="0.62" />
+            </StackPanel>
+
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                <Button x:Name="TopmostButton" Style="{StaticResource CaptionButton}" Click="ToggleTopmost"
+                        ToolTip="Keep on top" AutomationProperties.Name="Keep window on top">
+                    <materialDesign:PackIcon x:Name="TopmostIcon" Kind="PinOutline" Width="17" Height="17" />
+                </Button>
+                <Button x:Name="ThemeButton" Style="{StaticResource CaptionButton}" Click="ToggleTheme"
+                        ToolTip="Switch theme" AutomationProperties.Name="Switch theme">
+                    <materialDesign:PackIcon x:Name="ThemeIcon" Kind="WeatherNight" Width="18" Height="18" />
+                </Button>
+                <Button Style="{StaticResource CaptionButton}" Click="Minimize" ToolTip="Minimize"
+                        AutomationProperties.Name="Minimize window">
+                    <materialDesign:PackIcon Kind="WindowMinimize" Width="16" Height="16" />
+                </Button>
+                <Button x:Name="MaximizeButton" Style="{StaticResource CaptionButton}" Click="MaximizeRestore"
+                        ToolTip="Maximize" AutomationProperties.Name="Maximize window">
+                    <materialDesign:PackIcon x:Name="MaxIcon" Kind="WindowMaximize" Width="15" Height="15" />
+                </Button>
+                <Button Style="{StaticResource CloseCaptionButton}" Click="CloseWindow" ToolTip="Close"
+                        x:Name="CloseButton" AutomationProperties.Name="Close QX Scripter">
+                    <materialDesign:PackIcon Kind="WindowClose" Width="16" Height="16" />
+                </Button>
+            </StackPanel>
+        </Grid>
+
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="52" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <!-- Sidebar -->
+            <Grid Grid.Column="0" Margin="5,0,5,8">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <Border Grid.Row="0" Padding="0" Background="Transparent" BorderThickness="0">
+                    <StackPanel>
+                        <ToggleButton x:Name="LoggingButton" Style="{StaticResource SidebarNavToggle}"
+                                      Click="ShowLogging"
+                                      ToolTip="Application log"
+                                      AutomationProperties.Name="Application log">
+                            <materialDesign:PackIcon Kind="TextBoxOutline" Width="18" Height="18" />
+                        </ToggleButton>
+                        <ToggleButton x:Name="LibraryButton" Style="{StaticResource SidebarNavToggle}"
+                                      Click="OpenScript"
+                                      ToolTip="Script library (Ctrl+O)"
+                                      AutomationProperties.Name="Script library"
+                                      AutomationProperties.AcceleratorKey="Ctrl+O">
+                            <materialDesign:PackIcon Kind="Bookshelf" Width="18" Height="18" />
+                        </ToggleButton>
+                        <!-- Not a toggle. Making a new script is something you do, not somewhere
+                             you are, and latching it left two buttons lit at once. -->
+                        <Button x:Name="EditorButton" Style="{StaticResource SidebarNavButton}"
+                                Click="NewTab"
+                                ToolTip="New script (Ctrl+N)"
+                                AutomationProperties.Name="New script"
+                                AutomationProperties.AcceleratorKey="Ctrl+N">
+                            <materialDesign:PackIcon Kind="FilePlusOutline" Width="18" Height="18" />
+                        </Button>
+                    </StackPanel>
+                </Border>
+
+                <ScrollViewer Grid.Row="1" Margin="0,20,0,0"
+                              VerticalScrollBarVisibility="Hidden"
+                              HorizontalScrollBarVisibility="Disabled"
+                              PanningMode="VerticalOnly" Focusable="False"
+                              AutomationProperties.Name="Room tools">
+                    <Border x:Name="RoomButtons" Padding="0"
+                            Background="Transparent" BorderThickness="0">
+                        <StackPanel>
+                            <ToggleButton x:Name="RoomButton" Style="{StaticResource SidebarNavToggle}"
+                                          Click="ShowRoom"
+                                          ToolTip="Room"
+                                          AutomationProperties.Name="Room">
+                                <materialDesign:PackIcon Kind="HomeOutline" Width="19" Height="19" />
+                            </ToggleButton>
+                            <ToggleButton x:Name="GeneralButton" Style="{StaticResource SidebarNavToggle}"
+                                          Click="ShowGeneral"
+                                          ToolTip="General"
+                                          AutomationProperties.Name="General">
+                                <materialDesign:PackIcon Kind="TuneVariant" Width="19" Height="19" />
+                            </ToggleButton>
+                            <ToggleButton x:Name="ChatButton" Style="{StaticResource SidebarNavToggle}"
+                                          Click="ShowChat"
+                                          ToolTip="Chat"
+                                          AutomationProperties.Name="Chat">
+                                <materialDesign:PackIcon Kind="ChatOutline" Width="19" Height="19" />
+                            </ToggleButton>
+                            <ToggleButton x:Name="FriendsButton" Style="{StaticResource SidebarNavToggle}"
+                                          Click="ShowFriends"
+                                          ToolTip="Friends"
+                                          AutomationProperties.Name="Friends">
+                                <materialDesign:PackIcon Kind="AccountMultipleOutline" Width="19" Height="19" />
+                            </ToggleButton>
+                            <ToggleButton x:Name="NavigatorButton" Style="{StaticResource SidebarNavToggle}"
+                                          Click="ShowNavigator"
+                                          ToolTip="Navigator"
+                                          AutomationProperties.Name="Navigator">
+                                <materialDesign:PackIcon Kind="CompassOutline" Width="19" Height="19" />
+                            </ToggleButton>
+                            <ToggleButton x:Name="InventoryButton" Style="{StaticResource SidebarNavToggle}"
+                                          Click="ShowInventory"
+                                          ToolTip="Inventory"
+                                          AutomationProperties.Name="Inventory">
+                                <materialDesign:PackIcon Kind="PackageVariantClosed" Width="19" Height="19" />
+                            </ToggleButton>
+                            <ToggleButton x:Name="WardrobeButton" Style="{StaticResource SidebarNavToggle}"
+                                          Click="ShowWardrobe"
+                                          ToolTip="Wardrobe"
+                                          AutomationProperties.Name="Wardrobe">
+                                <materialDesign:PackIcon Kind="Hanger" Width="19" Height="19" />
+                            </ToggleButton>
+                            <ToggleButton x:Name="GameDataButton" Style="{StaticResource SidebarNavToggle}"
+                                          Click="ShowGameData"
+                                          ToolTip="Game data"
+                                          AutomationProperties.Name="Game data">
+                                <materialDesign:PackIcon Kind="DatabaseOutline" Width="19" Height="19" />
+                            </ToggleButton>
+                        </StackPanel>
+                    </Border>
+                </ScrollViewer>
+
+                <Border Grid.Row="2" Padding="0"
+                        Background="Transparent" BorderThickness="0">
+                    <StackPanel>
+                        <ToggleButton x:Name="ReportBugButton" Style="{StaticResource SidebarNavToggle}"
+                                      Margin="0,0,0,7"
+                                      Click="ShowBugReport"
+                                      ToolTip="Report a bug"
+                                      AutomationProperties.Name="Report a bug">
+                            <materialDesign:PackIcon Kind="BugReport" Width="19" Height="19" />
+                        </ToggleButton>
+                        <ToggleButton x:Name="SettingsButton" Style="{StaticResource SidebarNavToggle}"
+                                      Click="ShowSettings"
+                                      ToolTip="Settings"
+                                      AutomationProperties.Name="Settings">
+                            <materialDesign:PackIcon Kind="CogOutline" Width="19" Height="19" />
+                        </ToggleButton>
+                        <ToggleButton x:Name="AboutButton" Style="{StaticResource SidebarNavToggle}"
+                                      Click="ShowAbout"
+                                      ToolTip="About QX Scripter"
+                                      AutomationProperties.Name="About QX Scripter">
+                            <materialDesign:PackIcon Kind="InformationOutline" Width="19" Height="19" />
+                        </ToggleButton>
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+            <!-- Editor surface (flat, seamless) -->
+            <Border Grid.Column="1" Background="{DynamicResource MaterialDesign.Brush.Background}"
+                    BorderBrush="{DynamicResource MaterialDesign.Brush.Divider}">
+                <Border.Style>
+                    <Style TargetType="Border">
+                        <Setter Property="BorderThickness" Value="1,0,0,0" />
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding HasItems, ElementName=TabList}" Value="True">
+                                <Setter Property="BorderThickness" Value="0" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Border.Style>
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition x:Name="OutputRow" Height="170" MinHeight="32" />
+                    </Grid.RowDefinitions>
+
+                    <Border Grid.Row="0" x:Name="TabStrip" Padding="0,3,6,0" BorderThickness="0,0,0,1"
+                            BorderBrush="{DynamicResource MaterialDesign.Brush.Divider}">
+                        <DockPanel>
+                            <StackPanel x:Name="WorkspaceActions" DockPanel.Dock="Right" Orientation="Horizontal"
+                                        Margin="10,0,2,4" VerticalAlignment="Bottom">
+                                <Border Margin="7,0,9,0" Padding="2" CornerRadius="4"
+                                        Background="{DynamicResource QxSurfaceSubtleBrush}"
+                                        BorderThickness="1" BorderBrush="{DynamicResource MaterialDesign.Brush.Divider}">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <ToggleButton x:Name="CodeToggle" Grid.Column="0"
+                                                      Style="{StaticResource ViewModeToggle}"
+                                                      Click="SelectCodeMode" IsChecked="True"
+                                                      ToolTip="Code view"
+                                                      AutomationProperties.Name="Code view">
+                                            <materialDesign:PackIcon Kind="CodeBraces" Width="15" Height="15" />
+                                        </ToggleButton>
+                                        <ToggleButton x:Name="PanelToggle" Grid.Column="1"
+                                                      Style="{StaticResource ViewModeToggle}"
+                                                      Click="SelectPanelMode"
+                                                      ToolTip="UI view"
+                                                      AutomationProperties.Name="UI view">
+                                            <materialDesign:PackIcon Kind="ViewDashboardOutline" Width="15" Height="15" />
+                                        </ToggleButton>
+                                    </Grid>
+                                </Border>
+
+                                <Button x:Name="RunButton" Click="ToggleRun"
+                                        DataContext="{Binding SelectedItem, ElementName=TabList}"
+                                        AutomationProperties.AcceleratorKey="F5">
+                                    <Button.Style>
+                                        <Style TargetType="Button" BasedOn="{StaticResource RunActionButton}">
+                                            <Setter Property="ToolTip" Value="Run script (F5)" />
+                                            <Setter Property="AutomationProperties.Name" Value="Run script" />
+                                            <Style.Triggers>
+                                                <!-- White on the red, in both themes. Tying it to the
+                                                     page background made it dark on dark, which is
+                                                     the one place the label has to carry.
+                                                     The outline stays at one pixel: the running ring
+                                                     is drawn at the same inset and a thicker border
+                                                     simply buried it. -->
+                                                <DataTrigger Binding="{Binding IsAlive}" Value="True">
+                                                    <Setter Property="Background" Value="{DynamicResource QxDangerBrush}" />
+                                                    <Setter Property="Foreground" Value="White" />
+                                                    <Setter Property="ToolTip" Value="Stop script (F5)" />
+                                                    <Setter Property="AutomationProperties.Name" Value="Stop script" />
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding IsArmedIdle}" Value="True">
+                                                    <Setter Property="Background" Value="{DynamicResource QxAccentSoftBrush}" />
+                                                    <Setter Property="BorderBrush" Value="{DynamicResource QxAccentBrush}" />
+                                                    <Setter Property="Foreground" Value="{DynamicResource QxAccentBrush}" />
+                                                    <Setter Property="ToolTip" Value="UI ready — click to stop (F5)" />
+                                                    <Setter Property="AutomationProperties.Name" Value="UI ready; stop script" />
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding IsCompiling}" Value="True">
+                                                    <Setter Property="Background" Value="{DynamicResource QxWarningBrush}" />
+                                                    <Setter Property="Foreground" Value="#DD000000" />
+                                                    <Setter Property="ToolTip" Value="Cancel compilation (F5)" />
+                                                    <Setter Property="AutomationProperties.Name" Value="Cancel compilation" />
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding IsStopping}" Value="True">
+                                                    <Setter Property="IsEnabled" Value="False" />
+                                                    <Setter Property="ToolTip" Value="Stopping script" />
+                                                    <Setter Property="AutomationProperties.Name" Value="Stopping script" />
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding}" Value="{x:Null}">
+                                                    <Setter Property="Visibility" Value="Collapsed" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Button.Style>
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                        <Grid Width="14" Height="14" Margin="0,0,5,0" VerticalAlignment="Center">
+                                             <materialDesign:PackIcon Kind="Play" Width="14" Height="14"
+                                                                      Visibility="{Binding IsAlive, Converter={StaticResource InvBoolToVis}}" />
+                                            <materialDesign:PackIcon Kind="Stop" Width="13" Height="13">
+                                                <materialDesign:PackIcon.Style>
+                                                    <Style TargetType="materialDesign:PackIcon">
+                                                        <Setter Property="Visibility" Value="Collapsed" />
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding IsRunning}" Value="True">
+                                                                <Setter Property="Visibility" Value="Visible" />
+                                                            </DataTrigger>
+                                                            <DataTrigger Binding="{Binding IsStopping}" Value="True">
+                                                                <Setter Property="Visibility" Value="Visible" />
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </materialDesign:PackIcon.Style>
+                                            </materialDesign:PackIcon>
+                                            <ProgressBar Width="13" Height="13" IsIndeterminate="True" Value="0"
+                                                         Style="{StaticResource MaterialDesignCircularProgressBar}"
+                                                         Foreground="#DD000000"
+                                                         Visibility="{Binding IsCompiling, Converter={StaticResource BoolToVis}}" />
+                                        </Grid>
+                                        <TextBlock VerticalAlignment="Center" FontSize="12" FontWeight="SemiBold">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="Text" Value="Run" />
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsAlive}" Value="True">
+                                                            <Setter Property="Text" Value="Stop" />
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding IsArmedIdle}" Value="True">
+                                                            <Setter Property="Text" Value="Ready" />
+                                                        </DataTrigger>
+                                                        <!-- Compiling and Stopping are the two long
+                                                             words in a button sized for Run, so they
+                                                             set their own size rather than widening
+                                                             the button on every state change. -->
+                                                        <DataTrigger Binding="{Binding IsCompiling}" Value="True">
+                                                            <Setter Property="Text" Value="Compiling" />
+                                                            <Setter Property="FontSize" Value="10" />
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding IsStopping}" Value="True">
+                                                            <Setter Property="Text" Value="Stopping" />
+                                                            <Setter Property="FontSize" Value="10" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                    </StackPanel>
+                                </Button>
+                            </StackPanel>
+                            <ListBox x:Name="TabList" SelectionChanged="TabSelected"
+                                     PreviewMouseDown="TabStripMouseDown" PreviewMouseMove="TabStripMouseMove"
+                                     AllowDrop="True" Drop="TabDrop"
+                                     ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                                     ScrollViewer.VerticalScrollBarVisibility="Disabled"
+                                     Background="Transparent" BorderThickness="0">
+                                <ListBox.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <StackPanel Orientation="Horizontal" />
+                                    </ItemsPanelTemplate>
+                                </ListBox.ItemsPanel>
+                                <ListBox.ItemContainerStyle>
+                                    <Style TargetType="ListBoxItem">
+                                        <Setter Property="Margin" Value="0,0,4,0" />
+                                        <Setter Property="Padding" Value="0" />
+                                        <Setter Property="MinWidth" Value="82" />
+                                        <Setter Property="MaxWidth" Value="214" />
+                                        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                        <Setter Property="AutomationProperties.Name" Value="{Binding AccessibilityText}" />
+                                        <Setter Property="Template">
+                                            <Setter.Value>
+                                                <ControlTemplate TargetType="ListBoxItem">
+                                                    <Border x:Name="pill" Padding="10,5,3,5"
+                                                            Background="{DynamicResource QxSurfaceSubtleBrush}"
+                                                            CornerRadius="3,3,0,0">
+                                                        <Border.ContextMenu>
+                                                            <ContextMenu>
+                                                                <MenuItem Header="Rename" Click="CtxRename">
+                                                                    <MenuItem.Icon>
+                                                                        <materialDesign:PackIcon Kind="RenameBox" />
+                                                                    </MenuItem.Icon>
+                                                                </MenuItem>
+                                                                <MenuItem Header="Duplicate" Click="CtxDuplicate">
+                                                                    <MenuItem.Icon>
+                                                                        <materialDesign:PackIcon Kind="ContentDuplicate" />
+                                                                    </MenuItem.Icon>
+                                                                </MenuItem>
+                                                                <MenuItem Header="Show in folder" Click="CtxReveal">
+                                                                    <MenuItem.Icon>
+                                                                        <materialDesign:PackIcon Kind="FolderOpenOutline" />
+                                                                    </MenuItem.Icon>
+                                                                </MenuItem>
+                                                                <Separator />
+                                                                <MenuItem Header="Close" Click="CtxClose">
+                                                                    <MenuItem.Icon>
+                                                                        <materialDesign:PackIcon Kind="Close" />
+                                                                    </MenuItem.Icon>
+                                                                </MenuItem>
+                                                                <MenuItem Header="Close others" Click="CtxCloseOthers">
+                                                                    <MenuItem.Icon>
+                                                                        <materialDesign:PackIcon Kind="CloseBoxMultipleOutline" />
+                                                                    </MenuItem.Icon>
+                                                                </MenuItem>
+                                                            </ContextMenu>
+                                                        </Border.ContextMenu>
+                                                        <Grid>
+                                                            <StackPanel Orientation="Horizontal">
+                                                                <TextBlock x:Name="label" Text="{Binding Name}" VerticalAlignment="Center"
+                                                                           FontSize="12.5" Opacity="0.68" MaxWidth="146"
+                                                                           TextTrimming="CharacterEllipsis" ToolTip="{Binding Name}" />
+                                                                <Button x:Name="closeBtn" Margin="4,0,0,0" VerticalAlignment="Center"
+                                                                        Opacity="0.58"
+                                                                        Click="StopOrCloseTab" Tag="{Binding}">
+                                                                    <Button.Style>
+                                                                        <Style TargetType="Button" BasedOn="{StaticResource TabCloseButton}">
+                                                                            <Setter Property="ToolTip" Value="Close tab (Ctrl+W)" />
+                                                                            <Setter Property="AutomationProperties.Name" Value="Close script tab" />
+                                                                            <Style.Triggers>
+                                                                                <DataTrigger Binding="{Binding IsWorking}" Value="True">
+                                                                                    <Setter Property="ToolTip" Value="Stop script" />
+                                                                                    <Setter Property="AutomationProperties.Name" Value="Stop script" />
+                                                                                </DataTrigger>
+                                                                                <DataTrigger Binding="{Binding IsCompiling}" Value="True">
+                                                                                    <Setter Property="ToolTip" Value="Cancel compilation" />
+                                                                                    <Setter Property="AutomationProperties.Name" Value="Cancel compilation" />
+                                                                                </DataTrigger>
+                                                                                <DataTrigger Binding="{Binding IsStopping}" Value="True">
+                                                                                    <Setter Property="IsEnabled" Value="False" />
+                                                                                    <Setter Property="ToolTip" Value="Stopping script" />
+                                                                                    <Setter Property="AutomationProperties.Name" Value="Stopping script" />
+                                                                                </DataTrigger>
+                                                                            </Style.Triggers>
+                                                                        </Style>
+                                                                    </Button.Style>
+                                                                    <Grid Width="12" Height="12">
+                                                                        <materialDesign:PackIcon Kind="Close" Width="11" Height="11"
+                                                                                                 Visibility="{Binding IsWorking, Converter={StaticResource InvBoolToVis}}" />
+                                                                        <ProgressBar Width="11" Height="11" Value="0" IsIndeterminate="True"
+                                                                                     Visibility="{Binding IsWorking, Converter={StaticResource BoolToVis}}">
+                                                                            <ProgressBar.Style>
+                                                                                <Style TargetType="ProgressBar" BasedOn="{StaticResource MaterialDesignCircularProgressBar}">
+                                                                                    <Setter Property="Foreground" Value="{DynamicResource QxWarningBrush}" />
+                                                                                    <Style.Triggers>
+                                                                                        <DataTrigger Binding="{Binding IsRunning}" Value="True">
+                                                                                            <Setter Property="Foreground" Value="{DynamicResource QxSuccessBrush}" />
+                                                                                        </DataTrigger>
+                                                                                    </Style.Triggers>
+                                                                                </Style>
+                                                                            </ProgressBar.Style>
+                                                                        </ProgressBar>
+                                                                    </Grid>
+                                                                </Button>
+                                                            </StackPanel>
+                                                            <Border Width="3" Height="3" CornerRadius="1.5"
+                                                                    Margin="0,1,21,0"
+                                                                    HorizontalAlignment="Right"
+                                                                    VerticalAlignment="Top"
+                                                                    Background="{DynamicResource QxTextMutedBrush}"
+                                                                    Opacity="0.72"
+                                                                    IsHitTestVisible="False"
+                                                                    Visibility="{Binding IsModified, Converter={StaticResource BoolToVis}}" />
+                                                        </Grid>
+                                                    </Border>
+                                                    <ControlTemplate.Triggers>
+                                                        <Trigger Property="IsSelected" Value="True">
+                                                            <Setter TargetName="pill" Property="Background" Value="{DynamicResource MaterialDesign.Brush.Card.Background}" />
+                                                            <Setter TargetName="label" Property="Opacity" Value="1" />
+                                                            <Setter TargetName="closeBtn" Property="Opacity" Value="0.78" />
+                                                        </Trigger>
+                                                        <Trigger Property="IsMouseOver" Value="True">
+                                                            <Setter TargetName="pill" Property="Background" Value="{DynamicResource MaterialDesign.Brush.Card.Background}" />
+                                                            <Setter TargetName="label" Property="Opacity" Value="0.9" />
+                                                            <Setter TargetName="closeBtn" Property="Opacity" Value="0.9" />
+                                                        </Trigger>
+                                                    </ControlTemplate.Triggers>
+                                                </ControlTemplate>
+                                            </Setter.Value>
+                                        </Setter>
+                                    </Style>
+                                </ListBox.ItemContainerStyle>
+                            </ListBox>
+                        </DockPanel>
+                    </Border>
+
+                    <Grid Grid.Row="1" x:Name="CodeArea"
+                          Background="{DynamicResource MaterialDesign.Brush.Background}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition x:Name="ApiSplitterColumn" Width="Auto" />
+                            <ColumnDefinition x:Name="ApiColumn" Width="0" MinWidth="0" />
+                        </Grid.ColumnDefinitions>
+
+                        <ContentControl x:Name="EditorHost" Grid.Column="0" />
+
+                        <!-- Sits over the editor rather than above it, so the code keeps the whole
+                             height and the button is where the eye already is when reading a line. -->
+                        <Button x:Name="ApiButton" Grid.Column="0" Click="ToggleApiBrowser"
+                                Width="26" Height="26" Padding="0"
+                                HorizontalAlignment="Right" VerticalAlignment="Top"
+                                Margin="0,6,18,0" Cursor="Hand"
+                                Style="{StaticResource OutputActionButton}"
+                                ToolTip="Script API library (F2)"
+                                AutomationProperties.Name="Script API library"
+                                AutomationProperties.AcceleratorKey="F2">
+                            <materialDesign:PackIcon Kind="HelpCircleOutline" Width="17" Height="17" />
+                        </Button>
+
+                        <GridSplitter x:Name="ApiSplitter" Grid.Column="1" Width="5"
+                                      HorizontalAlignment="Stretch" Background="Transparent"
+                                      Cursor="SizeWE" Visibility="Collapsed" />
+
+                        <Border x:Name="ApiPane" Grid.Column="2" Visibility="Collapsed"
+                                BorderThickness="1,0,0,0"
+                                BorderBrush="{DynamicResource MaterialDesign.Brush.Divider}">
+                            <local:ApiBrowser x:Name="ApiLibrary" />
+                        </Border>
+                    </Grid>
+
+                    <!-- Spans the splitter and console rows the way Home does. The console is
+                         hidden while a panel is open, and without the span the panel would stop
+                         short and leave the console's row height as dead background. -->
+                    <local:PanelView x:Name="Panel" Grid.Row="1" Grid.RowSpan="3" Visibility="Collapsed" />
+
+                    <GridSplitter x:Name="OutputSplitter" Grid.Row="2" Height="5"
+                                  HorizontalAlignment="Stretch" Background="Transparent"
+                                  Cursor="SizeNS" />
+
+                    <Border x:Name="OutputShell" Grid.Row="3"
+                            Background="{DynamicResource MaterialDesign.Brush.Background}"
+                            BorderThickness="0,1,0,0"
+                            BorderBrush="{DynamicResource MaterialDesign.Brush.Divider}"
+                            DataContext="{Binding SelectedItem, ElementName=TabList}">
+                        <Grid x:Name="OutputPanel">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="32" />
+                                <RowDefinition x:Name="OutputBodyRow" Height="*" />
+                            </Grid.RowDefinitions>
+                            <DockPanel Grid.Row="0" Margin="12,0,8,0">
+                                <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" VerticalAlignment="Center">
+                                    <TextBlock Text="Output" FontSize="11.5" FontWeight="SemiBold"
+                                               VerticalAlignment="Center" />
+                                    <TextBlock Text="{Binding StatusText}" FontSize="11"
+                                               Margin="10,0,0,0" VerticalAlignment="Center"
+                                               Foreground="{DynamicResource QxTextSecondaryBrush}" />
+                                    <TextBlock x:Name="OutputFilterCount" FontSize="11" Foreground="{DynamicResource QxTextMutedBrush}"
+                                               Margin="10,0,0,0" VerticalAlignment="Center"
+                                               AutomationProperties.LiveSetting="Polite" />
+                                </StackPanel>
+                                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                                    <Button x:Name="GoToErrorButton" Style="{StaticResource OutputActionButton}"
+                                            Click="GoToError" Visibility="Collapsed" Margin="0,0,4,0"
+                                            ToolTip="Go to the next error (F8)"
+                                            AutomationProperties.Name="Go to the next error"
+                                            AutomationProperties.AcceleratorKey="F8">
+                                        <materialDesign:PackIcon Kind="AlertCircleOutline" Width="15" Height="15"
+                                                                 Foreground="{DynamicResource QxDangerBrush}" />
+                                    </Button>
+                                    <TextBox x:Name="OutputFilterBox" Width="150" Height="22" Margin="0,0,6,0"
+                                             VerticalContentAlignment="Center" Padding="6,0"
+                                             FontSize="11.5"
+                                             TextChanged="OnOutputFilterChanged"
+                                             KeyDown="OnOutputFilterKeyDown"
+                                             materialDesign:HintAssist.Hint="Filter"
+                                             materialDesign:TextFieldAssist.HasClearButton="True"
+                                             ToolTip="Show only lines containing this text"
+                                             AutomationProperties.Name="Filter output lines" />
+                                    <!-- Sits before the text filter because it narrows the same
+                                         view: the two compose, and a level with no matching text
+                                         shows nothing rather than one overriding the other. -->
+                                    <ToggleButton x:Name="OutputProblemsButton" Click="ToggleOutputProblems"
+                                                  Style="{StaticResource ViewModeToggle}"
+                                                  MinWidth="30" Height="24" Margin="0,0,6,0"
+                                                  ToolTip="Show only warnings and errors"
+                                                  AutomationProperties.Name="Show only warnings and errors">
+                                        <materialDesign:PackIcon x:Name="OutputProblemsIcon"
+                                                                 Kind="AlertCircleOutline" Width="15" Height="15" />
+                                    </ToggleButton>
+                                    <ToggleButton x:Name="OutputWrapButton" Click="ToggleOutputWrap"
+                                                  Style="{StaticResource ViewModeToggle}"
+                                                  MinWidth="30" Height="24" Margin="0,0,4,0"
+                                                  ToolTip="Wrap long lines"
+                                                  AutomationProperties.Name="Wrap output lines">
+                                        <materialDesign:PackIcon x:Name="OutputWrapIcon" Kind="WrapDisabled" Width="15" Height="15" />
+                                    </ToggleButton>
+                                    <Button x:Name="CopyOutputButton" Style="{StaticResource OutputActionButton}"
+                                            Click="CopyOutput"
+                                            ToolTip="Copy output"
+                                            AutomationProperties.Name="Copy output">
+                                        <materialDesign:PackIcon x:Name="CopyOutputIcon" Kind="ContentCopy" Width="15" Height="15" />
+                                    </Button>
+                                    <Button Style="{StaticResource OutputActionButton}" Click="ClearOutput"
+                                            ToolTip="Clear output"
+                                            AutomationProperties.Name="Clear output">
+                                        <materialDesign:PackIcon Kind="DeleteSweepOutline" Width="16" Height="16" />
+                                    </Button>
+                                    <Button x:Name="OutputToggleButton"
+                                            Style="{StaticResource OutputActionButton}" Click="ToggleOutput"
+                                            ToolTip="Collapse output (Ctrl+J)"
+                                            AutomationProperties.Name="Toggle output"
+                                            AutomationProperties.AcceleratorKey="Ctrl+J">
+                                        <materialDesign:PackIcon x:Name="OutputToggleIcon" Kind="ChevronDown"
+                                                                 Width="17" Height="17" />
+                                    </Button>
+                                </StackPanel>
+                            </DockPanel>
+                            <!-- Virtualized, so a tab that has logged for hours costs the same to
+                                 draw as one that has logged nothing. The filter is a view over
+                                 this collection rather than a rebuilt string, which is what made
+                                 filtering a live script re-flow the whole buffer per line. -->
+                            <ListBox x:Name="OutputBox" Grid.Row="1"
+                                     BorderThickness="0" Background="Transparent"
+                                     Padding="8,2,10,8"
+                                     SelectionMode="Extended"
+                                     ScrollViewer.CanContentScroll="True"
+                                     ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                     ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                                     VirtualizingPanel.IsVirtualizing="True"
+                                     VirtualizingPanel.VirtualizationMode="Recycling"
+                                     KeyDown="OnOutputKeyDown"
+                                     AutomationProperties.Name="Script output">
+                                <ListBox.ItemContainerStyle>
+                                    <Style TargetType="ListBoxItem">
+                                        <Setter Property="Padding" Value="0" />
+                                        <Setter Property="Margin" Value="0" />
+                                        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                        <Setter Property="Template">
+                                            <Setter.Value>
+                                                <ControlTemplate TargetType="ListBoxItem">
+                                                    <Border x:Name="row" Background="Transparent" Padding="6,0">
+                                                        <ContentPresenter />
+                                                    </Border>
+                                                    <ControlTemplate.Triggers>
+                                                        <Trigger Property="IsSelected" Value="True">
+                                                            <Setter TargetName="row" Property="Background"
+                                                                    Value="{DynamicResource QxSurfaceSubtleBrush}" />
+                                                        </Trigger>
+                                                    </ControlTemplate.Triggers>
+                                                </ControlTemplate>
+                                            </Setter.Value>
+                                        </Setter>
+                                    </Style>
+                                </ListBox.ItemContainerStyle>
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Grid.Column="0" Text="{Binding Time}"
+                                                       FontFamily="{StaticResource FontCode}" FontSize="11"
+                                                       Opacity="0.32" Margin="0,0,10,0"
+                                                       VerticalAlignment="Top" />
+                                            <TextBlock x:Name="text" Grid.Column="1" Text="{Binding Text}"
+                                                       FontFamily="{StaticResource FontCode}" FontSize="12"
+                                                       TextWrapping="{Binding OutputWrapping,
+                                                           RelativeSource={RelativeSource AncestorType=Window}}"
+                                                       Foreground="{DynamicResource MaterialDesign.Brush.Foreground}" />
+                                        </Grid>
+                                        <DataTemplate.Triggers>
+                                            <DataTrigger Binding="{Binding Level}" Value="Error">
+                                                <Setter TargetName="text" Property="Foreground"
+                                                        Value="{DynamicResource QxDangerBrush}" />
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding Level}" Value="Warning">
+                                                <Setter TargetName="text" Property="Foreground"
+                                                        Value="{DynamicResource QxWarningBrush}" />
+                                            </DataTrigger>
+                                        </DataTemplate.Triggers>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
+
+                            <!-- Only there while the view is held away from the bottom. Scrolling
+                                 up is taken as reading, so the console stops following — without
+                                 this there was nothing to say lines were still arriving, and no
+                                 way back but dragging the bar. -->
+                            <Button x:Name="OutputLatestButton" Grid.Row="1"
+                                    HorizontalAlignment="Center" VerticalAlignment="Bottom"
+                                    Margin="0,0,0,10" Padding="11,4" Visibility="Collapsed"
+                                    Click="ScrollOutputToLatest" Cursor="Hand"
+                                    Style="{StaticResource OutputActionButton}"
+                                    AutomationProperties.Name="Jump to the newest output">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock x:Name="OutputLatestText" FontSize="11.5"
+                                               VerticalAlignment="Center" />
+                                    <materialDesign:PackIcon Kind="ArrowDown" Width="13" Height="13"
+                                                             Margin="6,0,0,0" VerticalAlignment="Center" />
+                                </StackPanel>
+                            </Button>
+                        </Grid>
+                    </Border>
+
+                    <local:HomeView x:Name="Home" Grid.Row="1" Grid.RowSpan="3" Visibility="Collapsed" />
+                    <local:LoggingPage x:Name="LoggingView" Grid.Row="1" Grid.RowSpan="3" Visibility="Collapsed" />
+                    <local:RoomPage x:Name="Room" Grid.Row="1" Grid.RowSpan="3" Visibility="Collapsed" />
+                    <local:GameDataPage x:Name="GameData" Grid.Row="1" Grid.RowSpan="3" Visibility="Collapsed" />
+                    <local:FriendsPage x:Name="FriendsView" Grid.Row="1" Grid.RowSpan="3" Visibility="Collapsed" />
+                    <local:NavigatorPage x:Name="NavigatorView" Grid.Row="1" Grid.RowSpan="3" Visibility="Collapsed" />
+                    <local:InventoryPage x:Name="InventoryView" Grid.Row="1" Grid.RowSpan="3" Visibility="Collapsed" />
+                    <local:WardrobePage x:Name="WardrobeView" Grid.Row="1" Grid.RowSpan="3" Visibility="Collapsed" />
+                    <local:ChatPage x:Name="ChatView" Grid.Row="1" Grid.RowSpan="3" Visibility="Collapsed" />
+                    <local:GeneralPage x:Name="GeneralView" Grid.Row="1" Grid.RowSpan="3" Visibility="Collapsed" />
+                    <local:BugReportPage x:Name="BugReportView" Grid.Row="1" Grid.RowSpan="3" Visibility="Collapsed" />
+                    <local:SettingsPage x:Name="SettingsView" Grid.Row="1" Grid.RowSpan="3" Visibility="Collapsed" />
+                    <local:AboutPage x:Name="AboutView" Grid.Row="1" Grid.RowSpan="3" Visibility="Collapsed" />
+                    <Border Grid.Row="1" Grid.RowSpan="3" Width="1" HorizontalAlignment="Left"
+                            Background="{DynamicResource MaterialDesign.Brush.Divider}"
+                            IsHitTestVisible="False" Panel.ZIndex="100">
+                        <Border.Style>
+                            <Style TargetType="Border">
+                                <Setter Property="Visibility" Value="Collapsed" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding HasItems, ElementName=TabList}" Value="True">
+                                        <Setter Property="Visibility" Value="Visible" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Border.Style>
+                    </Border>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <Border Grid.Row="2" x:Name="StatusRoot" Height="30"
+                Background="{DynamicResource MaterialDesign.Brush.Background}"
+                BorderThickness="0,1,0,0" BorderBrush="{DynamicResource MaterialDesign.Brush.Divider}">
+            <DockPanel Margin="14,0,14,0" LastChildFill="False">
+                <!-- G-Earth connection (left) -->
+                <materialDesign:PackIcon DockPanel.Dock="Left" Kind="AccessPointNetwork" Width="16" Height="16" VerticalAlignment="Center">
+                    <materialDesign:PackIcon.Style>
+                        <Style TargetType="materialDesign:PackIcon">
+                            <Setter Property="Foreground" Value="{DynamicResource MaterialDesign.Brush.Foreground}" />
+                            <Setter Property="Opacity" Value="0.35" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsGEarthConnected}" Value="True">
+                                    <Setter Property="Foreground" Value="{DynamicResource QxSuccessBrush}" />
+                                    <Setter Property="Opacity" Value="1" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </materialDesign:PackIcon.Style>
+                </materialDesign:PackIcon>
+                <TextBlock DockPanel.Dock="Left" Margin="8,0,0,0" VerticalAlignment="Center" FontSize="12">
+                    <TextBlock.Style>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="Foreground" Value="{DynamicResource MaterialDesign.Brush.Foreground}" />
+                            <Setter Property="Opacity" Value="0.5" />
+                            <Setter Property="Text" Value="G-Earth" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsGEarthConnected}" Value="True">
+                                    <Setter Property="Foreground" Value="{DynamicResource QxSuccessBrush}" />
+                                    <Setter Property="Opacity" Value="0.95" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBlock.Style>
+                </TextBlock>
+
+                <!-- MCP server (left) -->
+                <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" Margin="18,0,0,0"
+                            ToolTip="{Binding McpTooltip}"
+                            AutomationProperties.Name="MCP server state"
+                            AutomationProperties.HelpText="{Binding McpTooltip}">
+                    <!-- The same three states as the G-Earth entry beside it, in the same colours:
+                         dim when it is simply not there, green when it is. Red is kept for the one
+                         case that entry does not have — a server that tried to start and could
+                         not, which is a fault and not a resting state. -->
+                    <materialDesign:PackIcon Kind="LanConnect" Width="16" Height="16" VerticalAlignment="Center">
+                        <materialDesign:PackIcon.Style>
+                            <Style TargetType="materialDesign:PackIcon">
+                                <Setter Property="Foreground" Value="{DynamicResource MaterialDesign.Brush.Foreground}" />
+                                <Setter Property="Opacity" Value="0.35" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding HasMcpFailure}" Value="True">
+                                        <Setter Property="Foreground" Value="{DynamicResource QxDangerBrush}" />
+                                        <Setter Property="Opacity" Value="0.9" />
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding IsMcpRunning}" Value="True">
+                                        <Setter Property="Foreground" Value="{DynamicResource QxSuccessBrush}" />
+                                        <Setter Property="Opacity" Value="1" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </materialDesign:PackIcon.Style>
+                    </materialDesign:PackIcon>
+                    <TextBlock Margin="8,0,0,0" VerticalAlignment="Center" FontSize="12"
+                               Text="MCP">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Foreground" Value="{DynamicResource MaterialDesign.Brush.Foreground}" />
+                                <Setter Property="Opacity" Value="0.5" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding HasMcpFailure}" Value="True">
+                                        <Setter Property="Foreground" Value="{DynamicResource QxDangerBrush}" />
+                                        <Setter Property="Opacity" Value="0.9" />
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding IsMcpRunning}" Value="True">
+                                        <Setter Property="Foreground" Value="{DynamicResource QxSuccessBrush}" />
+                                        <Setter Property="Opacity" Value="0.95" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+                </StackPanel>
+
+                <!-- Client (left, after MCP). The build is long and nobody reads it twice, so the
+                     bar shows which client is on and hands the version over on hover. -->
+                <TextBlock DockPanel.Dock="Left" Margin="18,0,0,0" VerticalAlignment="Center"
+                           FontSize="12" Text="{Binding GameClient}"
+                           Foreground="{DynamicResource QxTextSecondaryBrush}"
+                           ToolTip="{Binding GameClientTooltip}"
+                           AutomationProperties.Name="Connected client"
+                           AutomationProperties.HelpText="{Binding GameClientTooltip}"
+                           Visibility="{Binding IsGameConnected, Converter={StaticResource BoolToVis}}" />
+
+                <!-- Running scripts and the panic stop (left) -->
+                <Border DockPanel.Dock="Left" Margin="18,0,0,0" CornerRadius="4" Padding="7,1"
+                        VerticalAlignment="Center"
+                        Background="{DynamicResource QxSurfaceSubtleBrush}"
+                        Visibility="{Binding HasRunning, Converter={StaticResource BoolToVis}}">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="{Binding RunningText}" FontSize="11.5" VerticalAlignment="Center"
+                                   Foreground="{DynamicResource QxSuccessBrush}" />
+                        <Button Click="StopAllScripts" Margin="8,0,0,0" Padding="0"
+                                Width="16" Height="16" VerticalAlignment="Center"
+                                Style="{StaticResource TabCloseButton}"
+                                ToolTip="Stop every running script (Ctrl+Alt+Shift+F12, works from the game)"
+                                AutomationProperties.Name="Stop every running script">
+                            <materialDesign:PackIcon Kind="Stop" Width="13" Height="13"
+                                                     Foreground="{DynamicResource QxDangerBrush}" />
+                        </Button>
+                    </StackPanel>
+                </Border>
+
+                <!-- Username (right) -->
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal"
+                            Visibility="{Binding HasUserData, Converter={StaticResource BoolToVis}}">
+                    <materialDesign:PackIcon Style="{StaticResource StatusIcon}" Kind="AccountCircle" Opacity="0.7" />
+                    <TextBlock Style="{StaticResource StatusText}" Text="{Binding UserName}" Opacity="0.85" />
+                </StackPanel>
+
+                <!-- Room name (right) — the one thing here anyone copies, so it copies on click. -->
+                <Button DockPanel.Dock="Right" Margin="0,0,16,0" Padding="6,1"
+                        Style="{StaticResource OutputActionButton}"
+                        Click="CopyRoomId" Cursor="Hand"
+                        ToolTip="{Binding RoomTooltip}"
+                        AutomationProperties.Name="Copy the room id"
+                        Visibility="{Binding IsInRoom, Converter={StaticResource BoolToVis}}">
+                    <TextBlock Text="{Binding RoomName}" FontSize="12" MaxWidth="190"
+                               TextTrimming="CharacterEllipsis" Opacity="0.85" />
+                </Button>
+
+                <!-- Room stats (right) -->
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Margin="0,0,16,0"
+                            Visibility="{Binding IsInRoom, Converter={StaticResource BoolToVis}}">
+                    <materialDesign:PackIcon Style="{StaticResource StatusIcon}" Kind="AccountGroup" ToolTip="Users" />
+                    <TextBlock Style="{StaticResource StatusText}" Text="{Binding UserCount}" Margin="4,0,10,0" />
+                    <materialDesign:PackIcon Style="{StaticResource StatusIcon}" Kind="Robot" ToolTip="Bots" />
+                    <TextBlock Style="{StaticResource StatusText}" Text="{Binding BotCount}" Margin="4,0,10,0" />
+                    <materialDesign:PackIcon Style="{StaticResource StatusIcon}" Kind="Paw" ToolTip="Pets" />
+                    <TextBlock Style="{StaticResource StatusText}" Text="{Binding PetCount}" Margin="4,0,10,0" />
+                    <materialDesign:PackIcon Style="{StaticResource StatusIcon}" Kind="SofaSingle" ToolTip="Furni" />
+                    <TextBlock Style="{StaticResource StatusText}" Text="{Binding FurniCount}" Margin="4,0,0,0" />
+                </StackPanel>
+
+                <TextBlock DockPanel.Dock="Right" />
+            </DockPanel>
+        </Border>
+    </Grid>
+</Window>

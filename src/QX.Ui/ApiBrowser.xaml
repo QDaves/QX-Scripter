@@ -1,0 +1,189 @@
+<UserControl x:Class="Qx.Ui.ApiBrowser"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             Background="{DynamicResource MaterialDesign.Brush.Background}">
+    <UserControl.Resources>
+        <!-- Square, borderless, one accent rule when it is on. A filter is a state, not a button,
+             so it should not look like something that can be pressed for an action. -->
+        <Style x:Key="FilterTab" TargetType="ToggleButton">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Foreground" Value="{DynamicResource QxTextMutedBrush}" />
+            <Setter Property="Padding" Value="7,3" />
+            <Setter Property="FontSize" Value="11" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ToggleButton">
+                        <Grid>
+                            <Border x:Name="fill" Background="{TemplateBinding Background}" />
+                            <Border x:Name="rule" Height="2" VerticalAlignment="Bottom"
+                                    Background="Transparent" />
+                            <ContentPresenter Margin="{TemplateBinding Padding}"
+                                              VerticalAlignment="Center" />
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="rule" Property="Background"
+                                        Value="{DynamicResource QxAccentBrush}" />
+                                <Setter Property="Foreground"
+                                        Value="{DynamicResource MaterialDesign.Brush.Foreground}" />
+                                <Setter Property="FontWeight" Value="Medium" />
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="fill" Property="Background"
+                                        Value="{DynamicResource QxSurfaceSubtleBrush}" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="TypeTab" TargetType="ToggleButton" BasedOn="{StaticResource FilterTab}">
+            <Setter Property="FontFamily" Value="{DynamicResource FontCode}" />
+            <Setter Property="FontSize" Value="10.5" />
+            <Setter Property="Padding" Value="6,2" />
+        </Style>
+    </UserControl.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <DockPanel Grid.Row="0" Margin="10,7,6,6">
+            <Button DockPanel.Dock="Right" Click="Close" Width="22" Height="22" Padding="0"
+                    Style="{StaticResource OutputActionButton}"
+                    ToolTip="Close (Esc)" AutomationProperties.Name="Close the API library">
+                <materialDesign:PackIcon Kind="Close" Width="13" Height="13" />
+            </Button>
+            <TextBlock Text="SCRIPT API" VerticalAlignment="Center"
+                       Style="{StaticResource SectionLabel}" Margin="0" />
+        </DockPanel>
+
+        <Border Grid.Row="1" Margin="10,0,10,0" Padding="8,0" Height="28"
+                Background="{DynamicResource QxSurfaceSubtleBrush}">
+            <DockPanel>
+                <materialDesign:PackIcon DockPanel.Dock="Left" Kind="Magnify" Width="14" Height="14"
+                                         VerticalAlignment="Center" Margin="0,0,6,0"
+                                         Foreground="{DynamicResource QxTextMutedBrush}" />
+                <TextBox x:Name="SearchBox" BorderThickness="0" Background="Transparent"
+                         VerticalContentAlignment="Center" FontSize="12"
+                         TextChanged="Refilter" PreviewKeyDown="SearchKey"
+                         AutomationProperties.Name="Search the script API" />
+            </DockPanel>
+        </Border>
+
+        <ItemsControl Grid.Row="2" x:Name="KindTabs" Margin="8,4,8,0">
+            <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+        </ItemsControl>
+
+        <Border Grid.Row="3" Margin="10,4,10,4" Padding="0,3"
+                BorderThickness="0,1,0,1"
+                BorderBrush="{DynamicResource MaterialDesign.Brush.Divider}">
+            <ScrollViewer VerticalScrollBarVisibility="Disabled" HorizontalScrollBarVisibility="Auto"
+                          MaxHeight="52">
+                <ItemsControl x:Name="TypeTabs">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                </ItemsControl>
+            </ScrollViewer>
+        </Border>
+
+        <ListBox Grid.Row="4" x:Name="Results" BorderThickness="0" Background="Transparent"
+                 Margin="4,0,4,0"
+                 HorizontalContentAlignment="Stretch"
+                 ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                 VirtualizingStackPanel.IsVirtualizing="True"
+                 VirtualizingStackPanel.VirtualizationMode="Recycling"
+                 MouseDoubleClick="Take" PreviewKeyDown="ResultKey"
+                 AutomationProperties.Name="Script API members">
+            <ListBox.ItemContainerStyle>
+                <Style TargetType="ListBoxItem">
+                    <Setter Property="Padding" Value="0" />
+                    <Setter Property="Margin" Value="0" />
+                    <Setter Property="BorderThickness" Value="0" />
+                    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                    <Setter Property="Template">
+                        <Setter.Value>
+                            <ControlTemplate TargetType="ListBoxItem">
+                                <Border x:Name="row" Background="Transparent" Padding="6,4">
+                                    <ContentPresenter />
+                                </Border>
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter TargetName="row" Property="Background"
+                                                Value="{DynamicResource QxSurfaceSubtleBrush}" />
+                                    </Trigger>
+                                    <Trigger Property="IsSelected" Value="True">
+                                        <Setter TargetName="row" Property="Background"
+                                                Value="{DynamicResource QxAccentSoftBrush}" />
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Setter.Value>
+                    </Setter>
+                </Style>
+            </ListBox.ItemContainerStyle>
+            <ListBox.ItemTemplate>
+                <DataTemplate>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+
+                        <Image Grid.Column="0" Width="15" Height="15" Margin="0,1,7,0"
+                               VerticalAlignment="Top" SnapsToDevicePixels="True"
+                               Source="{Binding Glyph, Converter={StaticResource GlyphToImage}}" />
+
+                        <StackPanel Grid.Column="1">
+                            <DockPanel>
+                                <TextBlock DockPanel.Dock="Right" Text="{Binding ReturnType}"
+                                           FontFamily="{DynamicResource FontCode}" FontSize="10.5"
+                                           Margin="8,0,0,0" VerticalAlignment="Center"
+                                           TextTrimming="CharacterEllipsis" MaxWidth="150"
+                                           Foreground="{DynamicResource QxTextMutedBrush}" />
+                                <!-- The arguments belong on the row: without them two overloads of
+                                     the same name are the same row twice, which is the one thing
+                                     they are not. Dimmed, so the name still reads first. -->
+                                <TextBlock TextTrimming="CharacterEllipsis"
+                                           FontFamily="{DynamicResource FontCode}" FontSize="12">
+                                    <Run Text="{Binding Name, Mode=OneWay}"
+                                         Foreground="{DynamicResource MaterialDesign.Brush.Foreground}" />
+                                    <Run Text="{Binding Parameters, Mode=OneWay}" FontSize="11"
+                                         Foreground="{DynamicResource QxTextMutedBrush}" />
+                                </TextBlock>
+                            </DockPanel>
+                            <TextBlock Text="{Binding Summary}" FontSize="10.5" Margin="0,1,0,0"
+                                       TextWrapping="Wrap" MaxHeight="30" TextTrimming="CharacterEllipsis"
+                                       Foreground="{DynamicResource QxTextSecondaryBrush}"
+                                       Visibility="{Binding HasSummary, Converter={StaticResource BoolToVis}}" />
+                        </StackPanel>
+                    </Grid>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
+
+        <Border Grid.Row="5" BorderThickness="0,1,0,0" Padding="10,4"
+                BorderBrush="{DynamicResource MaterialDesign.Brush.Divider}">
+            <DockPanel>
+                <TextBlock DockPanel.Dock="Right" Text="Enter inserts"
+                           FontSize="10" VerticalAlignment="Center"
+                           Foreground="{DynamicResource QxTextMutedBrush}" />
+                <TextBlock x:Name="Status" FontSize="10"
+                           Foreground="{DynamicResource QxTextMutedBrush}" />
+            </DockPanel>
+        </Border>
+    </Grid>
+</UserControl>

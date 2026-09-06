@@ -1,0 +1,109 @@
+<local:GamePage x:Class="Qx.Ui.AboutPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:Qx.Ui"
+             Background="{DynamicResource MaterialDesign.Brush.Background}">
+    <Grid MaxWidth="{StaticResource PageContentWidth}" Margin="{StaticResource PageOuterMargin}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0" Margin="{StaticResource PageHeaderMargin}">
+            <TextBlock Text="About" Style="{StaticResource PageHeading}" />
+            <TextBlock Style="{StaticResource PageSubheading}"
+                       Text="What this is and what it is made of." />
+        </StackPanel>
+
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="0,0,6,0">
+            <StackPanel MaxWidth="620" HorizontalAlignment="Left">
+                <Border Style="{StaticResource PageCard}">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal">
+                            <Viewbox Width="46" Height="46" VerticalAlignment="Top"
+                                     AutomationProperties.Name="QX Scripter">
+                                <Path Data="{StaticResource QxMarkGeometry}"
+                                      Fill="{DynamicResource MaterialDesign.Brush.Foreground}">
+                                    <Path.LayoutTransform>
+                                        <ScaleTransform ScaleY="-1" />
+                                    </Path.LayoutTransform>
+                                </Path>
+                            </Viewbox>
+                            <StackPanel Margin="3,-4,0,0" VerticalAlignment="Top">
+                                <TextBlock Text="Scripter" FontSize="21" FontWeight="SemiBold" />
+                                <TextBlock x:Name="VersionText" FontSize="11.5" Margin="0,3,0,0"
+                                           Foreground="{DynamicResource QxTextMutedBrush}"
+                                           AutomationProperties.Name="Version" />
+                            </StackPanel>
+                        </StackPanel>
+                        <TextBlock Margin="0,16,0,0" FontSize="13" TextWrapping="Wrap"
+                                   Foreground="{DynamicResource QxTextSecondaryBrush}"
+                                   Text="A C# scripting console for Habbo that runs as a G-Earth extension." />
+                    </StackPanel>
+                </Border>
+
+                <Border Style="{StaticResource PageCard}">
+                    <StackPanel>
+                        <TextBlock Text="PEOPLE" Style="{StaticResource PageSection}" />
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="120" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+                            <TextBlock Text="Created by" FontSize="10.5" FontWeight="SemiBold"
+                                       Foreground="{DynamicResource QxTextMutedBrush}" />
+                            <TextBlock Grid.Column="1" FontSize="12.5">
+                                <Hyperlink NavigateUri="https://github.com/QDaves"
+                                           RequestNavigate="OpenProfile"
+                                           Foreground="{DynamicResource QxTextSecondaryBrush}"
+                                           TextDecorations="{x:Null}"
+                                           ToolTip="Open QDave on GitHub">QDave</Hyperlink>
+                            </TextBlock>
+                            <TextBlock Grid.Row="1" Grid.ColumnSpan="2" Margin="0,9,0,0"
+                                       FontSize="12.5" TextWrapping="Wrap"
+                                       Foreground="{DynamicResource QxTextSecondaryBrush}">
+                                <Run Text="Special thanks to " /><Hyperlink NavigateUri="https://github.com/b7c"
+                                           RequestNavigate="OpenProfile"
+                                           Foreground="{DynamicResource QxTextSecondaryBrush}"
+                                           TextDecorations="{x:Null}"
+                                           ToolTip="Open b7 on GitHub">b7</Hyperlink><Run Text=" and his work on xabbo." />
+                            </TextBlock>
+                            <TextBlock Grid.Row="2" Text="Contributors" Margin="0,9,0,0"
+                                       FontSize="10.5" FontWeight="SemiBold"
+                                       Foreground="{DynamicResource QxTextMutedBrush}" />
+                            <WrapPanel Grid.Row="2" Grid.Column="1" Margin="0,9,0,0">
+                                <TextBlock Margin="0,0,18,0" FontSize="12.5">
+                                    <Hyperlink NavigateUri="https://github.com/hasancodedit"
+                                               RequestNavigate="OpenProfile"
+                                               Foreground="{DynamicResource QxTextSecondaryBrush}"
+                                               TextDecorations="{x:Null}"
+                                               ToolTip="Open hasancodedit on GitHub">hasancodedit</Hyperlink>
+                                </TextBlock>
+                                <TextBlock Margin="0,0,18,0" FontSize="12.5">
+                                    <Hyperlink NavigateUri="https://github.com/JoaninhaJNS"
+                                               RequestNavigate="OpenProfile"
+                                               Foreground="{DynamicResource QxTextSecondaryBrush}"
+                                               TextDecorations="{x:Null}"
+                                               ToolTip="Open JoaninhaJNS on GitHub">JoaninhaJNS</Hyperlink>
+                                </TextBlock>
+                                <TextBlock FontSize="12.5">
+                                    <Hyperlink NavigateUri="https://github.com/scottstamp"
+                                               RequestNavigate="OpenProfile"
+                                               Foreground="{DynamicResource QxTextSecondaryBrush}"
+                                               TextDecorations="{x:Null}"
+                                               ToolTip="Open DarkStar851 on GitHub">DarkStar851</Hyperlink>
+                                </TextBlock>
+                            </WrapPanel>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</local:GamePage>

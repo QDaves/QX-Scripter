@@ -1,0 +1,992 @@
+<local:GamePage x:Class="Qx.Ui.RoomPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:local="clr-namespace:Qx.Ui"
+             Background="{DynamicResource MaterialDesign.Brush.Background}">
+    <UserControl.Resources>
+
+        <!-- Four across a row rather than one label-and-value per line. The old shape used a
+             third of the width for the label and left the rest empty; these stack the caption over
+             the value so the room details stay dense and readable. -->
+        <ItemsPanelTemplate x:Key="StatPanel">
+            <UniformGrid Columns="4" />
+        </ItemsPanelTemplate>
+
+        <DataTemplate x:Key="CompactStatCell">
+            <StackPanel Margin="0,0,12,7">
+                <TextBlock Text="{Binding Caption}" Style="{StaticResource StatCaption}"
+                           FontSize="9.5" />
+                <TextBlock Text="{Binding Value}" Style="{StaticResource StatValue}"
+                           FontSize="11.5" ToolTip="{Binding Value}" />
+            </StackPanel>
+        </DataTemplate>
+
+        <DataTemplate x:Key="RuleValueCell">
+            <TextBlock Text="{Binding}" Style="{StaticResource StatValue}"
+                       FontSize="11.5" ToolTip="{Binding}" />
+        </DataTemplate>
+
+        <Style x:Key="InfoGroupHead" TargetType="StackPanel">
+            <Setter Property="Orientation" Value="Horizontal" />
+            <Setter Property="Margin" Value="0,0,0,10" />
+        </Style>
+
+        <Style x:Key="InfoGroupWord" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="Margin" Value="9,0,0,0" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+
+        <Style x:Key="InfoGroupGlyph" TargetType="materialDesign:PackIcon">
+            <Setter Property="Width" Value="16" />
+            <Setter Property="Height" Value="16" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Foreground" Value="{DynamicResource QxTextSecondaryBrush}" />
+        </Style>
+
+        <Style x:Key="FieldLabel" TargetType="TextBlock">
+            <Setter Property="HorizontalAlignment" Value="Right" />
+            <Setter Property="Margin" Value="0,0,12,5" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="Foreground" Value="{DynamicResource QxTextMutedBrush}" />
+        </Style>
+
+        <Style x:Key="FieldValue" TargetType="TextBlock">
+            <Setter Property="Margin" Value="0,0,0,5" />
+            <Setter Property="FontSize" Value="12.5" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+        </Style>
+
+        <Style x:Key="BlockHeading" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="10.5" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Margin" Value="0,12,0,8" />
+            <Setter Property="Foreground" Value="{DynamicResource QxTextMutedBrush}" />
+        </Style>
+
+        <!-- Avatar rows. The head render is 54x62 and the row is shorter than that, so it hangs
+             over both edges by design — the face fills the row instead of sitting in a stamp. -->
+        <Style x:Key="AvatarRow" TargetType="ListBoxItem">
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="Margin" Value="0,1" />
+            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+            <Setter Property="AutomationProperties.Name" Value="{Binding Name}" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ListBoxItem">
+                        <Border x:Name="row" Background="Transparent" MinHeight="44"
+                                CornerRadius="{StaticResource RadiusMedium}" Padding="10,0,10,0">
+                            <DockPanel>
+                                <Grid DockPanel.Dock="Left" Width="54" Height="62"
+                                      Margin="0,-9,6,-9" VerticalAlignment="Center">
+                                    <materialDesign:PackIcon Kind="{Binding Fallback}"
+                                                             Width="18" Height="18"
+                                                             HorizontalAlignment="Center"
+                                                             VerticalAlignment="Center"
+                                                             Foreground="{DynamicResource QxTextMutedBrush}" />
+                                    <Image Source="{Binding Image}" Stretch="None"
+                                           RenderOptions.BitmapScalingMode="NearestNeighbor" />
+                                </Grid>
+
+                                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal"
+                                            VerticalAlignment="Center" Margin="10,0,0,0">
+                                    <materialDesign:PackIcon Kind="Sleep" Width="14" Height="14"
+                                                             VerticalAlignment="Center" Margin="4,0,0,0"
+                                                             Foreground="{DynamicResource QxTextMutedBrush}"
+                                                             ToolTip="Idle"
+                                                             Visibility="{Binding IsIdle, Converter={StaticResource BoolToVis}}" />
+                                    <materialDesign:PackIcon Kind="SwapHorizontal" Width="14" Height="14"
+                                                             VerticalAlignment="Center" Margin="4,0,0,0"
+                                                             Foreground="{DynamicResource QxSuccessBrush}"
+                                                             ToolTip="Trading"
+                                                             Visibility="{Binding IsTrading, Converter={StaticResource BoolToVis}}" />
+                                    <TextBlock Text="{Binding Position}" Margin="8,0,0,0"
+                                               FontFamily="{StaticResource FontCode}" FontSize="11"
+                                               VerticalAlignment="Center"
+                                               Foreground="{DynamicResource QxTextMutedBrush}"
+                                               Visibility="{Binding HasPosition, Converter={StaticResource BoolToVis}}" />
+                                </StackPanel>
+
+                                <StackPanel VerticalAlignment="Center">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="{Binding Name}" FontSize="13"
+                                                   TextTrimming="CharacterEllipsis"
+                                                   ToolTip="{Binding Name}" />
+                                        <Border Margin="7,0,0,0" Padding="5,1" CornerRadius="{StaticResource RadiusSmall}"
+                                                VerticalAlignment="Center"
+                                                Background="{DynamicResource QxSurfaceSubtleBrush}"
+                                                Visibility="{Binding HasTag, Converter={StaticResource BoolToVis}}">
+                                            <TextBlock Text="{Binding Tag}" FontSize="9.5"
+                                                       Foreground="{DynamicResource QxTextMutedBrush}" />
+                                        </Border>
+                                    </StackPanel>
+                                    <TextBlock Text="{Binding Detail}" FontSize="11.5"
+                                               TextTrimming="CharacterEllipsis" Margin="0,1,0,0"
+                                               Foreground="{DynamicResource QxTextMutedBrush}"
+                                               Visibility="{Binding HasDetail, Converter={StaticResource BoolToVis}}" />
+                                </StackPanel>
+                            </DockPanel>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="row" Property="Background"
+                                        Value="{DynamicResource QxSurfaceSubtleBrush}" />
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="row" Property="Background"
+                                        Value="{DynamicResource QxAccentSoftBrush}" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- A furni icon is a small, variable-sized picture — 22x23 for a duck. Drawing it in the
+             54x62 slot the avatar heads use, at natural size with nearest-neighbour, is what made
+             them look stretched and off-centre. Its own square box, scaled uniformly and smoothed,
+             fixes it. -->
+        <Style x:Key="FurniRow" TargetType="ListBoxItem">
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="Margin" Value="0,1" />
+            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+            <Setter Property="AutomationProperties.Name" Value="{Binding Name}" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ListBoxItem">
+                        <Border x:Name="row" Background="Transparent" MinHeight="42"
+                                CornerRadius="{StaticResource RadiusMedium}" Padding="10,4">
+                            <DockPanel>
+                                <Grid DockPanel.Dock="Left" Width="32" Height="32"
+                                      Margin="0,0,10,0" VerticalAlignment="Center">
+                                    <materialDesign:PackIcon Kind="{Binding Fallback}"
+                                                             Width="16" Height="16"
+                                                             HorizontalAlignment="Center"
+                                                             VerticalAlignment="Center"
+                                                             Foreground="{DynamicResource QxTextMutedBrush}" />
+                                    <Image Source="{Binding Image}" Stretch="None"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center"
+                                           RenderOptions.BitmapScalingMode="NearestNeighbor" />
+                                </Grid>
+
+                                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal"
+                                            VerticalAlignment="Center" Margin="10,0,0,0">
+                                    <Border Padding="5,1" CornerRadius="{StaticResource RadiusSmall}"
+                                            VerticalAlignment="Center" Margin="0,0,8,0"
+                                            Background="{DynamicResource QxSurfaceSubtleBrush}"
+                                            Visibility="{Binding HasTag, Converter={StaticResource BoolToVis}}">
+                                        <TextBlock Text="{Binding Tag}" FontSize="9.5"
+                                                   Foreground="{DynamicResource QxTextMutedBrush}" />
+                                    </Border>
+                                    <TextBlock Text="{Binding Position}"
+                                               FontFamily="{StaticResource FontCode}" FontSize="11"
+                                               VerticalAlignment="Center"
+                                               Foreground="{DynamicResource QxTextMutedBrush}" />
+                                </StackPanel>
+
+                                <StackPanel VerticalAlignment="Center">
+                                    <TextBlock Text="{Binding Name}" FontSize="12.5"
+                                               TextTrimming="CharacterEllipsis"
+                                               ToolTip="{Binding Name}" />
+                                    <TextBlock Text="{Binding Detail}" FontSize="11" Margin="0,1,0,0"
+                                               TextTrimming="CharacterEllipsis"
+                                               Foreground="{DynamicResource QxTextMutedBrush}"
+                                               Visibility="{Binding HasDetail, Converter={StaticResource BoolToVis}}" />
+                                </StackPanel>
+                            </DockPanel>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="row" Property="Background"
+                                        Value="{DynamicResource QxSurfaceSubtleBrush}" />
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="row" Property="Background"
+                                        Value="{DynamicResource QxAccentSoftBrush}" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Furni tiles, grouped by kind. Same 60x60 cell Xabbo uses, with the count of that kind
+             in the corner when there is more than one. -->
+        <Style x:Key="FurniTile" TargetType="ListBoxItem">
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="Margin" Value="0" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ListBoxItem">
+                        <Border x:Name="tile" Width="60" Height="60" Margin="2"
+                                CornerRadius="{StaticResource RadiusSmall}"
+                                BorderThickness="1"
+                                Background="Transparent"
+                                BorderBrush="{DynamicResource MaterialDesign.Brush.Divider}"
+                                ToolTip="{Binding Tooltip}">
+                            <Grid>
+                                <TextBlock Text="{Binding Initial}" FontSize="20" Opacity="0.33"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center"
+                                           Visibility="{Binding HasImage, Converter={StaticResource InvBoolToVis}}" />
+                                <Image Source="{Binding Image}" Stretch="None"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center"
+                                       RenderOptions.BitmapScalingMode="NearestNeighbor" />
+                                <Border HorizontalAlignment="Right" VerticalAlignment="Bottom"
+                                        Margin="3" Padding="4,0" CornerRadius="{StaticResource RadiusSmall}"
+                                        Background="{DynamicResource QxAccentSoftBrush}"
+                                        Visibility="{Binding HasMany, Converter={StaticResource BoolToVis}}">
+                                    <TextBlock Text="{Binding Count}" FontSize="10"
+                                               Foreground="{DynamicResource MaterialDesign.Brush.Foreground}" />
+                                </Border>
+                            </Grid>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="tile" Property="Background"
+                                        Value="{DynamicResource QxSurfaceSubtleBrush}" />
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="tile" Property="Background"
+                                        Value="{DynamicResource QxAccentSoftBrush}" />
+                                <Setter TargetName="tile" Property="BorderBrush"
+                                        Value="{DynamicResource QxAccentBrush}" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- The head render is 54x62 and the row is shorter, so it overhangs by design: the face
+             fills the cell instead of sitting in a stamp. Nearest-neighbour, because these are
+             pixel art and smoothing them turns them to mush. -->
+        <!-- The head render is 54 by 62. The cell is the same size and the row is taller than it,
+             so the whole face is there: a shorter row cut the legs off every avatar in the list. -->
+        <DataTemplate x:Key="HeadCell">
+            <Grid Width="54" Height="62" HorizontalAlignment="Center" VerticalAlignment="Center">
+                <materialDesign:PackIcon Kind="{Binding Fallback}" Width="18" Height="18"
+                                         HorizontalAlignment="Center" VerticalAlignment="Center"
+                                         Foreground="{DynamicResource QxTextMutedBrush}" />
+                <Image Source="{Binding Image}" Stretch="None"
+                       HorizontalAlignment="Center" VerticalAlignment="Center"
+                       RenderOptions.BitmapScalingMode="NearestNeighbor" />
+            </Grid>
+        </DataTemplate>
+
+        <DataTemplate x:Key="NameCell">
+            <DockPanel>
+                <materialDesign:PackIcon DockPanel.Dock="Right" Kind="Sleep" Width="14" Height="14"
+                                         VerticalAlignment="Center" Margin="6,0,0,0"
+                                         Foreground="{DynamicResource QxTextMutedBrush}"
+                                         ToolTip="Idle"
+                                         Visibility="{Binding IsIdle, Converter={StaticResource BoolToVis}}" />
+                <Border DockPanel.Dock="Right" Margin="6,0,0,0" Padding="5,1" VerticalAlignment="Center"
+                        CornerRadius="{StaticResource RadiusSmall}"
+                        Background="{DynamicResource QxSurfaceSubtleBrush}"
+                        Visibility="{Binding HasTag, Converter={StaticResource BoolToVis}}">
+                    <TextBlock Text="{Binding Tag}" FontSize="9.5"
+                               Foreground="{DynamicResource QxTextMutedBrush}" />
+                </Border>
+                <TextBlock Text="{Binding Name}" VerticalAlignment="Center"
+                           TextTrimming="CharacterEllipsis" ToolTip="{Binding Name}" />
+            </DockPanel>
+        </DataTemplate>
+
+        <!-- Shared by the people who are here and the people who have been. Both are users; what
+             you want to do with one is what you want to do with the other. -->
+        <ContextMenu x:Key="PeopleMenu">
+            <MenuItem Header="Find in the room" Click="FindPerson"
+                      ToolTip="Puts their own bubble over their head so you can see where they are">
+                <MenuItem.Icon>
+                    <materialDesign:PackIcon Kind="MapMarkerOutline" />
+                </MenuItem.Icon>
+            </MenuItem>
+            <MenuItem Header="Send a friend request" Click="AddFriend">
+                <MenuItem.Icon>
+                    <materialDesign:PackIcon Kind="AccountPlusOutline" />
+                </MenuItem.Icon>
+            </MenuItem>
+            <MenuItem Header="Trade" Click="TradePerson">
+                <MenuItem.Icon>
+                    <materialDesign:PackIcon Kind="SwapHorizontal" />
+                </MenuItem.Icon>
+            </MenuItem>
+            <MenuItem Header="Open profile" Click="OpenPersonProfile">
+                <MenuItem.Icon>
+                    <materialDesign:PackIcon Kind="AccountOutline" />
+                </MenuItem.Icon>
+            </MenuItem>
+            <MenuItem Header="Mimic">
+                <MenuItem.Icon>
+                    <materialDesign:PackIcon Kind="AccountConvertOutline" />
+                </MenuItem.Icon>
+                <MenuItem Header="Everything"  Tag="all"        Click="MimicPerson" />
+                <Separator />
+                <MenuItem Header="Look"        Tag="figure"     Click="MimicPerson" />
+                <MenuItem Header="Motto"       Tag="motto"      Click="MimicPerson" />
+                <MenuItem Header="Dance"       Tag="dance"      Click="MimicPerson" />
+                <MenuItem Header="Sign"        Tag="sign"       Click="MimicPerson" />
+                <MenuItem Header="Effect"      Tag="effect"     Click="MimicPerson" />
+                <MenuItem Header="Facing"      Tag="direction"  Click="MimicPerson" />
+                <MenuItem Header="Stand where they stand" Tag="walk" Click="MimicPerson" />
+            </MenuItem>
+            <MenuItem Header="Add outfit to my wardrobe" Click="AddToWardrobe">
+                <MenuItem.Icon>
+                    <materialDesign:PackIcon Kind="TshirtCrewOutline" />
+                </MenuItem.Icon>
+            </MenuItem>
+            <Separator />
+            <MenuItem Header="Copy">
+                <MenuItem.Icon>
+                    <materialDesign:PackIcon Kind="ContentCopy" />
+                </MenuItem.Icon>
+                <MenuItem Header="Name"   Tag="name"   Click="CopyPersonField" />
+                <MenuItem Header="Id"     Tag="id"     Click="CopyPersonField" />
+                <MenuItem Header="Motto"  Tag="motto"  Click="CopyPersonField" />
+                <MenuItem Header="Figure" Tag="figure" Click="CopyPersonField" />
+            </MenuItem>
+            <MenuItem Header="Moderate">
+                <MenuItem.Icon>
+                    <materialDesign:PackIcon Kind="ShieldAlertOutline" />
+                </MenuItem.Icon>
+                <MenuItem Header="Mute">
+                    <MenuItem Header="2 minutes"  Tag="2"    Click="MutePerson" />
+                    <MenuItem Header="5 minutes"  Tag="5"    Click="MutePerson" />
+                    <MenuItem Header="10 minutes" Tag="10"   Click="MutePerson" />
+                    <MenuItem Header="30 minutes" Tag="30"   Click="MutePerson" />
+                    <MenuItem Header="An hour"    Tag="60"   Click="MutePerson" />
+                    <MenuItem Header="A day"      Tag="1440" Click="MutePerson" />
+                </MenuItem>
+                <MenuItem Header="Unmute" Tag="0" Click="MutePerson" />
+                <Separator />
+                <MenuItem Header="Kick" Click="KickPerson">
+                    <MenuItem.Icon>
+                        <materialDesign:PackIcon Kind="ExitRun" />
+                    </MenuItem.Icon>
+                </MenuItem>
+                <MenuItem Header="Ban">
+                    <MenuItem Header="For an hour"  Tag="hour" Click="BanPerson" />
+                    <MenuItem Header="For a day"    Tag="day"  Click="BanPerson" />
+                    <MenuItem Header="Permanently"  Tag="perm" Click="BanPerson" />
+                </MenuItem>
+                <MenuItem Header="Bounce" Click="BouncePerson"
+                          ToolTip="Ban and unban at once, which puts them out with no kick notice" />
+            </MenuItem>
+            <Separator />
+            <MenuItem Header="Show bots" IsCheckable="True"
+                      Click="PeopleFilterChanged" />
+            <MenuItem Header="Show pets" IsCheckable="True"
+                      Click="PeopleFilterChanged" />
+        </ContextMenu>
+
+        <ItemsPanelTemplate x:Key="TilePanel">
+            <WrapPanel Orientation="Horizontal" />
+        </ItemsPanelTemplate>
+
+        <!-- Lit while a selection is waiting for two clicks in the room, and while an area is
+             holding the list down to part of the floor. -->
+        <Style x:Key="CaptureAreaToggle" TargetType="ToggleButton">
+            <Setter Property="Background" Value="{DynamicResource QxSurfaceSubtleBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource MaterialDesign.Brush.Divider}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Foreground" Value="{DynamicResource QxTextSecondaryBrush}" />
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ToggleButton">
+                        <Border x:Name="shell" Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="{StaticResource RadiusMedium}"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="shell" Property="Background"
+                                        Value="{DynamicResource QxAccentSoftBrush}" />
+                            </Trigger>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="shell" Property="Background"
+                                        Value="{DynamicResource QxAccentSoftBrush}" />
+                                <Setter TargetName="shell" Property="BorderBrush"
+                                        Value="{DynamicResource QxAccentBrush}" />
+                                <Setter Property="Foreground"
+                                        Value="{DynamicResource MaterialDesign.Brush.Foreground}" />
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.4" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+
+        <ItemsPanelTemplate x:Key="RowPanel">
+            <VirtualizingStackPanel />
+        </ItemsPanelTemplate>
+    </UserControl.Resources>
+
+    <Grid Margin="0">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!-- Heading -->
+        <StackPanel Grid.Row="0" Margin="16,14,16,12">
+            <TextBlock Text="Room" Style="{StaticResource PageHeading}" />
+            <TextBlock x:Name="Subheading" Style="{StaticResource PageSubheading}" />
+        </StackPanel>
+
+        <Border Grid.Row="1" BorderThickness="0,1,0,0" CornerRadius="0"
+                BorderBrush="{DynamicResource MaterialDesign.Brush.Divider}">
+            <TabControl x:Name="Tabs" Style="{StaticResource PageTabStrip}"
+                        SelectionChanged="TabChanged">
+                <TabControl.ItemContainerStyle>
+                    <Style TargetType="TabItem" BasedOn="{StaticResource PageTab}" />
+                </TabControl.ItemContainerStyle>
+
+                <TabItem x:Name="InfoTab">
+                    <TabItem.Header>
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="InformationOutline" Width="16" Height="16"
+                                                     VerticalAlignment="Center" />
+                            <TextBlock Text="Info" Margin="6,0,0,0" VerticalAlignment="Center" FontSize="12.5" />
+                        </StackPanel>
+                    </TabItem.Header>
+                    <ScrollViewer VerticalScrollBarVisibility="Auto"
+                                  HorizontalScrollBarVisibility="Disabled"
+                                  HorizontalContentAlignment="Stretch">
+                        <Grid x:Name="InfoBody" Margin="24,18,16,18">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="220" />
+                                <ColumnDefinition Width="32" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+
+                            <StackPanel Grid.Column="0">
+                                <Border Width="150" Height="150" HorizontalAlignment="Left"
+                                        CornerRadius="{StaticResource RadiusMedium}"
+                                        ClipToBounds="True" BorderThickness="1"
+                                        Background="{DynamicResource QxSurfaceSubtleBrush}"
+                                        BorderBrush="{DynamicResource MaterialDesign.Brush.Divider}">
+                                    <Grid>
+                                        <Grid.Clip>
+                                            <RectangleGeometry Rect="0,0,148,148" RadiusX="5" RadiusY="5" />
+                                        </Grid.Clip>
+                                        <materialDesign:PackIcon Kind="HomeOutline" Width="24" Height="24"
+                                                                 HorizontalAlignment="Center"
+                                                                 VerticalAlignment="Center"
+                                                                 Foreground="{DynamicResource QxTextMutedBrush}" />
+                                        <Image x:Name="Thumbnail" Stretch="UniformToFill" />
+                                        <TextBlock x:Name="ThumbnailNote" FontSize="9.5"
+                                                   Visibility="Collapsed"
+                                                   HorizontalAlignment="Center"
+                                                   VerticalAlignment="Bottom" Margin="0,0,0,8"
+                                                   Foreground="{DynamicResource QxTextMutedBrush}" />
+                                    </Grid>
+                                </Border>
+
+                                <TextBlock x:Name="RoomName" FontSize="16" FontWeight="SemiBold"
+                                           Margin="0,14,0,0" TextWrapping="Wrap" />
+                                <TextBlock x:Name="RoomOwner" FontSize="11.5" Margin="0,4,0,0"
+                                           TextWrapping="Wrap"
+                                           Foreground="{DynamicResource QxTextMutedBrush}" />
+                                <Grid Margin="0,9,0,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock FontSize="11.5" TextTrimming="CharacterEllipsis"
+                                               VerticalAlignment="Center">
+                                        <Hyperlink x:Name="RoomLink" Click="OpenRoomLink"
+                                                   Foreground="{DynamicResource QxTextSecondaryBrush}"
+                                                   TextDecorations="{x:Null}" FocusVisualStyle="{x:Null}"
+                                                   ToolTip="Open this room in Habbo">
+                                            <Run x:Name="RoomLinkText" />
+                                        </Hyperlink>
+                                    </TextBlock>
+                                    <Button x:Name="CopyRoomLinkButton" Grid.Column="1"
+                                            Width="24" Height="22" Padding="0" Margin="7,0,0,0"
+                                            Style="{StaticResource OutputActionButton}"
+                                            Click="CopyRoomLink" ToolTip="Copy room link">
+                                        <materialDesign:PackIcon Kind="ContentCopy" Width="13" Height="13" />
+                                    </Button>
+                                </Grid>
+                                <TextBlock x:Name="RoomDescription" FontSize="11.5" Margin="0,12,0,0"
+                                           TextWrapping="Wrap" MaxHeight="120"
+                                           TextTrimming="CharacterEllipsis"
+                                           Foreground="{DynamicResource QxTextSecondaryBrush}" />
+                            </StackPanel>
+
+                            <StackPanel Grid.Column="2">
+                                <StackPanel Style="{StaticResource InfoGroupHead}">
+                                    <materialDesign:PackIcon Style="{StaticResource InfoGroupGlyph}"
+                                                             Kind="HomeOutline" />
+                                    <TextBlock Style="{StaticResource InfoGroupWord}" Text="Details" />
+                                </StackPanel>
+                                <ItemsControl x:Name="RoomFields"
+                                              ItemTemplate="{StaticResource CompactStatCell}"
+                                              ItemsPanel="{StaticResource StatPanel}" />
+
+                                <Border x:Name="InfoRulesDivider" Height="1" Margin="0,8,0,14"
+                                        Background="{DynamicResource MaterialDesign.Brush.Divider}"
+                                        SnapsToDevicePixels="True" />
+
+                                <UniformGrid Columns="4">
+                                    <StackPanel Margin="0,0,24,0">
+                                        <StackPanel Style="{StaticResource InfoGroupHead}">
+                                            <materialDesign:PackIcon Style="{StaticResource InfoGroupGlyph}"
+                                                                     Kind="DoorOpen" />
+                                            <TextBlock Style="{StaticResource InfoGroupWord}" Text="Access" />
+                                        </StackPanel>
+                                        <ContentControl x:Name="AccessRule"
+                                                        ContentTemplate="{StaticResource RuleValueCell}" />
+                                    </StackPanel>
+
+                                    <StackPanel Margin="0,0,24,0">
+                                        <StackPanel Style="{StaticResource InfoGroupHead}">
+                                            <materialDesign:PackIcon Style="{StaticResource InfoGroupGlyph}"
+                                                                     Kind="ShieldOutline" />
+                                            <TextBlock Style="{StaticResource InfoGroupWord}" Text="Moderation" />
+                                        </StackPanel>
+                                        <ContentControl x:Name="MuteRule"
+                                                        ContentTemplate="{StaticResource CompactStatCell}" />
+                                        <ContentControl x:Name="KickRule"
+                                                        ContentTemplate="{StaticResource CompactStatCell}" />
+                                        <ContentControl x:Name="BanRule"
+                                                        ContentTemplate="{StaticResource CompactStatCell}" />
+                                    </StackPanel>
+
+                                    <StackPanel Margin="0,0,24,0">
+                                        <StackPanel Style="{StaticResource InfoGroupHead}">
+                                            <materialDesign:PackIcon Style="{StaticResource InfoGroupGlyph}"
+                                                                     Kind="ChatOutline" />
+                                            <TextBlock Style="{StaticResource InfoGroupWord}" Text="Chat" />
+                                        </StackPanel>
+                                        <ContentControl x:Name="FlowRule"
+                                                        ContentTemplate="{StaticResource CompactStatCell}" />
+                                        <ContentControl x:Name="BubbleRule"
+                                                        ContentTemplate="{StaticResource CompactStatCell}" />
+                                        <ContentControl x:Name="ScrollRule"
+                                                        ContentTemplate="{StaticResource CompactStatCell}" />
+                                        <ContentControl x:Name="HearingRule"
+                                                        ContentTemplate="{StaticResource CompactStatCell}" />
+                                    </StackPanel>
+
+                                    <StackPanel>
+                                        <StackPanel Style="{StaticResource InfoGroupHead}">
+                                            <materialDesign:PackIcon Style="{StaticResource InfoGroupGlyph}"
+                                                                     Kind="Flood" />
+                                            <TextBlock Style="{StaticResource InfoGroupWord}" Text="Flood" />
+                                        </StackPanel>
+                                        <ContentControl x:Name="FloodRule"
+                                                        ContentTemplate="{StaticResource RuleValueCell}" />
+                                    </StackPanel>
+                                </UniformGrid>
+                            </StackPanel>
+                        </Grid>
+                    </ScrollViewer>
+                </TabItem>
+
+                <TabItem x:Name="UsersTab">
+                    <TabItem.Header>
+                        <StackPanel Orientation="Horizontal">
+                            <!-- Wide enough to hold both. The count was pushed out of this box with
+                                 negative margins, which put it past the edge of the tab and clipped
+                                 the top off every number. -->
+                            <Grid VerticalAlignment="Center" Width="24" Height="22">
+                                <materialDesign:PackIcon Kind="AccountGroup" Width="16" Height="16"
+                                                         HorizontalAlignment="Left" VerticalAlignment="Bottom" />
+                                <TextBlock x:Name="UsersBadge" FontSize="10"
+                                           HorizontalAlignment="Right" VerticalAlignment="Top"
+                                           Foreground="{DynamicResource QxAccentBrush}" />
+                            </Grid>
+                            <TextBlock Text="Users" Margin="6,0,0,0" VerticalAlignment="Center" FontSize="12.5" />
+                        </StackPanel>
+                    </TabItem.Header>
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+                        <Border Grid.Row="0" Margin="12,12,12,8" Padding="10,0" Height="30"
+                                CornerRadius="{StaticResource RadiusMedium}"
+                                Background="{DynamicResource QxSurfaceSubtleBrush}">
+                            <DockPanel>
+                                <materialDesign:PackIcon DockPanel.Dock="Left" Kind="Magnify" Width="14" Height="14"
+                                                         VerticalAlignment="Center" Margin="0,0,7,0"
+                                                         Foreground="{DynamicResource QxTextMutedBrush}" />
+                                <TextBox x:Name="UsersFilter" Style="{StaticResource PageFilterText}"
+                                         TextChanged="FilterChanged"
+                                         Tag="Filter people in the room" AutomationProperties.Name="Filter people in the room" />
+                            </DockPanel>
+                        </Border>
+                        <DataGrid x:Name="UsersList" Grid.Row="1" Style="{StaticResource QxDataGrid}"
+                                  Margin="4,0,4,8" RowHeight="64"
+                                  ContextMenu="{StaticResource PeopleMenu}"
+                                  ContextMenuOpening="PeopleMenuOpening"
+                                  AutomationProperties.Name="People in the room">
+                            <DataGrid.Columns>
+                                <DataGridTemplateColumn Header="" Width="58" CanUserSort="False"
+                                                        CellStyle="{StaticResource QxIconCell}"
+                                                        CellTemplate="{StaticResource HeadCell}" />
+                                <DataGridTemplateColumn Header="NAME" Width="2*" SortMemberPath="Name"
+                                                        CellTemplate="{StaticResource NameCell}" />
+                                <DataGridTextColumn Header="MOTTO" Width="2*" Binding="{Binding Detail}"
+                                                    ElementStyle="{StaticResource QxDataGridTextElement}" />
+                                <DataGridTextColumn Header="TILE" Width="90" Binding="{Binding Position}"
+                                                    ElementStyle="{StaticResource QxDataGridTextElement}" />
+                                <DataGridTextColumn Header="INDEX" Width="70" Binding="{Binding Index}"
+                                                    ElementStyle="{StaticResource QxDataGridTextElement}" />
+                                <DataGridTextColumn Header="ID" Width="*" Binding="{Binding EntityId}"
+                                                    ElementStyle="{StaticResource QxDataGridTextElement}" />
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </Grid>
+                </TabItem>
+
+                <TabItem x:Name="VisitorsTab">
+                    <TabItem.Header>
+                        <StackPanel Orientation="Horizontal">
+                            <Grid VerticalAlignment="Center" Width="24" Height="22">
+                                <materialDesign:PackIcon Kind="AccountClockOutline" Width="16" Height="16" HorizontalAlignment="Left" VerticalAlignment="Bottom" />
+                                <TextBlock x:Name="VisitorsBadge" FontSize="10"
+                                           HorizontalAlignment="Right" VerticalAlignment="Top"
+                                           Foreground="{DynamicResource QxAccentBrush}" />
+                            </Grid>
+                            <TextBlock Text="Visitors" Margin="6,0,0,0" VerticalAlignment="Center" FontSize="12.5" />
+                        </StackPanel>
+                    </TabItem.Header>
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+
+                        <DockPanel Grid.Row="0" Margin="12,12,12,8">
+                            <Button DockPanel.Dock="Right" Margin="10,0,0,0"
+                                    Style="{StaticResource PageActionButton}"
+                                    Click="ClearVisitors"
+                                    ToolTip="Empty the list and start again from now">
+                                <StackPanel Orientation="Horizontal">
+                                    <materialDesign:PackIcon Kind="DeleteSweepOutline" Width="15" Height="15"
+                                                             VerticalAlignment="Center" />
+                                    <TextBlock Text="Clear" Margin="6,0,0,0" VerticalAlignment="Center"
+                                               FontSize="12" />
+                                </StackPanel>
+                            </Button>
+                            <Border Padding="10,0" Height="30"
+                                    CornerRadius="{StaticResource RadiusMedium}"
+                                    Background="{DynamicResource QxSurfaceSubtleBrush}">
+                                <DockPanel>
+                                    <materialDesign:PackIcon DockPanel.Dock="Left" Kind="Magnify" Width="14" Height="14"
+                                                             VerticalAlignment="Center" Margin="0,0,7,0"
+                                                             Foreground="{DynamicResource QxTextMutedBrush}" />
+                                    <TextBox x:Name="VisitorsFilter" Style="{StaticResource PageFilterText}"
+                                             TextChanged="FilterChanged"
+                                             Tag="Filter the people who have been here" AutomationProperties.Name="Filter the people who have been here" />
+                                </DockPanel>
+                            </Border>
+                        </DockPanel>
+
+                        <DataGrid x:Name="VisitorsList" Grid.Row="1" Style="{StaticResource QxDataGrid}"
+                                  Margin="4,0,4,0" RowHeight="64"
+                                  ContextMenu="{StaticResource PeopleMenu}"
+                                  ContextMenuOpening="PeopleMenuOpening"
+                                  AutomationProperties.Name="People who have been in this room">
+                            <DataGrid.Columns>
+                                <DataGridTemplateColumn Header="" Width="58" CanUserSort="False"
+                                                        CellStyle="{StaticResource QxIconCell}"
+                                                        CellTemplate="{StaticResource HeadCell}" />
+                                <DataGridTemplateColumn Header="NAME" Width="2*" SortMemberPath="Name"
+                                                        CellTemplate="{StaticResource NameCell}" />
+                                <DataGridTextColumn Header="WHEN" Width="3*" Binding="{Binding Detail}"
+                                                    ElementStyle="{StaticResource QxDataGridTextElement}" />
+                                <DataGridTextColumn Header="VISITS" Width="80" Binding="{Binding Position}"
+                                                    ElementStyle="{StaticResource QxDataGridTextElement}" />
+                                <DataGridTextColumn Header="ID" Width="*" Binding="{Binding EntityId}"
+                                                    ElementStyle="{StaticResource QxDataGridTextElement}" />
+                            </DataGrid.Columns>
+                        </DataGrid>
+
+                        <TextBlock x:Name="VisitorsStatus" Grid.Row="2" Margin="14,8,14,10" FontSize="11"
+                                   TextWrapping="Wrap"
+                                   Foreground="{DynamicResource QxTextMutedBrush}" />
+                    </Grid>
+                </TabItem>
+
+                <TabItem x:Name="BansTab">
+                    <TabItem.Header>
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="AccountCancelOutline" Width="16" Height="16"
+                                                     VerticalAlignment="Center" />
+                            <TextBlock Text="Bans" Margin="6,0,0,0" VerticalAlignment="Center" FontSize="12.5" />
+                        </StackPanel>
+                    </TabItem.Header>
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+
+                        <DockPanel Grid.Row="0" Margin="12,12,12,8">
+                            <Button x:Name="UnbanSelected" DockPanel.Dock="Right" Margin="8,0,0,0"
+                                    Style="{StaticResource PageActionButton}"
+                                    Click="UnbanSelected_Click" IsEnabled="False"
+                                    ToolTip="Let the selected people back in">
+                                <StackPanel Orientation="Horizontal">
+                                    <materialDesign:PackIcon Kind="AccountCheckOutline" Width="15" Height="15"
+                                                             VerticalAlignment="Center" />
+                                    <TextBlock Text="Unban" Margin="6,0,0,0" VerticalAlignment="Center" />
+                                </StackPanel>
+                            </Button>
+                            <Button x:Name="RefreshBans" DockPanel.Dock="Right" Margin="10,0,0,0"
+                                    Style="{StaticResource PageActionButton}"
+                                    Click="RefreshBans_Click"
+                                    ToolTip="Ask the hotel for the ban list">
+                                <StackPanel Orientation="Horizontal">
+                                    <materialDesign:PackIcon Kind="Refresh" Width="15" Height="15"
+                                                             VerticalAlignment="Center" />
+                                    <TextBlock Text="Load" Margin="6,0,0,0" VerticalAlignment="Center" />
+                                </StackPanel>
+                            </Button>
+                            <Border Padding="10,0" Height="30"
+                                    CornerRadius="{StaticResource RadiusMedium}"
+                                    Background="{DynamicResource QxSurfaceSubtleBrush}">
+                                <DockPanel>
+                                    <materialDesign:PackIcon DockPanel.Dock="Left" Kind="Magnify" Width="14" Height="14"
+                                                             VerticalAlignment="Center" Margin="0,0,7,0"
+                                                             Foreground="{DynamicResource QxTextMutedBrush}" />
+                                    <TextBox x:Name="BansFilter" Style="{StaticResource PageFilterText}"
+                                             TextChanged="FilterChanged"
+                                             Tag="Filter the ban list" AutomationProperties.Name="Filter the ban list" />
+                                </DockPanel>
+                            </Border>
+                        </DockPanel>
+
+                        <DataGrid x:Name="BansList" Grid.Row="1" Style="{StaticResource QxDataGrid}"
+                                  Margin="4,0,4,0" RowHeight="64"
+                                  SelectionChanged="BansSelectionChanged"
+                                  AutomationProperties.Name="People barred from this room">
+                            <DataGrid.ContextMenu>
+                                <ContextMenu>
+                                    <MenuItem Header="Unban" Click="UnbanSelected_Click">
+                                        <MenuItem.Icon>
+                                            <materialDesign:PackIcon Kind="AccountCheckOutline" />
+                                        </MenuItem.Icon>
+                                    </MenuItem>
+                                    <MenuItem Header="Copy name" Click="CopyBanName">
+                                        <MenuItem.Icon>
+                                            <materialDesign:PackIcon Kind="ContentCopy" />
+                                        </MenuItem.Icon>
+                                    </MenuItem>
+                                </ContextMenu>
+                            </DataGrid.ContextMenu>
+                            <DataGrid.Columns>
+                                <DataGridTemplateColumn Header="" Width="58" CanUserSort="False"
+                                                        CellStyle="{StaticResource QxIconCell}"
+                                                        CellTemplate="{StaticResource HeadCell}" />
+                                <DataGridTemplateColumn Header="NAME" Width="2*" SortMemberPath="Name"
+                                                        CellTemplate="{StaticResource NameCell}" />
+                                <DataGridTextColumn Header="ID" Width="*" Binding="{Binding EntityId}"
+                                                    ElementStyle="{StaticResource QxDataGridTextElement}" />
+                            </DataGrid.Columns>
+                        </DataGrid>
+
+                        <TextBlock x:Name="BansStatus" Grid.Row="2" Margin="14,8,14,10" FontSize="11"
+                                   TextWrapping="Wrap"
+                                   Foreground="{DynamicResource QxTextMutedBrush}" />
+                    </Grid>
+                </TabItem>
+
+                <TabItem x:Name="FurniTab">
+                    <TabItem.Header>
+                        <StackPanel Orientation="Horizontal">
+                            <Grid VerticalAlignment="Center" Width="24" Height="22">
+                                <materialDesign:PackIcon Kind="SofaSingleOutline" Width="16" Height="16" HorizontalAlignment="Left" VerticalAlignment="Bottom" />
+                                <TextBlock x:Name="FurniBadge" FontSize="10"
+                                           HorizontalAlignment="Right" VerticalAlignment="Top"
+                                           Foreground="{DynamicResource QxAccentBrush}" />
+                            </Grid>
+                            <TextBlock Text="Furni" Margin="6,0,0,0" VerticalAlignment="Center" FontSize="12.5" />
+                        </StackPanel>
+                    </TabItem.Header>
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+
+                        <DockPanel Grid.Row="0" Margin="12,12,12,8">
+                            <Border DockPanel.Dock="Right" Margin="8,0,0,0" Padding="2"
+                                    CornerRadius="{StaticResource RadiusMedium}"
+                                    Background="{DynamicResource QxSurfaceSubtleBrush}"
+                                    BorderThickness="1"
+                                    BorderBrush="{DynamicResource MaterialDesign.Brush.Divider}">
+                                <StackPanel Orientation="Horizontal">
+                                    <ToggleButton x:Name="FurniListToggle" Style="{StaticResource ViewModeToggle}"
+                                                  MinWidth="40" Click="ShowFurniList" IsChecked="True"
+                                                  ToolTip="List" AutomationProperties.Name="List view">
+                                        <materialDesign:PackIcon Kind="ViewListOutline" Width="15" Height="15" />
+                                    </ToggleButton>
+                                    <ToggleButton x:Name="FurniGridToggle" Style="{StaticResource ViewModeToggle}"
+                                                  MinWidth="40" Click="ShowFurniGrid"
+                                                  ToolTip="Grid" AutomationProperties.Name="Grid view">
+                                        <materialDesign:PackIcon Kind="ViewGridOutline" Width="15" Height="15" />
+                                    </ToggleButton>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Pointing at the floor beats typing coordinates you would have to
+                                 read off the room first. Both clicks are swallowed, so picking an
+                                 area does not walk you across it. -->
+                            <ToggleButton x:Name="AreaToggle" DockPanel.Dock="Right" Margin="8,0,0,0"
+                                          Height="30" MinWidth="0" Padding="11,0" Cursor="Hand"
+                                          FontSize="12" Style="{StaticResource CaptureAreaToggle}"
+                                          Click="CaptureArea"
+                                          ToolTip="Click two corners in the room to show only what stands between them">
+                                <StackPanel Orientation="Horizontal">
+                                    <materialDesign:PackIcon Kind="SelectionDrag" Width="15" Height="15"
+                                                             VerticalAlignment="Center" />
+                                    <TextBlock x:Name="AreaLabel" Text="Area" Margin="6,0,0,0"
+                                               VerticalAlignment="Center" />
+                                </StackPanel>
+                            </ToggleButton>
+
+                            <Button x:Name="ShowHiddenButton" DockPanel.Dock="Right" Margin="10,0,0,0"
+                                    Style="{StaticResource PageActionButton}"
+                                    Click="ShowHidden" Visibility="Collapsed"
+                                    ToolTip="Put everything hidden back on screen">
+                                <StackPanel Orientation="Horizontal">
+                                    <materialDesign:PackIcon Kind="EyeOutline" Width="15" Height="15"
+                                                             VerticalAlignment="Center" />
+                                    <TextBlock x:Name="ShowHiddenLabel" Margin="6,0,0,0"
+                                               VerticalAlignment="Center" />
+                                </StackPanel>
+                            </Button>
+                            <Border Padding="10,0" Height="30"
+                                    CornerRadius="{StaticResource RadiusMedium}"
+                                    Background="{DynamicResource QxSurfaceSubtleBrush}">
+                                <DockPanel>
+                                    <materialDesign:PackIcon DockPanel.Dock="Left" Kind="Magnify" Width="14" Height="14"
+                                                             VerticalAlignment="Center" Margin="0,0,7,0"
+                                                             Foreground="{DynamicResource QxTextMutedBrush}" />
+                                    <TextBox x:Name="FurniFilter" Style="{StaticResource PageFilterText}"
+                                             TextChanged="FilterChanged"
+                                             Tag="Filter the furni in the room" AutomationProperties.Name="Filter the furni in the room" />
+                                </DockPanel>
+                            </Border>
+                        </DockPanel>
+
+                        <ListBox x:Name="FurniList" Grid.Row="1" BorderThickness="0" Background="Transparent"
+                                 Margin="8,0,8,0" Padding="0" SelectionMode="Extended"
+                                 SelectionChanged="FurniSelectionChanged"
+                                 ItemContainerStyle="{StaticResource FurniRow}"
+                                 ItemsPanel="{StaticResource RowPanel}"
+                                 ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                 VirtualizingStackPanel.IsVirtualizing="True"
+                                 VirtualizingStackPanel.VirtualizationMode="Recycling"
+                                 ContextMenuOpening="FurniMenuOpening"
+                                 AutomationProperties.Name="Furni in the room">
+                            <ListBox.ContextMenu>
+                                <ContextMenu>
+                                    <MenuItem x:Name="MenuHide" Header="Hide" Click="HideFurni">
+                                        <MenuItem.Icon>
+                                            <materialDesign:PackIcon Kind="EyeOffOutline" />
+                                        </MenuItem.Icon>
+                                    </MenuItem>
+                                    <MenuItem x:Name="MenuShow" Header="Show" Click="ShowFurni">
+                                        <MenuItem.Icon>
+                                            <materialDesign:PackIcon Kind="EyeOutline" />
+                                        </MenuItem.Icon>
+                                    </MenuItem>
+                                    <Separator />
+                                    <MenuItem x:Name="MenuToggle" Header="Toggle" Click="ToggleFurni"
+                                              ToolTip="Press each one, as clicking it would">
+                                        <MenuItem.Icon>
+                                            <materialDesign:PackIcon Kind="ToggleSwitchOutline" />
+                                        </MenuItem.Icon>
+                                    </MenuItem>
+                                    <MenuItem x:Name="MenuRotate" Header="Rotate">
+                                        <MenuItem.Icon>
+                                            <materialDesign:PackIcon Kind="RotateRight" />
+                                        </MenuItem.Icon>
+                                    </MenuItem>
+                                    <MenuItem x:Name="MenuMove" Header="Move to…" Click="MoveFurni"
+                                              ToolTip="Click a tile in the room for each one">
+                                        <MenuItem.Icon>
+                                            <materialDesign:PackIcon Kind="CursorMove" />
+                                        </MenuItem.Icon>
+                                    </MenuItem>
+                                    <Separator />
+                                    <MenuItem x:Name="MenuPickup" Header="Pick up" Click="PickupFurni"
+                                              ToolTip="Your own furni, back into your inventory">
+                                        <MenuItem.Icon>
+                                            <materialDesign:PackIcon Kind="HandBackLeftOutline" />
+                                        </MenuItem.Icon>
+                                    </MenuItem>
+                                    <MenuItem x:Name="MenuEject" Header="Eject" Click="EjectFurni"
+                                              ToolTip="Other people's furni, back to them. Room owner only">
+                                        <MenuItem.Icon>
+                                            <materialDesign:PackIcon Kind="ExitRun" />
+                                        </MenuItem.Icon>
+                                    </MenuItem>
+                                    <Separator />
+                                    <MenuItem x:Name="MenuCopyIds" Header="Copy ids" Click="CopyFurniIds">
+                                        <MenuItem.Icon>
+                                            <materialDesign:PackIcon Kind="ContentCopy" />
+                                        </MenuItem.Icon>
+                                    </MenuItem>
+                                </ContextMenu>
+                            </ListBox.ContextMenu>
+                        </ListBox>
+
+                        <ListBox x:Name="FurniGrid" Grid.Row="1" BorderThickness="0" Background="Transparent"
+                                 Margin="10,0,10,0" Padding="0" Visibility="Collapsed"
+                                 SelectionMode="Extended"
+                                 SelectionChanged="FurniSelectionChanged"
+                                 ItemContainerStyle="{StaticResource FurniTile}"
+                                 ItemsPanel="{StaticResource TilePanel}"
+                                 ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                 ContextMenuOpening="FurniMenuOpening"
+                                 AutomationProperties.Name="Furni in the room, by kind" />
+                        <DockPanel Grid.Row="2" Margin="14,8,14,10">
+                            <!-- Only there while something is running. A run is a hundred messages
+                                 spread over a minute; without a way to stop it the only way out is
+                                 to close the tool. -->
+                            <Button x:Name="CancelRun" DockPanel.Dock="Right" Margin="10,0,0,0"
+                                    Visibility="Collapsed" Height="24" Padding="9,0"
+                                    Style="{StaticResource PageActionButton}"
+                                    Click="CancelRun_Click">
+                                <TextBlock Text="Stop" FontSize="11" />
+                            </Button>
+                            <TextBlock x:Name="FurniStatus" FontSize="11" VerticalAlignment="Center"
+                                       TextTrimming="CharacterEllipsis"
+                                       Foreground="{DynamicResource QxTextMutedBrush}" />
+                        </DockPanel>
+                    </Grid>
+                </TabItem>
+            </TabControl>
+        </Border>
+
+        <!-- Shown over the whole page when there is no room to describe. -->
+        <Border x:Name="OutsideNotice" Grid.Row="1" CornerRadius="{StaticResource RadiusLarge}"
+                Background="{DynamicResource MaterialDesign.Brush.Background}"
+                Visibility="Collapsed">
+            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Opacity="0.55">
+                <materialDesign:PackIcon Kind="HomeOutline" Width="30" Height="30"
+                                         HorizontalAlignment="Center" />
+                <TextBlock Text="Enter a room" FontSize="14" Margin="0,10,0,0"
+                           HorizontalAlignment="Center" />
+            </StackPanel>
+        </Border>
+    </Grid>
+</local:GamePage>

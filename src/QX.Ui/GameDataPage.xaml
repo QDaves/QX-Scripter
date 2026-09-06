@@ -1,0 +1,420 @@
+<local:GamePage x:Class="Qx.Ui.GameDataPage"
+                xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+                xmlns:local="clr-namespace:Qx.Ui"
+                Background="{DynamicResource MaterialDesign.Brush.Background}">
+    <UserControl.Resources>
+        <DataTemplate x:Key="FurniIconCell">
+            <Grid Width="40" Height="40" HorizontalAlignment="Center" VerticalAlignment="Center">
+                <TextBlock Text="{Binding Initial}" FontSize="12" Opacity="0.3"
+                           HorizontalAlignment="Center" VerticalAlignment="Center"
+                           Visibility="{Binding HasImage, Converter={StaticResource InvBoolToVis}}" />
+                <Image Source="{Binding Image}" Width="36" Height="36" Stretch="Uniform"
+                       StretchDirection="DownOnly"
+                       HorizontalAlignment="Center" VerticalAlignment="Center"
+                       RenderOptions.BitmapScalingMode="NearestNeighbor" />
+            </Grid>
+        </DataTemplate>
+
+        <DataTemplate x:Key="IdentifierCell">
+            <TextBlock Text="{Binding Identifier}" FontFamily="{StaticResource FontCode}"
+                       FontSize="11.5" TextTrimming="CharacterEllipsis"
+                       ToolTip="{Binding Identifier}"
+                       Foreground="{DynamicResource QxTextSecondaryBrush}" />
+        </DataTemplate>
+
+        <DataTemplate x:Key="KeyCell">
+            <TextBlock Text="{Binding Key}" FontFamily="{StaticResource FontCode}"
+                       FontSize="11.5" TextTrimming="CharacterEllipsis"
+                       ToolTip="{Binding Key}"
+                       Foreground="{DynamicResource QxTextSecondaryBrush}" />
+        </DataTemplate>
+
+        <DataTemplate x:Key="ValueCell">
+            <TextBlock Text="{Binding Value}" TextTrimming="CharacterEllipsis"
+                       ToolTip="{Binding Value}" />
+        </DataTemplate>
+
+        <DataTemplate x:Key="ShopPriceCell">
+            <TextBlock Text="{Binding ShopText}" ToolTip="{Binding ShopDetails}"
+                       TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
+        </DataTemplate>
+    </UserControl.Resources>
+
+    <Grid Margin="0">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0" Margin="16,14,16,12">
+            <TextBlock Text="Game data" Style="{StaticResource PageHeading}" />
+            <TextBlock x:Name="Subheading" Style="{StaticResource PageSubheading}" />
+        </StackPanel>
+
+        <Border Grid.Row="1" BorderThickness="0,1,0,0" CornerRadius="0"
+                BorderBrush="{DynamicResource MaterialDesign.Brush.Divider}">
+            <TabControl x:Name="Tabs" Style="{StaticResource PageTabStrip}">
+                <TabControl.ItemContainerStyle>
+                    <Style TargetType="TabItem" BasedOn="{StaticResource PageTab}" />
+                </TabControl.ItemContainerStyle>
+
+                <TabItem>
+                    <TabItem.Header>
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="SofaSingleOutline" Width="16" Height="16"
+                                                     VerticalAlignment="Center" />
+                            <TextBlock Text="Furni" Margin="6,0,0,0" VerticalAlignment="Center" FontSize="12.5" />
+                        </StackPanel>
+                    </TabItem.Header>
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+
+                        <Grid Grid.Row="0" Margin="12,12,12,8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="210" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="126" />
+                                <ColumnDefinition Width="78" />
+                                <ColumnDefinition Width="178" />
+                            </Grid.ColumnDefinitions>
+
+                            <Border Grid.Column="0" Style="{StaticResource PageFilterBox}">
+                                <DockPanel>
+                                    <materialDesign:PackIcon DockPanel.Dock="Left" Kind="Magnify" Width="14" Height="14"
+                                                             VerticalAlignment="Center" Margin="0,0,7,0"
+                                                             Foreground="{DynamicResource QxTextMutedBrush}" />
+                                    <TextBox x:Name="FurniFilter" Style="{StaticResource PageFilterText}"
+                                             TextChanged="FurniFilterChanged"
+                                             Tag="Search furni" AutomationProperties.Name="Search the furni definitions" />
+                                </DockPanel>
+                            </Border>
+
+                            <Button x:Name="FurniFiltersButton" Grid.Column="1" Width="82" Margin="8,0,0,0"
+                                    Style="{StaticResource PageActionButton}" Click="ToggleFurniFilters">
+                                <StackPanel Orientation="Horizontal">
+                                    <materialDesign:PackIcon Kind="FilterVariant" Width="15" Height="15"
+                                                             VerticalAlignment="Center" />
+                                    <TextBlock Text="Filters" Margin="6,0,0,0" VerticalAlignment="Center" />
+                                    <TextBlock x:Name="FurniFilterCount" Margin="4,0,0,0" VerticalAlignment="Center"
+                                               Foreground="{DynamicResource QxTextMutedBrush}" />
+                                </StackPanel>
+                            </Button>
+
+                            <ComboBox x:Name="BuySource" Grid.Column="3" Height="30" Margin="8,0,0,0"
+                                      SelectedIndex="0" ToolTip="Where to buy the selected furni">
+                                <ComboBoxItem Content="Cheapest" Tag="cheapest" />
+                                <ComboBoxItem Content="Marketplace" Tag="marketplace" />
+                                <ComboBoxItem Content="Shop" Tag="shop" />
+                            </ComboBox>
+
+                            <Button x:Name="BuyButton" Grid.Column="4" Width="70" Margin="8,0,0,0"
+                                    Style="{StaticResource PageActionButton}" Click="BuySelected" IsEnabled="False">
+                                <StackPanel Orientation="Horizontal">
+                                    <materialDesign:PackIcon Kind="CartOutline" Width="15" Height="15"
+                                                             VerticalAlignment="Center" />
+                                    <TextBlock Text="Buy" Margin="5,0,0,0" VerticalAlignment="Center" />
+                                </StackPanel>
+                            </Button>
+
+                            <Button x:Name="ShopScanButton" Grid.Column="5" Width="170" Margin="8,0,0,0"
+                                    Style="{StaticResource PageActionButton}" Click="ScanShop"
+                                    ToolTip="Read every catalog page and cache the results">
+                                <StackPanel Orientation="Horizontal">
+                                    <materialDesign:PackIcon Kind="DatabaseSearchOutline" Width="15" Height="15"
+                                                             VerticalAlignment="Center" />
+                                    <TextBlock x:Name="ShopScanLabel" Width="128" Text="Show shop prices"
+                                               Margin="6,0,0,0" TextAlignment="Center" TextTrimming="CharacterEllipsis"
+                                               VerticalAlignment="Center" />
+                                </StackPanel>
+                            </Button>
+                        </Grid>
+
+                        <DataGrid x:Name="FurniList" Grid.Row="1" Style="{StaticResource QxDataGrid}"
+                                  Margin="4,0,4,0" RowHeight="42" SelectionMode="Single"
+                                  PreviewMouseDown="FurniPointerDown"
+                                  SelectionChanged="FurniSelectionChanged"
+                                  ScrollViewer.ScrollChanged="FurniScrolled"
+                                  AutomationProperties.Name="Furni definitions">
+                            <DataGrid.Columns>
+                                <DataGridTemplateColumn Header="" Width="52" MinWidth="52" CanUserSort="False"
+                                                        CellStyle="{StaticResource QxIconCell}"
+                                                        CellTemplate="{StaticResource FurniIconCell}" />
+                                <DataGridTextColumn Header="NAME" Width="260" Binding="{Binding Name}"
+                                                    ElementStyle="{StaticResource QxDataGridTextElement}" />
+                                <DataGridTemplateColumn Header="IDENTIFIER" Width="220"
+                                                        SortMemberPath="Identifier"
+                                                        ClipboardContentBinding="{Binding Identifier}"
+                                                        CellTemplate="{StaticResource IdentifierCell}" />
+                                <DataGridTemplateColumn Header="SHOP" Width="95" SortMemberPath="ShopCredits"
+                                                        ClipboardContentBinding="{Binding ShopText}"
+                                                        CellTemplate="{StaticResource ShopPriceCell}" />
+                                <DataGridTextColumn Header="MARKET" Width="95" Binding="{Binding MarketText}"
+                                                    ElementStyle="{StaticResource QxDataGridTextElement}"
+                                                    SortMemberPath="Market.CurrentPrice" />
+                                <DataGridTextColumn Header="LINE" Width="160" Binding="{Binding Line}"
+                                                    ElementStyle="{StaticResource QxDataGridTextElement}" />
+                                <DataGridTextColumn Header="CATEGORY" Width="160" Binding="{Binding Category}"
+                                                    ElementStyle="{StaticResource QxDataGridTextElement}" />
+                                <DataGridTextColumn x:Name="KindColumn" Header="KIND" Width="70"
+                                                    Visibility="Collapsed" Binding="{Binding Kind}"
+                                                    ElementStyle="{StaticResource QxDataGridTextElement}" />
+                                <DataGridTextColumn x:Name="PlaceColumn" Header="PLACE" Width="70"
+                                                    Visibility="Collapsed" Binding="{Binding Placement}"
+                                                    ElementStyle="{StaticResource QxDataGridTextElement}" />
+                            </DataGrid.Columns>
+                        </DataGrid>
+
+                        <TextBlock x:Name="FurniStatus" Grid.Row="2" Margin="14,8,14,10" FontSize="11"
+                                   TextWrapping="Wrap" Foreground="{DynamicResource QxTextMutedBrush}" />
+
+                        <Popup x:Name="FurniFiltersPopup" Grid.Row="0" Placement="Bottom"
+                               PlacementTarget="{Binding ElementName=FurniFiltersButton}"
+                               StaysOpen="False" AllowsTransparency="True" PopupAnimation="Fade">
+                            <Border Width="330" Margin="0,6,0,0" Padding="14"
+                                    CornerRadius="{StaticResource RadiusLarge}"
+                                    Background="{DynamicResource MaterialDesign.Brush.Background}"
+                                    BorderBrush="{DynamicResource MaterialDesign.Brush.Divider}"
+                                    BorderThickness="1">
+                                <StackPanel>
+                                    <DockPanel Margin="0,0,0,12">
+                                        <Button DockPanel.Dock="Right" Style="{StaticResource PageActionButton}"
+                                                Height="26" Padding="8,0" Click="ClearFurniFilters" Content="Clear" />
+                                        <TextBlock Text="FILTER FURNI" Style="{StaticResource PageSection}"
+                                                   VerticalAlignment="Center" Margin="0" />
+                                    </DockPanel>
+
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="10" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel Grid.Column="0">
+                                            <TextBlock Text="TYPE" FontSize="10.5" FontWeight="SemiBold"
+                                                       Foreground="{DynamicResource QxTextMutedBrush}" />
+                                            <ComboBox x:Name="FurniTypeFilter" Height="30" Margin="0,5,0,0"
+                                                      SelectedIndex="0" SelectionChanged="FurniOptionChanged">
+                                                <ComboBoxItem Content="All" Tag="all" />
+                                                <ComboBoxItem Content="Floor" Tag="floor" />
+                                                <ComboBoxItem Content="Wall" Tag="wall" />
+                                            </ComboBox>
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="2">
+                                            <TextBlock Text="AVAILABLE FROM" FontSize="10.5" FontWeight="SemiBold"
+                                                       Foreground="{DynamicResource QxTextMutedBrush}" />
+                                            <ComboBox x:Name="FurniAvailabilityFilter" Height="30" Margin="0,5,0,0"
+                                                      SelectedIndex="0" SelectionChanged="FurniOptionChanged">
+                                                <ComboBoxItem Content="Anywhere" Tag="all" />
+                                                <ComboBoxItem Content="Marketplace" Tag="marketplace" />
+                                                <ComboBoxItem Content="Shop" Tag="shop" />
+                                                <ComboBoxItem Content="Both" Tag="both" />
+                                            </ComboBox>
+                                        </StackPanel>
+                                    </Grid>
+
+                                    <Grid Margin="0,12,0,0">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="10" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel Grid.Column="0">
+                                            <TextBlock Text="LINE" FontSize="10.5" FontWeight="SemiBold"
+                                                       Foreground="{DynamicResource QxTextMutedBrush}" />
+                                            <Border Style="{StaticResource PageFilterBox}" Margin="0,5,0,0">
+                                                <TextBox x:Name="FurniLineFilter" Style="{StaticResource PageFilterText}"
+                                                         TextChanged="FurniOptionTextChanged" Tag="Any line" />
+                                            </Border>
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="2">
+                                            <TextBlock Text="CATEGORY" FontSize="10.5" FontWeight="SemiBold"
+                                                       Foreground="{DynamicResource QxTextMutedBrush}" />
+                                            <Border Style="{StaticResource PageFilterBox}" Margin="0,5,0,0">
+                                                <TextBox x:Name="FurniCategoryFilter" Style="{StaticResource PageFilterText}"
+                                                         TextChanged="FurniOptionTextChanged" Tag="Any category" />
+                                            </Border>
+                                        </StackPanel>
+                                    </Grid>
+
+                                    <TextBlock Text="CREDIT PRICE" Margin="0,12,0,0" FontSize="10.5"
+                                               FontWeight="SemiBold" Foreground="{DynamicResource QxTextMutedBrush}" />
+                                    <Grid Margin="0,5,0,0">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="10" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <Border Grid.Column="0" Style="{StaticResource PageFilterBox}">
+                                            <TextBox x:Name="FurniMinPrice" Style="{StaticResource PageFilterText}"
+                                                     TextChanged="FurniOptionTextChanged" Tag="Minimum" />
+                                        </Border>
+                                        <Border Grid.Column="2" Style="{StaticResource PageFilterBox}">
+                                            <TextBox x:Name="FurniMaxPrice" Style="{StaticResource PageFilterText}"
+                                                     TextChanged="FurniOptionTextChanged" Tag="Maximum" />
+                                        </Border>
+                                    </Grid>
+
+                                    <TextBlock Text="COLUMNS" Margin="0,12,0,5" FontSize="10.5"
+                                               FontWeight="SemiBold" Foreground="{DynamicResource QxTextMutedBrush}" />
+                                    <Grid x:Name="FurniColumnFilters">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="16" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <CheckBox x:Name="ShowKindColumn" Grid.Column="0" Content="Kind"
+                                                  Style="{StaticResource PageSwitch}"
+                                                  Checked="FurniColumnsChanged" Unchecked="FurniColumnsChanged" />
+                                        <CheckBox x:Name="ShowPlaceColumn" Grid.Column="2" Content="Place"
+                                                  Style="{StaticResource PageSwitch}"
+                                                  Checked="FurniColumnsChanged" Unchecked="FurniColumnsChanged" />
+                                    </Grid>
+                                </StackPanel>
+                            </Border>
+                        </Popup>
+                    </Grid>
+                </TabItem>
+
+                <TabItem>
+                    <TabItem.Header>
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="FormatText" Width="16" Height="16"
+                                                     VerticalAlignment="Center" />
+                            <TextBlock Text="Texts" Margin="6,0,0,0" VerticalAlignment="Center" FontSize="12.5" />
+                        </StackPanel>
+                    </TabItem.Header>
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <Border Grid.Row="0" Style="{StaticResource PageFilterBox}" Margin="12,12,12,8">
+                            <DockPanel>
+                                <materialDesign:PackIcon DockPanel.Dock="Left" Kind="Magnify" Width="14" Height="14"
+                                                         VerticalAlignment="Center" Margin="0,0,7,0"
+                                                         Foreground="{DynamicResource QxTextMutedBrush}" />
+                                <TextBox x:Name="TextsFilter" Style="{StaticResource PageFilterText}"
+                                         TextChanged="TextsFilterChanged"
+                                         Tag="Search the external texts" AutomationProperties.Name="Search the external texts" />
+                            </DockPanel>
+                        </Border>
+
+                        <DataGrid x:Name="TextsList" Grid.Row="1" Style="{StaticResource QxDataGrid}"
+                                  Margin="4,0,4,0" AutomationProperties.Name="External texts">
+                            <DataGrid.Columns>
+                                <DataGridTemplateColumn Header="KEY" Width="400" SortMemberPath="Key"
+                                                        CellTemplate="{StaticResource KeyCell}" />
+                                <DataGridTemplateColumn Header="VALUE" Width="*" SortMemberPath="Value"
+                                                        CellTemplate="{StaticResource ValueCell}" />
+                            </DataGrid.Columns>
+                        </DataGrid>
+
+                        <TextBlock x:Name="TextsStatus" Grid.Row="2" Margin="14,8,14,10" FontSize="11"
+                                   Foreground="{DynamicResource QxTextMutedBrush}" />
+                    </Grid>
+                </TabItem>
+
+                <TabItem>
+                    <TabItem.Header>
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="CodeBraces" Width="16" Height="16"
+                                                     VerticalAlignment="Center" />
+                            <TextBlock Text="Variables" Margin="6,0,0,0" VerticalAlignment="Center" FontSize="12.5" />
+                        </StackPanel>
+                    </TabItem.Header>
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <Border Grid.Row="0" Style="{StaticResource PageFilterBox}" Margin="12,12,12,8">
+                            <DockPanel>
+                                <materialDesign:PackIcon DockPanel.Dock="Left" Kind="Magnify" Width="14" Height="14"
+                                                         VerticalAlignment="Center" Margin="0,0,7,0"
+                                                         Foreground="{DynamicResource QxTextMutedBrush}" />
+                                <TextBox x:Name="VariablesFilter" Style="{StaticResource PageFilterText}"
+                                         TextChanged="VariablesFilterChanged"
+                                         Tag="Search the external variables" AutomationProperties.Name="Search the external variables" />
+                            </DockPanel>
+                        </Border>
+
+                        <DataGrid x:Name="VariablesList" Grid.Row="1" Style="{StaticResource QxDataGrid}"
+                                  Margin="4,0,4,0" AutomationProperties.Name="External variables">
+                            <DataGrid.Columns>
+                                <DataGridTemplateColumn Header="KEY" Width="400" SortMemberPath="Key"
+                                                        CellTemplate="{StaticResource KeyCell}" />
+                                <DataGridTemplateColumn Header="VALUE" Width="*" SortMemberPath="Value"
+                                                        CellTemplate="{StaticResource ValueCell}" />
+                            </DataGrid.Columns>
+                        </DataGrid>
+
+                        <TextBlock x:Name="VariablesStatus" Grid.Row="2" Margin="14,8,14,10" FontSize="11"
+                                   Foreground="{DynamicResource QxTextMutedBrush}" />
+                    </Grid>
+                </TabItem>
+
+                <TabItem>
+                    <TabItem.Header>
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="TagOutline" Width="16" Height="16"
+                                                     VerticalAlignment="Center" />
+                            <TextBlock Text="Products" Margin="6,0,0,0" VerticalAlignment="Center" FontSize="12.5" />
+                        </StackPanel>
+                    </TabItem.Header>
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <Border Grid.Row="0" Style="{StaticResource PageFilterBox}" Margin="12,12,12,8">
+                            <DockPanel>
+                                <materialDesign:PackIcon DockPanel.Dock="Left" Kind="Magnify" Width="14" Height="14"
+                                                         VerticalAlignment="Center" Margin="0,0,7,0"
+                                                         Foreground="{DynamicResource QxTextMutedBrush}" />
+                                <TextBox x:Name="ProductsFilter" Style="{StaticResource PageFilterText}"
+                                         TextChanged="ProductsFilterChanged"
+                                         Tag="Search the product data" AutomationProperties.Name="Search the product data" />
+                            </DockPanel>
+                        </Border>
+
+                        <DataGrid x:Name="ProductsList" Grid.Row="1" Style="{StaticResource QxDataGrid}"
+                                  Margin="4,0,4,0" AutomationProperties.Name="Product data">
+                            <DataGrid.Columns>
+                                <DataGridTemplateColumn Header="CODE" Width="300" SortMemberPath="Key"
+                                                        CellTemplate="{StaticResource KeyCell}" />
+                                <DataGridTemplateColumn Header="NAME" Width="*" SortMemberPath="Value"
+                                                        CellTemplate="{StaticResource ValueCell}" />
+                            </DataGrid.Columns>
+                        </DataGrid>
+
+                        <TextBlock x:Name="ProductsStatus" Grid.Row="2" Margin="14,8,14,10" FontSize="11"
+                                   Foreground="{DynamicResource QxTextMutedBrush}" />
+                    </Grid>
+                </TabItem>
+            </TabControl>
+        </Border>
+
+        <!-- Over the tables only, and see-through: painted over the whole card it hid the tabs and
+             the search box, which is how a page with nothing in it yet came to look like a page
+             with nothing on it at all. -->
+        <Border x:Name="EmptyNotice" Grid.Row="1" Margin="0,44,0,0"
+                IsHitTestVisible="False" Visibility="Collapsed">
+            <StackPanel Style="{StaticResource PageEmptyNotice}">
+                <materialDesign:PackIcon Kind="DatabaseOutline" Width="30" Height="30"
+                                         HorizontalAlignment="Center" />
+                <TextBlock x:Name="EmptyText" FontSize="14" Margin="0,10,0,0"
+                           HorizontalAlignment="Center" />
+            </StackPanel>
+        </Border>
+    </Grid>
+</local:GamePage>

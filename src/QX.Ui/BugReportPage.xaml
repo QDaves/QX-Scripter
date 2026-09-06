@@ -1,0 +1,175 @@
+<local:GamePage x:Class="Qx.Ui.BugReportPage"
+                xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+                xmlns:local="clr-namespace:Qx.Ui"
+                Background="{DynamicResource MaterialDesign.Brush.Background}">
+    <local:GamePage.Resources>
+        <Style x:Key="ReportTextBox" TargetType="TextBox">
+            <Setter Property="Background" Value="{DynamicResource QxSurfaceSubtleBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource MaterialDesign.Brush.Divider}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Padding" Value="11,8" />
+            <Setter Property="FontSize" Value="12.5" />
+            <Setter Property="Foreground" Value="{DynamicResource MaterialDesign.Brush.Foreground}" />
+            <Setter Property="CaretBrush" Value="{DynamicResource QxAccentBrush}" />
+            <Setter Property="SelectionBrush" Value="{DynamicResource QxAccentBrush}" />
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TextBox">
+                        <Border x:Name="shell"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="3"
+                                SnapsToDevicePixels="True">
+                            <ScrollViewer x:Name="PART_ContentHost"
+                                          Margin="{TemplateBinding Padding}"
+                                          VerticalScrollBarVisibility="{TemplateBinding VerticalScrollBarVisibility}"
+                                          HorizontalScrollBarVisibility="{TemplateBinding HorizontalScrollBarVisibility}" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsKeyboardFocusWithin" Value="True">
+                                <Setter TargetName="shell" Property="BorderBrush"
+                                        Value="{DynamicResource QxAccentBrush}" />
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.45" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="ReportPrimaryButton" TargetType="Button">
+            <Setter Property="Height" Value="34" />
+            <Setter Property="Padding" Value="15,0" />
+            <Setter Property="Background" Value="{DynamicResource QxAccentBrush}" />
+            <Setter Property="Foreground" Value="White" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="FontSize" Value="12.5" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="shell"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="3"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center"
+                                              VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="shell" Property="Opacity" Value="0.9" />
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="shell" Property="Opacity" Value="0.72" />
+                            </Trigger>
+                            <Trigger Property="IsKeyboardFocused" Value="True">
+                                <Setter TargetName="shell" Property="BorderBrush"
+                                        Value="{DynamicResource MaterialDesign.Brush.Foreground}" />
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.38" />
+                                <Setter Property="Cursor" Value="Arrow" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </local:GamePage.Resources>
+
+    <Grid MaxWidth="{StaticResource PageContentWidth}"
+          Margin="{StaticResource PageOuterMargin}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0" Margin="{StaticResource PageHeaderMargin}">
+            <TextBlock Text="Report a bug" Style="{StaticResource PageHeading}" />
+            <TextBlock Text="Describe the problem and review what will be sent to GitHub."
+                       Style="{StaticResource PageSubheading}" />
+        </StackPanel>
+
+        <ScrollViewer x:Name="ReportScroll" Grid.Row="1" VerticalScrollBarVisibility="Auto"
+                      HorizontalScrollBarVisibility="Disabled" Padding="0,0,6,0">
+            <StackPanel Width="{Binding ViewportWidth, ElementName=ReportScroll}"
+                        MaxWidth="780" HorizontalAlignment="Left">
+                <Border Style="{StaticResource PageCard}">
+                    <StackPanel>
+                        <TextBlock Text="WHAT HAPPENED" Style="{StaticResource PageSection}" />
+
+                        <TextBlock Text="SUMMARY" FontSize="10.5" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource QxTextMutedBrush}" />
+                        <TextBox x:Name="SummaryBox" Height="36" Margin="0,6,0,14"
+                                 MaxLength="100" Style="{StaticResource ReportTextBox}"
+                                 VerticalContentAlignment="Center"
+                                 TextChanged="OnTextChanged"
+                                 AutomationProperties.Name="Bug report summary" />
+
+                        <TextBlock Text="DETAILS" FontSize="10.5" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource QxTextMutedBrush}" />
+                        <TextBlock Margin="0,3,0,6"
+                                   Text="What did you do, what did you expect, and what happened instead?"
+                                   FontSize="11" TextWrapping="Wrap"
+                                   Foreground="{DynamicResource QxTextMutedBrush}" />
+                        <TextBox x:Name="DescriptionBox" Height="170" MaxLength="3000"
+                                 Style="{StaticResource ReportTextBox}"
+                                 AcceptsReturn="True" TextWrapping="Wrap"
+                                 VerticalContentAlignment="Top"
+                                 VerticalScrollBarVisibility="Auto"
+                                 TextChanged="OnTextChanged"
+                                 AutomationProperties.Name="Bug report description" />
+                    </StackPanel>
+                </Border>
+
+                <Border Style="{StaticResource PageCard}">
+                    <StackPanel>
+                        <TextBlock Text="DIAGNOSTICS" Style="{StaticResource PageSection}" />
+                        <TextBlock x:Name="DiagnosticsText" TextWrapping="Wrap"
+                                   AutomationProperties.LiveSetting="Polite" />
+
+                        <CheckBox x:Name="IncludeLogsOption" Margin="-4,12,0,0"
+                                  Content="Include sanitized application logs from the last 24 hours"
+                                  Style="{StaticResource PageSwitch}"
+                                  Click="OnIncludeLogsChanged"
+                                  AutomationProperties.Name="Include sanitized application logs" />
+                    </StackPanel>
+                </Border>
+
+                <Grid Margin="0,0,0,16">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Margin="0,0,18,0" VerticalAlignment="Center">
+                        <TextBlock x:Name="ErrorText" Visibility="Collapsed"
+                                   TextWrapping="Wrap"
+                                   Foreground="{DynamicResource QxDangerBrush}"
+                                   AutomationProperties.LiveSetting="Assertive" />
+                        <TextBlock x:Name="SuccessText" Visibility="Collapsed"
+                                   Text="GitHub opened with the report ready to review and send."
+                                   TextWrapping="Wrap"
+                                   Foreground="{DynamicResource QxSuccessBrush}"
+                                   AutomationProperties.LiveSetting="Polite" />
+                    </StackPanel>
+                    <Button x:Name="ContinueButton" Grid.Column="1"
+                            Content="Continue to GitHub"
+                            Style="{StaticResource ReportPrimaryButton}"
+                            Click="OnContinue"
+                            AutomationProperties.Name="Continue bug report to GitHub" />
+                </Grid>
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</local:GamePage>

@@ -1,0 +1,8 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>Qx.Mcp</RootNamespace>
+    <AssemblyName>QX.Mcp</AssemblyName>
+  </PropertyGroup>
+
+</Project>

@@ -1,0 +1,130 @@
+name: Build
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+env:
+  DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+  DOTNET_NOLOGO: "1"
+  NUGET_PACKAGES: ${{ github.workspace }}/.nuget/packages
+
+jobs:
+  verify:
+    name: Verify
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68
+        with:
+          global-json-file: global.json
+          cache: true
+          cache-dependency-path: |
+            **/packages.lock.json
+            tests/**/*.csproj
+
+      - name: Restore solution
+        run: dotnet restore QX.slnx --locked-mode --disable-build-servers
+
+      - name: Verify generated message facade
+        shell: pwsh
+        run: ./tools/generate-message-facade.ps1 -check
+
+      - name: Build solution
+        run: dotnet build QX.slnx -c Release --no-restore --disable-build-servers
+
+      - name: Run tests
+        run: dotnet test tests/QX.Tests.csproj -c Release --no-build --no-restore --disable-build-servers
+
+  package:
+    name: Package ${{ matrix.name }}
+    needs: verify
+    runs-on: windows-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Desktop win-x64
+            project: src/QX.Ui/QX.Ui.csproj
+            artifact: QX-Scripter-Desktop-win-x64
+          - name: CLI win-x64
+            project: src/QX.App/QX.App.csproj
+            artifact: QX-Scripter-CLI-win-x64
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68
+        with:
+          global-json-file: global.json
+          cache: true
+          cache-dependency-path: "**/packages.lock.json"
+
+      - name: Restore ${{ matrix.name }}
+        run: dotnet restore ${{ matrix.project }} -r win-x64 --locked-mode --disable-build-servers
+
+      - name: Publish ${{ matrix.name }}
+        run: dotnet publish ${{ matrix.project }} -c Release -r win-x64 --self-contained false -p:PublishSingleFile=false -p:UseAppHost=true -p:DebugType=None -p:DebugSymbols=false --no-restore --disable-build-servers -o artifacts/${{ matrix.artifact }}
+
+      - name: Include dependency license
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Path artifacts/${{ matrix.artifact }}/licenses -Force | Out-Null
+          Copy-Item -LiteralPath src/Flazzy/LICENSE.md -Destination artifacts/${{ matrix.artifact }}/licenses/Flazzy.md
+
+      - name: Verify package
+        shell: pwsh
+        run: |
+          $package = 'artifacts/${{ matrix.artifact }}'
+          foreach ($file in 'QX.exe', 'QX.dll', 'QX.deps.json', 'QX.runtimeconfig.json') {
+              if (!(Test-Path -LiteralPath "$package/$file" -PathType Leaf)) {
+                  throw "Missing package file: $file"
+              }
+          }
+          $runtime = Get-Content -LiteralPath "$package/QX.runtimeconfig.json" -Raw | ConvertFrom-Json
+          if ($runtime.runtimeOptions.includedFrameworks -or
+              !($runtime.runtimeOptions.framework -or $runtime.runtimeOptions.frameworks)) {
+              throw 'The package must use the installed .NET runtime.'
+          }
+          foreach ($file in 'coreclr.dll', 'hostfxr.dll', 'hostpolicy.dll') {
+              if (Test-Path -LiteralPath "$package/$file") {
+                  throw "The package unexpectedly bundles .NET: $file"
+              }
+          }
+          if ('${{ matrix.project }}' -eq 'src/QX.App/QX.App.csproj') {
+              & "$package/QX.exe" app help
+              if ($LASTEXITCODE -ne 0) { throw 'CLI startup failed.' }
+          }
+
+      - name: Upload ${{ matrix.name }}
+        if: github.event_name != 'pull_request'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: ${{ matrix.artifact }}
+          path: artifacts/${{ matrix.artifact }}/**
+          if-no-files-found: error
+          retention-days: 14

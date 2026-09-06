@@ -1,0 +1,311 @@
+<local:GamePage x:Class="Qx.Ui.GeneralPage"
+                xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+                xmlns:local="clr-namespace:Qx.Ui"
+                Background="{DynamicResource MaterialDesign.Brush.Background}">
+    <UserControl.Resources>
+        <!-- Two to a row, with room between them. Nothing folds: every switch on this page is worth
+             seeing at once, and an arrow that hides the thing somebody came for is not a control. -->
+        <Style TargetType="local:PageSection"
+               BasedOn="{StaticResource {x:Type local:PageSection}}">
+            <Setter Property="IsLocked" Value="True" />
+            <Setter Property="IsOpen" Value="True" />
+            <Setter Property="Margin" Value="0,0,16,14" />
+        </Style>
+
+        <!-- The header of a section: an icon and a word. -->
+        <Style x:Key="GroupHead" TargetType="StackPanel">
+            <Setter Property="Orientation" Value="Horizontal" />
+        </Style>
+
+        <Style x:Key="GroupWord" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="Margin" Value="9,0,0,0" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+
+        <Style x:Key="GroupGlyph" TargetType="materialDesign:PackIcon">
+            <Setter Property="Width" Value="16" />
+            <Setter Property="Height" Value="16" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Foreground" Value="{DynamicResource QxTextSecondaryBrush}" />
+        </Style>
+    </UserControl.Resources>
+
+    <Grid Margin="0">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0" Margin="16,14,16,12">
+            <TextBlock Text="General" Style="{StaticResource PageHeading}" />
+            <TextBlock x:Name="Subheading" Style="{StaticResource PageSubheading}" />
+        </StackPanel>
+
+        <Border Grid.Row="1">
+            <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="16,12,8,12">
+            <StackPanel>
+                <WrapPanel x:Name="Sections" ItemWidth="524" Orientation="Horizontal">
+
+                <local:PageSection x:Name="SectionMe">
+                    <local:PageSection.Header>
+                        <StackPanel Style="{StaticResource GroupHead}">
+                            <materialDesign:PackIcon Style="{StaticResource GroupGlyph}" Kind="AccountOutline" />
+                            <TextBlock Style="{StaticResource GroupWord}" Text="Me" />
+                        </StackPanel>
+                    </local:PageSection.Header>
+                    <StackPanel>
+                        <StackPanel Tag="unit">
+                            <WrapPanel Style="{StaticResource SwitchRow}">
+                                <TextBlock Style="{StaticResource RowLabel}" Text="Anti" />
+                                <CheckBox x:Name="AntiIdle" Style="{StaticResource InlineSwitch}"
+                                          Content="idle" Click="SwitchChanged"
+                                          ToolTip="Sends a gesture on a timer so you never go idle at all" />
+                                <CheckBox x:Name="AntiIdleOut" Style="{StaticResource InlineSwitch}"
+                                          Content="idle-out" Click="SwitchChanged"
+                                          ToolTip="Lets you idle, and answers only the moment the hotel would put you out" />
+                                <CheckBox x:Name="AntiTrade" Style="{StaticResource InlineSwitch}"
+                                          Content="trade" Click="SwitchChanged"
+                                          ToolTip="Closes a trade the moment somebody else opens one" />
+                            </WrapPanel>
+
+                            <WrapPanel Style="{StaticResource SwitchRow}" Margin="24,0,0,4"
+                                       Visibility="{Binding IsChecked, ElementName=AntiIdle,
+                                                    Converter={StaticResource BoolToVis}}">
+                                <TextBlock Style="{StaticResource RowLabel}" Text="every" />
+                                <Border Style="{StaticResource InlineNumberBox}">
+                                    <TextBox x:Name="IdleSeconds" Style="{StaticResource InlineNumber}"
+                                             LostFocus="IdleSecondsChanged"
+                                             AutomationProperties.Name="Anti-idle interval in seconds" />
+                                </Border>
+                                <TextBlock Style="{StaticResource RowLabel}" Text="seconds" />
+                            </WrapPanel>
+                        </StackPanel>
+
+                    </StackPanel>
+                </local:PageSection>
+
+                <local:PageSection x:Name="SectionMovement">
+                    <local:PageSection.Header>
+                        <StackPanel Style="{StaticResource GroupHead}">
+                            <materialDesign:PackIcon Style="{StaticResource GroupGlyph}" Kind="Walk" />
+                            <TextBlock Style="{StaticResource GroupWord}" Text="Movement" />
+                        </StackPanel>
+                    </local:PageSection.Header>
+                    <StackPanel>
+                        <WrapPanel Style="{StaticResource SwitchRow}">
+                            <CheckBox x:Name="NoTurn" Style="{StaticResource InlineSwitch}"
+                                      Content="No turn" Click="SwitchChanged"
+                                      ToolTip="Clicking somebody no longer turns you towards them" />
+                            <CheckBox x:Name="TurnOnReselect" Style="{StaticResource InlineSwitch}"
+                                      Content="except when re-selecting a user" Click="SwitchChanged" />
+                        </WrapPanel>
+                        <WrapPanel Style="{StaticResource SwitchRow}">
+                            <CheckBox x:Name="NoWalk" Style="{StaticResource InlineSwitch}"
+                                      Content="No walk" Click="SwitchChanged" />
+                            <CheckBox x:Name="TurnTowardsTile" Style="{StaticResource InlineSwitch}"
+                                      Content="turn towards the tile clicked" Click="SwitchChanged" />
+                        </WrapPanel>
+                    </StackPanel>
+                </local:PageSection>
+
+                <local:PageSection x:Name="SectionRoom">
+                    <local:PageSection.Header>
+                        <StackPanel Style="{StaticResource GroupHead}">
+                            <materialDesign:PackIcon Style="{StaticResource GroupGlyph}" Kind="HomeOutline" />
+                            <TextBlock Style="{StaticResource GroupWord}" Text="Room" />
+                        </StackPanel>
+                    </local:PageSection.Header>
+                    <StackPanel>
+                        <WrapPanel Style="{StaticResource SwitchRow}">
+                            <CheckBox x:Name="HideAvatars" Style="{StaticResource InlineSwitch}"
+                                      Content="Hide all avatars" Click="SwitchChanged"
+                                      ToolTip="Takes effect on the next room you enter" />
+                            <CheckBox x:Name="FlattenFloor" Style="{StaticResource InlineSwitch}"
+                                      Content="Flatten floor plan" Click="SwitchChanged"
+                                      ToolTip="Every walkable tile drawn level. Takes effect on the next room" />
+                        </WrapPanel>
+
+                        <WrapPanel Style="{StaticResource SwitchRow}">
+                            <TextBlock Style="{StaticResource RowLabel}" Text="Block room" />
+                            <CheckBox x:Name="BlockRoomAds" Style="{StaticResource InlineSwitch}"
+                                      Content="adverts" Click="SwitchChanged" />
+                            <CheckBox x:Name="BlockRoomInvites" Style="{StaticResource InlineSwitch}"
+                                      Content="invitations" Click="SwitchChanged" />
+                        </WrapPanel>
+
+                        <WrapPanel Style="{StaticResource SwitchRow}">
+                            <TextBlock Style="{StaticResource RowLabel}" Text="At the door" />
+                            <CheckBox x:Name="RememberPasswords" Style="{StaticResource InlineSwitch}"
+                                      Content="remember room passwords" Click="SwitchChanged"
+                                      ToolTip="Kept for this session only, and never written to disk" />
+                            <CheckBox x:Name="AutoAcceptDoorbell" Style="{StaticResource InlineSwitch}"
+                                      Content="let friends in" Click="SwitchChanged" />
+                        </WrapPanel>
+                    </StackPanel>
+                </local:PageSection>
+
+                <local:PageSection x:Name="SectionPeople">
+                    <local:PageSection.Header>
+                        <StackPanel Style="{StaticResource GroupHead}">
+                            <materialDesign:PackIcon Style="{StaticResource GroupGlyph}"
+                                                     Kind="AccountMultipleOutline" />
+                            <TextBlock Style="{StaticResource GroupWord}" Text="People" />
+                        </StackPanel>
+                    </local:PageSection.Header>
+                    <StackPanel Tag="unit">
+                        <TextBlock Style="{StaticResource PageHint}"
+                                   Text="What clicking somebody does instead of turning towards them." />
+
+                        <WrapPanel Style="{StaticResource SwitchRow}">
+                            <RadioButton x:Name="ClickNothing" GroupName="ClickTo" Content="Nothing"
+                                         Style="{StaticResource InlineChoice}" Checked="SwitchChanged" />
+                            <RadioButton x:Name="ClickKick" GroupName="ClickTo" Content="Kick"
+                                         Style="{StaticResource InlineChoice}" Checked="SwitchChanged" />
+                            <RadioButton x:Name="ClickBounce" GroupName="ClickTo" Content="Bounce"
+                                         Style="{StaticResource InlineChoice}" Checked="SwitchChanged"
+                                         ToolTip="Ban and unban at once, which puts them out with no kick notice" />
+                        </WrapPanel>
+
+                        <WrapPanel Style="{StaticResource SwitchRow}">
+                            <RadioButton x:Name="ClickMute" GroupName="ClickTo" Content="Mute for"
+                                         Style="{StaticResource InlineChoice}" Checked="SwitchChanged" />
+                            <Border Style="{StaticResource InlineNumberBox}"
+                                    IsEnabled="{Binding IsChecked, ElementName=ClickMute}">
+                                <TextBox x:Name="MuteMinutes" Style="{StaticResource InlineNumber}"
+                                         LostFocus="MuteMinutesChanged"
+                                         AutomationProperties.Name="Click-to mute length in minutes" />
+                            </Border>
+                            <TextBlock Style="{StaticResource RowLabel}" Text="minutes" />
+                        </WrapPanel>
+
+                        <WrapPanel Style="{StaticResource SwitchRow}">
+                            <RadioButton x:Name="ClickBan" GroupName="ClickTo" Content="Ban for"
+                                         Style="{StaticResource InlineChoice}" Checked="SwitchChanged" />
+                            <RadioButton x:Name="BanHour" GroupName="ClickBan" Content="an hour"
+                                         Style="{StaticResource InlineChoice}" Checked="SwitchChanged"
+                                         IsEnabled="{Binding IsChecked, ElementName=ClickBan}" />
+                            <RadioButton x:Name="BanDay" GroupName="ClickBan" Content="a day"
+                                         Style="{StaticResource InlineChoice}" Checked="SwitchChanged"
+                                         IsEnabled="{Binding IsChecked, ElementName=ClickBan}" />
+                            <RadioButton x:Name="BanPerm" GroupName="ClickBan" Content="ever"
+                                         Style="{StaticResource InlineChoice}" Checked="SwitchChanged"
+                                         IsEnabled="{Binding IsChecked, ElementName=ClickBan}" />
+                        </WrapPanel>
+
+                        <WrapPanel Style="{StaticResource SwitchRow}">
+                            <TextBlock Style="{StaticResource RowLabel}" Text="Never" />
+                            <CheckBox x:Name="ClickExcludeFriends" Style="{StaticResource InlineSwitch}"
+                                      Content="do this to friends" Click="SwitchChanged" />
+                        </WrapPanel>
+                    </StackPanel>
+                </local:PageSection>
+
+                <local:PageSection x:Name="SectionChat">
+                    <local:PageSection.Header>
+                        <StackPanel Style="{StaticResource GroupHead}">
+                            <materialDesign:PackIcon Style="{StaticResource GroupGlyph}" Kind="ChatOutline" />
+                            <TextBlock Style="{StaticResource GroupWord}" Text="Chat" />
+                        </StackPanel>
+                    </local:PageSection.Header>
+                    <StackPanel>
+                        <WrapPanel Style="{StaticResource SwitchRow}">
+                            <CheckBox x:Name="NoTyping" Style="{StaticResource InlineSwitch}"
+                                      Content="No typing indicator" Click="SwitchChanged" />
+                            <CheckBox x:Name="AlwaysShout" Style="{StaticResource InlineSwitch}"
+                                      Content="Always shout" Click="SwitchChanged" />
+                        </WrapPanel>
+
+                        <WrapPanel Style="{StaticResource SwitchRow}">
+                            <TextBlock Style="{StaticResource RowLabel}" Text="Mute" />
+                            <CheckBox x:Name="MuteAll" Style="{StaticResource InlineSwitch}"
+                                      Content="everything" Click="SwitchChanged" />
+                            <CheckBox x:Name="MuteBots" Style="{StaticResource InlineSwitch}"
+                                      Content="bots" Click="SwitchChanged" />
+                            <CheckBox x:Name="MutePets" Style="{StaticResource InlineSwitch}"
+                                      Content="pets" Click="SwitchChanged" />
+                            <CheckBox x:Name="MutePetCommands" Style="{StaticResource InlineSwitch}"
+                                      Content="pet commands" Click="SwitchChanged" />
+                            <CheckBox x:Name="MuteWired" Style="{StaticResource InlineSwitch}"
+                                      Content="wired messages" Click="SwitchChanged" />
+                            <CheckBox x:Name="MuteRespects" Style="{StaticResource InlineSwitch}"
+                                      Content="respects and scratches" Click="SwitchChanged" />
+                        </WrapPanel>
+
+                        <WrapPanel Style="{StaticResource SwitchRow}">
+                            <TextBlock Style="{StaticResource RowLabel}" Text="Say" />
+                            <CheckBox x:Name="ShowRespectCount" Style="{StaticResource InlineSwitch}"
+                                      Content="who respected whom and their total" Click="SwitchChanged" />
+                        </WrapPanel>
+                    </StackPanel>
+                </local:PageSection>
+
+                <local:PageSection x:Name="SectionFurni">
+                    <local:PageSection.Header>
+                        <StackPanel Style="{StaticResource GroupHead}">
+                            <materialDesign:PackIcon Style="{StaticResource GroupGlyph}" Kind="SofaSingleOutline" />
+                            <TextBlock Style="{StaticResource GroupWord}" Text="Furni" />
+                        </StackPanel>
+                    </local:PageSection.Header>
+                    <StackPanel>
+                        <CheckBox x:Name="PreventUse" Style="{StaticResource InlineSwitch}"
+                                  Content="Prevent using furni" Click="SwitchChanged" />
+
+                        <WrapPanel Style="{StaticResource SwitchRow}" Margin="0,4,0,0">
+                            <TextBlock Style="{StaticResource RowLabel}" Text="Shift-click to" />
+                            <CheckBox x:Name="ShiftClickInfo" Style="{StaticResource InlineSwitch}"
+                                      Content="show info" Click="SwitchChanged" />
+                            <CheckBox x:Name="ShiftClickHide" Style="{StaticResource InlineSwitch}"
+                                      Content="hide" Click="SwitchChanged" />
+                            <CheckBox x:Name="ShiftClickLink" Style="{StaticResource InlineSwitch}"
+                                      Content="find a teleport's pair" Click="SwitchChanged" />
+                            <CheckBox x:Name="ShiftClickMarket" Style="{StaticResource InlineSwitch}"
+                                      Content="fetch marketplace stats" IsEnabled="False"
+                                      ToolTip="Not yet: the stats request has no verified Unity layout, and a rule that works on one client only is worse than none" />
+                        </WrapPanel>
+
+                        <WrapPanel Style="{StaticResource SwitchRow}">
+                            <TextBlock Style="{StaticResource RowLabel}" Text="Anything handed to me," />
+                            <CheckBox x:Name="DropHandItems" Style="{StaticResource InlineSwitch}"
+                                      Content="drop it" Click="SwitchChanged" />
+                            <CheckBox x:Name="ReturnHandItems" Style="{StaticResource InlineSwitch}"
+                                      Content="hand it straight back" Click="SwitchChanged" />
+                        </WrapPanel>
+
+                        <CheckBox x:Name="KeepDirection" Style="{StaticResource InlineSwitch}"
+                                  Content="Keep facing the way I was when handed something"
+                                  Click="SwitchChanged"
+                                  ToolTip="Being handed something turns you towards whoever handed it. This turns you straight back" />
+                    </StackPanel>
+                </local:PageSection>
+
+                <local:PageSection x:Name="SectionBlocking">
+                    <local:PageSection.Header>
+                        <StackPanel Style="{StaticResource GroupHead}">
+                            <materialDesign:PackIcon Style="{StaticResource GroupGlyph}" Kind="ShieldOutline" />
+                            <TextBlock Style="{StaticResource GroupWord}" Text="Blocking" />
+                        </StackPanel>
+                    </local:PageSection.Header>
+                    <StackPanel>
+                        <WrapPanel Style="{StaticResource SwitchRow}">
+                            <TextBlock Style="{StaticResource RowLabel}" Text="Block" />
+                            <CheckBox x:Name="BlockClubGifts" Style="{StaticResource InlineSwitch}"
+                                      Content="club gift notification" Click="SwitchChanged" />
+                            <CheckBox x:Name="BlockNotifications" Style="{StaticResource InlineSwitch}"
+                                      Content="hotel notices" Click="SwitchChanged" />
+                            <CheckBox x:Name="BlockFriendRequests" Style="{StaticResource InlineSwitch}"
+                                      Content="friend requests" Click="SwitchChanged" />
+                        </WrapPanel>
+                        <CheckBox x:Name="AutoAcceptFriendRequests" Style="{StaticResource InlineSwitch}"
+                                  Content="Accept every friend request as it arrives" Click="SwitchChanged" />
+                    </StackPanel>
+                </local:PageSection>
+
+                </WrapPanel>
+            </StackPanel>
+            </ScrollViewer>
+        </Border>
+    </Grid>
+</local:GamePage>

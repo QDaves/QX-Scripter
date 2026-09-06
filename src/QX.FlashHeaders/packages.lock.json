@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "dependencies": {
+    "net10.0": {
+      "SharpCompress": {
+        "type": "Direct",
+        "requested": "[0.50.0, )",
+        "resolved": "0.50.0",
+        "contentHash": "EzoWIzA31rb/kADwHkcmdT1rzqnT91kR/Df8X/gqd3qvXhgMbCzyKIWH6M3LTDwPIr0uLoXfX9fvThidXHBdyQ=="
+      },
+      "flazzy": {
+        "type": "Project"
+      }
+    },
+    "net10.0/win-x64": {}
+  }
+}

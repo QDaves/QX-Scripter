@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>Qx.ClientHeaders</RootNamespace>
+    <AssemblyName>QX.ClientHeaders</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="headers.json" LogicalName="QX.Unity.headers.json" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Remove="bin\**\*.cs;build\**\*.cs;obj\**\*.cs" />
+  </ItemGroup>
+
+</Project>

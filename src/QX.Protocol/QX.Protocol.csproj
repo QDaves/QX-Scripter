@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>Qx.Protocol</RootNamespace>
+    <AssemblyName>QX.Protocol</AssemblyName>
+    <IsAotCompatible>true</IsAotCompatible>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\QX.Wire\QX.Wire.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Resources\messages.ini" LogicalName="Qx.Protocol.messages.ini" />
+  </ItemGroup>
+
+</Project>

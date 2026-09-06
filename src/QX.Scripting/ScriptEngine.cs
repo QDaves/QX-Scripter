@@ -22,6 +22,7 @@ public static class ScriptEngine
         typeof(IInterceptor).Assembly,
         typeof(RoomManager).Assembly,
         typeof(IPacket).Assembly,
+        typeof(Qx.Protocol.MessageKey).Assembly,
         typeof(RoomEntryInfo).Assembly
     ];
 

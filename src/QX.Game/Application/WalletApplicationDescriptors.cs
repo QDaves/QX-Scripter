@@ -27,7 +27,7 @@ internal static class WalletApplicationDescriptors
     public static ApplicationDescriptor Refresh { get; } = new(
         ApplicationMemberIds.WalletRefresh,
         "Refresh wallet",
-        "Loads fresh credit and activity-point snapshots for the active session.",
+        "Refreshes credits and returns the latest observed activity-point balances for the active session.",
         ApplicationMemberKind.Operation,
         ApplicationExposure.All,
         typeof(WalletRefreshRequest),
@@ -104,6 +104,6 @@ internal static class WalletApplicationDescriptors
         typeof(int),
         false,
         10000,
-        "Maximum total time for both full wallet responses.",
+        "Maximum total time for the credit balance response.",
         new(Minimum: 1, Maximum: 120000));
 }

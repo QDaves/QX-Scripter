@@ -159,8 +159,7 @@ internal sealed class WalletApplication : IApplicationFeature, IWalletOperations
         WalletState current = economy.State;
         if (!force_refresh &&
             ScopeActive(scope, current) &&
-            current.CreditsLoaded &&
-            current.ActivityPointsLoaded)
+            current.CreditsLoaded)
         {
             return current;
         }
@@ -173,8 +172,7 @@ internal sealed class WalletApplication : IApplicationFeature, IWalletOperations
             current = economy.State;
             if (!force_refresh &&
                 ScopeActive(scope, current) &&
-                current.CreditsLoaded &&
-                current.ActivityPointsLoaded)
+                current.CreditsLoaded)
             {
                 return current;
             }
@@ -277,7 +275,7 @@ internal sealed class WalletApplication : IApplicationFeature, IWalletOperations
                 operation.Attempt = attempt;
             try
             {
-                if (!operation.ForceRefresh && attempt_number == 1 && economy.State.CreditsLoaded)
+                if (!operation.ForceRefresh && economy.State.CreditsLoaded)
                 {
                     ArmAttempt(operation, attempt);
                 }
@@ -359,11 +357,8 @@ internal sealed class WalletApplication : IApplicationFeature, IWalletOperations
             if (!ReferenceEquals(operation.Attempt, attempt))
                 throw new InvalidOperationException("The wallet load attempt is no longer active.");
             attempt.CreditsBaseline = baseline.CreditsSnapshotRevision;
-            attempt.ActivityPointsBaseline = baseline.ActivityPointsSnapshotRevision;
-            attempt.CreditsReceived = !operation.ForceRefresh && baseline.CreditsLoaded;
-            attempt.ActivityPointsReceived = !operation.ForceRefresh && baseline.ActivityPointsLoaded;
             attempt.Armed = true;
-            if (attempt.CreditsReceived && attempt.ActivityPointsReceived)
+            if (!operation.ForceRefresh && baseline.CreditsLoaded)
                 attempt.Completion.TrySetResult(baseline);
         }
     }
@@ -399,19 +394,8 @@ internal sealed class WalletApplication : IApplicationFeature, IWalletOperations
             if (!attempt.Armed)
                 return;
             if (update.Kind is WalletStateChangeKind.CreditsRefreshed &&
-                update.State.CreditsSnapshotRevision > attempt.CreditsBaseline)
-            {
-                attempt.CreditsReceived = true;
-            }
-            else if (update.Kind is WalletStateChangeKind.ActivityPointsRefreshed &&
-                update.State.ActivityPointsSnapshotRevision > attempt.ActivityPointsBaseline)
-            {
-                attempt.ActivityPointsReceived = true;
-            }
-            if (attempt.CreditsReceived &&
-                attempt.ActivityPointsReceived &&
-                update.State.CreditsLoaded &&
-                update.State.ActivityPointsLoaded)
+                update.State.CreditsSnapshotRevision > attempt.CreditsBaseline &&
+                update.State.CreditsLoaded)
             {
                 attempt.Completion.TrySetResult(update.State);
             }
@@ -454,7 +438,7 @@ internal sealed class WalletApplication : IApplicationFeature, IWalletOperations
         Session session = state.Session
             ?? throw new RequestDisconnectedException(
                 MessageKeys.Wallet.CreditsRequest.Value,
-                $"{MessageKeys.Wallet.CreditsBalance.Value} and {MessageKeys.Wallet.ActivityPoints.Value}");
+                MessageKeys.Wallet.CreditsBalance.Value);
         return new WalletOperationScope(session, state.Generation);
     }
 
@@ -642,12 +626,12 @@ internal sealed class WalletApplication : IApplicationFeature, IWalletOperations
 
     private static RequestTimeoutException Timeout(int timeout_milliseconds) => new(
         MessageKeys.Wallet.CreditsRequest.Value,
-        $"{MessageKeys.Wallet.CreditsBalance.Value} and {MessageKeys.Wallet.ActivityPoints.Value}",
+        MessageKeys.Wallet.CreditsBalance.Value,
         timeout_milliseconds);
 
     private static RequestDisconnectedException Disconnected() => new(
         MessageKeys.Wallet.CreditsRequest.Value,
-        $"{MessageKeys.Wallet.CreditsBalance.Value} and {MessageKeys.Wallet.ActivityPoints.Value}");
+        MessageKeys.Wallet.CreditsBalance.Value);
 
     private static void FailAndCancel(WalletLoadOperation operation, Exception error)
     {
@@ -703,9 +687,6 @@ internal sealed class WalletApplication : IApplicationFeature, IWalletOperations
         public TaskCompletionSource<WalletState> Completion { get; } =
             new(TaskCreationOptions.RunContinuationsAsynchronously);
         public long CreditsBaseline { get; set; }
-        public long ActivityPointsBaseline { get; set; }
-        public bool CreditsReceived { get; set; }
-        public bool ActivityPointsReceived { get; set; }
         public bool Armed { get; set; }
     }
 }

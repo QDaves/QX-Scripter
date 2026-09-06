@@ -400,6 +400,177 @@ public sealed class ApplicationSurfaceTests
         Assert.Equal(1, fixture.WalletRequestCount);
     }
 
+    [Theory]
+    [InlineData(ClientType.Flash)]
+    [InlineData(ClientType.Unity)]
+    public async Task wallet_load_reuses_received_credits_and_waits_for_points(ClientType client)
+    {
+        using var fixture = new SurfaceFixture(client);
+        fixture.Receive(MessageContracts.Wallet.CreditsBalance, new CreditBalance("0.0"));
+
+        Task first = EnsureWalletLoaded(fixture.Application);
+        Task second = EnsureWalletLoaded(fixture.Application);
+        Assert.Equal(0, fixture.WalletRequestCount);
+        Assert.False(first.IsCompleted);
+        fixture.Receive(MessageContracts.Wallet.ActivityPoints, new ActivityPoints([]));
+        await Task.WhenAll(first, second).WaitAsync(test_synchronization_timeout);
+        await EnsureWalletLoaded(fixture.Application).WaitAsync(test_synchronization_timeout);
+
+        WalletStateView state = WalletApplicationPages.Read(fixture.Application);
+        Assert.True(state.CreditsLoaded);
+        Assert.Equal(0, state.Credits);
+        Assert.True(state.PointsLoaded);
+        Assert.Equal(0, fixture.WalletRequestCount);
+    }
+
+    [Theory]
+    [InlineData(ClientType.Flash)]
+    [InlineData(ClientType.Unity)]
+    public async Task wallet_load_reuses_points_but_requests_missing_credits(ClientType client)
+    {
+        using var fixture = new SurfaceFixture(client);
+        fixture.Receive(MessageContracts.Wallet.ActivityPoints, new ActivityPoints([]));
+
+        Task pending = EnsureWalletLoaded(fixture.Application);
+        await fixture.WalletRequestSent.WaitAsync(test_synchronization_timeout);
+        fixture.Receive(MessageContracts.Wallet.CreditsBalance, new CreditBalance("321.0"));
+        await pending.WaitAsync(test_synchronization_timeout);
+
+        Assert.Equal(1, fixture.WalletRequestCount);
+        Assert.Equal(321, WalletApplicationPages.Read(fixture.Application).Credits);
+    }
+
+    [Theory]
+    [InlineData(ClientType.Flash)]
+    [InlineData(ClientType.Unity)]
+    public async Task wallet_refresh_requires_fresh_snapshots_even_when_fully_loaded(ClientType client)
+    {
+        using var fixture = new SurfaceFixture(client);
+        fixture.Receive(MessageContracts.Wallet.CreditsBalance, new CreditBalance("100.0"));
+        fixture.Receive(MessageContracts.Wallet.ActivityPoints, new ActivityPoints([]));
+        await EnsureWalletLoaded(fixture.Application).WaitAsync(test_synchronization_timeout);
+
+        Task<WalletStateView> refresh = fixture.Application
+            .InvokeAsync<WalletRefreshRequest, WalletStateView>(
+                ApplicationMemberIds.WalletRefresh,
+                new WalletRefreshRequest(TimeoutMilliseconds: test_request_timeout_ms))
+            .AsTask();
+        await fixture.WalletRequestSent.WaitAsync(test_synchronization_timeout);
+        fixture.Receive(MessageContracts.Wallet.CreditsBalance, new CreditBalance("200.0"));
+        Assert.False(refresh.IsCompleted);
+        fixture.Receive(MessageContracts.Wallet.ActivityPoints, new ActivityPoints([]));
+
+        Assert.Equal(200, (await refresh.WaitAsync(test_synchronization_timeout)).Credits);
+        Assert.Equal(1, fixture.WalletRequestCount);
+    }
+
+    [Theory]
+    [InlineData(ClientType.Flash)]
+    [InlineData(ClientType.Unity)]
+    public async Task wallet_refresh_during_cached_load_does_not_accept_old_credits(ClientType client)
+    {
+        using var fixture = new SurfaceFixture(client);
+        fixture.Receive(MessageContracts.Wallet.CreditsBalance, new CreditBalance("100.0"));
+        Task pending = EnsureWalletLoaded(fixture.Application);
+        Assert.Equal(0, fixture.WalletRequestCount);
+
+        Task<WalletStateView> refresh = fixture.Application
+            .InvokeAsync<WalletRefreshRequest, WalletStateView>(
+                ApplicationMemberIds.WalletRefresh,
+                new WalletRefreshRequest(TimeoutMilliseconds: test_request_timeout_ms))
+            .AsTask();
+        await fixture.WalletRequestSent.WaitAsync(test_synchronization_timeout);
+        fixture.Receive(MessageContracts.Wallet.ActivityPoints, new ActivityPoints([]));
+        await pending.WaitAsync(test_synchronization_timeout);
+        Assert.False(refresh.IsCompleted);
+        fixture.Receive(MessageContracts.Wallet.CreditsBalance, new CreditBalance("200.0"));
+
+        Assert.Equal(200, (await refresh.WaitAsync(test_synchronization_timeout)).Credits);
+        Assert.Equal(1, fixture.WalletRequestCount);
+    }
+
+    [Theory]
+    [InlineData(ClientType.Flash)]
+    [InlineData(ClientType.Unity)]
+    public async Task wallet_load_joins_an_existing_refresh(ClientType client)
+    {
+        using var fixture = new SurfaceFixture(client);
+        Task<WalletStateView> refresh = fixture.Application
+            .InvokeAsync<WalletRefreshRequest, WalletStateView>(
+                ApplicationMemberIds.WalletRefresh,
+                new WalletRefreshRequest(TimeoutMilliseconds: test_request_timeout_ms))
+            .AsTask();
+        await fixture.WalletRequestSent.WaitAsync(test_synchronization_timeout);
+        Task pending = EnsureWalletLoaded(fixture.Application);
+        fixture.Receive(MessageContracts.Wallet.CreditsBalance, new CreditBalance("321.0"));
+        fixture.Receive(MessageContracts.Wallet.ActivityPoints, new ActivityPoints([]));
+        await Task.WhenAll(pending, refresh).WaitAsync(test_synchronization_timeout);
+
+        Assert.Equal(1, fixture.WalletRequestCount);
+    }
+
+    [Theory]
+    [InlineData(ClientType.Flash)]
+    [InlineData(ClientType.Unity)]
+    public async Task wallet_load_retries_when_initial_points_never_arrive(ClientType client)
+    {
+        using var fixture = new SurfaceFixture(client);
+        fixture.Receive(MessageContracts.Wallet.CreditsBalance, new CreditBalance("100.0"));
+        Task pending = EnsureWalletLoaded(fixture.Application, 3000);
+        Assert.Equal(0, fixture.WalletRequestCount);
+        await fixture.WalletRequestSent.WaitAsync(test_synchronization_timeout);
+        fixture.Receive(MessageContracts.Wallet.ActivityPoints, new ActivityPoints([]));
+        await pending.WaitAsync(test_synchronization_timeout);
+
+        Assert.Equal(1, fixture.WalletRequestCount);
+    }
+
+    [Theory]
+    [InlineData(ClientType.Flash)]
+    [InlineData(ClientType.Unity)]
+    public async Task cancelling_cached_wallet_load_does_not_cancel_refresh(ClientType client)
+    {
+        using var fixture = new SurfaceFixture(client);
+        using var cancellation = new CancellationTokenSource();
+        fixture.Receive(MessageContracts.Wallet.CreditsBalance, new CreditBalance("100.0"));
+        Task pending = EnsureWalletLoaded(fixture.Application, cancellation_token: cancellation.Token);
+        Task<WalletStateView> refresh = fixture.Application
+            .InvokeAsync<WalletRefreshRequest, WalletStateView>(
+                ApplicationMemberIds.WalletRefresh,
+                new WalletRefreshRequest(TimeoutMilliseconds: test_request_timeout_ms))
+            .AsTask();
+        await fixture.WalletRequestSent.WaitAsync(test_synchronization_timeout);
+        cancellation.Cancel();
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => pending);
+        Assert.False(refresh.IsCompleted);
+        fixture.Receive(MessageContracts.Wallet.CreditsBalance, new CreditBalance("200.0"));
+        fixture.Receive(MessageContracts.Wallet.ActivityPoints, new ActivityPoints([]));
+
+        Assert.Equal(200, (await refresh.WaitAsync(test_synchronization_timeout)).Credits);
+        Assert.Equal(1, fixture.WalletRequestCount);
+    }
+
+    [Theory]
+    [InlineData(ClientType.Flash)]
+    [InlineData(ClientType.Unity)]
+    public async Task disposing_wallet_ends_cached_load_and_refresh(ClientType client)
+    {
+        using var fixture = new SurfaceFixture(client);
+        fixture.Receive(MessageContracts.Wallet.CreditsBalance, new CreditBalance("100.0"));
+        Task pending = EnsureWalletLoaded(fixture.Application);
+        Task<WalletStateView> refresh = fixture.Application
+            .InvokeAsync<WalletRefreshRequest, WalletStateView>(
+                ApplicationMemberIds.WalletRefresh,
+                new WalletRefreshRequest(TimeoutMilliseconds: test_request_timeout_ms))
+            .AsTask();
+        await fixture.WalletRequestSent.WaitAsync(test_synchronization_timeout);
+        fixture.Application.Dispose();
+
+        await Assert.ThrowsAsync<ObjectDisposedException>(() => pending.WaitAsync(test_synchronization_timeout));
+        await Assert.ThrowsAsync<ObjectDisposedException>(() => refresh.WaitAsync(test_synchronization_timeout));
+        Assert.Equal(1, fixture.WalletRequestCount);
+    }
+
     [Fact]
     public async Task marketplace_state_is_offline_readable_but_network_operations_are_not()
     {
@@ -16182,6 +16353,22 @@ public sealed class ApplicationSurfaceTests
                 "ReservedWireFlag",
                 BindingFlags.Instance | BindingFlags.NonPublic)!
             .GetValue(offer)!;
+
+    private static Task EnsureWalletLoaded(
+        ApplicationRuntime application,
+        int timeout_milliseconds = test_request_timeout_ms,
+        CancellationToken cancellation_token = default)
+    {
+        var features = (System.Collections.IEnumerable)typeof(ApplicationRuntime)
+            .GetField("features", BindingFlags.Instance | BindingFlags.NonPublic)!
+            .GetValue(application)!;
+        object wallet = Assert.Single(
+            features.Cast<object>(),
+            feature => feature.GetType().Name == "WalletApplication");
+        Type contract = wallet.GetType().GetInterface("IWalletOperations")!;
+        return (Task)contract.GetMethod("EnsureLoadedAsync")!
+            .Invoke(wallet, [timeout_milliseconds, cancellation_token])!;
+    }
 
     private static object SubscriptionFeature(ApplicationRuntime application)
     {

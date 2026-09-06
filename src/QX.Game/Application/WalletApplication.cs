@@ -21,6 +21,7 @@ internal sealed class WalletApplication : IApplicationFeature, IWalletOperations
     private readonly CancellationToken lifetime_token;
     private readonly object load_sync = new();
     private WalletLoadOperation? load;
+    private WalletLoadOperation? refresh;
     private int disposed;
 
     public WalletApplication(
@@ -129,9 +130,13 @@ internal sealed class WalletApplication : IApplicationFeature, IWalletOperations
                 return;
             Volatile.Write(ref disposed, 1);
             WalletLoadOperation? active = load;
+            WalletLoadOperation? refreshing = refresh;
             load = null;
+            refresh = null;
             if (active is not null)
                 FailAndCancel(active, new ObjectDisposedException(nameof(WalletApplication)));
+            if (refreshing is not null)
+                FailAndCancel(refreshing, new ObjectDisposedException(nameof(WalletApplication)));
         }
         game.UnbindWalletOperations(this);
         economy.StateCommitted -= OnStateCommitted;
@@ -178,7 +183,12 @@ internal sealed class WalletApplication : IApplicationFeature, IWalletOperations
                 load = null;
                 FailAndCancel(existing, Disconnected());
             }
-            if (load is { } active)
+            if (refresh is { } existing_refresh && !SameScope(existing_refresh.Scope, scope))
+            {
+                refresh = null;
+                FailAndCancel(existing_refresh, Disconnected());
+            }
+            if ((refresh ?? (force_refresh ? null : load)) is { } active)
             {
                 operation = active;
             }
@@ -186,8 +196,12 @@ internal sealed class WalletApplication : IApplicationFeature, IWalletOperations
             {
                 operation = new WalletLoadOperation(
                     scope,
-                    time_provider.GetTimestamp());
-                load = operation;
+                    time_provider.GetTimestamp(),
+                    force_refresh);
+                if (force_refresh)
+                    refresh = operation;
+                else
+                    load = operation;
                 start = true;
             }
             ExtendDeadline(operation, timeout_milliseconds);
@@ -242,8 +256,7 @@ internal sealed class WalletApplication : IApplicationFeature, IWalletOperations
                 operation.Completion.TrySetResult(result!);
             else
                 operation.Completion.TrySetException(failure);
-            if (ReferenceEquals(load, operation))
-                load = null;
+            RemoveLoad(operation);
         }
         operation.Cancellation.Dispose();
     }
@@ -264,12 +277,19 @@ internal sealed class WalletApplication : IApplicationFeature, IWalletOperations
                 operation.Attempt = attempt;
             try
             {
-                message_dispatcher.Dispatch(
-                    MessageContracts.Wallet.CreditsRequest,
-                    new WalletBalanceRequest(),
-                    operation.Scope.Session,
-                    operation.Token,
-                    dispatch_guard: () => ArmAttempt(operation, attempt));
+                if (!operation.ForceRefresh && attempt_number == 1 && economy.State.CreditsLoaded)
+                {
+                    ArmAttempt(operation, attempt);
+                }
+                else
+                {
+                    message_dispatcher.Dispatch(
+                        MessageContracts.Wallet.CreditsRequest,
+                        new WalletBalanceRequest(),
+                        operation.Scope.Session,
+                        operation.Token,
+                        dispatch_guard: () => ArmAttempt(operation, attempt));
+                }
                 TimeSpan wait_timeout = attempt_timeout -
                     time_provider.GetElapsedTime(attempt_started);
                 if (wait_timeout <= TimeSpan.Zero)
@@ -331,26 +351,38 @@ internal sealed class WalletApplication : IApplicationFeature, IWalletOperations
     {
         operation.Token.ThrowIfCancellationRequested();
         RequireScope(operation.Scope);
-        WalletState baseline = economy.State;
-        if (!ScopeActive(operation.Scope, baseline))
-            throw Disconnected();
         lock (operation.Sync)
         {
+            WalletState baseline = economy.State;
+            if (!ScopeActive(operation.Scope, baseline))
+                throw Disconnected();
             if (!ReferenceEquals(operation.Attempt, attempt))
                 throw new InvalidOperationException("The wallet load attempt is no longer active.");
             attempt.CreditsBaseline = baseline.CreditsSnapshotRevision;
             attempt.ActivityPointsBaseline = baseline.ActivityPointsSnapshotRevision;
-            attempt.CreditsReceived = false;
-            attempt.ActivityPointsReceived = false;
+            attempt.CreditsReceived = !operation.ForceRefresh && baseline.CreditsLoaded;
+            attempt.ActivityPointsReceived = !operation.ForceRefresh && baseline.ActivityPointsLoaded;
             attempt.Armed = true;
+            if (attempt.CreditsReceived && attempt.ActivityPointsReceived)
+                attempt.Completion.TrySetResult(baseline);
         }
     }
 
     private void OnStateCommitted(WalletStateUpdate update)
     {
         WalletLoadOperation? operation;
+        WalletLoadOperation? refreshing;
         lock (load_sync)
+        {
             operation = load;
+            refreshing = refresh;
+        }
+        UpdateAttempt(operation, update);
+        UpdateAttempt(refreshing, update);
+    }
+
+    private void UpdateAttempt(WalletLoadOperation? operation, WalletStateUpdate update)
+    {
         if (operation is null)
             return;
         lock (operation.Sync)
@@ -526,11 +558,11 @@ internal sealed class WalletApplication : IApplicationFeature, IWalletOperations
     {
         lock (load_sync)
         {
-            if (!ReferenceEquals(load, operation))
+            if (!ReferenceEquals(load, operation) && !ReferenceEquals(refresh, operation))
                 return true;
             if (Remaining(operation) > TimeSpan.Zero)
                 return false;
-            load = null;
+            RemoveLoad(operation);
             return true;
         }
     }
@@ -544,9 +576,8 @@ internal sealed class WalletApplication : IApplicationFeature, IWalletOperations
                 throw new InvalidOperationException("The wallet load waiter count became negative.");
             if (operation.Waiters == 0 &&
                 !operation.Completion.Task.IsCompleted &&
-                ReferenceEquals(load, operation))
+                RemoveLoad(operation))
             {
-                load = null;
                 Cancel(operation);
             }
         }
@@ -556,6 +587,21 @@ internal sealed class WalletApplication : IApplicationFeature, IWalletOperations
     {
         lock (operation.Sync)
             return operation.MaximumTimeoutMilliseconds;
+    }
+
+    private bool RemoveLoad(WalletLoadOperation operation)
+    {
+        if (ReferenceEquals(load, operation))
+        {
+            load = null;
+            return true;
+        }
+        if (ReferenceEquals(refresh, operation))
+        {
+            refresh = null;
+            return true;
+        }
+        return false;
     }
 
     private static WalletChangeKind ChangeKind(WalletStateChangeKind kind) => kind switch
@@ -628,10 +674,12 @@ internal sealed class WalletApplication : IApplicationFeature, IWalletOperations
     {
         public WalletLoadOperation(
             WalletOperationScope scope,
-            long started_timestamp)
+            long started_timestamp,
+            bool force_refresh)
         {
             Scope = scope;
             StartedTimestamp = started_timestamp;
+            ForceRefresh = force_refresh;
             Cancellation = new CancellationTokenSource();
             Token = Cancellation.Token;
         }
@@ -643,6 +691,7 @@ internal sealed class WalletApplication : IApplicationFeature, IWalletOperations
         public WalletOperationScope Scope { get; }
         public CancellationToken Token { get; }
         public long StartedTimestamp { get; }
+        public bool ForceRefresh { get; }
         public TimeSpan DeadlineElapsed { get; set; }
         public int MaximumTimeoutMilliseconds { get; set; }
         public int Waiters { get; set; }

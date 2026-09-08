@@ -31,8 +31,11 @@ public sealed class McpServer
 
         ORIENT
         get_server_info reports the running version, the negotiated protocol and which capabilities this
-        server is currently allowed to use. list_mcp_tools lists every tool with its required capability
-        and whether it is presently permitted. get_connection reports whether the interceptor and the
+        server is currently allowed to use. list_mcp_tools searches the complete tool catalog in pages,
+        including tools hidden by the discovery filter. describe_mcp_tool returns one tool's full schema.
+        Use read_mcp_tool for a hidden read-only tool, or call_mcp_tool for an operation, passing its
+        name and arguments. Both preserve the target's permissions and timeout and return its output
+        in result. get_connection reports whether the interceptor and the
         hotel session are live; nearly every game tool returns empty data until they are.
 
         SCRIPTS
@@ -80,6 +83,7 @@ public sealed class McpServer
     private readonly IMcpHost _host;
     private readonly int _basePort;
     private readonly List<McpTool> _tools;
+    private readonly IReadOnlyList<McpTool> _listed_tools;
     private McpConfig _config;
     private HttpListener? _listener;
     private CancellationTokenSource? _cts;
@@ -150,6 +154,12 @@ public sealed class McpServer
         Port = basePort;
         _config = config ?? McpConfig.Load();
         _tools = BuildTools(additional_tools);
+        HashSet<string>? filter = _config.ToolFilter?.ToHashSet(StringComparer.Ordinal);
+        _listed_tools = _tools
+            .Where(tool => filter is null || filter.Contains(tool.Name) || tool.Name is
+                "get_server_info" or "list_mcp_tools" or "describe_mcp_tool" or "read_mcp_tool" or "call_mcp_tool")
+            .OrderBy(tool => tool.Name, StringComparer.Ordinal)
+            .ToArray();
     }
 
     public bool Start()
@@ -504,10 +514,8 @@ public sealed class McpServer
                         ["tools"] = new Dictionary<string, object?> { ["listChanged"] = false }
                     },
                     ["instructions"] = Instructions,
-                    // The tool list only moves when QX itself is rebuilt, so a client may hold this
-                    // for an hour instead of asking again before every call.
                     ["ttlMs"] = 3600000,
-                    ["cacheScope"] = "public"
+                    ["cacheScope"] = "private"
                 });
 
             case "ping":
@@ -516,7 +524,9 @@ public sealed class McpServer
             case "tools/list":
                 return Result(id, protocol, new Dictionary<string, object?>
                 {
-                    ["tools"] = _tools.Select(ToolDefinition).ToList()
+                    ["tools"] = _listed_tools.Select(ToolDefinition).ToList(),
+                    ["ttlMs"] = 3600000,
+                    ["cacheScope"] = "private"
                 });
 
             case "tools/call":
@@ -552,14 +562,6 @@ public sealed class McpServer
         if (tool is null)
             return Error(id, -32602, $"Unknown tool: {name}");
 
-        IReadOnlyList<string> missing = Config.MissingCapabilities(tool.Capability);
-        if (missing.Count > 0)
-        {
-            return Result(id, protocol, ToolContent(
-                $"'{tool.Name}' is disabled: set {string.Join(" and ", missing)} to true in {McpConfig.DefaultPath} and restart QX Scripter.",
-                true));
-        }
-
         return await Invoke(id, protocol, tool, args, cancellationToken).ConfigureAwait(false);
     }
 
@@ -574,6 +576,7 @@ public sealed class McpServer
         bool abandoned = false;
         try
         {
+            RequireAllowed(tool);
             int timeout_ms = tool.Timeout?.Invoke(args) ?? 0;
             Task<string> execution = tool.Handler(args, scope.Token);
             if (timeout_ms <= 0)
@@ -1720,12 +1723,26 @@ public sealed class McpServer
         new McpTool
         {
             Name = "list_mcp_tools",
-            Description = "List every MCP tool this server exposes with its parameters, capability requirement and whether the current configuration allows calling it.",
+            Description = "Search all MCP tools, including filtered tools, with permissions and parameter names. Use describe_mcp_tool for the full schema and read_mcp_tool or call_mcp_tool to call a filtered tool. Follow nextOffset for more results.",
             InputSchema = OptionalSchema(
-                ("filter", "string", "optional name or description substring", null, null, null)),
+                ("filter", "string", "optional name or description substring", null, null, null),
+                ("limit", "integer", "maximum returned tools", 50, 1, 100),
+                OffsetProperty("tool")),
             Annotations = ClosedReadOnly,
-            Handler = (args, ct) => Task.FromResult(ToolCatalogJson(Str(args, "filter")))
-        }
+            Handler = (args, ct) => Task.FromResult(ToolCatalogJson(
+                Str(args, "filter"), Int(args, "limit", 50), Int(args, "offset")))
+        },
+        new McpTool
+        {
+            Name = "describe_mcp_tool",
+            Description = "Get one MCP tool's complete input/output schemas, annotations and permissions, including tools hidden from discovery.",
+            InputSchema = Schema(("name", "string", "exact tool name from list_mcp_tools")),
+            Annotations = ClosedReadOnly,
+            Handler = (args, ct) => Task.FromResult(JsonSerializer.Serialize(
+                ToolDetails(FindTool(Str(args, "name"))), IndentedJson))
+        },
+        RoutedTool(read_only: true),
+        RoutedTool(read_only: false)
         };
 
         if (additional_tools is not null)
@@ -1773,6 +1790,84 @@ public sealed class McpServer
         if (tool.Metadata is not null)
             definition["_meta"] = tool.Metadata;
         return definition;
+    }
+
+    private McpTool RoutedTool(bool read_only) => new()
+    {
+        Name = read_only ? "read_mcp_tool" : "call_mcp_tool",
+        Description = read_only
+            ? "Call any read-only MCP tool by name, even if filtered from discovery. Read its schema with describe_mcp_tool first. Target permissions and timeout still apply. Returns the target output in result. Rejects write tools."
+            : "Call any MCP tool by name, even if filtered from discovery. Read its schema with describe_mcp_tool first. Target permissions and timeout still apply. May modify files, editor or game state. Returns the target output in result.",
+        InputSchema = MixedSchema(
+            [("name", "string", "exact tool name from list_mcp_tools")],
+            ("arguments", "object", "arguments matching the target tool's input schema", null, null, null)),
+        OutputSchema = new Dictionary<string, object?>
+        {
+            ["type"] = "object",
+            ["properties"] = new Dictionary<string, object?> { ["result"] = new Dictionary<string, object?>() },
+            ["required"] = new[] { "result" }
+        },
+        Annotations = read_only ? OpenReadOnly : OpenDestructiveWrite,
+        Timeout = args =>
+        {
+            (McpTool tool, JsonElement arguments) = RoutedTarget(args, read_only);
+            return tool.Timeout?.Invoke(arguments) ?? 0;
+        },
+        Handler = async (args, cancellation_token) =>
+        {
+            (McpTool tool, JsonElement arguments) = RoutedTarget(args, read_only);
+            string text = await tool.Handler(arguments, cancellation_token).ConfigureAwait(false);
+            object output = text;
+            try
+            {
+                output = JsonSerializer.Deserialize<JsonElement>(text);
+            }
+            catch (JsonException) when (tool.OutputSchema is null)
+            {
+            }
+            if (tool.OutputSchema is not null && output is JsonElement { ValueKind: not JsonValueKind.Object })
+                throw new JsonException($"MCP tool '{tool.Name}' returned a non-object structured result.");
+            return JsonSerializer.Serialize(new { result = output });
+        }
+    };
+
+    private (McpTool Tool, JsonElement Arguments) RoutedTarget(JsonElement args, bool read_only)
+    {
+        string name = Str(args, "name");
+        if (name is "read_mcp_tool" or "call_mcp_tool")
+            throw new McpToolException("Pass the target tool name directly; nested routing is not supported.");
+        McpTool tool = FindTool(name);
+        if (read_only && !tool.Annotations.ReadOnlyHint)
+            throw new McpToolException($"'{name}' is not read-only; use call_mcp_tool instead.");
+        RequireAllowed(tool);
+        JsonElement arguments = args.TryGetProperty("arguments", out JsonElement value)
+            ? value
+            : JsonSerializer.SerializeToElement(new Dictionary<string, object?>());
+        if (arguments.ValueKind != JsonValueKind.Object)
+            throw new McpToolException("arguments must be an object.");
+        return (tool, arguments);
+    }
+
+    private McpTool FindTool(string name) =>
+        _tools.FirstOrDefault(tool => tool.Name == name)
+            ?? throw new McpToolException($"Unknown tool: {name}");
+
+    private void RequireAllowed(McpTool tool)
+    {
+        IReadOnlyList<string> missing = Config.MissingCapabilities(tool.Capability);
+        if (missing.Count > 0)
+            throw new McpToolException(
+                $"'{tool.Name}' is disabled: enable {string.Join(" and ", missing)} in MCP settings.");
+    }
+
+    private Dictionary<string, object?> ToolDetails(McpTool tool)
+    {
+        Dictionary<string, object?> details = ToolDefinition(tool);
+        details["requires"] = CapabilityNames(tool.Capability);
+        details["runtimeRequires"] = RuntimeCapabilityNames(tool.RuntimeCapability);
+        details["allowed"] = Config.Allows(tool.Capability);
+        details["listed"] = _listed_tools.Contains(tool);
+        return details;
     }
 
     private List<McpTool> AvailableTools(List<McpTool> tools) =>
@@ -2194,6 +2289,7 @@ public sealed class McpServer
                 ["endpoint"] = $"http://127.0.0.1:{Port}/mcp",
                 ["listening"] = IsRunning,
                 ["toolCount"] = _tools.Count,
+                ["listedToolCount"] = _listed_tools.Count,
                 ["configPath"] = McpConfig.DefaultPath,
                 ["authRequired"] = Config.RequireAuth,
                 ["capabilities"] = new Dictionary<string, object?>
@@ -2212,27 +2308,39 @@ public sealed class McpServer
             },
             IndentedJson);
 
-    private string ToolCatalogJson(string filter) =>
-        JsonSerializer.Serialize(
-            _tools
-                .Where(tool =>
-                    string.IsNullOrWhiteSpace(filter) ||
-                    tool.Name.Contains(filter, StringComparison.OrdinalIgnoreCase) ||
-                    tool.Description.Contains(filter, StringComparison.OrdinalIgnoreCase))
-                .OrderBy(tool => tool.Name, StringComparer.Ordinal)
-                .Select(tool => new Dictionary<string, object?>
-                {
-                    ["name"] = tool.Name,
-                    ["description"] = tool.Description,
-                    ["parameters"] = ParameterNames(tool.InputSchema),
-                    ["requires"] = CapabilityNames(tool.Capability),
-                    ["runtimeRequires"] = RuntimeCapabilityNames(tool.RuntimeCapability),
-                    ["allowed"] = Config.Allows(tool.Capability),
-                    ["readOnly"] = tool.Annotations.ReadOnlyHint,
-                    ["destructive"] = tool.Annotations.DestructiveHint
-                })
-                .ToArray(),
+    private string ToolCatalogJson(string filter, int limit, int offset)
+    {
+        limit = Math.Clamp(limit, 1, 100);
+        offset = Math.Clamp(offset, 0, MaxOffset);
+        McpTool[] matches = _tools
+            .Where(tool =>
+                string.IsNullOrWhiteSpace(filter) ||
+                tool.Name.Contains(filter, StringComparison.OrdinalIgnoreCase) ||
+                tool.Description.Contains(filter, StringComparison.OrdinalIgnoreCase))
+            .OrderBy(tool => tool.Name, StringComparer.Ordinal)
+            .ToArray();
+        var page = matches.Skip(offset).Take(limit)
+            .Select(tool => new Dictionary<string, object?>
+            {
+                ["name"] = tool.Name,
+                ["description"] = tool.Description,
+                ["parameters"] = ParameterNames(tool.InputSchema),
+                ["requires"] = CapabilityNames(tool.Capability),
+                ["runtimeRequires"] = RuntimeCapabilityNames(tool.RuntimeCapability),
+                ["allowed"] = Config.Allows(tool.Capability),
+                ["listed"] = _listed_tools.Contains(tool),
+                ["readOnly"] = tool.Annotations.ReadOnlyHint,
+                ["destructive"] = tool.Annotations.DestructiveHint
+            })
+            .ToArray();
+        return JsonSerializer.Serialize(new
+        {
+            tools = page,
+            total = matches.Length,
+            nextOffset = offset + page.Length < matches.Length ? (int?)(offset + page.Length) : null
+        },
             IndentedJson);
+    }
 
     private static string[] CapabilityNames(McpCapability capability) =>
         capability == McpCapability.None

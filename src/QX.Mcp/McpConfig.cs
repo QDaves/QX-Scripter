@@ -35,6 +35,8 @@ public sealed record McpConfig
     /// <summary>Allows the tools that read and mutate the editor tabs.</summary>
     public bool AllowEditor { get; init; } = true;
 
+    public IReadOnlyList<string>? ToolFilter { get; init; }
+
     /// <summary>The default configuration file, <c>%APPDATA%/QX Scripter/mcp.json</c>.</summary>
     public static string DefaultPath { get; } = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
@@ -76,7 +78,7 @@ public sealed record McpConfig
         File.WriteAllText(
             temporary,
             JsonSerializer.Serialize(
-                new StoredConfig(Token, RequireAuth, AllowExecute, AllowFileWrite, AllowEditor),
+                new StoredConfig(Token, RequireAuth, AllowExecute, AllowFileWrite, AllowEditor, ToolFilter),
                 FileOptions));
         RestrictToOwner(temporary);
         File.Move(temporary, file, overwrite: true);
@@ -134,7 +136,8 @@ public sealed record McpConfig
                 RequireAuth = stored.RequireAuth ?? true,
                 AllowExecute = stored.AllowExecute ?? true,
                 AllowFileWrite = stored.AllowFileWrite ?? true,
-                AllowEditor = stored.AllowEditor ?? true
+                AllowEditor = stored.AllowEditor ?? true,
+                ToolFilter = stored.ToolFilter
             };
         }
         catch (Exception error) when (
@@ -189,5 +192,6 @@ public sealed record McpConfig
         bool? RequireAuth,
         bool? AllowExecute,
         bool? AllowFileWrite,
-        bool? AllowEditor);
+        bool? AllowEditor,
+        IReadOnlyList<string>? ToolFilter);
 }

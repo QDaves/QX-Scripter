@@ -6911,20 +6911,20 @@ public sealed class ApplicationSurfaceTests
             nameof(ScriptGlobals.PlaceBuildersClubFurni))!;
         Assert.Equal(typeof(void), place_floor.ReturnType);
         Assert.Equal(
-            [typeof(int), typeof(int), typeof(int), typeof(int), typeof(int), typeof(string)],
+            [typeof(int), typeof(int), typeof(int), typeof(int), typeof(int), typeof(string), typeof(bool)],
             place_floor.GetParameters().Select(parameter => parameter.ParameterType).ToArray());
         Assert.Equal(
-            [DBNull.Value, DBNull.Value, DBNull.Value, DBNull.Value, 0, ""],
+            [DBNull.Value, DBNull.Value, DBNull.Value, DBNull.Value, 0, "", false],
             place_floor.GetParameters().Select(parameter => parameter.DefaultValue).ToArray());
 
         MethodInfo place_wall = typeof(ScriptGlobals).GetMethod(
             nameof(ScriptGlobals.PlaceBuildersClubWallItem))!;
         Assert.Equal(typeof(void), place_wall.ReturnType);
         Assert.Equal(
-            [typeof(int), typeof(int), typeof(string), typeof(string)],
+            [typeof(int), typeof(int), typeof(string), typeof(string), typeof(bool)],
             place_wall.GetParameters().Select(parameter => parameter.ParameterType).ToArray());
         Assert.Equal(
-            [DBNull.Value, DBNull.Value, DBNull.Value, ""],
+            [DBNull.Value, DBNull.Value, DBNull.Value, "", false],
             place_wall.GetParameters().Select(parameter => parameter.DefaultValue).ToArray());
 
         MethodInfo mcp = typeof(IMcpHost).GetMethod(nameof(IMcpHost.GetSubscriptionsAsync))!;

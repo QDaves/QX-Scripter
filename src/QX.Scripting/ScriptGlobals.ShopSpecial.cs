@@ -180,13 +180,15 @@ public partial class ScriptGlobals
     /// <param name="y">Target tile row.</param>
     /// <param name="direction">Rotation to place it at.</param>
     /// <param name="extraData">The offer's selection data, empty when it takes none.</param>
+    /// <param name="isRetry">Whether the placement is a retry.</param>
     public void PlaceBuildersClubFurni(
         int pageId,
         int offerId,
         int x,
         int y,
         int direction = 0,
-        string extraData = "") =>
+        string extraData = "",
+        bool isRetry = false) =>
         _ = Application.Invoke<
             SubscriptionBuildersClubFloorPlaceRequest,
             SubscriptionBuildersClubPlacementDispatchReceipt>(
@@ -197,7 +199,8 @@ public partial class ScriptGlobals
                     x,
                     y,
                     direction,
-                    extraData),
+                    extraData,
+                    isRetry),
                 Ct);
 
     /// <summary>
@@ -207,11 +210,13 @@ public partial class ScriptGlobals
     /// <param name="offerId">The offer to place.</param>
     /// <param name="wallLocation">Where on the wall it goes, in the <c>:w=x,y l=x,y r</c> form.</param>
     /// <param name="extraData">The offer's selection data, empty when it takes none.</param>
+    /// <param name="isRetry">Whether the placement is a retry.</param>
     public void PlaceBuildersClubWallItem(
         int pageId,
         int offerId,
         string wallLocation,
-        string extraData = "")
+        string extraData = "",
+        bool isRetry = false)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(wallLocation);
         _ = Application.Invoke<
@@ -222,7 +227,8 @@ public partial class ScriptGlobals
                     pageId,
                     offerId,
                     wallLocation,
-                    extraData),
+                    extraData,
+                    isRetry),
                 Ct);
     }
 }

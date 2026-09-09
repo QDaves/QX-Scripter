@@ -12,13 +12,22 @@ namespace Qx.Model.Messages.Incoming;
 /// </param>
 public sealed record OneWayDoorStatus(Id ItemId, int Status) : IParserComposer<OneWayDoorStatus>
 {
+    public int? FlashTrailingValue { get; init; }
     public int? UnityTrailingValue { get; init; }
 
     public static OneWayDoorStatus Parse(in PacketReader p) =>
         ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
 
     private static OneWayDoorStatus ParseFlash(in PacketReader p) =>
-        new(p.ReadId(), p.ReadInt());
+        new(p.ReadId(), p.ReadInt())
+        {
+            FlashTrailingValue = p.Available switch
+            {
+                0 => null,
+                4 => p.ReadInt(),
+                _ => throw new InvalidDataException("Flash one-way door status requires either no trailing data or one trailing integer.")
+            }
+        };
 
     private static OneWayDoorStatus ParseUnity(in PacketReader p) =>
         new(p.ReadId(), p.ReadInt())
@@ -33,6 +42,8 @@ public sealed record OneWayDoorStatus(Id ItemId, int Status) : IParserComposer<O
     {
         p.WriteId(value.ItemId);
         p.WriteInt(value.Status);
+        if (value.FlashTrailingValue is int trailing_value)
+            p.WriteInt(trailing_value);
     }
 
     private static void ComposeUnity(OneWayDoorStatus value, in PacketWriter p)

@@ -288,6 +288,7 @@ internal sealed class NavigatorApplication : IApplicationFeature
         return Search(
             contract,
             new NavigatorEmptySearchRequest(),
+            MessageContracts.Navigator.Search.LegacyResult,
             request.TimeoutMilliseconds,
             session,
             null,

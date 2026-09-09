@@ -246,7 +246,8 @@ internal static class NavigatorApplicationDescriptors
             title,
             description,
             request_key,
-            [TimeoutParameter()]);
+            [TimeoutParameter()],
+            MessageKeys.Navigator.Search.LegacyResult);
 
     private static ApplicationDescriptor Search<TRequest>(
         string id,

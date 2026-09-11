@@ -799,9 +799,11 @@ public sealed class RoomManager : GameStateManager
         RoomAccessState.NotFound or
         RoomAccessState.ConnectionError;
 
-    private void BeginRoom(Id room_id)
+    private void BeginRoom(Id room_id, bool new_entry = false)
     {
-        bool new_room = RoomId != room_id || State is RoomSessionState.Outside or RoomSessionState.Leaving;
+        bool new_room = RoomId != room_id ||
+            State is RoomSessionState.Outside or RoomSessionState.Leaving ||
+            new_entry && State is RoomSessionState.Ready;
         if (new_room)
         {
             GuestRoomResult? pending_result = TakePendingRoomResult(room_id);
@@ -957,13 +959,13 @@ public sealed class RoomManager : GameStateManager
 
         OnRoomOutgoing(MessageContracts.Room.Access.OpenRequest, message =>
         {
-            BeginRoom(message.RoomId);
+            BeginRoom(message.RoomId, new_entry: true);
             SetAccessState(RoomAccessState.Connecting, message.RoomId);
         });
 
         OnRoomIncoming(MessageContracts.Room.Access.OpenConfirmed, message =>
         {
-            BeginRoom(message.RoomId);
+            BeginRoom(message.RoomId, new_entry: true);
             SetAccessState(RoomAccessState.Connecting, message.RoomId);
         });
 
@@ -1020,7 +1022,7 @@ public sealed class RoomManager : GameStateManager
 
         OnRoomIncoming(MessageContracts.Room.Lifecycle.Ready, message =>
         {
-            BeginRoom(message.RoomId);
+            BeginRoom(message.RoomId, new_entry: true);
             SetAccessState(RoomAccessState.Accessible, message.RoomId);
             RoomType = message.RoomType;
             _room_ready_received = true;
@@ -1206,6 +1208,17 @@ public sealed class RoomManager : GameStateManager
         {
             foreach (Avatar avatar in message.Avatars)
             {
+                if (avatar is User)
+                {
+                    foreach ((int index, Avatar cached) in _avatars)
+                    {
+                        if (index == avatar.Index || cached is not User || cached.Id != avatar.Id)
+                            continue;
+                        _avatars.TryRemove(index, out _);
+                        cached.IsRemoved = true;
+                        Publish(AvatarRemoved, cached);
+                    }
+                }
                 avatar.IsRemoved = false;
                 if (_avatars.TryGetValue(avatar.Index, out Avatar? previous) &&
                     !ReferenceEquals(previous, avatar))

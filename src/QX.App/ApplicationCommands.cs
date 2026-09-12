@@ -137,12 +137,10 @@ internal static class ApplicationCommands
                 return;
 
             Task transport = runtime.TransportTask;
-            Task cancellation = Task.Delay(Timeout.InfiniteTimeSpan, cancellation_token);
             Task completed = await Task
-                .WhenAny(connected.Task, transport, cancellation)
+                .WhenAny(connected.Task, transport)
+                .WaitAsync(cancellation_token)
                 .ConfigureAwait(false);
-            if (ReferenceEquals(completed, cancellation))
-                await cancellation.ConfigureAwait(false);
             if (ReferenceEquals(completed, connected.Task))
                 return;
 
@@ -289,13 +287,15 @@ internal static class ApplicationCommands
             Description = "QX",
             Port = 9092
         });
+        gearth.SearchPorts = !args.Contains("-p") && !gearth.IsLaunchedByGEarth;
         return new RuntimeHost(new RuntimeHostOptions
         {
             GEarth = gearth,
             EnableTransport = !offline,
             EnableFallbackCatalogs = !offline,
             EnableClientMonitoring = !offline,
-            EnableMcp = false
+            EnableMcp = false,
+            ReconnectTransport = !gearth.IsLaunchedByGEarth
         });
     }
 
@@ -309,8 +309,17 @@ internal static class ApplicationCommands
 
     private static void RequireLength(string[] args, int length, string usage)
     {
-        if (args.Length != length)
-            throw new ArgumentException($"Usage: {usage}", nameof(args));
+        if (args.Length < length)
+            throw new ArgumentException($"Usage: {usage} [-p <port>]", nameof(args));
+        var seen = new HashSet<string>(StringComparer.Ordinal);
+        for (int index = length; index < args.Length; index += 2)
+        {
+            string option = args[index];
+            if (option is not ("-p" or "-c" or "-f") || index + 1 >= args.Length || !seen.Add(option))
+                throw new ArgumentException($"Unknown, duplicate or incomplete option '{option}'.", nameof(args));
+            if (option == "-p" && (!int.TryParse(args[index + 1], out int port) || port is < 1 or > 65535))
+                throw new ArgumentException("The G-Earth port must be between 1 and 65535.", nameof(args));
+        }
     }
 
     private static int Usage(TextWriter writer, int exit_code)
@@ -321,6 +330,16 @@ internal static class ApplicationCommands
         writer.WriteLine("  QX app invoke <id> <json>");
         writer.WriteLine("  QX app watch <id>");
         writer.WriteLine("  QX app session");
+        writer.WriteLine("Append -p <port> to select a G-Earth instance. Without -p, local ports are searched.");
+        writer.WriteLine("app invoke creates a new runtime. Use app session to reuse loaded state between commands and scripts.");
+        writer.WriteLine("Session input: one JSON object per line. Responses and script events are matched by id.");
+        writer.WriteLine("  {\"id\":\"1\",\"method\":\"status\"}");
+        writer.WriteLine("  {\"id\":\"2\",\"method\":\"run_script\",\"file\":\"my-script.csx\"}");
+        writer.WriteLine("  {\"id\":\"3\",\"method\":\"run_code\",\"code\":\"Log(RoomId);\"}");
+        writer.WriteLine("  {\"id\":\"4\",\"method\":\"compile_check\",\"code\":\"Log(RoomId);\"}");
+        writer.WriteLine("  {\"id\":\"5\",\"method\":\"cancel_request\",\"request_id\":\"2\"}");
+        writer.WriteLine("  {\"id\":\"6\",\"method\":\"close\"}");
+        writer.WriteLine("Other session methods: health, list, describe, invoke, scripts, subscribe, unsubscribe.");
         return exit_code;
     }
 }

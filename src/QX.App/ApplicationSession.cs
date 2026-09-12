@@ -4,6 +4,7 @@ using System.Text.Json;
 using System.Threading.Channels;
 using Qx.Game.Application;
 using Qx.Hosting;
+using Qx.Scripting;
 
 namespace Qx.App;
 
@@ -293,6 +294,21 @@ internal sealed class ApplicationSession
                 "list" => ApplicationCommands.ListMembers(runtime.Application),
                 "describe" => ApplicationCommands.DescribeMember(runtime.Application, request.Member!),
                 "invoke" => await InvokeMemberAsync(request, active.Token).ConfigureAwait(false),
+                "status" => new
+                {
+                    connection = runtime.Queries.Connection(),
+                    room = runtime.Game.Room.Capture(room => new
+                    {
+                        id = (long)room.RoomId,
+                        state = room.State.ToString(),
+                        avatars = room.Avatars.Count(),
+                        floor_items = room.FloorItems.Count(),
+                        wall_items = room.WallItems.Count()
+                    })
+                },
+                "scripts" => runtime.McpHost.ListScripts(),
+                "run_script" or "run_code" or "compile_check" =>
+                    await ScriptAsync(request, active.Token).ConfigureAwait(false),
                 _ => throw new InvalidOperationException($"Unsupported request method '{request.Method}'.")
             };
             output.Success(request.Id, result);
@@ -310,6 +326,37 @@ internal sealed class ApplicationSession
             active_requests.TryRemove(request.Id, out _);
             active.Dispose();
         }
+    }
+
+    private async Task<object> ScriptAsync(SessionRequest request, CancellationToken cancellation_token)
+    {
+        ScriptExecutionRequest script = request.File is not null
+            ? await ScriptSession.ReadScriptAsync(request.File, cancellation_token).ConfigureAwait(false)
+            : new ScriptExecutionRequest
+            {
+                Code = request.Code!,
+                SourceIdentity = $"cli:request:{Guid.NewGuid():N}",
+                FileName = "script.csx"
+            };
+        if (request.Method == "compile_check")
+        {
+            var diagnostics = await Task.Run(
+                () => ScriptEngine.Compile(script.Code, script.FileName), cancellation_token).ConfigureAwait(false);
+            return new
+            {
+                success = !diagnostics.Any(value => value.Severity == Microsoft.CodeAnalysis.DiagnosticSeverity.Error),
+                diagnostics = diagnostics.Select(value => new
+                {
+                    severity = value.Severity.ToString(),
+                    diagnostic = ScriptExecutionError.FromDiagnostic(value, script.FileName)
+                }).ToArray()
+            };
+        }
+        return await ScriptSession.RunAsync(runtime, script with
+        {
+            OutputWritten = message => output.ScriptEvent(request.Id, "output", message),
+            StateChanged = state => output.ScriptEvent(request.Id, "state", state)
+        }, cancellation_token).ConfigureAwait(false);
     }
 
     private async Task<object?> InvokeMemberAsync(
@@ -344,6 +391,10 @@ internal sealed class ApplicationSession
                 break;
             case KeyNotFoundException:
                 output.Error(request_id, "unknown_member", error.Message);
+                break;
+            case IOException:
+            case UnauthorizedAccessException:
+                output.Error(request_id, "file_error", error.Message);
                 break;
             case JsonException:
             case ArgumentException:
@@ -749,6 +800,21 @@ internal sealed class ApplicationSession
 
         public void Fail(Exception error) => writer.Fail(error);
 
+        public void ScriptEvent(string id, string kind, object value)
+        {
+            lock (event_gate)
+            {
+                writer.TryWrite(new
+                {
+                    type = "script",
+                    sequence = ++event_sequence,
+                    id,
+                    kind,
+                    data = value
+                });
+            }
+        }
+
         public void Abort() => writer.Abort();
 
         public Task CompleteAsync() => writer.CompleteAsync(OutputDrainTimeout);
@@ -759,7 +825,9 @@ internal sealed class ApplicationSession
         string Method,
         string? Member,
         string? Target,
-        JsonElement? Arguments)
+        JsonElement? Arguments,
+        string? File = null,
+        string? Code = null)
     {
         public static SessionRequest Parse(string line)
         {
@@ -796,17 +864,30 @@ internal sealed class ApplicationSession
                 string method = RequiredString(root, "method", request_id);
                 return method switch
                 {
-                    "list" or "health" or "close" => WithoutArguments(root, request_id, method),
+                    "list" or "health" or "close" or "status" or "scripts" => WithoutArguments(root, request_id, method),
                     "describe" or "subscribe" => WithMember(root, request_id, method),
                     "invoke" => Invocation(root, request_id),
                     "cancel_request" => WithTarget(root, request_id, method, "request_id"),
                     "unsubscribe" => WithTarget(root, request_id, method, "subscription_id"),
+                    "run_script" or "run_code" or "compile_check" => Script(root, request_id, method),
                     _ => throw new SessionProtocolException(
                         request_id,
                         "unknown_method",
                         $"Unknown session method '{method}'.")
                 };
             }
+        }
+
+        private static SessionRequest Script(JsonElement root, string id, string method)
+        {
+            ValidateProperties(root, id, "id", "method", "file", "code");
+            bool has_file = root.TryGetProperty("file", out _);
+            bool has_code = root.TryGetProperty("code", out _);
+            if (has_file == has_code || method == "run_script" && !has_file || method == "run_code" && !has_code)
+                throw new SessionProtocolException(id, "invalid_request", "Provide 'file' for run_script, 'code' for run_code, or exactly one of them for compile_check.");
+            return new SessionRequest(id, method, null, null, null,
+                has_file ? RequiredString(root, "file", id) : null,
+                has_code ? RequiredString(root, "code", id) : null);
         }
 
         private static SessionRequest WithoutArguments(JsonElement root, string id, string method)

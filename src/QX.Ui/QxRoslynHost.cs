@@ -59,7 +59,10 @@ public sealed class QxRoslynHost : RoslynHost
 
         if (compilationOptions is CSharpCompilationOptions csharp)
             compilationOptions = csharp.WithNullableContextOptions(NullableContextOptions.Disable);
-        compilationOptions = compilationOptions.WithScriptClassName(name);
+        compilationOptions = compilationOptions
+            .WithScriptClassName(name)
+            .WithSpecificDiagnosticOptions(
+                compilationOptions.SpecificDiagnosticOptions.SetItem("IDE1006", ReportDiagnostic.Suppress));
 
         solution = solution.AddProject(ProjectInfo.Create(
             id,

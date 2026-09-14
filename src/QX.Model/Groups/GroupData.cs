@@ -22,7 +22,8 @@ public sealed record GroupData(
     bool MembersCanDecorate,
     int PendingMemberCount,
     bool HasBoard,
-    Id? UnityExtensionId = null) : IParserComposer<GroupData>
+    Id? UnityExtensionId = null,
+    int? MemberLimit = null) : IParserComposer<GroupData>
 {
     public static GroupData Parse(in PacketReader p) =>
         ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
@@ -49,6 +50,8 @@ public sealed record GroupData(
             p.ReadBool(),
             p.ReadInt(),
             p.ReadBool());
+        if (p.Available >= 4)
+            value = value with { MemberLimit = p.ReadInt() };
         PeopleWire.RequireEmpty(in p, nameof(GroupData));
         return value;
     }
@@ -94,6 +97,8 @@ public sealed record GroupData(
         p.WriteString(value.BadgeCode);
         p.WriteInt(PeopleWire.RequireFlashId(value.RoomId, nameof(RoomId)));
         ComposeTail(value, in p);
+        if (value.MemberLimit is { } limit)
+            p.WriteInt(limit);
     }
 
     private static void ComposeUnity(GroupData value, in PacketWriter p)

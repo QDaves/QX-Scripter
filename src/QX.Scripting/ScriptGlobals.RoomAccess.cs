@@ -11,10 +11,6 @@ namespace Qx.Scripting;
 /// All of the state below is a live view of the room tracker, updated as the entry handshake
 /// progresses. Reading it never sends anything.
 /// </para>
-/// <para>
-/// The doorbell and access grant/deny messages are decoded on Flash only; the queue, the
-/// connection-failure message and the access state machine itself work on both clients.
-/// </para>
 /// </content>
 public partial class ScriptGlobals
 {
@@ -189,31 +185,15 @@ public partial class ScriptGlobals
             value => Room.DoorbellRang += value,
             value => Room.DoorbellRang -= value);
 
-    /// <summary>
-    /// Raised when someone at a doorbell is let in. An empty user name means it was the local
-    /// user; a name means another visitor was admitted to the room the local user is in.
-    /// </summary>
-    /// <param name="handler">Receives the grant.</param>
-    /// <returns>A handle that removes the handler when disposed.</returns>
-    /// <exception cref="ObjectDisposedException">The script globals have already been disposed.</exception>
-    /// <remarks>Flash only; the message has no Unity layout.</remarks>
     public IDisposable OnRoomAccessGranted(Action<FlatAccessible> handler)
-        => Subscribe(
-            handler,
-            value => Room.AccessGranted += value,
-            value => Room.AccessGranted -= value);
+    => Subscribe(
+        handler,
+        value => Room.AccessGranted += value,
+        value => Room.AccessGranted -= value);
 
-    /// <summary>
-    /// Raised when someone at a doorbell is turned away. An empty or absent user name means it was
-    /// the local user, which also drives the access state to denied.
-    /// </summary>
-    /// <param name="handler">Receives the denial.</param>
-    /// <returns>A handle that removes the handler when disposed.</returns>
-    /// <exception cref="ObjectDisposedException">The script globals have already been disposed.</exception>
-    /// <remarks>Flash only; the message has no Unity layout.</remarks>
     public IDisposable OnRoomAccessDenied(Action<FlatAccessDenied> handler)
-        => Subscribe(
-            handler,
-            value => Room.AccessDenied += value,
-            value => Room.AccessDenied -= value);
+    => Subscribe(
+        handler,
+        value => Room.AccessDenied += value,
+        value => Room.AccessDenied -= value);
 }

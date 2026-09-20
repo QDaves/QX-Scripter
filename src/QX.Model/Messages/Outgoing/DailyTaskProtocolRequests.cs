@@ -5,7 +5,7 @@ namespace Qx.Model.Messages.Outgoing;
 public sealed record DailyTaskListRequest : IParserComposer<DailyTaskListRequest>
 {
     public static DailyTaskListRequest Parse(in PacketReader p) =>
-        ModernWireClients.ParseFlash(in p, ParseFlash);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static DailyTaskListRequest ParseFlash(in PacketReader p)
     {
@@ -14,7 +14,7 @@ public sealed record DailyTaskListRequest : IParserComposer<DailyTaskListRequest
     }
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.ComposeFlash(this, in p, ComposeFlash);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(DailyTaskListRequest value, in PacketWriter p) =>
         ArgumentNullException.ThrowIfNull(value);
@@ -24,7 +24,7 @@ public sealed record DailyTaskClaimRequest(long TaskId)
     : IParserComposer<DailyTaskClaimRequest>
 {
     public static DailyTaskClaimRequest Parse(in PacketReader p) =>
-        ModernWireClients.ParseFlash(in p, ParseFlash);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static DailyTaskClaimRequest ParseFlash(in PacketReader p)
     {
@@ -35,7 +35,7 @@ public sealed record DailyTaskClaimRequest(long TaskId)
     }
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.ComposeFlash(this, in p, ComposeFlash);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(DailyTaskClaimRequest value, in PacketWriter p)
     {

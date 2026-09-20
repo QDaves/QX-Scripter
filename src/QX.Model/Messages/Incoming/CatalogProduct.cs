@@ -9,8 +9,7 @@ public sealed record CatalogProduct(
     int ProductCount,
     bool UniqueLimitedItem,
     int UniqueLimitedItemSeriesSize,
-    int UniqueLimitedItemsLeft,
-    short? UnityProductType = null) : IParserComposer<CatalogProduct>
+    int UniqueLimitedItemsLeft) : IParserComposer<CatalogProduct>
 {
     public const string TypeItem = "i";
     public const string TypeStuff = "s";
@@ -19,9 +18,8 @@ public sealed record CatalogProduct(
 
     public static CatalogProduct Parse(in PacketReader p)
     {
-        short? unityProductType = p.Client is ClientType.Unity ? p.ReadShort() : null;
-        string productType = unityProductType is short value ? FromUnityType(value) : p.ReadString();
-        bool isBadge = unityProductType is 4 || unityProductType is null && productType == TypeBadge;
+        string productType = p.ReadString();
+        bool isBadge = productType == TypeBadge;
         if (!isBadge)
         {
             int furniClassId = p.ReadInt();
@@ -34,26 +32,16 @@ public sealed record CatalogProduct(
                 seriesSize = p.ReadInt();
                 itemsLeft = p.ReadInt();
             }
-            return new CatalogProduct(productType, furniClassId, extraParam, productCount, uniqueLimited, seriesSize, itemsLeft, unityProductType);
+            return new CatalogProduct(productType, furniClassId, extraParam, productCount, uniqueLimited, seriesSize, itemsLeft);
         }
 
-        return new CatalogProduct(productType, 0, p.ReadString(), 1, false, 0, 0, unityProductType);
+        return new CatalogProduct(productType, 0, p.ReadString(), 1, false, 0, 0);
     }
 
     public void Compose(in PacketWriter p)
     {
-        short? unityProductType = null;
-        if (p.Client is ClientType.Unity)
-        {
-            unityProductType = UnityProductType ?? ToUnityType(ProductType);
-            p.WriteShort(unityProductType.Value);
-        }
-        else
-        {
-            p.WriteString(ProductType);
-        }
-
-        bool isBadge = unityProductType is 4 || unityProductType is null && ProductType == TypeBadge;
+        p.WriteString(ProductType);
+        bool isBadge = ProductType == TypeBadge;
         if (!isBadge)
         {
             p.WriteInt(FurniClassId);
@@ -70,30 +58,5 @@ public sealed record CatalogProduct(
         {
             p.WriteString(ExtraParam);
         }
-    }
-
-    private static string FromUnityType(short value) => value switch
-    {
-        0 => TypeItem,
-        1 => TypeStuff,
-        2 => TypeEffect,
-        4 => TypeBadge,
-        _ => $"unity:{value}"
-    };
-
-    private static short ToUnityType(string value)
-    {
-        if (value.StartsWith("unity:", StringComparison.Ordinal) &&
-            short.TryParse(value.AsSpan(6), out short unityType))
-            return unityType;
-
-        return value.ToLowerInvariant() switch
-        {
-            TypeItem => 0,
-            TypeStuff => 1,
-            TypeEffect => 2,
-            TypeBadge => 4,
-            _ => throw new ArgumentException($"Unknown Unity catalog product type: {value}.", nameof(value))
-        };
     }
 }

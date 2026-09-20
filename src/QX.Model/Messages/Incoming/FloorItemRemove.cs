@@ -5,7 +5,7 @@ namespace Qx.Model.Messages.Incoming;
 public sealed record FloorItemRemove(Id Id, bool IsExpired, Id PickerId, int Delay) : IParserComposer<FloorItemRemove>
 {
     public static FloorItemRemove Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static FloorItemRemove ParseFlash(in PacketReader p)
     {
@@ -13,12 +13,6 @@ public sealed record FloorItemRemove(Id Id, bool IsExpired, Id PickerId, int Del
         return ParseItem(
             in p,
             RoomPlacementWire.ReadFlashStringId(in p, nameof(Id)));
-    }
-
-    private static FloorItemRemove ParseUnity(in PacketReader p)
-    {
-        RoomPlacementWire.RequireSize(in p, 21, nameof(FloorItemRemove));
-        return ParseItem(in p, p.ReadId());
     }
 
     private static FloorItemRemove ParseItem(in PacketReader p, Id id)
@@ -29,20 +23,12 @@ public sealed record FloorItemRemove(Id Id, bool IsExpired, Id PickerId, int Del
     }
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(FloorItemRemove value, in PacketWriter p)
     {
         RoomPlacementWire.RequireId(value.PickerId, nameof(value.PickerId), in p);
         RoomPlacementWire.WriteFlashStringId(value.Id, nameof(value.Id), in p);
-        value.ComposeItem(in p);
-    }
-
-    private static void ComposeUnity(FloorItemRemove value, in PacketWriter p)
-    {
-        RoomPlacementWire.RequireId(value.Id, nameof(value.Id), in p);
-        RoomPlacementWire.RequireId(value.PickerId, nameof(value.PickerId), in p);
-        p.WriteId(value.Id);
         value.ComposeItem(in p);
     }
 
@@ -58,7 +44,7 @@ public sealed record PickupConfirmation(int Category, Id ItemId, string Title, s
     : IParserComposer<PickupConfirmation>
 {
     public static PickupConfirmation Parse(in PacketReader p) =>
-        ModernWireClients.ParseFlash(in p, ParseFlash);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static PickupConfirmation ParseFlash(in PacketReader p)
     {
@@ -73,7 +59,7 @@ public sealed record PickupConfirmation(int Category, Id ItemId, string Title, s
     }
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.ComposeFlash(this, in p, ComposeFlash);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(PickupConfirmation value, in PacketWriter p)
     {
@@ -102,11 +88,9 @@ public sealed record FloorItemsRemove(IReadOnlyList<Id> Ids, Id PickerId)
     : IParserComposer<FloorItemsRemove>
 {
     public static FloorItemsRemove Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static FloorItemsRemove ParseFlash(in PacketReader p) => ParseItems(in p);
-
-    private static FloorItemsRemove ParseUnity(in PacketReader p) => ParseItems(in p);
 
     private static FloorItemsRemove ParseItems(in PacketReader p)
     {
@@ -118,12 +102,9 @@ public sealed record FloorItemsRemove(IReadOnlyList<Id> Ids, Id PickerId)
     }
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(FloorItemsRemove value, in PacketWriter p) =>
-        value.ComposeItems(in p);
-
-    private static void ComposeUnity(FloorItemsRemove value, in PacketWriter p) =>
         value.ComposeItems(in p);
 
     private void ComposeItems(in PacketWriter p)

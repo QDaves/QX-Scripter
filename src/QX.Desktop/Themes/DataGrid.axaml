@@ -1,0 +1,217 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:c="using:Qx.Desktop.Controls">
+
+  <ControlTheme x:Key="DataGridCellTextBlockTheme" TargetType="TextBlock">
+    <Setter Property="Margin" Value="12,0" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+    <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+  </ControlTheme>
+
+  <ControlTheme x:Key="{x:Type DataGridCell}" TargetType="DataGridCell">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+    <Setter Property="VerticalContentAlignment" Value="Stretch" />
+    <Setter Property="FontSize" Value="{DynamicResource QxFontSizeBody}" />
+    <Setter Property="Foreground" Value="{DynamicResource QxTextPrimaryBrush}" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border Name="CellBorder" Background="{TemplateBinding Background}">
+          <Grid Name="PART_CellRoot" ColumnDefinitions="*,Auto">
+            <ContentPresenter Grid.Column="0"
+                              Margin="{TemplateBinding Padding}"
+                              HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                              VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                              Content="{TemplateBinding Content}"
+                              ContentTemplate="{TemplateBinding ContentTemplate}"
+                              Foreground="{TemplateBinding Foreground}" />
+            <Rectangle Name="InvalidVisualElement"
+                       IsVisible="False"
+                       IsHitTestVisible="False"
+                       Stroke="{DynamicResource QxDangerBrush}"
+                       StrokeThickness="1" />
+            <Rectangle Name="PART_RightGridLine" Grid.Column="1" Width="1" VerticalAlignment="Stretch" Fill="Transparent" />
+          </Grid>
+        </Border>
+      </ControlTemplate>
+    </Setter>
+    <Style Selector="^:invalid /template/ Rectangle#InvalidVisualElement">
+      <Setter Property="IsVisible" Value="True" />
+    </Style>
+  </ControlTheme>
+
+  <ControlTheme x:Key="{x:Type DataGridColumnHeader}" TargetType="DataGridColumnHeader">
+    <Setter Property="Foreground" Value="{DynamicResource QxTextSecondaryBrush}" />
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+    <Setter Property="VerticalContentAlignment" Value="Center" />
+    <Setter Property="SeparatorBrush" Value="{DynamicResource QxBorderSubtleBrush}" />
+    <Setter Property="AreSeparatorsVisible" Value="False" />
+    <Setter Property="Padding" Value="12,0" />
+    <Setter Property="FontSize" Value="{DynamicResource QxFontSizeSmall}" />
+    <Setter Property="FontWeight" Value="Medium" />
+    <Setter Property="MinHeight" Value="{DynamicResource QxRowHeight}" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border Name="HeaderBorder" Background="{TemplateBinding Background}">
+          <Grid Name="PART_ColumnHeaderRoot" ColumnDefinitions="*,Auto">
+            <Grid Margin="{TemplateBinding Padding}" ColumnDefinitions="Auto,Auto,*">
+              <ContentPresenter Name="PART_ContentPresenter"
+                                Content="{TemplateBinding Content}"
+                                ContentTemplate="{TemplateBinding ContentTemplate}"
+                                VerticalAlignment="Center" />
+              <c:Icon Name="SortIcon"
+                      Grid.Column="1"
+                      Kind="ArrowUp"
+                      Size="12"
+                      StrokeWidth="1.6"
+                      Margin="4,0,0,0"
+                      IsVisible="False"
+                      VerticalAlignment="Center"
+                      Foreground="{DynamicResource QxAccentBrush}" />
+            </Grid>
+            <Rectangle Name="VerticalSeparator"
+                       Grid.Column="1"
+                       Width="1"
+                       Margin="0,8"
+                       VerticalAlignment="Stretch"
+                       Fill="{TemplateBinding SeparatorBrush}"
+                       IsVisible="{TemplateBinding AreSeparatorsVisible}" />
+          </Grid>
+        </Border>
+      </ControlTemplate>
+    </Setter>
+    <Style Selector="^:pointerover">
+      <Setter Property="Foreground" Value="{DynamicResource QxTextPrimaryBrush}" />
+      <Setter Property="Background" Value="{DynamicResource QxFillSubtleBrush}" />
+    </Style>
+    <Style Selector="^:pressed">
+      <Setter Property="Background" Value="{DynamicResource QxFillHoverBrush}" />
+    </Style>
+    <Style Selector="^:sortascending">
+      <Setter Property="Foreground" Value="{DynamicResource QxTextPrimaryBrush}" />
+      <Style Selector="^ /template/ c|Icon#SortIcon">
+        <Setter Property="IsVisible" Value="True" />
+      </Style>
+    </Style>
+    <Style Selector="^:sortdescending">
+      <Setter Property="Foreground" Value="{DynamicResource QxTextPrimaryBrush}" />
+      <Style Selector="^ /template/ c|Icon#SortIcon">
+        <Setter Property="IsVisible" Value="True" />
+        <Setter Property="Kind" Value="ArrowDown" />
+      </Style>
+    </Style>
+    <Style Selector="^:dragIndicator">
+      <Setter Property="Opacity" Value="0.6" />
+    </Style>
+  </ControlTheme>
+
+  <ControlTheme x:Key="{x:Type DataGridRow}" TargetType="DataGridRow">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border Name="RowBorder"
+                Background="{TemplateBinding Background}"
+                BorderBrush="{DynamicResource QxBorderSubtleBrush}"
+                BorderThickness="0,0,0,1">
+          <DataGridFrozenGrid Name="PART_Root" ColumnDefinitions="Auto,*" RowDefinitions="*,Auto,Auto">
+            <Rectangle Name="BackgroundRectangle" Grid.RowSpan="2" Grid.ColumnSpan="2" Fill="Transparent" />
+            <Rectangle Name="InvalidVisualElement" Grid.ColumnSpan="2" Opacity="0" Fill="{DynamicResource QxDangerSoftBrush}" />
+            <DataGridRowHeader Name="PART_RowHeader" Grid.RowSpan="3" DataGridFrozenGrid.IsFrozen="True" />
+            <DataGridCellsPresenter Name="PART_CellsPresenter" Grid.Column="1" DataGridFrozenGrid.IsFrozen="True" />
+            <DataGridDetailsPresenter Name="PART_DetailsPresenter" Grid.Row="1" Grid.Column="1" />
+            <Rectangle Name="PART_BottomGridLine" Grid.Row="2" Grid.Column="1" Height="0" HorizontalAlignment="Stretch" />
+          </DataGridFrozenGrid>
+        </Border>
+      </ControlTemplate>
+    </Setter>
+    <Style Selector="^:pointerover /template/ Rectangle#BackgroundRectangle">
+      <Setter Property="Fill" Value="{DynamicResource QxFillHoverBrush}" />
+    </Style>
+    <Style Selector="^:selected">
+      <Style Selector="^ /template/ Rectangle#BackgroundRectangle">
+        <Setter Property="Fill" Value="{DynamicResource QxFillSelectedBrush}" />
+      </Style>
+      <Style Selector="^:pointerover /template/ Rectangle#BackgroundRectangle">
+        <Setter Property="Fill" Value="{DynamicResource QxFillSelectedHoverBrush}" />
+      </Style>
+    </Style>
+    <Style Selector="^:invalid /template/ Rectangle#InvalidVisualElement">
+      <Setter Property="Opacity" Value="1" />
+    </Style>
+  </ControlTheme>
+
+  <ControlTheme x:Key="{x:Type DataGrid}" TargetType="DataGrid">
+    <Setter Property="RowBackground" Value="Transparent" />
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="Foreground" Value="{DynamicResource QxTextPrimaryBrush}" />
+    <Setter Property="HeadersVisibility" Value="Column" />
+    <Setter Property="HorizontalScrollBarVisibility" Value="Auto" />
+    <Setter Property="VerticalScrollBarVisibility" Value="Auto" />
+    <Setter Property="SelectionMode" Value="Extended" />
+    <Setter Property="GridLinesVisibility" Value="None" />
+    <Setter Property="RowHeight" Value="{DynamicResource QxRowHeight}" />
+    <Setter Property="ColumnHeaderHeight" Value="{DynamicResource QxRowHeight}" />
+    <Setter Property="CanUserResizeColumns" Value="True" />
+    <Setter Property="CanUserSortColumns" Value="True" />
+    <Setter Property="IsReadOnly" Value="True" />
+    <Setter Property="ClipboardCopyMode" Value="None" />
+    <Setter Property="FocusAdorner" Value="{x:Null}" />
+    <Setter Property="DropLocationIndicatorTemplate">
+      <Template>
+        <Rectangle Fill="{DynamicResource QxAccentBrush}" Width="2" />
+      </Template>
+    </Setter>
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border Name="DataGridBorder"
+                Background="{TemplateBinding Background}"
+                BorderBrush="{TemplateBinding BorderBrush}"
+                BorderThickness="{TemplateBinding BorderThickness}"
+                CornerRadius="{TemplateBinding CornerRadius}">
+          <Grid ColumnDefinitions="Auto,*,Auto" RowDefinitions="Auto,*,Auto,Auto" ClipToBounds="True">
+            <DataGridColumnHeader Name="PART_TopLeftCornerHeader" IsVisible="False" />
+            <DataGridColumnHeadersPresenter Name="PART_ColumnHeadersPresenter" Grid.Column="1" Grid.ColumnSpan="2" />
+            <Rectangle Name="PART_ColumnHeadersAndRowsSeparator"
+                       Grid.ColumnSpan="3"
+                       VerticalAlignment="Bottom"
+                       Height="1"
+                       Fill="{DynamicResource QxBorderSubtleBrush}" />
+            <DataGridRowsPresenter Name="PART_RowsPresenter" Grid.Row="1" Grid.RowSpan="2" Grid.ColumnSpan="3">
+              <DataGridRowsPresenter.GestureRecognizers>
+                <ScrollGestureRecognizer CanHorizontallyScroll="True" CanVerticallyScroll="True" />
+              </DataGridRowsPresenter.GestureRecognizers>
+            </DataGridRowsPresenter>
+            <Rectangle Name="PART_BottomRightCorner" Grid.Column="2" Grid.Row="2" Fill="Transparent" />
+            <ScrollBar Name="PART_VerticalScrollbar" Orientation="Vertical" Grid.Column="2" Grid.Row="1" />
+            <Grid Grid.Column="1" Grid.Row="2" ColumnDefinitions="Auto,*">
+              <Rectangle Name="PART_FrozenColumnScrollBarSpacer" />
+              <ScrollBar Name="PART_HorizontalScrollbar" Grid.Column="1" Orientation="Horizontal" />
+            </Grid>
+          </Grid>
+        </Border>
+      </ControlTemplate>
+    </Setter>
+    <Style Selector="^:empty-columns">
+      <Style Selector="^ /template/ DataGridColumnHeadersPresenter#PART_ColumnHeadersPresenter">
+        <Setter Property="IsVisible" Value="False" />
+      </Style>
+      <Style Selector="^ /template/ Rectangle#PART_ColumnHeadersAndRowsSeparator">
+        <Setter Property="IsVisible" Value="False" />
+      </Style>
+    </Style>
+    <Style Selector="^.compact">
+      <Setter Property="RowHeight" Value="{DynamicResource QxRowHeightCompact}" />
+      <Setter Property="ColumnHeaderHeight" Value="{DynamicResource QxRowHeightCompact}" />
+    </Style>
+  </ControlTheme>
+
+  <ControlTheme x:Key="{x:Type DataGridRowHeader}" TargetType="DataGridRowHeader">
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Panel />
+      </ControlTemplate>
+    </Setter>
+  </ControlTheme>
+
+</ResourceDictionary>

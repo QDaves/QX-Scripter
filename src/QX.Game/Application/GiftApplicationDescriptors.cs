@@ -372,7 +372,7 @@ internal static class GiftApplicationDescriptors
             typeof(int),
             false,
             1,
-            "Positive requested quantity; Unity sends it and Flash uses one.",
+            "Requested quantity; each gift purchase sends one item.",
             new(Minimum: 1)),
         ExpectedSessionGenerationParameter(),
         ExpectedRevisionParameter(

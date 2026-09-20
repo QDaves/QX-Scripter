@@ -8,19 +8,14 @@ public sealed record RuntimeHostOptions
 {
     public GEarthOptions GEarth { get; init; } = new();
 
-    public string ScriptsDirectory { get; init; } = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-        "QX Scripter",
-        "scripts");
+    public string ScriptsDirectory { get; init; } = StoragePaths.Scripts;
 
     public string SessionRulesPath { get; init; } = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-        "QX Scripter",
+        StoragePaths.Configuration,
         "rules.json");
 
     public string HeaderCatalogCachePath { get; init; } = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-        "QX",
+        StoragePaths.Cache,
         "header-catalogs");
 
     public InstalledClientMonitorOptions InstalledClients { get; init; } = new();

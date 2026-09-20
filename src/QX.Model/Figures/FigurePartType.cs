@@ -77,7 +77,6 @@ public readonly record struct FigurePartType
     /// </summary>
     public static IReadOnlyList<FigurePartType> FigureSets { get; } = Array.AsReadOnly(_figureSets);
 
-    /// <summary>Part types the Flash client declares but the Unity client does not.</summary>
     public static IReadOnlyList<FigurePartType> FlashOnly { get; } = Array.AsReadOnly(_flashOnly);
 
     /// <summary>The serialized wire code, e.g. <c>hr</c>.</summary>

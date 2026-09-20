@@ -1,4 +1,3 @@
-using System.Collections.ObjectModel;
 using Qx.Messages;
 using Qx.Protocol;
 
@@ -10,13 +9,9 @@ public interface IMessageContract
 
     Type MessageType { get; }
 
-    IReadOnlyList<ClientType> Clients { get; }
-
     bool Supports(ClientType client);
 
-    bool AllowsSchemaSelectedHeader(ClientType client);
-
-    MessageDialectCapability Capability(ClientType client, MessageManager messages, Header header);
+    MessageCapability Capability(ClientType client, MessageManager messages, Header header);
 
     object Parse(in PacketReader reader);
 
@@ -25,62 +20,38 @@ public interface IMessageContract
 
 public sealed class MessageContract<T> : IMessageContract where T : IParserComposer<T>
 {
-    private readonly IReadOnlyDictionary<ClientType, MessageDialectProjection<T>> _by_client;
+    private readonly MessageCodec<T> _codec;
 
-    public MessageContract(MessageKey key, params MessageDialectProjection<T>[] projections)
+    public MessageContract(MessageKey key, MessageCodec<T> codec)
     {
         if (key.IsEmpty)
             throw new ArgumentException("A message contract requires a key.", nameof(key));
 
-        ArgumentNullException.ThrowIfNull(projections);
-        if (projections.Length == 0)
-            throw new ArgumentException("A message contract requires at least one dialect projection.", nameof(projections));
-
-        var by_client = new Dictionary<ClientType, MessageDialectProjection<T>>();
-        foreach (MessageDialectProjection<T> projection in projections)
-        {
-            ArgumentNullException.ThrowIfNull(projection);
-            if (!by_client.TryAdd(projection.Client, projection))
-                throw new InvalidDataException($"Message contract '{key}' declares {projection.Client} more than once.");
-        }
-
+        ArgumentNullException.ThrowIfNull(codec);
         Key = key;
-        Projections = Array.AsReadOnly(
-        [
-            .. by_client.Values.OrderBy(projection => projection.Client is ClientType.Flash ? 0 : 1)
-        ]);
-        Clients = Array.AsReadOnly(Projections.Select(projection => projection.Client).ToArray());
-        _by_client = new ReadOnlyDictionary<ClientType, MessageDialectProjection<T>>(by_client);
+        _codec = codec;
     }
 
     public MessageKey Key { get; }
 
     public Type MessageType => typeof(T);
 
-    public IReadOnlyList<ClientType> Clients { get; }
+    public bool Supports(ClientType client) => client is ClientType.Flash;
 
-    public IReadOnlyList<MessageDialectProjection<T>> Projections { get; }
-
-    public bool Supports(ClientType client) => _by_client.ContainsKey(client);
-
-    public bool AllowsSchemaSelectedHeader(ClientType client) =>
-        _by_client.TryGetValue(client, out MessageDialectProjection<T>? projection) &&
-        projection.AllowsSchemaSelectedHeader;
-
-    public MessageDialectCapability Capability(
+    public MessageCapability Capability(
         ClientType client,
         MessageManager messages,
-        Header header) => ProjectionFor(client).Capability(messages, header);
+        Header header)
+    {
+        if (!Supports(client))
+            throw new UnsupportedClientException(client);
+        return _codec.Capability(messages, header);
+    }
 
-    public bool TryGetProjection(
-        ClientType client,
-        out MessageDialectProjection<T> projection) =>
-        _by_client.TryGetValue(client, out projection!);
-
-    public T Parse(in PacketReader reader) => ProjectionFor(reader.Client).Parse(in reader);
+    public T Parse(in PacketReader reader) => _codec.Parse(in reader);
 
     public void Compose(T message, in PacketWriter writer) =>
-        ProjectionFor(writer.Client).Compose(message, in writer);
+        _codec.Compose(message, in writer);
 
     object IMessageContract.Parse(in PacketReader reader) => Parse(in reader)!;
 
@@ -96,10 +67,4 @@ public sealed class MessageContract<T> : IMessageContract where T : IParserCompo
         Compose(typed_message, in writer);
     }
 
-    private MessageDialectProjection<T> ProjectionFor(ClientType client)
-    {
-        if (_by_client.TryGetValue(client, out MessageDialectProjection<T>? projection))
-            return projection;
-        throw new UnsupportedClientException(client);
-    }
 }

@@ -63,10 +63,9 @@ public sealed record ForumPermissions(
     public static ForumPermissions Parse(in PacketReader p)
     {
         ForumStringBudget budget = ForumProtocol.NewStringBudget();
-        ForumPermissions value = ModernWireClients.Parse(
+        ForumPermissions value = FlashWire.Parse(
             in p,
-            (in PacketReader reader) => ParseFlashWire(in reader, 0, ref budget),
-            ParseUnity);
+            (in PacketReader reader) => ParseFlashWire(in reader, 0, ref budget));
         ForumProtocol.RequireEmpty(in p, nameof(ForumPermissions));
         return value;
     }
@@ -114,11 +113,8 @@ public sealed record ForumPermissions(
             report_error);
     }
 
-    private static ForumPermissions ParseUnity(in PacketReader p) =>
-        ForumProtocol.UnsupportedUnity<ForumPermissions>(p.Client);
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     internal static void PrepareFlash(
         ForumPermissions value,
@@ -152,9 +148,6 @@ public sealed record ForumPermissions(
         PrepareFlash(value, in p, ref budget);
         ComposeFlashWire(value, in p);
     }
-
-    private static void ComposeUnity(ForumPermissions value, in PacketWriter p) =>
-        ForumProtocol.UnsupportedUnity(p.Client);
 }
 
 public sealed record ForumDetails(
@@ -191,10 +184,9 @@ public sealed record ForumDetails(
     public static ForumDetails Parse(in PacketReader p)
     {
         ForumStringBudget budget = ForumProtocol.NewStringBudget();
-        ForumDetails value = ModernWireClients.Parse(
+        ForumDetails value = FlashWire.Parse(
             in p,
-            (in PacketReader reader) => ParseFlashWire(in reader, 0, ref budget),
-            ParseUnity);
+            (in PacketReader reader) => ParseFlashWire(in reader, 0, ref budget));
         ForumProtocol.RequireEmpty(in p, nameof(ForumDetails));
         return value;
     }
@@ -220,11 +212,8 @@ public sealed record ForumDetails(
         return new ForumDetails(summary, permissions, p.ReadBool(), p.ReadBool());
     }
 
-    private static ForumDetails ParseUnity(in PacketReader p) =>
-        ForumProtocol.UnsupportedUnity<ForumDetails>(p.Client);
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     internal static void PrepareFlash(
         ForumDetails value,
@@ -250,7 +239,4 @@ public sealed record ForumDetails(
         PrepareFlash(value, in p, ref budget);
         ComposeFlashWire(value, in p);
     }
-
-    private static void ComposeUnity(ForumDetails value, in PacketWriter p) =>
-        ForumProtocol.UnsupportedUnity(p.Client);
 }

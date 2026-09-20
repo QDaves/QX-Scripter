@@ -521,7 +521,6 @@ public static class MessageKeys
             public static readonly MessageKey ListSnapshot = new("users.ignore.list.snapshot");
             public static readonly MessageKey Updated = new("users.ignore.updated");
             public static readonly MessageKey AddByIdRequest = new("users.ignore.add_by_id.request");
-            public static readonly MessageKey AddByNameRequest = new("users.ignore.add_by_name.request");
             public static readonly MessageKey Remove = new("users.ignore.remove");
         }
 
@@ -681,7 +680,6 @@ public static class MessageKeys
             public static readonly MessageKey Entry = new("room.lifecycle.entry");
             public static readonly MessageKey Forward = new("room.lifecycle.forward");
             public static readonly MessageKey ConnectionClosed = new("room.lifecycle.connection_closed");
-            public static readonly MessageKey NativeExit = new("room.lifecycle.native_exit");
             public static readonly MessageKey Quit = new("room.lifecycle.quit");
         }
 
@@ -715,7 +713,6 @@ public static class MessageKeys
             public static readonly MessageKey Owner = new("room.authority.owner");
             public static readonly MessageKey SpectatorGranted = new("room.authority.spectator.granted");
             public static readonly MessageKey SpectatorRevoked = new("room.authority.spectator.revoked");
-            public static readonly MessageKey SpectatingEnded = new("room.authority.spectating.ended");
         }
 
         public static class Occupants

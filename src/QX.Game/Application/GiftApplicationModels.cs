@@ -18,14 +18,11 @@ public sealed record GiftClubInfoSummaryView(
     int GiftsAvailable,
     int OfferCount,
     int EligibilityCount,
-    int ProductCount,
-    int UnityProductReferenceCount,
-    int UnityProductCount);
+    int ProductCount);
 
 public sealed record GiftClubSelectedSummaryView(
     string ProductCode,
-    int ProductCount,
-    int UnityProductCount);
+    int ProductCount);
 
 public sealed record GiftNewUserOfferSummaryView(
     int StepCount,
@@ -88,9 +85,7 @@ public enum GiftClubInfoCollection
 {
     Offers,
     Eligibility,
-    Products,
-    UnityProductReferences,
-    UnityProducts
+    Products
 }
 
 public sealed record GiftClubInfoPageRequest(
@@ -113,9 +108,7 @@ public sealed record GiftClubOfferView(
     bool BundlePurchaseAllowed,
     bool IsPet,
     string PreviewImage,
-    int ProductCount,
-    int UnityProductReferenceCount,
-    int UnityProductCount);
+    int ProductCount);
 
 public sealed record GiftClubEligibilityView(
     int EligibilityOrdinal,
@@ -129,16 +122,6 @@ public sealed record GiftClubProductView(
     int ProductOrdinal,
     CatalogProduct Product);
 
-public sealed record GiftClubUnityProductReferenceView(
-    int OfferOrdinal,
-    int ReferenceOrdinal,
-    CatalogPageProductReference ProductReference);
-
-public sealed record GiftClubUnityProductView(
-    int OfferOrdinal,
-    int ProductOrdinal,
-    CatalogPageProduct Product);
-
 public sealed record GiftClubInfoPage(
     bool Connected,
     ClientType? Client,
@@ -151,22 +134,17 @@ public sealed record GiftClubInfoPage(
     int TotalOffers,
     int TotalEligibility,
     int TotalProducts,
-    int TotalUnityProductReferences,
-    int TotalUnityProducts,
     GiftClubInfoCollection Collection,
     int Total,
     int Offset,
     int? NextOffset,
     IReadOnlyList<GiftClubOfferView> Offers,
     IReadOnlyList<GiftClubEligibilityView> Eligibility,
-    IReadOnlyList<GiftClubProductView> Products,
-    IReadOnlyList<GiftClubUnityProductReferenceView> UnityProductReferences,
-    IReadOnlyList<GiftClubUnityProductView> UnityProducts);
+    IReadOnlyList<GiftClubProductView> Products);
 
 public enum GiftClubSelectedCollection
 {
-    Products,
-    UnityProducts
+    Products
 }
 
 public sealed record GiftClubSelectedPageRequest(
@@ -184,13 +162,11 @@ public sealed record GiftClubSelectedPage(
     bool Loaded,
     string? ProductCode,
     int TotalProducts,
-    int TotalUnityProducts,
     GiftClubSelectedCollection Collection,
     int Total,
     int Offset,
     int? NextOffset,
-    IReadOnlyList<CatalogProduct> Products,
-    IReadOnlyList<CatalogPageProduct> UnityProducts);
+    IReadOnlyList<CatalogProduct> Products);
 
 public enum GiftNewUserOfferCollection
 {

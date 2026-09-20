@@ -174,7 +174,6 @@ public static partial class SnapshotFactory
             exit.Source.ToString(),
             exit.Cause.ToString(),
             exit.Reason,
-            exit.HasNativeReason,
             exit.WasKicked,
             exit.Kick is { } kick ? From(kick) : null);
     }
@@ -241,13 +240,6 @@ public static partial class SnapshotFactory
             (int)settings.Ban);
     }
 
-    /// <summary>Projects the detail block that accompanies a guest room result.</summary>
-    /// <param name="details">The detail block to project.</param>
-    /// <returns>
-    /// The details snapshot. The opening-connection flag is Flash only; the context identifier
-    /// and thumbnail are Unity only, and the fields that do not apply keep their defaults.
-    /// </returns>
-    /// <exception cref="ArgumentNullException"><paramref name="details"/> is <see langword="null"/>.</exception>
     public static RoomResultDetailsSnapshot From(RoomResultDetails details)
     {
         ArgumentNullException.ThrowIfNull(details);
@@ -259,11 +251,7 @@ public static partial class SnapshotFactory
             From(details.Moderation),
             details.CanMute,
             From(details.Chat),
-            details.OpeningConnection,
-            details.UnityContextId,
-            details.UnityThumbnail is { } thumbnail
-                ? new RoomThumbnailSnapshot(thumbnail.RoomId, thumbnail.Reference, thumbnail.ImageUrl)
-                : null);
+            details.OpeningConnection);
     }
 
     /// <summary>Projects the room's decoration, door tile and chat configuration.</summary>
@@ -309,13 +297,6 @@ public static partial class SnapshotFactory
             details is null ? null : From(details.Moderation));
     }
 
-    /// <summary>Projects the room's static geometry, including its decoded height grid.</summary>
-    /// <param name="floorPlan">The floor plan to project.</param>
-    /// <returns>
-    /// The floor plan snapshot. The camera fields are <see langword="null"/> when the client
-    /// sent no camera hint, which happens on Unity builds that omit that tail.
-    /// </returns>
-    /// <exception cref="ArgumentNullException"><paramref name="floorPlan"/> is <see langword="null"/>.</exception>
     public static FloorPlanSnapshot From(FloorPlan floorPlan)
     {
         ArgumentNullException.ThrowIfNull(floorPlan);
@@ -604,9 +585,7 @@ public static partial class SnapshotFactory
                 friend.IsVipMember,
                 friend.IsPocketHabboUser,
                 friend.Relation.ToString(),
-                friend.LastOnline,
-                friend.UnityStatus,
-                friend.UnityPlatform))
+                friend.LastOnline))
             .ToArray();
         FriendCategorySnapshot[] projected_categories = MaterializeBounded(
                 categories ?? [],
@@ -988,11 +967,6 @@ public static partial class SnapshotFactory
             item.SecondsToExpiration,
             item.HasRentPeriodStarted,
             item.RoomId,
-            item.IsUnseen,
-            item.Timestamp,
-            item.IsNft,
-            item.NftName,
-            item.IsExternalImage,
             item.SlotId,
             item.Extra);
     }

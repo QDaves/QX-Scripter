@@ -51,10 +51,9 @@ public sealed record ForumPost(
     public static ForumPost Parse(in PacketReader p)
     {
         ForumStringBudget budget = ForumProtocol.NewStringBudget();
-        ForumPost value = ModernWireClients.Parse(
+        ForumPost value = FlashWire.Parse(
             in p,
-            (in PacketReader reader) => ParseFlashWire(in reader, 0, ref budget),
-            ParseUnity);
+            (in PacketReader reader) => ParseFlashWire(in reader, 0, ref budget));
         ForumProtocol.RequireEmpty(in p, nameof(ForumPost));
         return value;
     }
@@ -117,11 +116,8 @@ public sealed record ForumPost(
             author_post_count);
     }
 
-    private static ForumPost ParseUnity(in PacketReader p) =>
-        ForumProtocol.UnsupportedUnity<ForumPost>(p.Client);
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     internal static void PrepareFlash(
         ForumPost value,
@@ -160,7 +156,4 @@ public sealed record ForumPost(
         PrepareFlash(value, in p, ref budget);
         ComposeFlashWire(value, in p);
     }
-
-    private static void ComposeUnity(ForumPost value, in PacketWriter p) =>
-        ForumProtocol.UnsupportedUnity(p.Client);
 }

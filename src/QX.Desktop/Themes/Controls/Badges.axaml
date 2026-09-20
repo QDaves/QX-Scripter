@@ -1,0 +1,155 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:c="using:Qx.Desktop.Controls">
+
+  <ControlTheme x:Key="{x:Type c:Badge}" TargetType="c:Badge">
+    <Setter Property="Background" Value="{DynamicResource QxFillHoverBrush}" />
+    <Setter Property="Foreground" Value="{DynamicResource QxTextSecondaryBrush}" />
+    <Setter Property="FontSize" Value="{DynamicResource QxFontSizeSmall}" />
+    <Setter Property="FontWeight" Value="Medium" />
+    <Setter Property="Padding" Value="6,0" />
+    <Setter Property="Height" Value="20" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+    <Setter Property="HorizontalAlignment" Value="Left" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border Background="{TemplateBinding Background}"
+                CornerRadius="{DynamicResource QxRadiusXs}"
+                Padding="{TemplateBinding Padding}">
+          <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+            <c:Spinner Name="PART_Spinner" Size="10" Thickness="1.5" IsVisible="False" VerticalAlignment="Center" />
+            <c:Icon Name="PART_Icon" Kind="{TemplateBinding Icon}" Size="12" StrokeWidth="1.6" IsVisible="False" VerticalAlignment="Center" />
+            <TextBlock Text="{TemplateBinding Text}" VerticalAlignment="Center" />
+            <TextBlock Name="PART_Detail"
+                       Text="{TemplateBinding Detail}"
+                       FontFamily="{DynamicResource QxMonoFont}"
+                       FontWeight="Normal"
+                       VerticalAlignment="Center"
+                       IsVisible="False" />
+          </StackPanel>
+        </Border>
+      </ControlTemplate>
+    </Setter>
+    <Style Selector="^:busy /template/ c|Spinner#PART_Spinner">
+      <Setter Property="IsVisible" Value="True" />
+    </Style>
+    <Style Selector="^:icon:not(:busy) /template/ c|Icon#PART_Icon">
+      <Setter Property="IsVisible" Value="True" />
+    </Style>
+    <Style Selector="^:detail /template/ TextBlock#PART_Detail">
+      <Setter Property="IsVisible" Value="True" />
+    </Style>
+    <Style Selector="^:accent">
+      <Setter Property="Background" Value="{DynamicResource QxAccentSoftBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource QxAccentBrush}" />
+    </Style>
+    <Style Selector="^:running">
+      <Setter Property="Background" Value="{DynamicResource QxRunningSoftBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource QxRunningBrush}" />
+    </Style>
+    <Style Selector="^:success">
+      <Setter Property="Background" Value="{DynamicResource QxSuccessSoftBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource QxSuccessBrush}" />
+    </Style>
+    <Style Selector="^:warning">
+      <Setter Property="Background" Value="{DynamicResource QxWarningSoftBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource QxWarningBrush}" />
+    </Style>
+    <Style Selector="^:danger">
+      <Setter Property="Background" Value="{DynamicResource QxDangerSoftBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource QxDangerBrush}" />
+    </Style>
+    <Style Selector="^:info">
+      <Setter Property="Background" Value="{DynamicResource QxInfoSoftBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource QxInfoBrush}" />
+    </Style>
+    <Style Selector="^.plain">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="Padding" Value="0" />
+    </Style>
+  </ControlTheme>
+
+  <ControlTheme x:Key="{x:Type c:Chip}" TargetType="c:Chip">
+    <Setter Property="Foreground" Value="{DynamicResource QxTextSecondaryBrush}" />
+    <Setter Property="Background" Value="{DynamicResource QxFillSubtleBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource QxBorderSubtleBrush}" />
+    <Setter Property="FontSize" Value="{DynamicResource QxFontSizeSmall}" />
+    <Setter Property="Height" Value="20" />
+    <Setter Property="Padding" Value="6,0" />
+    <Setter Property="HorizontalAlignment" Value="Left" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border Background="{TemplateBinding Background}"
+                BorderBrush="{TemplateBinding BorderBrush}"
+                BorderThickness="1"
+                CornerRadius="{DynamicResource QxRadiusXs}"
+                Padding="{TemplateBinding Padding}">
+          <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+            <c:Icon Name="PART_Icon" Kind="{TemplateBinding Icon}" Size="12" StrokeWidth="1.5" IsVisible="False" VerticalAlignment="Center" />
+            <TextBlock Text="{TemplateBinding Text}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+          </StackPanel>
+        </Border>
+      </ControlTemplate>
+    </Setter>
+    <Style Selector="^:icon /template/ c|Icon#PART_Icon">
+      <Setter Property="IsVisible" Value="True" />
+    </Style>
+    <Style Selector="^.mono">
+      <Setter Property="FontFamily" Value="{DynamicResource QxMonoFont}" />
+      <Setter Property="FontSize" Value="{DynamicResource QxFontSizeCodeCaption}" />
+      <Setter Property="Foreground" Value="{DynamicResource QxTextTertiaryBrush}" />
+    </Style>
+  </ControlTheme>
+
+  <ControlTheme x:Key="{x:Type c:Kbd}" TargetType="c:Kbd">
+    <Setter Property="Foreground" Value="{DynamicResource QxTextSecondaryBrush}" />
+    <Setter Property="Background" Value="{DynamicResource QxFillSubtleBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource QxBorderDefaultBrush}" />
+    <Setter Property="FontSize" Value="{DynamicResource QxFontSizeCaption}" />
+    <Setter Property="FontWeight" Value="Medium" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border MinWidth="18"
+                Height="18"
+                Padding="5,0"
+                CornerRadius="{DynamicResource QxRadiusXs}"
+                Background="{TemplateBinding Background}"
+                BorderBrush="{TemplateBinding BorderBrush}"
+                BorderThickness="1,1,1,2">
+          <TextBlock Text="{TemplateBinding Text}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+        </Border>
+      </ControlTemplate>
+    </Setter>
+    <Style Selector="^.on-accent">
+      <Setter Property="Background" Value="{DynamicResource QxOnAccentSubtleBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource QxOnAccentSubtleBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource QxTextOnAccentBrush}" />
+    </Style>
+  </ControlTheme>
+
+  <ControlTheme x:Key="{x:Type c:CountBadge}" TargetType="c:CountBadge">
+    <Setter Property="Foreground" Value="{DynamicResource QxTextSecondaryBrush}" />
+    <Setter Property="Background" Value="{DynamicResource QxFillHoverBrush}" />
+    <Setter Property="FontSize" Value="{DynamicResource QxFontSizeCaption}" />
+    <Setter Property="FontWeight" Value="Medium" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border MinWidth="18"
+                Height="18"
+                Padding="6,0"
+                CornerRadius="{DynamicResource QxRadiusXs}"
+                Background="{TemplateBinding Background}">
+          <TextBlock Text="{TemplateBinding Text}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+        </Border>
+      </ControlTemplate>
+    </Setter>
+    <Style Selector="^.selected">
+      <Setter Property="Background" Value="{DynamicResource QxAccentSoftBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource QxAccentBrush}" />
+    </Style>
+  </ControlTheme>
+
+</ResourceDictionary>

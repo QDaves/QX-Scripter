@@ -73,7 +73,7 @@ public readonly record struct OwnedBadge : IParserComposer<OwnedBadge>
     }
 
     public static OwnedBadge Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static OwnedBadge ParseFlash(in PacketReader p)
     {
@@ -100,48 +100,21 @@ public readonly record struct OwnedBadge : IParserComposer<OwnedBadge>
         return value;
     }
 
-    private static OwnedBadge ParseUnity(in PacketReader p)
-    {
-        AchievementBadgeWire.RequireRemaining(
-            in p,
-            AchievementBadgeWire.BadgeMinimumBytes,
-            0,
-            nameof(OwnedBadge));
-        var strings = AchievementBadgeWire.NewStringBudget();
-        var value = new OwnedBadge(
-            p.ReadInt(),
-            strings.Read(in p, nameof(Code), 0),
-            0,
-            0,
-            false);
-        AchievementBadgeWire.RequireEmpty(in p, nameof(OwnedBadge));
-        return value;
-    }
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(OwnedBadge value, in PacketWriter p)
     {
-        OwnedBadgeWireValue prepared = Prepare(value, true, in p);
-        Write(prepared, in p);
-    }
-
-    private static void ComposeUnity(OwnedBadge value, in PacketWriter p)
-    {
-        OwnedBadgeWireValue prepared = Prepare(value, false, in p);
+        OwnedBadgeWireValue prepared = Prepare(value, in p);
         Write(prepared, in p);
     }
 
     internal static OwnedBadgeWireValue Prepare(
         OwnedBadge value,
-        bool allows_rarity_data,
         in PacketWriter p,
         ref AchievementBadgeStringBudget strings)
     {
         int badge_id = AchievementBadgeWire.RequireBadgeId(value.NativeBadgeId);
-        if (!allows_rarity_data && value.HasRarityData)
-            throw new InvalidDataException("Unity owned badges cannot contain rarity data.");
         strings.Require(value.Code, nameof(Code), in p);
         return new OwnedBadgeWireValue(
             badge_id,
@@ -164,11 +137,10 @@ public readonly record struct OwnedBadge : IParserComposer<OwnedBadge>
 
     private static OwnedBadgeWireValue Prepare(
         OwnedBadge value,
-        bool allows_rarity_data,
         in PacketWriter p)
     {
         var strings = AchievementBadgeWire.NewStringBudget();
-        return Prepare(value, allows_rarity_data, in p, ref strings);
+        return Prepare(value, in p, ref strings);
     }
 
     public override string ToString() =>
@@ -219,7 +191,7 @@ public sealed record BadgeInventory : IParserComposer<BadgeInventory>
     }
 
     public static BadgeInventory Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static BadgeInventory ParseFlash(in PacketReader p)
     {
@@ -246,22 +218,11 @@ public sealed record BadgeInventory : IParserComposer<BadgeInventory>
         return new BadgeInventory(total_pages, current_page, badges);
     }
 
-    private static BadgeInventory ParseUnity(in PacketReader p)
-    {
-        ReadHeader(in p, out int total_pages, out int current_page, out int count);
-        OwnedBadge[] badges = ParseEntries(in p, count, false);
-        AchievementBadgeWire.RequireEmpty(in p, nameof(BadgeInventory));
-        return new BadgeInventory(total_pages, current_page, badges);
-    }
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(BadgeInventory value, in PacketWriter p) =>
-        ComposeMessage(value, true, in p);
-
-    private static void ComposeUnity(BadgeInventory value, in PacketWriter p) =>
-        ComposeMessage(value, false, in p);
+        ComposeMessage(value, in p);
 
     private static void ReadHeader(
         in PacketReader p,
@@ -344,7 +305,6 @@ public sealed record BadgeInventory : IParserComposer<BadgeInventory>
 
     private static void ComposeMessage(
         BadgeInventory value,
-        bool allows_rarity_data,
         in PacketWriter p)
     {
         ArgumentNullException.ThrowIfNull(value);
@@ -361,7 +321,6 @@ public sealed record BadgeInventory : IParserComposer<BadgeInventory>
             has_rarity_data = badge.HasRarityData;
             badges[index] = OwnedBadge.Prepare(
                 badge,
-                allows_rarity_data,
                 in p,
                 ref strings);
         }

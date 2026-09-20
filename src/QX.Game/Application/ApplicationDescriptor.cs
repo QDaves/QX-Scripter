@@ -108,8 +108,7 @@ public sealed record ApplicationMessageRequirement(
     MessageKey Key,
     Direction Direction,
     ApplicationMessageRole Role,
-    bool Required = true,
-    string? SchemaCapability = null);
+    bool Required = true);
 
 public sealed record ApplicationToolHints(
     bool ReadOnly,
@@ -178,12 +177,6 @@ public sealed class ApplicationDescriptor
         ApplicationMessageRequirement[] message_values = [.. messages ?? []];
         if (message_values.Any(message => message.Key.IsEmpty || message.Direction is Direction.None))
             throw new ArgumentException("Application message requirements need a semantic key and direction.", nameof(messages));
-        if (message_values.Any(message =>
-                message.SchemaCapability is not null &&
-                string.IsNullOrWhiteSpace(message.SchemaCapability)))
-        {
-            throw new ArgumentException("Application message schema capabilities cannot be empty.", nameof(messages));
-        }
 
         Id = id;
         Title = title;
@@ -327,7 +320,6 @@ public static class ApplicationMemberIds
     public const string ProfileIgnoresList = "profile.ignores.list";
     public const string ProfileIgnoresRefresh = "profile.ignores.refresh";
     public const string ProfileIgnoreAddById = "profile.ignore.add_by_id";
-    public const string ProfileIgnoreAddByName = "profile.ignore.add_by_name";
     public const string ProfileIgnoreRemove = "profile.ignore.remove";
     public const string ProfileFigureSetsList = "profile.figure_sets.list";
     public const string ProfileSanctionsList = "profile.sanctions.list";

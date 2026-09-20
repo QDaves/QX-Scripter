@@ -29,7 +29,6 @@ public readonly record struct Identifier(ClientType Client, Direction Direction,
         result += Client switch
         {
             ClientType.None => "",
-            ClientType.Unity => "unity:",
             ClientType.Flash => "flash:",
             _ => throw new UnsupportedClientException(Client)
         };

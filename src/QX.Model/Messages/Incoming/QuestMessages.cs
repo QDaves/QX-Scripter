@@ -28,11 +28,9 @@ public sealed record Quest : IParserComposer<Quest>
     }
 
     public static Quest Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static Quest ParseFlash(in PacketReader p) => ParseRoot(in p);
-
-    private static Quest ParseUnity(in PacketReader p) => ParseRoot(in p);
 
     private static Quest ParseRoot(in PacketReader p)
     {
@@ -43,12 +41,9 @@ public sealed record Quest : IParserComposer<Quest>
     }
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(Quest value, in PacketWriter p) =>
-        ComposeRoot(value, in p);
-
-    private static void ComposeUnity(Quest value, in PacketWriter p) =>
         ComposeRoot(value, in p);
 
     private static void ComposeRoot(Quest value, in PacketWriter p)
@@ -86,11 +81,9 @@ public sealed record Quests : IParserComposer<Quests>
     }
 
     public static Quests Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static Quests ParseFlash(in PacketReader p) => ParseRoot(in p);
-
-    private static Quests ParseUnity(in PacketReader p) => ParseRoot(in p);
 
     private static Quests ParseRoot(in PacketReader p)
     {
@@ -101,12 +94,9 @@ public sealed record Quests : IParserComposer<Quests>
     }
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(Quests value, in PacketWriter p) =>
-        ComposeRoot(value, in p);
-
-    private static void ComposeUnity(Quests value, in PacketWriter p) =>
         ComposeRoot(value, in p);
 
     private static void ComposeRoot(Quests value, in PacketWriter p)
@@ -140,11 +130,9 @@ public sealed record QuestsSeasonal : IParserComposer<QuestsSeasonal>
     }
 
     public static QuestsSeasonal Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static QuestsSeasonal ParseFlash(in PacketReader p) => ParseRoot(in p);
-
-    private static QuestsSeasonal ParseUnity(in PacketReader p) => ParseRoot(in p);
 
     private static QuestsSeasonal ParseRoot(in PacketReader p)
     {
@@ -154,12 +142,9 @@ public sealed record QuestsSeasonal : IParserComposer<QuestsSeasonal>
     }
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(QuestsSeasonal value, in PacketWriter p) =>
-        ComposeRoot(value, in p);
-
-    private static void ComposeUnity(QuestsSeasonal value, in PacketWriter p) =>
         ComposeRoot(value, in p);
 
     private static void ComposeRoot(QuestsSeasonal value, in PacketWriter p)
@@ -199,11 +184,9 @@ public sealed record QuestCompleted : IParserComposer<QuestCompleted>
     }
 
     public static QuestCompleted Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static QuestCompleted ParseFlash(in PacketReader p) => ParseRoot(in p);
-
-    private static QuestCompleted ParseUnity(in PacketReader p) => ParseRoot(in p);
 
     private static QuestCompleted ParseRoot(in PacketReader p)
     {
@@ -215,12 +198,9 @@ public sealed record QuestCompleted : IParserComposer<QuestCompleted>
     }
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(QuestCompleted value, in PacketWriter p) =>
-        ComposeRoot(value, in p);
-
-    private static void ComposeUnity(QuestCompleted value, in PacketWriter p) =>
         ComposeRoot(value, in p);
 
     private static void ComposeRoot(QuestCompleted value, in PacketWriter p)
@@ -262,11 +242,9 @@ public sealed record QuestCancelled : IParserComposer<QuestCancelled>
     }
 
     public static QuestCancelled Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static QuestCancelled ParseFlash(in PacketReader p) => ParseRoot(in p);
-
-    private static QuestCancelled ParseUnity(in PacketReader p) => ParseRoot(in p);
 
     private static QuestCancelled ParseRoot(in PacketReader p)
     {
@@ -283,12 +261,9 @@ public sealed record QuestCancelled : IParserComposer<QuestCancelled>
     }
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(QuestCancelled value, in PacketWriter p) =>
-        ComposeRoot(value, in p);
-
-    private static void ComposeUnity(QuestCancelled value, in PacketWriter p) =>
         ComposeRoot(value, in p);
 
     private static void ComposeRoot(QuestCancelled value, in PacketWriter p)
@@ -326,11 +301,9 @@ public sealed record QuestDaily : IParserComposer<QuestDaily>
     }
 
     public static QuestDaily Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static QuestDaily ParseFlash(in PacketReader p) => ParseRoot(in p);
-
-    private static QuestDaily ParseUnity(in PacketReader p) => ParseRoot(in p);
 
     private static QuestDaily ParseRoot(in PacketReader p)
     {
@@ -353,12 +326,9 @@ public sealed record QuestDaily : IParserComposer<QuestDaily>
     }
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(QuestDaily value, in PacketWriter p) =>
-        ComposeRoot(value, in p);
-
-    private static void ComposeUnity(QuestDaily value, in PacketWriter p) =>
         ComposeRoot(value, in p);
 
     private static void ComposeRoot(QuestDaily value, in PacketWriter p)
@@ -387,11 +357,9 @@ public sealed record QuestDaily : IParserComposer<QuestDaily>
 public sealed record AcceptQuest(Id QuestId) : IParserComposer<AcceptQuest>
 {
     public static AcceptQuest Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static AcceptQuest ParseFlash(in PacketReader p) => ParseRoot(in p);
-
-    private static AcceptQuest ParseUnity(in PacketReader p) => ParseRoot(in p);
 
     private static AcceptQuest ParseRoot(in PacketReader p)
     {
@@ -401,12 +369,9 @@ public sealed record AcceptQuest(Id QuestId) : IParserComposer<AcceptQuest>
     }
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(AcceptQuest value, in PacketWriter p) =>
-        ComposeRoot(value, in p);
-
-    private static void ComposeUnity(AcceptQuest value, in PacketWriter p) =>
         ComposeRoot(value, in p);
 
     private static void ComposeRoot(AcceptQuest value, in PacketWriter p)
@@ -420,11 +385,9 @@ public sealed record AcceptQuest(Id QuestId) : IParserComposer<AcceptQuest>
 public sealed record ActivateQuest(Id QuestId) : IParserComposer<ActivateQuest>
 {
     public static ActivateQuest Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static ActivateQuest ParseFlash(in PacketReader p) => ParseRoot(in p);
-
-    private static ActivateQuest ParseUnity(in PacketReader p) => ParseRoot(in p);
 
     private static ActivateQuest ParseRoot(in PacketReader p)
     {
@@ -434,12 +397,9 @@ public sealed record ActivateQuest(Id QuestId) : IParserComposer<ActivateQuest>
     }
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(ActivateQuest value, in PacketWriter p) =>
-        ComposeRoot(value, in p);
-
-    private static void ComposeUnity(ActivateQuest value, in PacketWriter p) =>
         ComposeRoot(value, in p);
 
     private static void ComposeRoot(ActivateQuest value, in PacketWriter p)
@@ -453,11 +413,9 @@ public sealed record ActivateQuest(Id QuestId) : IParserComposer<ActivateQuest>
 public sealed record RejectQuest(Id QuestId) : IParserComposer<RejectQuest>
 {
     public static RejectQuest Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static RejectQuest ParseFlash(in PacketReader p) => ParseRoot(in p);
-
-    private static RejectQuest ParseUnity(in PacketReader p) => ParseRoot(in p);
 
     private static RejectQuest ParseRoot(in PacketReader p)
     {
@@ -467,12 +425,9 @@ public sealed record RejectQuest(Id QuestId) : IParserComposer<RejectQuest>
     }
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(RejectQuest value, in PacketWriter p) =>
-        ComposeRoot(value, in p);
-
-    private static void ComposeUnity(RejectQuest value, in PacketWriter p) =>
         ComposeRoot(value, in p);
 
     private static void ComposeRoot(RejectQuest value, in PacketWriter p)
@@ -486,11 +441,9 @@ public sealed record RejectQuest(Id QuestId) : IParserComposer<RejectQuest>
 public sealed record CancelQuest : IParserComposer<CancelQuest>
 {
     public static CancelQuest Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static CancelQuest ParseFlash(in PacketReader p) => ParseRoot(in p);
-
-    private static CancelQuest ParseUnity(in PacketReader p) => ParseRoot(in p);
 
     private static CancelQuest ParseRoot(in PacketReader p)
     {
@@ -499,12 +452,9 @@ public sealed record CancelQuest : IParserComposer<CancelQuest>
     }
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(CancelQuest value, in PacketWriter p) =>
-        ComposeRoot(value);
-
-    private static void ComposeUnity(CancelQuest value, in PacketWriter p) =>
         ComposeRoot(value);
 
     private static void ComposeRoot(CancelQuest value)
@@ -516,11 +466,9 @@ public sealed record CancelQuest : IParserComposer<CancelQuest>
 public sealed record GetQuests : IParserComposer<GetQuests>
 {
     public static GetQuests Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static GetQuests ParseFlash(in PacketReader p) => ParseRoot(in p);
-
-    private static GetQuests ParseUnity(in PacketReader p) => ParseRoot(in p);
 
     private static GetQuests ParseRoot(in PacketReader p)
     {
@@ -529,12 +477,9 @@ public sealed record GetQuests : IParserComposer<GetQuests>
     }
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(GetQuests value, in PacketWriter p) =>
-        ComposeRoot(value);
-
-    private static void ComposeUnity(GetQuests value, in PacketWriter p) =>
         ComposeRoot(value);
 
     private static void ComposeRoot(GetQuests value)
@@ -548,11 +493,9 @@ public sealed record GetDailyQuest(
     int Index) : IParserComposer<GetDailyQuest>
 {
     public static GetDailyQuest Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static GetDailyQuest ParseFlash(in PacketReader p) => ParseRoot(in p);
-
-    private static GetDailyQuest ParseUnity(in PacketReader p) => ParseRoot(in p);
 
     private static GetDailyQuest ParseRoot(in PacketReader p)
     {
@@ -567,12 +510,9 @@ public sealed record GetDailyQuest(
     }
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(GetDailyQuest value, in PacketWriter p) =>
-        ComposeRoot(value, in p);
-
-    private static void ComposeUnity(GetDailyQuest value, in PacketWriter p) =>
         ComposeRoot(value, in p);
 
     private static void ComposeRoot(GetDailyQuest value, in PacketWriter p)
@@ -586,11 +526,9 @@ public sealed record GetDailyQuest(
 public sealed record GetSeasonalQuests : IParserComposer<GetSeasonalQuests>
 {
     public static GetSeasonalQuests Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static GetSeasonalQuests ParseFlash(in PacketReader p) => ParseRoot(in p);
-
-    private static GetSeasonalQuests ParseUnity(in PacketReader p) => ParseRoot(in p);
 
     private static GetSeasonalQuests ParseRoot(in PacketReader p)
     {
@@ -599,12 +537,9 @@ public sealed record GetSeasonalQuests : IParserComposer<GetSeasonalQuests>
     }
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(GetSeasonalQuests value, in PacketWriter p) =>
-        ComposeRoot(value);
-
-    private static void ComposeUnity(GetSeasonalQuests value, in PacketWriter p) =>
         ComposeRoot(value);
 
     private static void ComposeRoot(GetSeasonalQuests value)
@@ -616,11 +551,9 @@ public sealed record GetSeasonalQuests : IParserComposer<GetSeasonalQuests>
 public sealed record OpenQuestTracker : IParserComposer<OpenQuestTracker>
 {
     public static OpenQuestTracker Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static OpenQuestTracker ParseFlash(in PacketReader p) => ParseRoot(in p);
-
-    private static OpenQuestTracker ParseUnity(in PacketReader p) => ParseRoot(in p);
 
     private static OpenQuestTracker ParseRoot(in PacketReader p)
     {
@@ -629,12 +562,9 @@ public sealed record OpenQuestTracker : IParserComposer<OpenQuestTracker>
     }
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(OpenQuestTracker value, in PacketWriter p) =>
-        ComposeRoot(value);
-
-    private static void ComposeUnity(OpenQuestTracker value, in PacketWriter p) =>
         ComposeRoot(value);
 
     private static void ComposeRoot(OpenQuestTracker value)
@@ -646,12 +576,9 @@ public sealed record OpenQuestTracker : IParserComposer<OpenQuestTracker>
 public sealed record FriendRequestQuestComplete : IParserComposer<FriendRequestQuestComplete>
 {
     public static FriendRequestQuestComplete Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static FriendRequestQuestComplete ParseFlash(in PacketReader p) =>
-        ParseRoot(in p);
-
-    private static FriendRequestQuestComplete ParseUnity(in PacketReader p) =>
         ParseRoot(in p);
 
     private static FriendRequestQuestComplete ParseRoot(in PacketReader p)
@@ -661,12 +588,9 @@ public sealed record FriendRequestQuestComplete : IParserComposer<FriendRequestQ
     }
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(FriendRequestQuestComplete value, in PacketWriter p) =>
-        ComposeRoot(value);
-
-    private static void ComposeUnity(FriendRequestQuestComplete value, in PacketWriter p) =>
         ComposeRoot(value);
 
     private static void ComposeRoot(FriendRequestQuestComplete value)

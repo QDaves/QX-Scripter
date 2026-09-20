@@ -1,0 +1,445 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:c="using:Qx.Desktop.Controls">
+
+  <ControlTheme x:Key="{x:Type CheckBox}" TargetType="CheckBox">
+    <Setter Property="ClipToBounds" Value="False" />
+    <Setter Property="Foreground" Value="{DynamicResource QxTextPrimaryBrush}" />
+    <Setter Property="Background" Value="{DynamicResource QxFieldBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource QxBorderControlBrush}" />
+    <Setter Property="FontSize" Value="{DynamicResource QxFontSizeBody}" />
+    <Setter Property="Padding" Value="8,0,0,0" />
+    <Setter Property="MinHeight" Value="{DynamicResource QxControlHeightSm}" />
+    <Setter Property="HorizontalAlignment" Value="Left" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+    <Setter Property="VerticalContentAlignment" Value="Center" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Grid Background="Transparent" ColumnDefinitions="Auto,*">
+          <Border Name="PART_FocusRing"
+                  Width="24"
+                  Height="24"
+                  Margin="-4"
+                  VerticalAlignment="Center"
+                  BorderThickness="{DynamicResource QxFocusRingThickness}"
+                  BorderBrush="{DynamicResource QxFocusRingBrush}"
+                  CornerRadius="{DynamicResource QxRadiusFocusXs}"
+                  IsHitTestVisible="False"
+                  IsVisible="False" />
+          <Border Name="PART_Box"
+                  Width="16"
+                  Height="16"
+                  VerticalAlignment="Center"
+                  Background="{TemplateBinding Background}"
+                  BorderBrush="{TemplateBinding BorderBrush}"
+                  BorderThickness="1"
+                  CornerRadius="{DynamicResource QxRadiusXs}">
+            <Border.Transitions>
+              <Transitions>
+                <BrushTransition Property="Background" Duration="0:0:0.1" />
+                <BrushTransition Property="BorderBrush" Duration="0:0:0.1" />
+              </Transitions>
+            </Border.Transitions>
+            <Panel>
+              <c:Icon Name="PART_Check" Kind="Check" Size="12" StrokeWidth="2" IsVisible="False" Foreground="{DynamicResource QxTextOnAccentBrush}" />
+              <Border Name="PART_Dash" Width="8" Height="2" CornerRadius="1" IsVisible="False" Background="{DynamicResource QxTextOnAccentBrush}" />
+            </Panel>
+          </Border>
+          <ContentPresenter Name="PART_ContentPresenter"
+                            Grid.Column="1"
+                            Margin="{TemplateBinding Padding}"
+                            Content="{TemplateBinding Content}"
+                            ContentTemplate="{TemplateBinding ContentTemplate}"
+                            RecognizesAccessKey="True"
+                            VerticalAlignment="{TemplateBinding VerticalContentAlignment}" />
+        </Grid>
+      </ControlTemplate>
+    </Setter>
+    <Style Selector="^:pointerover /template/ Border#PART_Box">
+      <Setter Property="BorderBrush" Value="{DynamicResource QxTextSecondaryBrush}" />
+    </Style>
+    <Style Selector="^:checked /template/ Border#PART_Box, ^:indeterminate /template/ Border#PART_Box">
+      <Setter Property="Background" Value="{DynamicResource QxAccentFillBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource QxAccentFillBrush}" />
+    </Style>
+    <Style Selector="^:checked:pointerover /template/ Border#PART_Box">
+      <Setter Property="Background" Value="{DynamicResource QxAccentFillHoverBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource QxAccentFillHoverBrush}" />
+    </Style>
+    <Style Selector="^:checked /template/ c|Icon#PART_Check">
+      <Setter Property="IsVisible" Value="True" />
+    </Style>
+    <Style Selector="^:indeterminate /template/ Border#PART_Dash">
+      <Setter Property="IsVisible" Value="True" />
+    </Style>
+    <Style Selector="^:focus-visible /template/ Border#PART_FocusRing">
+      <Setter Property="IsVisible" Value="True" />
+    </Style>
+    <Style Selector="^:disabled">
+      <Setter Property="Opacity" Value="{DynamicResource QxDisabledOpacity}" />
+    </Style>
+  </ControlTheme>
+
+  <ControlTheme x:Key="{x:Type RadioButton}" TargetType="RadioButton">
+    <Setter Property="ClipToBounds" Value="False" />
+    <Setter Property="Foreground" Value="{DynamicResource QxTextPrimaryBrush}" />
+    <Setter Property="Background" Value="{DynamicResource QxFieldBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource QxBorderControlBrush}" />
+    <Setter Property="FontSize" Value="{DynamicResource QxFontSizeBody}" />
+    <Setter Property="Padding" Value="8,0,0,0" />
+    <Setter Property="MinHeight" Value="{DynamicResource QxControlHeightSm}" />
+    <Setter Property="HorizontalAlignment" Value="Left" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+    <Setter Property="VerticalContentAlignment" Value="Center" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Grid Background="Transparent" ColumnDefinitions="Auto,*">
+          <Border Name="PART_FocusRing"
+                  Width="24"
+                  Height="24"
+                  Margin="-4"
+                  VerticalAlignment="Center"
+                  BorderThickness="{DynamicResource QxFocusRingThickness}"
+                  BorderBrush="{DynamicResource QxFocusRingBrush}"
+                  CornerRadius="12"
+                  IsHitTestVisible="False"
+                  IsVisible="False" />
+          <Border Name="PART_Ring"
+                  Width="16"
+                  Height="16"
+                  VerticalAlignment="Center"
+                  Background="{TemplateBinding Background}"
+                  BorderBrush="{TemplateBinding BorderBrush}"
+                  BorderThickness="1"
+                  CornerRadius="8">
+            <Ellipse Name="PART_Mark" Width="6" Height="6" IsVisible="False" Fill="{DynamicResource QxTextOnAccentBrush}" />
+          </Border>
+          <ContentPresenter Name="PART_ContentPresenter"
+                            Grid.Column="1"
+                            Margin="{TemplateBinding Padding}"
+                            Content="{TemplateBinding Content}"
+                            ContentTemplate="{TemplateBinding ContentTemplate}"
+                            RecognizesAccessKey="True"
+                            VerticalAlignment="{TemplateBinding VerticalContentAlignment}" />
+        </Grid>
+      </ControlTemplate>
+    </Setter>
+    <Style Selector="^:pointerover /template/ Border#PART_Ring">
+      <Setter Property="BorderBrush" Value="{DynamicResource QxTextSecondaryBrush}" />
+    </Style>
+    <Style Selector="^:checked /template/ Border#PART_Ring">
+      <Setter Property="Background" Value="{DynamicResource QxAccentFillBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource QxAccentFillBrush}" />
+    </Style>
+    <Style Selector="^:checked /template/ Ellipse#PART_Mark">
+      <Setter Property="IsVisible" Value="True" />
+    </Style>
+    <Style Selector="^:focus-visible /template/ Border#PART_FocusRing">
+      <Setter Property="IsVisible" Value="True" />
+    </Style>
+    <Style Selector="^:disabled">
+      <Setter Property="Opacity" Value="{DynamicResource QxDisabledOpacity}" />
+    </Style>
+  </ControlTheme>
+
+  <ControlTheme x:Key="QxSegmentItem" TargetType="ListBoxItem">
+    <Setter Property="Foreground" Value="{DynamicResource QxTextSecondaryBrush}" />
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderBrush" Value="Transparent" />
+    <Setter Property="FontSize" Value="{DynamicResource QxFontSizeSmall}" />
+    <Setter Property="FontWeight" Value="Medium" />
+    <Setter Property="Padding" Value="10,0" />
+    <Setter Property="Margin" Value="1,0" />
+    <Setter Property="MinHeight" Value="22" />
+    <Setter Property="CornerRadius" Value="{DynamicResource QxRadiusXs}" />
+    <Setter Property="HorizontalContentAlignment" Value="Center" />
+    <Setter Property="VerticalContentAlignment" Value="Center" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border Name="PART_Root"
+                Background="{TemplateBinding Background}"
+                BorderBrush="{TemplateBinding BorderBrush}"
+                BorderThickness="1"
+                CornerRadius="{TemplateBinding CornerRadius}"
+                MinHeight="{TemplateBinding MinHeight}"
+                Padding="{TemplateBinding Padding}">
+          <ContentPresenter Name="PART_ContentPresenter"
+                            Content="{TemplateBinding Content}"
+                            ContentTemplate="{TemplateBinding ContentTemplate}"
+                            RecognizesAccessKey="True"
+                            HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                            VerticalAlignment="{TemplateBinding VerticalContentAlignment}" />
+        </Border>
+      </ControlTemplate>
+    </Setter>
+    <Style Selector="^:pointerover">
+      <Setter Property="Foreground" Value="{DynamicResource QxTextPrimaryBrush}" />
+    </Style>
+    <Style Selector="^:selected">
+      <Setter Property="Foreground" Value="{DynamicResource QxTextPrimaryBrush}" />
+      <Style Selector="^ /template/ Border#PART_Root">
+        <Setter Property="Background" Value="{DynamicResource QxSurfaceRaisedBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource QxBorderDefaultBrush}" />
+        <Setter Property="BoxShadow" Value="{DynamicResource QxShadowControl}" />
+      </Style>
+    </Style>
+    <Style Selector="^:focus-visible /template/ Border#PART_Root">
+      <Setter Property="BorderBrush" Value="{DynamicResource QxFocusRingBrush}" />
+    </Style>
+    <Style Selector="^:disabled">
+      <Setter Property="Opacity" Value="{DynamicResource QxDisabledOpacity}" />
+    </Style>
+  </ControlTheme>
+
+  <ControlTheme x:Key="{x:Type c:SegmentedControl}" TargetType="c:SegmentedControl">
+    <Setter Property="AutoScrollToSelectedItem" Value="False" />
+    <Setter Property="Background" Value="{DynamicResource QxSurfaceSunkenBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource QxBorderSubtleBrush}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="5" />
+    <Setter Property="Padding" Value="1" />
+    <Setter Property="HorizontalAlignment" Value="Left" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+    <Setter Property="SelectionMode" Value="Single,AlwaysSelected" />
+    <Setter Property="ItemContainerTheme" Value="{StaticResource QxSegmentItem}" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border Name="PART_Track"
+                Background="{TemplateBinding Background}"
+                BorderBrush="{TemplateBinding BorderBrush}"
+                BorderThickness="{TemplateBinding BorderThickness}"
+                CornerRadius="{TemplateBinding CornerRadius}"
+                Padding="{TemplateBinding Padding}">
+          <ItemsPresenter Name="PART_ItemsPresenter" ItemsPanel="{TemplateBinding ItemsPanel}" />
+        </Border>
+      </ControlTemplate>
+    </Setter>
+    <Setter Property="ItemsPanel">
+      <ItemsPanelTemplate>
+        <UniformGrid Rows="1" />
+      </ItemsPanelTemplate>
+    </Setter>
+    <Style Selector="^:disabled">
+      <Setter Property="Opacity" Value="{DynamicResource QxDisabledOpacity}" />
+    </Style>
+  </ControlTheme>
+
+  <ControlTheme x:Key="{x:Type c:Segment}" TargetType="c:Segment">
+    <Setter Property="Template">
+      <ControlTemplate>
+        <StackPanel Orientation="Horizontal" Spacing="6" HorizontalAlignment="Center" VerticalAlignment="Center">
+          <c:Icon Name="PART_Icon" Kind="{TemplateBinding Icon}" Size="{TemplateBinding IconSize}" VerticalAlignment="Center" IsVisible="False" />
+          <TextBlock Name="PART_Text" Text="{TemplateBinding Text}" VerticalAlignment="Center" IsVisible="False" />
+        </StackPanel>
+      </ControlTemplate>
+    </Setter>
+    <Style Selector="^:icon /template/ c|Icon#PART_Icon">
+      <Setter Property="IsVisible" Value="True" />
+    </Style>
+    <Style Selector="^:text /template/ TextBlock#PART_Text">
+      <Setter Property="IsVisible" Value="True" />
+    </Style>
+  </ControlTheme>
+
+  <ControlTheme x:Key="{x:Type ToggleSwitch}" TargetType="ToggleSwitch">
+    <Setter Property="ClipToBounds" Value="False" />
+    <Setter Property="Foreground" Value="{DynamicResource QxTextPrimaryBrush}" />
+    <Setter Property="FontSize" Value="{DynamicResource QxFontSizeBody}" />
+    <Setter Property="HorizontalAlignment" Value="Left" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+    <Setter Property="HorizontalContentAlignment" Value="Left" />
+    <Setter Property="VerticalContentAlignment" Value="Center" />
+    <Setter Property="KnobTransitions">
+      <Transitions>
+        <DoubleTransition Easing="0.2,0,0,1" Property="Canvas.Left" Duration="0:0:0.16" />
+      </Transitions>
+    </Setter>
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Grid Background="Transparent" ColumnDefinitions="Auto,Auto">
+          <ContentPresenter Name="PART_ContentPresenter"
+                            Grid.Column="0"
+                            Margin="0,0,10,0"
+                            VerticalAlignment="Center"
+                            Content="{TemplateBinding Content}"
+                            ContentTemplate="{TemplateBinding ContentTemplate}"
+                            RecognizesAccessKey="True" />
+          <Panel Grid.Column="1" Width="32" Height="18" VerticalAlignment="Center">
+            <Border Name="PART_FocusRing"
+                    Margin="{DynamicResource QxFocusRingMargin}"
+                    BorderThickness="{DynamicResource QxFocusRingThickness}"
+                    BorderBrush="{DynamicResource QxFocusRingBrush}"
+                    CornerRadius="{DynamicResource QxRadiusFull}"
+                    IsHitTestVisible="False"
+                    IsVisible="False" />
+            <Border Name="PART_Track"
+                    Background="{DynamicResource QxFillTrackBrush}"
+                    BorderBrush="{DynamicResource QxBorderControlBrush}"
+                    BorderThickness="1"
+                    CornerRadius="9">
+              <Border.Transitions>
+                <Transitions>
+                  <BrushTransition Property="Background" Duration="0:0:0.16" />
+                  <BrushTransition Property="BorderBrush" Duration="0:0:0.16" />
+                </Transitions>
+              </Border.Transitions>
+            </Border>
+            <Canvas Name="PART_SwitchKnob" Width="14" Height="18" HorizontalAlignment="Left">
+              <Grid Name="PART_MovingKnobs" Width="18" Height="18">
+                <Ellipse Name="PART_Knob" Width="12" Height="12" Fill="{DynamicResource QxTextSecondaryBrush}" />
+              </Grid>
+            </Canvas>
+          </Panel>
+        </Grid>
+      </ControlTemplate>
+    </Setter>
+    <Style Selector="^ /template/ ContentPresenter#PART_ContentPresenter:empty">
+      <Setter Property="Margin" Value="0" />
+    </Style>
+    <Style Selector="^:pointerover /template/ Ellipse#PART_Knob">
+      <Setter Property="Fill" Value="{DynamicResource QxTextPrimaryBrush}" />
+    </Style>
+    <Style Selector="^:checked /template/ Border#PART_Track">
+      <Setter Property="Background" Value="{DynamicResource QxAccentFillBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource QxAccentFillBrush}" />
+    </Style>
+    <Style Selector="^:checked:pointerover /template/ Border#PART_Track">
+      <Setter Property="Background" Value="{DynamicResource QxAccentFillHoverBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource QxAccentFillHoverBrush}" />
+    </Style>
+    <Style Selector="^:checked /template/ Ellipse#PART_Knob">
+      <Setter Property="Fill" Value="{DynamicResource QxTextOnAccentBrush}" />
+    </Style>
+    <Style Selector="^:focus-visible /template/ Border#PART_FocusRing">
+      <Setter Property="IsVisible" Value="True" />
+    </Style>
+    <Style Selector="^:disabled">
+      <Setter Property="Opacity" Value="{DynamicResource QxDisabledOpacity}" />
+    </Style>
+  </ControlTheme>
+
+  <ControlTheme x:Key="QxSliderTrackButton" TargetType="RepeatButton">
+    <Setter Property="Focusable" Value="False" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Grid Background="Transparent">
+          <Border Height="4" VerticalAlignment="Center" CornerRadius="2" Background="{TemplateBinding Background}" />
+        </Grid>
+      </ControlTemplate>
+    </Setter>
+  </ControlTheme>
+
+  <ControlTheme x:Key="QxSliderThumb" TargetType="Thumb">
+    <Setter Property="Background" Value="{DynamicResource QxTextOnAccentBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource QxProgressFillBrush}" />
+    <Setter Property="BorderThickness" Value="2" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border Name="PART_Knob"
+                Background="{TemplateBinding Background}"
+                BorderBrush="{TemplateBinding BorderBrush}"
+                BorderThickness="{TemplateBinding BorderThickness}"
+                CornerRadius="7"
+                BoxShadow="{DynamicResource QxShadowControl}" />
+      </ControlTemplate>
+    </Setter>
+  </ControlTheme>
+
+  <ControlTheme x:Key="{x:Type Slider}" TargetType="Slider">
+    <Setter Property="ClipToBounds" Value="False" />
+    <Setter Property="Background" Value="{DynamicResource QxFillTrackBrush}" />
+    <Setter Property="Foreground" Value="{DynamicResource QxProgressFillBrush}" />
+    <Setter Property="MinHeight" Value="20" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+    <Style Selector="^:horizontal">
+      <Setter Property="Template">
+        <ControlTemplate>
+          <DataValidationErrors>
+            <Grid Name="SliderContainer" Background="Transparent" MinHeight="{TemplateBinding MinHeight}">
+              <Track Name="PART_Track"
+                     Minimum="{TemplateBinding Minimum}"
+                     Maximum="{TemplateBinding Maximum}"
+                     Value="{TemplateBinding Value, Mode=TwoWay}"
+                     IsDirectionReversed="{TemplateBinding IsDirectionReversed}"
+                     Orientation="Horizontal">
+                <Track.DecreaseButton>
+                  <RepeatButton Name="PART_DecreaseButton" Theme="{StaticResource QxSliderTrackButton}" Background="{TemplateBinding Foreground}" />
+                </Track.DecreaseButton>
+                <Track.IncreaseButton>
+                  <RepeatButton Name="PART_IncreaseButton" Theme="{StaticResource QxSliderTrackButton}" Background="{TemplateBinding Background}" />
+                </Track.IncreaseButton>
+                <Thumb Name="thumb" Width="14" Height="14" Theme="{StaticResource QxSliderThumb}" DataContext="{TemplateBinding Value}" />
+              </Track>
+            </Grid>
+          </DataValidationErrors>
+        </ControlTemplate>
+      </Setter>
+    </Style>
+    <Style Selector="^:pointerover /template/ Thumb#thumb">
+      <Setter Property="RenderTransform" Value="scale(1.08)" />
+    </Style>
+    <Style Selector="^:focus-visible /template/ Thumb#thumb">
+      <Setter Property="BorderBrush" Value="{DynamicResource QxAccentBrush}" />
+      <Setter Property="BorderThickness" Value="4" />
+    </Style>
+    <Style Selector="^:disabled">
+      <Setter Property="Opacity" Value="{DynamicResource QxDisabledOpacity}" />
+    </Style>
+  </ControlTheme>
+
+  <ControlTheme x:Key="{x:Type ProgressBar}" TargetType="ProgressBar">
+    <Setter Property="Foreground" Value="{DynamicResource QxProgressFillBrush}" />
+    <Setter Property="Background" Value="{DynamicResource QxFillTrackBrush}" />
+    <Setter Property="CornerRadius" Value="2" />
+    <Setter Property="MinHeight" Value="4" />
+    <Setter Property="Height" Value="4" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+    <Setter Property="Template">
+      <ControlTemplate TargetType="ProgressBar">
+        <Border Name="ProgressBarRoot"
+                Background="{TemplateBinding Background}"
+                CornerRadius="{TemplateBinding CornerRadius}"
+                ClipToBounds="True">
+          <Panel>
+            <Border Name="PART_Indicator"
+                    Background="{TemplateBinding Foreground}"
+                    CornerRadius="{TemplateBinding CornerRadius}"
+                    HorizontalAlignment="Left" />
+            <Border Name="IndeterminateProgressBarIndicator"
+                    Background="{TemplateBinding Foreground}"
+                    CornerRadius="{TemplateBinding CornerRadius}"
+                    HorizontalAlignment="Left"
+                    IsVisible="False" />
+          </Panel>
+        </Border>
+      </ControlTemplate>
+    </Setter>
+    <Style Selector="^:indeterminate /template/ Border#PART_Indicator">
+      <Setter Property="IsVisible" Value="False" />
+    </Style>
+    <Style Selector="^:indeterminate /template/ Border#IndeterminateProgressBarIndicator">
+      <Setter Property="IsVisible" Value="True" />
+      <Setter Property="Width" Value="{Binding $parent[ProgressBar].TemplateSettings.ContainerWidth}" />
+      <Style.Animations>
+        <Animation IterationCount="Infinite" Duration="0:0:1.6">
+          <KeyFrame KeySpline="0.4,0,0.6,1" KeyTime="0:0:0">
+            <Setter Property="TranslateTransform.X" Value="{Binding $parent[ProgressBar].TemplateSettings.ContainerAnimationStartPosition}" />
+          </KeyFrame>
+          <KeyFrame KeySpline="0.4,0,0.6,1" KeyTime="0:0:1.6">
+            <Setter Property="TranslateTransform.X" Value="{Binding $parent[ProgressBar].TemplateSettings.ContainerAnimationEndPosition}" />
+          </KeyFrame>
+        </Animation>
+      </Style.Animations>
+    </Style>
+    <Style Selector="^.running">
+      <Setter Property="Foreground" Value="{DynamicResource QxRunningBrush}" />
+    </Style>
+    <Style Selector="^.success">
+      <Setter Property="Foreground" Value="{DynamicResource QxSuccessBrush}" />
+    </Style>
+    <Style Selector="^.danger">
+      <Setter Property="Foreground" Value="{DynamicResource QxDangerBrush}" />
+    </Style>
+  </ControlTheme>
+
+</ResourceDictionary>

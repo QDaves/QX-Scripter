@@ -20,28 +20,17 @@ public sealed record NavigatorSearch(
     string Localization) : IParserComposer<NavigatorSearch>
 {
     public static NavigatorSearch Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static NavigatorSearch ParseFlash(in PacketReader p) =>
         new(p.ReadInt(), p.ReadString(), p.ReadString(), p.ReadString());
 
-    private static NavigatorSearch ParseUnity(in PacketReader p) =>
-        new(checked((int)p.ReadLong()), p.ReadString(), p.ReadString(), p.ReadString());
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(NavigatorSearch value, in PacketWriter p)
     {
         p.WriteInt(value.Id);
-        p.WriteString(value.SearchCode);
-        p.WriteString(value.Filter);
-        p.WriteString(value.Localization);
-    }
-
-    private static void ComposeUnity(NavigatorSearch value, in PacketWriter p)
-    {
-        p.WriteLong(value.Id);
         p.WriteString(value.SearchCode);
         p.WriteString(value.Filter);
         p.WriteString(value.Localization);
@@ -57,21 +46,12 @@ public sealed record NavigatorCategory(string SearchCode, IReadOnlyList<Navigato
     public int ViewMode { get; init; }
 
     public static NavigatorCategory Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static NavigatorCategory ParseFlash(in PacketReader p)
     {
         string search_code = p.ReadString();
         return ParseLinks(in p, search_code, p.ReadInt());
-    }
-
-    private static NavigatorCategory ParseUnity(in PacketReader p)
-    {
-        string search_code = p.ReadString();
-        return new NavigatorCategory(search_code, [])
-        {
-            ViewMode = p.ReadInt()
-        };
     }
 
     private static NavigatorCategory ParseLinks(in PacketReader p, string search_code, int count)
@@ -83,7 +63,7 @@ public sealed record NavigatorCategory(string SearchCode, IReadOnlyList<Navigato
     }
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(NavigatorCategory value, in PacketWriter p)
     {
@@ -91,12 +71,6 @@ public sealed record NavigatorCategory(string SearchCode, IReadOnlyList<Navigato
         p.WriteInt(value.QuickLinks.Count);
         foreach (NavigatorSearch link in value.QuickLinks)
             p.Compose(link);
-    }
-
-    private static void ComposeUnity(NavigatorCategory value, in PacketWriter p)
-    {
-        p.WriteString(value.SearchCode);
-        p.WriteInt(value.ViewMode);
     }
 }
 
@@ -112,13 +86,10 @@ public sealed record NavigatorMetaData(IReadOnlyList<NavigatorCategory> Categori
     : IParserComposer<NavigatorMetaData>
 {
     public static NavigatorMetaData Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static NavigatorMetaData ParseFlash(in PacketReader p) =>
         ParseCategories(in p, p.ReadInt());
-
-    private static NavigatorMetaData ParseUnity(in PacketReader p) =>
-        ParseCategories(in p, p.ReadLength());
 
     private static NavigatorMetaData ParseCategories(in PacketReader p, int count)
     {
@@ -129,18 +100,11 @@ public sealed record NavigatorMetaData(IReadOnlyList<NavigatorCategory> Categori
     }
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(NavigatorMetaData value, in PacketWriter p)
     {
         p.WriteInt(value.Categories.Count);
-        foreach (NavigatorCategory category in value.Categories)
-            p.Compose(category);
-    }
-
-    private static void ComposeUnity(NavigatorMetaData value, in PacketWriter p)
-    {
-        p.WriteLength((Length)value.Categories.Count);
         foreach (NavigatorCategory category in value.Categories)
             p.Compose(category);
     }
@@ -155,26 +119,15 @@ public sealed record NavigatorLiftedRoom(int RoomId, int AreaId, string Image, s
     : IParserComposer<NavigatorLiftedRoom>
 {
     public static NavigatorLiftedRoom Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static NavigatorLiftedRoom ParseFlash(in PacketReader p) =>
         new(p.ReadInt(), p.ReadInt(), p.ReadString(), p.ReadString());
 
-    private static NavigatorLiftedRoom ParseUnity(in PacketReader p) =>
-        new(p.ReadInt(), p.ReadInt(), p.ReadString(), p.ReadString());
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(NavigatorLiftedRoom value, in PacketWriter p)
-    {
-        p.WriteInt(value.RoomId);
-        p.WriteInt(value.AreaId);
-        p.WriteString(value.Image);
-        p.WriteString(value.Caption);
-    }
-
-    private static void ComposeUnity(NavigatorLiftedRoom value, in PacketWriter p)
     {
         p.WriteInt(value.RoomId);
         p.WriteInt(value.AreaId);
@@ -189,13 +142,10 @@ public sealed record NavigatorLiftedRooms(IReadOnlyList<NavigatorLiftedRoom> Roo
     : IParserComposer<NavigatorLiftedRooms>
 {
     public static NavigatorLiftedRooms Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static NavigatorLiftedRooms ParseFlash(in PacketReader p) =>
         ParseRooms(in p, p.ReadInt());
-
-    private static NavigatorLiftedRooms ParseUnity(in PacketReader p) =>
-        ParseRooms(in p, p.ReadLength());
 
     private static NavigatorLiftedRooms ParseRooms(in PacketReader p, int count)
     {
@@ -206,18 +156,11 @@ public sealed record NavigatorLiftedRooms(IReadOnlyList<NavigatorLiftedRoom> Roo
     }
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(NavigatorLiftedRooms value, in PacketWriter p)
     {
         p.WriteInt(value.Rooms.Count);
-        foreach (NavigatorLiftedRoom room in value.Rooms)
-            p.Compose(room);
-    }
-
-    private static void ComposeUnity(NavigatorLiftedRooms value, in PacketWriter p)
-    {
-        p.WriteLength((Length)value.Rooms.Count);
         foreach (NavigatorLiftedRoom room in value.Rooms)
             p.Compose(room);
     }
@@ -229,13 +172,10 @@ public sealed record NavigatorSavedSearches(IReadOnlyList<NavigatorSearch> Searc
     : IParserComposer<NavigatorSavedSearches>
 {
     public static NavigatorSavedSearches Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static NavigatorSavedSearches ParseFlash(in PacketReader p) =>
         ParseSearches(in p, p.ReadInt());
-
-    private static NavigatorSavedSearches ParseUnity(in PacketReader p) =>
-        ParseSearches(in p, p.ReadLength());
 
     private static NavigatorSavedSearches ParseSearches(in PacketReader p, int count)
     {
@@ -246,7 +186,7 @@ public sealed record NavigatorSavedSearches(IReadOnlyList<NavigatorSearch> Searc
     }
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(NavigatorSavedSearches value, in PacketWriter p)
     {
@@ -254,55 +194,24 @@ public sealed record NavigatorSavedSearches(IReadOnlyList<NavigatorSearch> Searc
         foreach (NavigatorSearch search in value.Searches)
             p.Compose(search);
     }
-
-    private static void ComposeUnity(NavigatorSavedSearches value, in PacketWriter p)
-    {
-        p.WriteLength((Length)value.Searches.Count);
-        foreach (NavigatorSearch search in value.Searches)
-            p.Compose(search);
-    }
 }
 
-/// <summary>
-/// Which room the account calls home, and which room the hotel wants entered next.
-/// </summary>
-/// <param name="HomeRoomId">The home room, or zero when none is set.</param>
-/// <param name="RoomIdToEnter">
-/// A room the hotel is steering the session into, or zero. Non-zero after following an invitation
-/// or a link, where the hotel decides the destination rather than the user.
-/// </param>
-/// <summary>
-/// Which room is home and which one to walk into next.
-/// </summary>
-/// <remarks>
-/// Both are room ids, so they are as wide as a room id is: four bytes on Flash and eight on Unity.
-/// Read as plain integers this parsed on Flash and silently ran off the end on Unity.
-/// </remarks>
 public sealed record NavigatorSettings(Id HomeRoomId, Id RoomIdToEnter)
     : IParserComposer<NavigatorSettings>
 {
     public static NavigatorSettings Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static NavigatorSettings ParseFlash(in PacketReader p) =>
         new(p.ReadInt(), p.ReadInt());
 
-    private static NavigatorSettings ParseUnity(in PacketReader p) =>
-        new(p.ReadLong(), p.ReadLong());
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(NavigatorSettings value, in PacketWriter p)
     {
         p.WriteInt(checked((int)value.HomeRoomId));
         p.WriteInt(checked((int)value.RoomIdToEnter));
-    }
-
-    private static void ComposeUnity(NavigatorSettings value, in PacketWriter p)
-    {
-        p.WriteLong(value.HomeRoomId);
-        p.WriteLong(value.RoomIdToEnter);
     }
 }
 
@@ -322,28 +231,15 @@ public sealed record NewNavigatorPreferences(
     int ResultsMode) : IParserComposer<NewNavigatorPreferences>
 {
     public static NewNavigatorPreferences Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static NewNavigatorPreferences ParseFlash(in PacketReader p) =>
         new(p.ReadInt(), p.ReadInt(), p.ReadInt(), p.ReadInt(), p.ReadBool(), p.ReadInt());
 
-    private static NewNavigatorPreferences ParseUnity(in PacketReader p) =>
-        new(p.ReadInt(), p.ReadInt(), p.ReadInt(), p.ReadInt(), p.ReadBool(), p.ReadInt());
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(NewNavigatorPreferences value, in PacketWriter p)
-    {
-        p.WriteInt(value.WindowX);
-        p.WriteInt(value.WindowY);
-        p.WriteInt(value.WindowWidth);
-        p.WriteInt(value.WindowHeight);
-        p.WriteBool(value.LeftPaneHidden);
-        p.WriteInt(value.ResultsMode);
-    }
-
-    private static void ComposeUnity(NewNavigatorPreferences value, in PacketWriter p)
     {
         p.WriteInt(value.WindowX);
         p.WriteInt(value.WindowY);
@@ -380,31 +276,16 @@ public sealed record FlatCategory(
     public bool IsSelectable => Visible && !Automatic && !StaffOnly;
 
     public static FlatCategory Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static FlatCategory ParseFlash(in PacketReader p) =>
         new(p.ReadInt(), p.ReadString(), p.ReadBool(), p.ReadBool(),
             p.ReadString(), p.ReadString(), p.ReadBool());
 
-    private static FlatCategory ParseUnity(in PacketReader p) =>
-        new(p.ReadInt(), p.ReadString(), p.ReadBool(), p.ReadBool(),
-            p.ReadString(), p.ReadString(), p.ReadBool());
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(FlatCategory value, in PacketWriter p)
-    {
-        p.WriteInt(value.NodeId);
-        p.WriteString(value.Name);
-        p.WriteBool(value.Visible);
-        p.WriteBool(value.Automatic);
-        p.WriteString(value.AutomaticCategoryKey);
-        p.WriteString(value.GlobalCategoryKey);
-        p.WriteBool(value.StaffOnly);
-    }
-
-    private static void ComposeUnity(FlatCategory value, in PacketWriter p)
     {
         p.WriteInt(value.NodeId);
         p.WriteString(value.Name);
@@ -422,13 +303,10 @@ public sealed record UserFlatCats(IReadOnlyList<FlatCategory> Categories)
     : IParserComposer<UserFlatCats>
 {
     public static UserFlatCats Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static UserFlatCats ParseFlash(in PacketReader p) =>
         ParseCategories(in p, p.ReadInt());
-
-    private static UserFlatCats ParseUnity(in PacketReader p) =>
-        ParseCategories(in p, p.ReadLength());
 
     private static UserFlatCats ParseCategories(in PacketReader p, int count)
     {
@@ -439,18 +317,11 @@ public sealed record UserFlatCats(IReadOnlyList<FlatCategory> Categories)
     }
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(UserFlatCats value, in PacketWriter p)
     {
         p.WriteInt(value.Categories.Count);
-        foreach (FlatCategory category in value.Categories)
-            p.Compose(category);
-    }
-
-    private static void ComposeUnity(UserFlatCats value, in PacketWriter p)
-    {
-        p.WriteLength((Length)value.Categories.Count);
         foreach (FlatCategory category in value.Categories)
             p.Compose(category);
     }
@@ -462,13 +333,10 @@ public sealed record CollapsedCategories(IReadOnlyList<string> Categories)
     : IParserComposer<CollapsedCategories>
 {
     public static CollapsedCategories Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static CollapsedCategories ParseFlash(in PacketReader p) =>
         ParseCategories(in p, p.ReadInt());
-
-    private static CollapsedCategories ParseUnity(in PacketReader p) =>
-        ParseCategories(in p, p.ReadLength());
 
     private static CollapsedCategories ParseCategories(in PacketReader p, int count)
     {
@@ -479,18 +347,11 @@ public sealed record CollapsedCategories(IReadOnlyList<string> Categories)
     }
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(CollapsedCategories value, in PacketWriter p)
     {
         p.WriteInt(value.Categories.Count);
-        foreach (string category in value.Categories)
-            p.WriteString(category);
-    }
-
-    private static void ComposeUnity(CollapsedCategories value, in PacketWriter p)
-    {
-        p.WriteLength((Length)value.Categories.Count);
         foreach (string category in value.Categories)
             p.WriteString(category);
     }

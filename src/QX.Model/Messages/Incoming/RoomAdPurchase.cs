@@ -18,7 +18,7 @@ public sealed record RoomAdRoom(Id RoomId, string RoomName, bool HasControllers)
     }
 
     public static RoomAdRoom Parse(in PacketReader p) =>
-        ModernWireClients.ParseFlash(in p, ParseFlash);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static RoomAdRoom ParseFlash(in PacketReader p)
     {
@@ -29,7 +29,7 @@ public sealed record RoomAdRoom(Id RoomId, string RoomName, bool HasControllers)
     }
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.ComposeFlash(this, in p, ComposeFlash);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(RoomAdRoom value, in PacketWriter p)
     {
@@ -103,7 +103,7 @@ public sealed record RoomAdPurchaseInfo(bool IsVip, IReadOnlyList<RoomAdRoom> Ro
     }
 
     public static RoomAdPurchaseInfo Parse(in PacketReader p) =>
-        ModernWireClients.ParseFlash(in p, ParseFlash);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static RoomAdPurchaseInfo ParseFlash(in PacketReader p)
     {
@@ -131,7 +131,7 @@ public sealed record RoomAdPurchaseInfo(bool IsVip, IReadOnlyList<RoomAdRoom> Ro
     }
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.ComposeFlash(this, in p, ComposeFlash);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(RoomAdPurchaseInfo value, in PacketWriter p)
     {
@@ -182,7 +182,7 @@ internal readonly record struct RoomAdPurchaseInfoWireSnapshot(
 public sealed record GetRoomAdPurchaseInfo : IParserComposer<GetRoomAdPurchaseInfo>
 {
     public static GetRoomAdPurchaseInfo Parse(in PacketReader p) =>
-        ModernWireClients.ParseFlash(in p, ParseFlash);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static GetRoomAdPurchaseInfo ParseFlash(in PacketReader p)
     {
@@ -191,7 +191,7 @@ public sealed record GetRoomAdPurchaseInfo : IParserComposer<GetRoomAdPurchaseIn
     }
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.ComposeFlash(this, in p, ComposeFlash);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(GetRoomAdPurchaseInfo value, in PacketWriter p) =>
         ArgumentNullException.ThrowIfNull(value);

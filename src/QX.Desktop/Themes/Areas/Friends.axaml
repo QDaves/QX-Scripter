@@ -1,0 +1,53 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+  <ControlTheme x:Key="Friends.Cell" TargetType="TextBlock">
+    <Setter Property="Margin" Value="12,0" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+    <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+    <Setter Property="FontSize" Value="{DynamicResource QxFontSizeBody}" />
+    <Setter Property="LineHeight" Value="{DynamicResource QxLineHeightBody}" />
+    <Setter Property="Foreground" Value="{DynamicResource QxTextSecondaryBrush}" />
+  </ControlTheme>
+
+  <ControlTheme x:Key="Friends.Name" TargetType="TextBlock">
+    <Setter Property="VerticalAlignment" Value="Center" />
+    <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+    <Setter Property="FontSize" Value="{DynamicResource QxFontSizeBody}" />
+    <Setter Property="LineHeight" Value="{DynamicResource QxLineHeightBody}" />
+    <Setter Property="FontWeight" Value="Medium" />
+    <Setter Property="Foreground" Value="{DynamicResource QxTextPrimaryBrush}" />
+  </ControlTheme>
+
+  <ControlTheme x:Key="Friends.Identifier" TargetType="TextBlock">
+    <Setter Property="Margin" Value="12,0" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+    <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+    <Setter Property="FontFamily" Value="{DynamicResource QxMonoFont}" />
+    <Setter Property="FontSize" Value="{DynamicResource QxFontSizeCodeSmall}" />
+    <Setter Property="Foreground" Value="{DynamicResource QxTextTertiaryBrush}" />
+  </ControlTheme>
+
+  <ControlTheme x:Key="Friends.LastSeen" TargetType="TextBlock">
+    <Setter Property="Margin" Value="12,0" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+    <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+    <Setter Property="FontFamily" Value="{DynamicResource QxMonoFont}" />
+    <Setter Property="FontSize" Value="{DynamicResource QxFontSizeCodeSmall}" />
+    <Setter Property="Foreground" Value="{DynamicResource QxTextTertiaryBrush}" />
+    <Style Selector="^.online">
+      <Setter Property="FontFamily" Value="{DynamicResource QxSansFont}" />
+      <Setter Property="FontSize" Value="{DynamicResource QxFontSizeSmall}" />
+      <Setter Property="FontWeight" Value="Medium" />
+      <Setter Property="Foreground" Value="{DynamicResource QxSuccessBrush}" />
+    </Style>
+  </ControlTheme>
+
+  <ControlTheme x:Key="Friends.RowContent" TargetType="StackPanel">
+    <Setter Property="Orientation" Value="Horizontal" />
+    <Setter Property="Spacing" Value="10" />
+    <Setter Property="Margin" Value="12,0" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+  </ControlTheme>
+
+</ResourceDictionary>

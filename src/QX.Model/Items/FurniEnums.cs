@@ -156,7 +156,7 @@ public enum ItemDataFlags
     None = 0,
     /// <summary>
     /// 1: the item belongs to a numbered limited series, which appends its serial number,
-    /// series size and, on Unity, an extra limited-edition string to the payload.
+    /// series size to the payload.
     /// </summary>
     IsLimitedRare = 1
 }

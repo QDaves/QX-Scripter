@@ -21,13 +21,11 @@ public sealed class WallItem : Furni, IParserComposer<WallItem>
     public WallItem() { }
 
     public static WallItem Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static WallItem ParseFlash(in PacketReader p) => ParseItem(
         in p,
         RoomPlacementWire.ReadFlashStringId(in p, nameof(Id)));
-
-    private static WallItem ParseUnity(in PacketReader p) => ParseItem(in p, p.ReadId());
 
     private static WallItem ParseItem(in PacketReader p, Id id)
     {
@@ -44,17 +42,11 @@ public sealed class WallItem : Furni, IParserComposer<WallItem>
     }
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(WallItem value, in PacketWriter p)
     {
         RoomPlacementWire.WriteFlashStringId(value.Id, nameof(value.Id), in p);
-        value.ComposeItem(in p);
-    }
-
-    private static void ComposeUnity(WallItem value, in PacketWriter p)
-    {
-        p.WriteId(value.Id);
         value.ComposeItem(in p);
     }
 

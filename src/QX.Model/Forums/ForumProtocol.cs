@@ -124,12 +124,6 @@ internal static class ForumProtocol
 
     public static ForumStringBudget NewStringBudget() =>
         new(MaximumStrings, MaximumStringBytes);
-
-    public static T UnsupportedUnity<T>(ClientType client) =>
-        throw new UnsupportedClientException(client);
-
-    public static void UnsupportedUnity(ClientType client) =>
-        throw new UnsupportedClientException(client);
 }
 
 internal struct ForumStringBudget

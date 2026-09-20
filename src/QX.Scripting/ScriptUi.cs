@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Globalization;
 
 namespace Qx.Scripting;
@@ -13,11 +14,11 @@ namespace Qx.Scripting;
 /// </remarks>
 public sealed class ScriptUi
 {
-    private readonly Dictionary<string, string> _values = new(StringComparer.OrdinalIgnoreCase);
+    readonly ConcurrentDictionary<string, string> _values = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, List<Func<Task>>> _handlers =
         new(StringComparer.OrdinalIgnoreCase);
     private readonly object _handler_sync = new();
-    private string? _clicked;
+    string? _clicked;
 
     /// <summary>
     /// Attaches a handler to a panel button.
@@ -103,7 +104,7 @@ public sealed class ScriptUi
             handlers = list.ToArray();
         }
 
-        _clicked = button;
+        Volatile.Write(ref _clicked, button);
 
         // Each handler is started inside its own try and a synchronous throw is turned into a
         // faulted task. Handing the delegates straight to Task.WhenAll ran them lazily inside this
@@ -158,21 +159,22 @@ public sealed class ScriptUi
     public void Set(string name, string? value)
     {
         ArgumentNullException.ThrowIfNull(name);
-        _values[name] = value ?? "";
-        Changed?.Invoke(name, _values[name]);
+        string stored = value ?? "";
+        _values[name] = stored;
+        Changed?.Invoke(name, stored);
     }
 
     /// <summary>Records which button started this run. Called by the host, not by scripts.</summary>
     /// <param name="button">The button's name, or null when the run was not started by one.</param>
-    public void SetClicked(string? button) => _clicked = button;
+    public void SetClicked(string? button) => Volatile.Write(ref _clicked, button);
 
     /// <summary>Whether a named button started this run.</summary>
     /// <param name="button">The button's name.</param>
     public bool Clicked(string button) =>
-        string.Equals(_clicked, button, StringComparison.OrdinalIgnoreCase);
+        string.Equals(Volatile.Read(ref _clicked), button, StringComparison.OrdinalIgnoreCase);
 
     /// <summary>The name of the button that started this run, or null.</summary>
-    public string? ClickedButton => _clicked;
+    public string? ClickedButton => Volatile.Read(ref _clicked);
 
     /// <summary>A text value, or the fallback when it is missing or empty.</summary>
     /// <param name="name">The control's name.</param>

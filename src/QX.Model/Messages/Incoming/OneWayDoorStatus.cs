@@ -13,10 +13,9 @@ namespace Qx.Model.Messages.Incoming;
 public sealed record OneWayDoorStatus(Id ItemId, int Status) : IParserComposer<OneWayDoorStatus>
 {
     public int? FlashTrailingValue { get; init; }
-    public int? UnityTrailingValue { get; init; }
 
     public static OneWayDoorStatus Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static OneWayDoorStatus ParseFlash(in PacketReader p) =>
         new(p.ReadId(), p.ReadInt())
@@ -29,14 +28,8 @@ public sealed record OneWayDoorStatus(Id ItemId, int Status) : IParserComposer<O
             }
         };
 
-    private static OneWayDoorStatus ParseUnity(in PacketReader p) =>
-        new(p.ReadId(), p.ReadInt())
-        {
-            UnityTrailingValue = p.ReadInt()
-        };
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(OneWayDoorStatus value, in PacketWriter p)
     {
@@ -44,14 +37,5 @@ public sealed record OneWayDoorStatus(Id ItemId, int Status) : IParserComposer<O
         p.WriteInt(value.Status);
         if (value.FlashTrailingValue is int trailing_value)
             p.WriteInt(trailing_value);
-    }
-
-    private static void ComposeUnity(OneWayDoorStatus value, in PacketWriter p)
-    {
-        int trailing_value = value.UnityTrailingValue ??
-            throw new InvalidOperationException("Unity one-way door status requires its native trailing value.");
-        p.WriteId(value.ItemId);
-        p.WriteInt(value.Status);
-        p.WriteInt(trailing_value);
     }
 }

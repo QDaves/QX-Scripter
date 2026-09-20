@@ -1,0 +1,13 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+  <x:Double x:Key="About.MarkSize">48</x:Double>
+
+  <ControlTheme x:Key="About.CreditRow" TargetType="Border">
+    <Setter Property="Padding" Value="16,12" />
+    <Setter Property="MinHeight" Value="56" />
+    <Setter Property="BorderBrush" Value="{DynamicResource QxBorderSubtleBrush}" />
+    <Setter Property="BorderThickness" Value="0,0,0,1" />
+  </ControlTheme>
+
+</ResourceDictionary>

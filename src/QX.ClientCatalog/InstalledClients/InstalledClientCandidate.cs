@@ -2,8 +2,7 @@ namespace Qx.ClientCatalog.InstalledClients;
 
 public enum InstalledClientFamily
 {
-    Flash,
-    Unity
+    Flash
 }
 
 public sealed record InstalledClientCandidate(

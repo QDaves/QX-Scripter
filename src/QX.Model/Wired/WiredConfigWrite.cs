@@ -28,19 +28,6 @@ public abstract record WiredConfigWrite : IComposer
         StuffIds2 = p.ReadIdArray();
     }
 
-    protected void ReadUnity(in PacketReader p)
-    {
-        FurniId = p.ReadLong();
-        IntParams = p.ReadIntArray();
-        StringParam = p.ReadString();
-        StuffIds = p.ReadIdArray();
-        ReadExtra(in p);
-        FurniSourceTypes = p.ReadIntArray();
-        UserSourceTypes = p.ReadIntArray();
-        VariableIds = [];
-        StuffIds2 = [];
-    }
-
     protected void ComposeFlash(in PacketWriter p)
     {
         ValidateFlash(in p);
@@ -53,18 +40,6 @@ public abstract record WiredConfigWrite : IComposer
         p.WriteIntArray(UserSourceTypes);
         p.WriteStringArray(VariableIds);
         p.WriteIdArray(StuffIds2);
-    }
-
-    protected void ComposeUnity(in PacketWriter p)
-    {
-        ValidateUnity(in p);
-        p.WriteLong(FurniId);
-        p.WriteIntArray(IntParams);
-        p.WriteString(StringParam);
-        p.WriteIdArray(StuffIds);
-        WriteExtra(in p);
-        p.WriteIntArray(FurniSourceTypes);
-        p.WriteIntArray(UserSourceTypes);
     }
 
     protected virtual void ReadExtra(in PacketReader p) { }
@@ -83,13 +58,6 @@ public abstract record WiredConfigWrite : IComposer
             WiredWire.RequireString(variable_id, nameof(VariableIds), in p);
     }
 
-    private void ValidateUnity(in PacketWriter p)
-    {
-        ValidateCommon(in p);
-        if (VariableIds.Count != 0 || StuffIds2.Count != 0)
-            throw new NotSupportedException("Unity wired configuration saves cannot represent VariableIds or StuffIds2.");
-    }
-
     private void ValidateCommon(in PacketWriter p)
     {
         ArgumentNullException.ThrowIfNull(IntParams);
@@ -100,19 +68,13 @@ public abstract record WiredConfigWrite : IComposer
         ArgumentNullException.ThrowIfNull(UserSourceTypes);
         ArgumentNullException.ThrowIfNull(VariableIds);
         WiredWire.RequireString(StringParam, nameof(StringParam), in p);
-        WiredWire.RequireUnityCount(IntParams.Count, nameof(IntParams));
-        WiredWire.RequireUnityCount(StuffIds.Count, nameof(StuffIds));
-        WiredWire.RequireUnityCount(StuffIds2.Count, nameof(StuffIds2));
-        WiredWire.RequireUnityCount(FurniSourceTypes.Count, nameof(FurniSourceTypes));
-        WiredWire.RequireUnityCount(UserSourceTypes.Count, nameof(UserSourceTypes));
-        WiredWire.RequireUnityCount(VariableIds.Count, nameof(VariableIds));
     }
 }
 
 public sealed record UpdateTrigger : WiredConfigWrite, IParserComposer<UpdateTrigger>
 {
     public static UpdateTrigger Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static UpdateTrigger ParseFlash(in PacketReader p)
     {
@@ -121,21 +83,11 @@ public sealed record UpdateTrigger : WiredConfigWrite, IParserComposer<UpdateTri
         return value;
     }
 
-    private static UpdateTrigger ParseUnity(in PacketReader p)
-    {
-        var value = new UpdateTrigger();
-        value.ReadUnity(in p);
-        return value;
-    }
-
     public override void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(UpdateTrigger value, in PacketWriter p) =>
         value.ComposeFlash(in p);
-
-    private static void ComposeUnity(UpdateTrigger value, in PacketWriter p) =>
-        value.ComposeUnity(in p);
 }
 
 public sealed record UpdateAction : WiredConfigWrite, IParserComposer<UpdateAction>
@@ -143,7 +95,7 @@ public sealed record UpdateAction : WiredConfigWrite, IParserComposer<UpdateActi
     public int Delay { get; set; }
 
     public static UpdateAction Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static UpdateAction ParseFlash(in PacketReader p)
     {
@@ -152,15 +104,8 @@ public sealed record UpdateAction : WiredConfigWrite, IParserComposer<UpdateActi
         return value;
     }
 
-    private static UpdateAction ParseUnity(in PacketReader p)
-    {
-        var value = new UpdateAction();
-        value.ReadUnity(in p);
-        return value;
-    }
-
     public override void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     protected override void ReadExtra(in PacketReader p) => Delay = p.ReadInt();
 
@@ -168,9 +113,6 @@ public sealed record UpdateAction : WiredConfigWrite, IParserComposer<UpdateActi
 
     private static void ComposeFlash(UpdateAction value, in PacketWriter p) =>
         value.ComposeFlash(in p);
-
-    private static void ComposeUnity(UpdateAction value, in PacketWriter p) =>
-        value.ComposeUnity(in p);
 }
 
 public sealed record UpdateCondition : WiredConfigWrite, IParserComposer<UpdateCondition>
@@ -178,7 +120,7 @@ public sealed record UpdateCondition : WiredConfigWrite, IParserComposer<UpdateC
     public int Quantifier { get; set; }
 
     public static UpdateCondition Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static UpdateCondition ParseFlash(in PacketReader p)
     {
@@ -187,15 +129,8 @@ public sealed record UpdateCondition : WiredConfigWrite, IParserComposer<UpdateC
         return value;
     }
 
-    private static UpdateCondition ParseUnity(in PacketReader p)
-    {
-        var value = new UpdateCondition();
-        value.ReadUnity(in p);
-        return value;
-    }
-
     public override void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     protected override void ReadExtra(in PacketReader p) => Quantifier = p.ReadInt();
 
@@ -203,15 +138,12 @@ public sealed record UpdateCondition : WiredConfigWrite, IParserComposer<UpdateC
 
     private static void ComposeFlash(UpdateCondition value, in PacketWriter p) =>
         value.ComposeFlash(in p);
-
-    private static void ComposeUnity(UpdateCondition value, in PacketWriter p) =>
-        value.ComposeUnity(in p);
 }
 
 public sealed record UpdateAddon : WiredConfigWrite, IParserComposer<UpdateAddon>
 {
     public static UpdateAddon Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static UpdateAddon ParseFlash(in PacketReader p)
     {
@@ -220,21 +152,11 @@ public sealed record UpdateAddon : WiredConfigWrite, IParserComposer<UpdateAddon
         return value;
     }
 
-    private static UpdateAddon ParseUnity(in PacketReader p)
-    {
-        var value = new UpdateAddon();
-        value.ReadUnity(in p);
-        return value;
-    }
-
     public override void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(UpdateAddon value, in PacketWriter p) =>
         value.ComposeFlash(in p);
-
-    private static void ComposeUnity(UpdateAddon value, in PacketWriter p) =>
-        value.ComposeUnity(in p);
 }
 
 public sealed record UpdateSelector : WiredConfigWrite, IParserComposer<UpdateSelector>
@@ -243,7 +165,7 @@ public sealed record UpdateSelector : WiredConfigWrite, IParserComposer<UpdateSe
     public bool IsInvert { get; set; }
 
     public static UpdateSelector Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static UpdateSelector ParseFlash(in PacketReader p)
     {
@@ -252,15 +174,8 @@ public sealed record UpdateSelector : WiredConfigWrite, IParserComposer<UpdateSe
         return value;
     }
 
-    private static UpdateSelector ParseUnity(in PacketReader p)
-    {
-        var value = new UpdateSelector();
-        value.ReadUnity(in p);
-        return value;
-    }
-
     public override void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     protected override void ReadExtra(in PacketReader p)
     {
@@ -276,15 +191,12 @@ public sealed record UpdateSelector : WiredConfigWrite, IParserComposer<UpdateSe
 
     private static void ComposeFlash(UpdateSelector value, in PacketWriter p) =>
         value.ComposeFlash(in p);
-
-    private static void ComposeUnity(UpdateSelector value, in PacketWriter p) =>
-        value.ComposeUnity(in p);
 }
 
 public sealed record UpdateVariable : WiredConfigWrite, IParserComposer<UpdateVariable>
 {
     public static UpdateVariable Parse(in PacketReader p) =>
-        ModernWireClients.ParseFlash(in p, ParseFlash);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static UpdateVariable ParseFlash(in PacketReader p)
     {
@@ -294,7 +206,7 @@ public sealed record UpdateVariable : WiredConfigWrite, IParserComposer<UpdateVa
     }
 
     public override void Compose(in PacketWriter p) =>
-        ModernWireClients.ComposeFlash(this, in p, ComposeFlash);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(UpdateVariable value, in PacketWriter p) =>
         value.ComposeFlash(in p);

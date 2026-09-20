@@ -10,13 +10,13 @@ public sealed class MessageManager : IMessageManager, ISemanticMessageResolver
     private const int CompatibleReferenceRequiredParts = 19;
     private readonly MessageMap _map;
     private readonly MessageRegistry _registry;
-    private readonly ConcurrentDictionary<ClientType, MessageCatalog> _catalogs = new();
-    private readonly ConcurrentDictionary<ClientType, MessageCatalog> _fallback_catalogs = new();
-    private readonly ConcurrentDictionary<ClientType, MessageCatalog> _default_versioned_catalogs = new();
+    private MessageCatalog? _catalog;
+    private MessageCatalog? _fallback_catalog;
+    private MessageCatalog? _default_versioned_catalog;
     private readonly ConcurrentDictionary<
-        (ClientType Client, string CatalogFingerprint, string SchemaFingerprint),
+        (string CatalogFingerprint, string SchemaFingerprint),
         MessageCatalog> _versioned_catalogs = new();
-    private readonly ConcurrentDictionary<ClientType, ClientBuildIdentity> _catalog_builds = new();
+    private ClientBuildIdentity? _catalog_build;
     private readonly object _session_catalog_sync = new();
     private SessionCatalogState? _session_catalog;
     private long _session_catalog_generation;
@@ -105,27 +105,27 @@ public sealed class MessageManager : IMessageManager, ISemanticMessageResolver
     public void LoadCatalog(ClientType client, MessagesJson json)
     {
         RequireSupportedClient(client);
-        _catalogs[client] = MessageCatalog.FromJson(json);
+        Volatile.Write(ref _catalog, MessageCatalog.FromJson(json));
     }
 
     public void LoadCatalog(ClientType client, MessageCatalog catalog)
     {
         RequireSupportedClient(client);
         ArgumentNullException.ThrowIfNull(catalog);
-        _catalogs[client] = catalog;
+        Volatile.Write(ref _catalog, catalog);
     }
 
     public bool ClearCatalog(ClientType client)
     {
         RequireSupportedClient(client);
-        return _catalogs.TryRemove(client, out _);
+        return Interlocked.Exchange(ref _catalog, null) is not null;
     }
 
     public void LoadFallbackCatalog(ClientType client, MessageCatalog catalog)
     {
         RequireSupportedClient(client);
         ArgumentNullException.ThrowIfNull(catalog);
-        _fallback_catalogs[client] = catalog;
+        Volatile.Write(ref _fallback_catalog, catalog);
     }
 
     public void LoadVerifiedFallbackCatalog(
@@ -139,12 +139,12 @@ public sealed class MessageManager : IMessageManager, ISemanticMessageResolver
         if (catalog.BuildFingerprint is { } fingerprint)
         {
             registered = _versioned_catalogs.AddOrUpdate(
-                (client, fingerprint, catalog.SchemaFingerprint ?? ""),
+                (fingerprint, catalog.SchemaFingerprint ?? ""),
                 catalog,
                 (_, _) => catalog);
         }
         if (preferred || catalog.BuildFingerprint is null)
-            _default_versioned_catalogs[client] = registered;
+            Volatile.Write(ref _default_versioned_catalog, registered);
     }
 
     public bool HasCatalogBuild(ClientType client, string fingerprint)
@@ -154,7 +154,6 @@ public sealed class MessageManager : IMessageManager, ISemanticMessageResolver
         if (ActiveCatalogBinding is { } binding && binding.Client == client)
             return binding.Catalog?.MatchesBuildFingerprint(fingerprint) is true;
         return _versioned_catalogs.Keys.Any(key =>
-            key.Client == client &&
             key.CatalogFingerprint.Equals(fingerprint.Trim(), StringComparison.OrdinalIgnoreCase));
     }
 
@@ -163,16 +162,16 @@ public sealed class MessageManager : IMessageManager, ISemanticMessageResolver
         RequireSupportedClient(client);
         if (identity is null || string.IsNullOrWhiteSpace(identity.CatalogFingerprint))
         {
-            _catalog_builds.TryRemove(client, out _);
+            Volatile.Write(ref _catalog_build, null);
             return;
         }
-        _catalog_builds[client] = identity with
+        Volatile.Write(ref _catalog_build, identity with
         {
             CatalogFingerprint = identity.CatalogFingerprint.Trim().ToUpperInvariant(),
             SchemaFingerprint = string.IsNullOrWhiteSpace(identity.SchemaFingerprint)
                 ? null
                 : identity.SchemaFingerprint.Trim().ToUpperInvariant()
-        };
+        });
     }
 
     public bool HasCatalog(ClientType client)
@@ -184,10 +183,10 @@ public sealed class MessageManager : IMessageManager, ISemanticMessageResolver
             if (session.Binding.Client == client)
                 return session.Binding.Catalog?.HeaderCount > 0;
         }
-        return _catalogs.ContainsKey(client) ||
-            _fallback_catalogs.ContainsKey(client) ||
-            _default_versioned_catalogs.ContainsKey(client) ||
-            _versioned_catalogs.Keys.Any(key => key.Client == client);
+        return Volatile.Read(ref _catalog) is not null ||
+            Volatile.Read(ref _fallback_catalog) is not null ||
+            Volatile.Read(ref _default_versioned_catalog) is not null ||
+            !_versioned_catalogs.IsEmpty;
     }
 
     public MessageWireProfile GetWireProfile(ClientType client)
@@ -209,11 +208,11 @@ public sealed class MessageManager : IMessageManager, ISemanticMessageResolver
         }
         if (TryGetBoundVersionedCatalog(client, out MessageCatalog? bound, out _))
             return bound.WireProfile;
-        if (_catalogs.TryGetValue(client, out MessageCatalog? catalog) && catalog.WireProfile.IsAnalyzed)
+        if (Volatile.Read(ref _catalog) is { } catalog && catalog.WireProfile.IsAnalyzed)
             return catalog.WireProfile;
         if (TryGetUsableVersionedCatalog(client, out MessageCatalog? versioned) && versioned.WireProfile.IsAnalyzed)
             return versioned.WireProfile;
-        if (_fallback_catalogs.TryGetValue(client, out MessageCatalog? fallback) && fallback.WireProfile.IsAnalyzed)
+        if (Volatile.Read(ref _fallback_catalog) is { } fallback && fallback.WireProfile.IsAnalyzed)
             return fallback.WireProfile;
         return default;
     }
@@ -231,36 +230,12 @@ public sealed class MessageManager : IMessageManager, ISemanticMessageResolver
                 ? fallback.WiredContextLayout
                 : preferred.WiredContextLayout,
             preferred.WiredConditionHasSeparateInvert ?? fallback.WiredConditionHasSeparateInvert,
-            UnityAvatarStatusHasTargetId:
-                preferred.UnityAvatarStatusHasTargetId ?? fallback.UnityAvatarStatusHasTargetId,
-            UnityUpdateAvatarHasBadgeRank:
-                preferred.UnityUpdateAvatarHasBadgeRank ?? fallback.UnityUpdateAvatarHasBadgeRank,
-            UnityInventoryItemHasExtendedMetadata:
-                preferred.UnityInventoryItemHasExtendedMetadata ?? fallback.UnityInventoryItemHasExtendedMetadata,
             FlashGuestRoomResultLayout:
                 preferred.FlashGuestRoomResultLayout ?? fallback.FlashGuestRoomResultLayout,
-            UnityGuestRoomResultHasExtendedData:
-                preferred.UnityGuestRoomResultHasExtendedData ?? fallback.UnityGuestRoomResultHasExtendedData,
-            UnityCraftingProductHasProductCode:
-                preferred.UnityCraftingProductHasProductCode ?? fallback.UnityCraftingProductHasProductCode,
-            UnityMarketplaceBuyLayout:
-                preferred.UnityMarketplaceBuyLayout is MarketplaceBuyWireLayout.Unknown
-                    ? fallback.UnityMarketplaceBuyLayout
-                    : preferred.UnityMarketplaceBuyLayout,
-            UnityMarketplaceBuyHeaderId:
-                preferred.UnityMarketplaceBuyHeaderId ?? fallback.UnityMarketplaceBuyHeaderId,
             FlashMarketplaceLayout:
                 preferred.FlashMarketplaceLayout is FlashMarketplaceWireLayout.Unknown
                     ? fallback.FlashMarketplaceLayout
-                    : preferred.FlashMarketplaceLayout,
-            UnityConsoleMessageLayout:
-                preferred.UnityConsoleMessageLayout is ConsoleMessageWireLayout.Unknown
-                    ? fallback.UnityConsoleMessageLayout
-                    : preferred.UnityConsoleMessageLayout,
-            UnityRoomSettingsLayout:
-                preferred.UnityRoomSettingsLayout is UnityRoomSettingsWireLayout.Unknown
-                    ? fallback.UnityRoomSettingsLayout
-                    : preferred.UnityRoomSettingsLayout);
+                    : preferred.FlashMarketplaceLayout);
     }
 
     public bool HasMessage(ClientType client, Direction direction, string name) =>
@@ -465,8 +440,6 @@ public sealed class MessageManager : IMessageManager, ISemanticMessageResolver
                     enriched.TryGetOutgoingSchemas(header.Value, out schemas);
             }
         }
-        if (client == ProtocolClients.Unity)
-            return TryGetUnityOutgoingSchemas(header, out schemas);
         if (TryGetBoundVersionedCatalog(client, out MessageCatalog? bound, out ClientBuildIdentity? identity))
         {
             if (bound.MatchesSchemaFingerprint(identity.SchemaFingerprint) &&
@@ -474,47 +447,28 @@ public sealed class MessageManager : IMessageManager, ISemanticMessageResolver
                 return true;
             if (!bound.TryGetName(header.Direction, header.Value, out string build_name))
                 return false;
-            return _fallback_catalogs.TryGetValue(client, out MessageCatalog? stable_for_build) &&
+            return Volatile.Read(ref _fallback_catalog) is { } stable_for_build &&
                 TryGetCompatibleSchemas(client, stable_for_build, header, build_name, out schemas);
         }
-        if (_catalogs.TryGetValue(client, out MessageCatalog? catalog))
+        if (Volatile.Read(ref _catalog) is { } catalog)
         {
             if (catalog.TryGetOutgoingSchemas(header.Value, out schemas))
                 return true;
-            if (TryGetCoveredFallbackSchemas(_fallback_catalogs, client, catalog, header, out schemas) ||
-                TryGetCoveredFallbackSchemas(_default_versioned_catalogs, client, catalog, header, out schemas))
+            if (TryGetCoveredFallbackSchemas(Volatile.Read(ref _fallback_catalog), client, catalog, header, out schemas) ||
+                TryGetCoveredFallbackSchemas(Volatile.Read(ref _default_versioned_catalog), client, catalog, header, out schemas))
                 return true;
             if (!catalog.TryGetName(header.Direction, header.Value, out string live_name))
                 return false;
-            return (_fallback_catalogs.TryGetValue(client, out MessageCatalog? compatible_stable) &&
+            return (Volatile.Read(ref _fallback_catalog) is { } compatible_stable &&
                     TryGetCompatibleSchemas(client, compatible_stable, header, live_name, out schemas)) ||
-                (_default_versioned_catalogs.TryGetValue(client, out MessageCatalog? compatible_versioned) &&
+                (Volatile.Read(ref _default_versioned_catalog) is { } compatible_versioned &&
                     TryGetCompatibleSchemas(client, compatible_versioned, header, live_name, out schemas));
         }
         if (TryGetUsableVersionedCatalog(client, out MessageCatalog? versioned) &&
             versioned.TryGetOutgoingSchemas(header.Value, out schemas))
             return true;
-        return _fallback_catalogs.TryGetValue(client, out MessageCatalog? stable) &&
+        return Volatile.Read(ref _fallback_catalog) is { } stable &&
             stable.TryGetOutgoingSchemas(header.Value, out schemas);
-    }
-
-    bool TryGetUnityOutgoingSchemas(
-        Header header,
-        out IReadOnlyList<OutgoingMessageSchema> schemas)
-    {
-        schemas = [];
-        if (_catalog_builds.ContainsKey(ProtocolClients.Unity))
-        {
-            return TryGetBoundVersionedCatalog(
-                    ProtocolClients.Unity,
-                    out MessageCatalog? catalog,
-                    out ClientBuildIdentity? identity) &&
-                catalog.MatchesBuildFingerprint(identity.CatalogFingerprint) &&
-                catalog.MatchesSchemaFingerprint(identity.SchemaFingerprint) &&
-                catalog.TryGetOutgoingSchemas(header.Value, out schemas);
-        }
-        return _catalogs.TryGetValue(ProtocolClients.Unity, out MessageCatalog? runtime) &&
-            runtime.TryGetOutgoingSchemas(header.Value, out schemas);
     }
 
     bool TryGetId(ClientType client, Direction direction, string name, out short id)
@@ -545,19 +499,19 @@ public sealed class MessageManager : IMessageManager, ISemanticMessageResolver
         {
             if (bound.TryGetIds(direction, name, out IReadOnlyList<short> build_ids))
                 values.AddRange(build_ids);
-            AppendCompatibleFallbackIds(_fallback_catalogs, client, direction, name, bound, values);
-            AppendCompatibleFallbackIds(_catalogs, client, direction, name, bound, values);
+            AppendCompatibleFallbackIds(Volatile.Read(ref _fallback_catalog), client, direction, name, bound, values);
+            AppendCompatibleFallbackIds(Volatile.Read(ref _catalog), client, direction, name, bound, values);
         }
-        else if (_catalogs.TryGetValue(client, out MessageCatalog? catalog))
+        else if (Volatile.Read(ref _catalog) is { } catalog)
         {
             if (catalog.TryGetIds(direction, name, out IReadOnlyList<short> catalog_ids))
                 values.AddRange(catalog_ids);
-            AppendCompatibleFallbackIds(_fallback_catalogs, client, direction, name, catalog, values);
-            AppendCompatibleFallbackIds(_default_versioned_catalogs, client, direction, name, catalog, values);
+            AppendCompatibleFallbackIds(Volatile.Read(ref _fallback_catalog), client, direction, name, catalog, values);
+            AppendCompatibleFallbackIds(Volatile.Read(ref _default_versioned_catalog), client, direction, name, catalog, values);
         }
         else
         {
-            AppendStandaloneFallbackIds(_fallback_catalogs, client, direction, name, values);
+            AppendStandaloneFallbackIds(Volatile.Read(ref _fallback_catalog), client, direction, name, values);
             if (TryGetUsableVersionedCatalog(client, out MessageCatalog? versioned))
                 AppendStandaloneIds(versioned, direction, name, values);
         }
@@ -567,6 +521,11 @@ public sealed class MessageManager : IMessageManager, ISemanticMessageResolver
 
     bool TryGetName(ClientType client, Direction direction, short id, out string name)
     {
+        if (client is not ClientType.Flash)
+        {
+            name = "";
+            return false;
+        }
         if (Volatile.Read(ref _session_catalog) is { } session)
         {
             if (session.Binding.Client == client)
@@ -579,19 +538,19 @@ public sealed class MessageManager : IMessageManager, ISemanticMessageResolver
         }
         if (TryGetBoundVersionedCatalog(client, out MessageCatalog? bound, out _))
             return bound.TryGetName(direction, id, out name!);
-        if (_catalogs.TryGetValue(client, out MessageCatalog? catalog))
+        if (Volatile.Read(ref _catalog) is { } catalog)
         {
             if (catalog.TryGetName(direction, id, out name))
                 return true;
-            if (TryGetCoveredFallbackName(_fallback_catalogs, client, catalog, direction, id, out name) ||
-                TryGetCoveredFallbackName(_default_versioned_catalogs, client, catalog, direction, id, out name))
+            if (TryGetCoveredFallbackName(Volatile.Read(ref _fallback_catalog), client, catalog, direction, id, out name) ||
+                TryGetCoveredFallbackName(Volatile.Read(ref _default_versioned_catalog), client, catalog, direction, id, out name))
                 return true;
             return false;
         }
         if (TryGetUsableVersionedCatalog(client, out MessageCatalog? versioned) &&
             versioned.TryGetName(direction, id, out name))
             return true;
-        if (_fallback_catalogs.TryGetValue(client, out MessageCatalog? stable) &&
+        if (Volatile.Read(ref _fallback_catalog) is { } stable &&
             stable.TryGetName(direction, id, out name))
             return true;
         name = "";
@@ -613,14 +572,14 @@ public sealed class MessageManager : IMessageManager, ISemanticMessageResolver
     }
 
     void AppendCompatibleFallbackIds(
-        ConcurrentDictionary<ClientType, MessageCatalog> catalogs,
+        MessageCatalog? fallback,
         ClientType client,
         Direction direction,
         string name,
         MessageCatalog live,
         List<short> values)
     {
-        if (!catalogs.TryGetValue(client, out MessageCatalog? fallback))
+        if (fallback is null)
             return;
         if (!fallback.TryGetIds(direction, name, out IReadOnlyList<short> fallback_ids))
             return;
@@ -653,14 +612,14 @@ public sealed class MessageManager : IMessageManager, ISemanticMessageResolver
         catalog.TryGetIds(direction, name, out IReadOnlyList<short> ids) && ids.Contains(id);
 
     static bool TryGetCoveredFallbackName(
-        ConcurrentDictionary<ClientType, MessageCatalog> catalogs,
+        MessageCatalog? fallback,
         ClientType client,
         MessageCatalog live,
         Direction direction,
         short id,
         out string name)
     {
-        if (catalogs.TryGetValue(client, out MessageCatalog? fallback) &&
+        if (fallback is not null &&
             (IsExactFallback(fallback, live) || IsCompatibleReference(client, fallback, live)) &&
             fallback.TryGetName(direction, id, out name))
             return true;
@@ -669,13 +628,13 @@ public sealed class MessageManager : IMessageManager, ISemanticMessageResolver
     }
 
     static bool TryGetCoveredFallbackSchemas(
-        ConcurrentDictionary<ClientType, MessageCatalog> catalogs,
+        MessageCatalog? fallback,
         ClientType client,
         MessageCatalog live,
         Header header,
         out IReadOnlyList<OutgoingMessageSchema> schemas)
     {
-        if (catalogs.TryGetValue(client, out MessageCatalog? fallback) &&
+        if (fallback is not null &&
             !live.TryGetName(header.Direction, header.Value, out _) &&
             IsExactFallback(fallback, live) &&
             fallback.TryGetOutgoingSchemas(header.Value, out schemas))
@@ -694,7 +653,7 @@ public sealed class MessageManager : IMessageManager, ISemanticMessageResolver
         MessageCatalog fallback,
         MessageCatalog live)
     {
-        if (client is not (ProtocolClients.Unity or ProtocolClients.Flash) ||
+        if (client is not (ProtocolClients.Flash) ||
             fallback.BuildFingerprint is not null ||
             live.HeaderCount < 64 ||
             fallback.HeaderCount < 64)
@@ -710,13 +669,13 @@ public sealed class MessageManager : IMessageManager, ISemanticMessageResolver
     }
 
     static void AppendStandaloneFallbackIds(
-        ConcurrentDictionary<ClientType, MessageCatalog> catalogs,
+        MessageCatalog? fallback,
         ClientType client,
         Direction direction,
         string name,
         List<short> values)
     {
-        if (!catalogs.TryGetValue(client, out MessageCatalog? fallback) ||
+        if (fallback is null ||
             !fallback.TryGetIds(direction, name, out IReadOnlyList<short> fallback_ids))
             return;
         foreach (short fallback_id in fallback_ids)
@@ -744,7 +703,7 @@ public sealed class MessageManager : IMessageManager, ISemanticMessageResolver
     {
         catalog = null!;
         identity = null!;
-        if (!_catalog_builds.TryGetValue(client, out ClientBuildIdentity? found_identity))
+        if (client is not ClientType.Flash || Volatile.Read(ref _catalog_build) is not { } found_identity)
         {
             return false;
         }
@@ -752,13 +711,13 @@ public sealed class MessageManager : IMessageManager, ISemanticMessageResolver
         if (found_identity.SchemaFingerprint is { } schema_fingerprint)
         {
             _versioned_catalogs.TryGetValue(
-                (client, found_identity.CatalogFingerprint, schema_fingerprint),
+                (found_identity.CatalogFingerprint, schema_fingerprint),
                 out found_catalog);
         }
         if (found_catalog is null)
         {
             _versioned_catalogs.TryGetValue(
-                (client, found_identity.CatalogFingerprint, ""),
+                (found_identity.CatalogFingerprint, ""),
                 out found_catalog);
         }
         if (found_catalog is null)
@@ -772,7 +731,7 @@ public sealed class MessageManager : IMessageManager, ISemanticMessageResolver
     {
         if (TryGetBoundVersionedCatalog(client, out catalog, out _))
             return true;
-        if (!_default_versioned_catalogs.TryGetValue(client, out MessageCatalog? fallback))
+        if (Volatile.Read(ref _default_versioned_catalog) is not { } fallback)
         {
             catalog = null!;
             return false;
@@ -795,7 +754,7 @@ public sealed class MessageManager : IMessageManager, ISemanticMessageResolver
             binding.Provenance.SourceSha256 is not { } source_fingerprint ||
             binding.Catalog is not { } session_catalog ||
             !session_catalog.MatchesBuildFingerprint(source_fingerprint) ||
-            !_catalog_builds.TryGetValue(binding.Client, out ClientBuildIdentity? identity) ||
+            Volatile.Read(ref _catalog_build) is not { } identity ||
             identity.SchemaFingerprint is null ||
             !identity.CatalogFingerprint.Equals(source_fingerprint, StringComparison.OrdinalIgnoreCase) ||
             !TryGetBoundVersionedCatalog(binding.Client, out MessageCatalog? candidate, out _) ||
@@ -818,33 +777,12 @@ public sealed class MessageManager : IMessageManager, ISemanticMessageResolver
 
     IReadOnlyList<string> ResolveNames(Identifier identifier, ClientType target)
     {
-        if (identifier.Client == ClientType.None)
-        {
-            IReadOnlyList<string> equivalents =
-                _map.EquivalentNames(target, identifier.Direction, identifier.Name);
-            return equivalents.Count == 0 ? [identifier.Name] : equivalents;
-        }
-        if (identifier.Client == target)
-        {
-            IReadOnlyList<string> equivalents =
-                _map.EquivalentNames(target, identifier.Direction, identifier.Name);
-            return equivalents.Count == 0 ? [identifier.Name] : equivalents;
-        }
-        IReadOnlyList<string> translated = _map.EquivalentNames(
-            identifier.Client,
-            target,
-            identifier.Direction,
-            identifier.Name);
-        if (translated.Count > 0)
-            return translated;
-        IReadOnlyList<string> source_names = _map.EquivalentNames(
-            target,
-            identifier.Client,
-            identifier.Direction,
-            identifier.Name);
-        return source_names.Count == 0
-            ? []
-            : _map.EquivalentNames(target, identifier.Direction, identifier.Name);
+        if (target is not ClientType.Flash ||
+            identifier.Client is not (ClientType.None or ClientType.Flash))
+            return [];
+        IReadOnlyList<string> equivalents =
+            _map.EquivalentNames(target, identifier.Direction, identifier.Name);
+        return equivalents.Count == 0 ? [identifier.Name] : equivalents;
     }
 
     static bool IsSupportedClient(ClientType client) =>
@@ -853,7 +791,7 @@ public sealed class MessageManager : IMessageManager, ISemanticMessageResolver
     static void RequireSupportedClient(ClientType client)
     {
         if (!IsSupportedClient(client))
-            throw new ArgumentOutOfRangeException(nameof(client), client, "Only Flash and Unity catalogs are supported.");
+            throw new ArgumentOutOfRangeException(nameof(client), client, "Only Flash catalogs are supported.");
     }
 
     sealed record SessionCatalogState(long Generation, SessionCatalogBinding Binding);

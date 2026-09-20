@@ -1,0 +1,69 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:c="using:Qx.Desktop.Controls"
+             xmlns:vm="using:Qx.Presentation.ViewModels.ApiBrowser"
+             xmlns:api="using:Qx.Scripting"
+             x:Class="Qx.Desktop.Views.ApiBrowser.ApiBrowserView"
+             x:DataType="vm:ApiBrowserViewModel">
+
+  <Grid RowDefinitions="Auto,Auto,*,Auto" Background="{DynamicResource QxSurfaceBaseBrush}">
+    <Border Grid.Row="0"
+            Height="{DynamicResource QxConsoleHeaderHeight}"
+            Padding="12,0"
+            BorderBrush="{DynamicResource QxBorderSubtleBrush}"
+            BorderThickness="0,0,0,1">
+      <Grid ColumnDefinitions="*,Auto">
+        <TextBlock Classes="small strong" Text="Script API library" VerticalAlignment="Center" />
+        <Button Grid.Column="1" Classes="icon small" Command="{Binding CloseCommand}"
+                ToolTip.Tip="Close API library" AutomationProperties.Name="Close API library">
+          <c:Icon Kind="Close" Size="14" />
+        </Button>
+      </Grid>
+    </Border>
+    <StackPanel Grid.Row="1" Margin="12" Spacing="8">
+      <c:SearchBox Name="QueryBox" Text="{Binding Query, Mode=TwoWay}"
+                   PlaceholderText="Search script API" AutomationProperties.Name="Search script API" />
+      <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
+        <ComboBox ItemsSource="{Binding Filters}" SelectedItem="{Binding SelectedFilter, Mode=TwoWay}"
+                  HorizontalAlignment="Stretch" AutomationProperties.Name="API kind or group">
+          <ComboBox.ItemTemplate>
+            <DataTemplate x:DataType="vm:ApiFilter"><TextBlock Text="{Binding Text}" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding Text}" /></DataTemplate>
+          </ComboBox.ItemTemplate>
+        </ComboBox>
+        <ComboBox Grid.Column="1" Classes="wide-popup" ItemsSource="{Binding ReturnTypes}" SelectedIndex="{Binding ReturnTypeIndex, Mode=TwoWay}"
+                  HorizontalAlignment="Stretch" AutomationProperties.Name="API return type">
+          <ComboBox.ItemTemplate>
+            <DataTemplate x:DataType="x:String">
+              <TextBlock Text="{Binding}" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding}" />
+            </DataTemplate>
+          </ComboBox.ItemTemplate>
+        </ComboBox>
+      </Grid>
+    </StackPanel>
+    <Panel Grid.Row="2">
+      <ListBox Name="ResultsList" ItemsSource="{Binding Results}" SelectedItem="{Binding Selected, Mode=TwoWay}"
+               Margin="6,0" ItemContainerTheme="{StaticResource ApiBrowser.Result}" AutomationProperties.Name="Script API members">
+        <ListBox.ItemTemplate>
+          <DataTemplate x:DataType="api:ScriptApiMember">
+            <StackPanel Spacing="4" ToolTip.Tip="{Binding Signature}">
+              <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                <TextBlock Text="{Binding Name}" Classes="mono strong" TextTrimming="CharacterEllipsis" />
+                <TextBlock Grid.Column="1" Text="{Binding Group}" Classes="caption tertiary" />
+              </Grid>
+              <TextBlock Text="{Binding Signature}" Classes="mono secondary" TextWrapping="Wrap" />
+              <TextBlock Text="{Binding Summary}" IsVisible="{Binding HasSummary}" Classes="small secondary" TextWrapping="Wrap" />
+            </StackPanel>
+          </DataTemplate>
+        </ListBox.ItemTemplate>
+      </ListBox>
+      <c:EmptyState Icon="Search" Title="No matching members" Description="Try another search or filter." IsVisible="{Binding IsEmpty}" />
+    </Panel>
+    <Border Grid.Row="3" Padding="12,8" BorderBrush="{DynamicResource QxBorderSubtleBrush}" BorderThickness="0,1,0,0">
+      <Grid ColumnDefinitions="*,Auto">
+        <TextBlock Text="{Binding CountText}" Classes="small tertiary" VerticalAlignment="Center" />
+        <Button Grid.Column="1" Classes="small" Content="Insert" Command="{Binding InsertCommand}" ToolTip.Tip="Insert selected member (Enter)" />
+      </Grid>
+    </Border>
+  </Grid>
+
+</UserControl>

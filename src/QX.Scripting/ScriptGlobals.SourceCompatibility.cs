@@ -1,4 +1,4 @@
-﻿using Qx.Game;
+using Qx.Game;
 using Qx.Game.Application;
 using Qx.Model.Messages.Incoming;
 using Qx.Model.Messages.Outgoing;
@@ -462,49 +462,29 @@ public partial class ScriptGlobals
     public void AcceptGroupMember(Id group_id, Id user_id) =>
         ApproveGroupMember(group_id, user_id);
 
-    /// <summary>
-    /// Blocking form of <c>GetGuildMembers</c>: fetches one page of a group's member list and
-    /// waits for it on the calling thread.
-    /// </summary>
-    /// <param name="group_id">The group id.</param>
-    /// <param name="page">The zero-based page number.</param>
-    /// <param name="filter">A name fragment to filter by; empty means no filter.</param>
-    /// <param name="search_type">Which slice to list.</param>
-    /// <param name="timeout">The total time budget in milliseconds, split across one retry.</param>
-    /// <returns>The member page.</returns>
-    /// <exception cref="ArgumentOutOfRangeException">
-    /// <paramref name="search_type"/> is not one of the three defined values, or
-    /// <paramref name="page"/> is negative.
-    /// </exception>
-    /// <exception cref="NotSupportedException">
-    /// The session is Unity and <paramref name="search_type"/> is not <c>Members</c>; the Unity
-    /// request carries no search type.
-    /// </exception>
-    /// <exception cref="Qx.Game.RequestTimeoutException">No matching page arrived in time.</exception>
-    /// <remarks>Blocks the calling thread. Prefer the awaitable native method.</remarks>
     public GuildMembers GetGroupMembers(
-        Id group_id,
-        int page = 0,
-        string filter = "",
-        GroupMemberSearchType search_type = GroupMemberSearchType.Members,
-        int timeout = 10000) =>
-        GetGuildMembers(
-            group_id,
-            page,
-            filter,
-            search_type switch
-            {
-                GroupMemberSearchType.Members => GuildMemberSearchType.All,
-                GroupMemberSearchType.Admins => GuildMemberSearchType.Administrators,
-                GroupMemberSearchType.Requests => GuildMemberSearchType.Pending,
-                _ => throw new ArgumentOutOfRangeException(
-                    nameof(search_type),
-                    search_type,
-                    "Unsupported group member search type.")
-            },
-            timeout)
-            .GetAwaiter()
-            .GetResult();
+    Id group_id,
+    int page = 0,
+    string filter = "",
+    GroupMemberSearchType search_type = GroupMemberSearchType.Members,
+    int timeout = 10000) =>
+    GetGuildMembers(
+        group_id,
+        page,
+        filter,
+        search_type switch
+        {
+            GroupMemberSearchType.Members => GuildMemberSearchType.All,
+            GroupMemberSearchType.Admins => GuildMemberSearchType.Administrators,
+            GroupMemberSearchType.Requests => GuildMemberSearchType.Pending,
+            _ => throw new ArgumentOutOfRangeException(
+                nameof(search_type),
+                search_type,
+                "Unsupported group member search type.")
+        },
+        timeout)
+        .GetAwaiter()
+        .GetResult();
 
     /// <summary>
     /// Blocking form of <see cref="GetGuildMemberships"/>: the groups the local user belongs to.

@@ -1,0 +1,77 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:log="using:Qx.Desktop.Views.Log">
+
+  <Thickness x:Key="Log.ListPadding">0,4,0,12</Thickness>
+  <Thickness x:Key="Log.JumpMargin">0,0,0,16</Thickness>
+
+  <ControlTheme x:Key="Log.Line" TargetType="log:LogLine">
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border Name="PART_Band" Background="Transparent" Padding="16,0" MinHeight="{DynamicResource QxConsoleLineHeight}">
+          <Grid ColumnDefinitions="68,60,96,*">
+            <TextBlock Text="{TemplateBinding Time}"
+                       FontFamily="{DynamicResource QxMonoFont}"
+                       FontSize="{DynamicResource QxFontSizeCodeSmall}"
+                       LineHeight="{DynamicResource QxLineHeightCode}"
+                       VerticalAlignment="Top"
+                       Foreground="{DynamicResource QxTextTertiaryBrush}" />
+            <TextBlock Name="PART_Level"
+                       Grid.Column="1"
+                       Text="{TemplateBinding LevelName}"
+                       FontFamily="{DynamicResource QxMonoFont}"
+                       FontSize="{DynamicResource QxFontSizeCodeCaption}"
+                       FontWeight="Medium"
+                       LineHeight="{DynamicResource QxLineHeightCode}"
+                       VerticalAlignment="Top"
+                       Foreground="{DynamicResource QxTextTertiaryBrush}" />
+            <TextBlock Grid.Column="2"
+                       Text="{TemplateBinding Category}"
+                       FontFamily="{DynamicResource QxMonoFont}"
+                       FontSize="{DynamicResource QxFontSizeCodeCaption}"
+                       LineHeight="{DynamicResource QxLineHeightCode}"
+                       VerticalAlignment="Top"
+                       TextTrimming="CharacterEllipsis"
+                       Foreground="{DynamicResource QxTextTertiaryBrush}" />
+            <TextBlock Name="PART_Message"
+                       Grid.Column="3"
+                       Text="{TemplateBinding Message}"
+                       FontFamily="{DynamicResource QxMonoFont}"
+                       FontSize="{DynamicResource QxFontSizeCodeSmall}"
+                       LineHeight="{DynamicResource QxLineHeightCode}"
+                       VerticalAlignment="Top"
+                       TextTrimming="CharacterEllipsis"
+                       Foreground="{DynamicResource QxEditorForegroundBrush}" />
+          </Grid>
+        </Border>
+      </ControlTemplate>
+    </Setter>
+    <Style Selector="^:wrap /template/ TextBlock#PART_Message">
+      <Setter Property="TextWrapping" Value="Wrap" />
+      <Setter Property="TextTrimming" Value="None" />
+    </Style>
+    <Style Selector="^:warning">
+      <Style Selector="^ /template/ Border#PART_Band">
+        <Setter Property="Background" Value="{DynamicResource QxWarningBandBrush}" />
+      </Style>
+      <Style Selector="^ /template/ TextBlock#PART_Level">
+        <Setter Property="Foreground" Value="{DynamicResource QxWarningBrush}" />
+      </Style>
+      <Style Selector="^ /template/ TextBlock#PART_Message">
+        <Setter Property="Foreground" Value="{DynamicResource QxWarningBrush}" />
+      </Style>
+    </Style>
+    <Style Selector="^:error">
+      <Style Selector="^ /template/ Border#PART_Band">
+        <Setter Property="Background" Value="{DynamicResource QxDangerBandBrush}" />
+      </Style>
+      <Style Selector="^ /template/ TextBlock#PART_Level">
+        <Setter Property="Foreground" Value="{DynamicResource QxDangerBrush}" />
+      </Style>
+      <Style Selector="^ /template/ TextBlock#PART_Message">
+        <Setter Property="Foreground" Value="{DynamicResource QxDangerBrush}" />
+      </Style>
+    </Style>
+  </ControlTheme>
+
+</ResourceDictionary>

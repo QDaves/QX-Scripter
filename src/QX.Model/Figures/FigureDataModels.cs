@@ -4,8 +4,7 @@ namespace Qx.Model.Figures;
 
 public enum FigureDataFormat
 {
-    Flash,
-    Unity
+    Flash
 }
 
 public sealed record FigureColor(

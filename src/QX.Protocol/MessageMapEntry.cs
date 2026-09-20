@@ -4,61 +4,45 @@ namespace Qx.Protocol;
 
 public sealed class MessageMapEntry
 {
-    private readonly Dictionary<ClientType, List<string>> _names = [];
-
-    public string? UnityName
-    {
-        get => NameFor(ProtocolClients.Unity);
-        set => SetPrimary(ProtocolClients.Unity, value);
-    }
+    private readonly List<string> _names = [];
 
     public string? FlashName
     {
         get => NameFor(ProtocolClients.Flash);
-        set => SetPrimary(ProtocolClients.Flash, value);
+        set => SetPrimary(value);
     }
 
     public string? NameFor(ClientType client) =>
-        _names.TryGetValue(client, out List<string>? names) && names.Count > 0
-            ? names[0]
+        client is ClientType.Flash && _names.Count > 0
+            ? _names[0]
             : null;
 
     public IReadOnlyList<string> NamesFor(ClientType client) =>
-        _names.TryGetValue(client, out List<string>? names) ? names : [];
+        client is ClientType.Flash ? _names : [];
 
     public void Set(ClientType client, string name)
     {
-        if (!ProtocolClients.Supported.Contains(client))
-            throw new ArgumentOutOfRangeException(nameof(client), client, "A message alias requires Flash or Unity.");
+        if (client is not ClientType.Flash)
+            throw new ArgumentOutOfRangeException(nameof(client), client, "A message alias requires Flash.");
         if (string.IsNullOrWhiteSpace(name))
             return;
-        if (!_names.TryGetValue(client, out List<string>? names))
-        {
-            names = [];
-            _names[client] = names;
-        }
-        if (!names.Contains(name, StringComparer.OrdinalIgnoreCase))
-            names.Add(name);
+        if (!_names.Contains(name, StringComparer.OrdinalIgnoreCase))
+            _names.Add(name);
     }
 
-    private void SetPrimary(ClientType client, string? name)
+    private void SetPrimary(string? name)
     {
         if (string.IsNullOrWhiteSpace(name))
         {
-            _names.Remove(client);
+            _names.Clear();
             return;
         }
-        if (!_names.TryGetValue(client, out List<string>? names))
-        {
-            _names[client] = [name];
-            return;
-        }
-        int duplicate = names.FindIndex(value => value.Equals(name, StringComparison.OrdinalIgnoreCase));
+        int duplicate = _names.FindIndex(value => value.Equals(name, StringComparison.OrdinalIgnoreCase));
         if (duplicate > 0)
-            names.RemoveAt(duplicate);
-        if (names.Count == 0)
-            names.Add(name);
+            _names.RemoveAt(duplicate);
+        if (_names.Count == 0)
+            _names.Add(name);
         else
-            names[0] = name;
+            _names[0] = name;
     }
 }

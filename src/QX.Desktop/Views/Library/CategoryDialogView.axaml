@@ -1,0 +1,54 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:c="using:Qx.Desktop.Controls"
+             xmlns:vm="using:Qx.Presentation.ViewModels.Library"
+             x:Class="Qx.Desktop.Views.Library.CategoryDialogView"
+             x:DataType="vm:CategoryDialogViewModel">
+  <c:Dialog CloseCommand="{Binding CancelCommand}"
+            Width="{DynamicResource QxDialogWidth}"
+            Title="{Binding Title}"
+            Icon="{Binding Icon}"
+            Tone="{Binding Tone}">
+    <StackPanel>
+      <TextBlock Classes="field-label" Text="CATEGORY" />
+      <TextBox Name="Value"
+               Text="{Binding Text, Mode=TwoWay}"
+               PlaceholderText="Category"
+               AutomationProperties.Name="Script category"
+               AutomationProperties.HelpText="Pick an existing category or type a new one. Leave empty for none." />
+      <ItemsControl Classes="bounded"
+                    Margin="0,10,0,0"
+                    ItemsSource="{Binding Categories}"
+                    IsVisible="{Binding HasCategories}">
+        <ItemsControl.ItemsPanel>
+          <ItemsPanelTemplate>
+            <WrapPanel />
+          </ItemsPanelTemplate>
+        </ItemsControl.ItemsPanel>
+        <ItemsControl.ItemTemplate>
+          <DataTemplate x:DataType="x:String">
+            <Button Classes="small"
+                    Margin="0,0,6,6"
+                    Content="{Binding}"
+                    Command="{Binding $parent[UserControl].((vm:CategoryDialogViewModel)DataContext).PickCommand}"
+                    CommandParameter="{Binding}" />
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
+      <TextBlock Classes="helper"
+                 TextWrapping="Wrap"
+                 Text="Pick an existing category or type a new one. Leave it empty for none." />
+    </StackPanel>
+    <c:Dialog.Buttons>
+      <StackPanel Orientation="Horizontal" Spacing="8">
+        <Button Classes="large" MinWidth="88" Content="Cancel" IsCancel="True" Command="{Binding CancelCommand}" />
+        <Button Classes="large primary"
+                MinWidth="88"
+                IsDefault="True"
+                Content="Save"
+                AutomationProperties.Name="Save category"
+                Command="{Binding AcceptCommand}" />
+      </StackPanel>
+    </c:Dialog.Buttons>
+  </c:Dialog>
+</UserControl>

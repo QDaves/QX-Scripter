@@ -1,4 +1,4 @@
-﻿using Qx;
+using Qx;
 using Qx.Game.Application;
 using Qx.Messages;
 using Qx.Model;
@@ -175,154 +175,11 @@ public partial class ScriptGlobals
             Ct.ThrowIfCancellationRequested();
     }
 
-    /// <summary>
-    /// Composes and sends a packet from a header and a list of field values. The header's
-    /// direction decides whether it goes to the server or to the game client.
-    /// </summary>
-    /// <param name="header">
-    /// The header, normally taken from <see cref="Out"/> or <see cref="In"/> rather than
-    /// written out by hand.
-    /// </param>
-    /// <param name="values">
-    /// The field values in wire order. Plain integers are written as 32-bit; wrap a value in
-    /// <see cref="Id"/> or <see cref="Length"/> where the field width depends on the client.
-    /// </param>
-    /// <exception cref="InvalidOperationException">
-    /// The session is Unity and the header is not present in the Unity catalog, or the values
-    /// do not match any Unity wire schema for it.
-    /// </exception>
-    /// <exception cref="NotSupportedException">
-    /// The composed Unity packet does not match the message's verified wire schema.
-    /// </exception>
-    /// <remarks>
-    /// On a Unity session the values are re-composed into the native Unity layout, so the field
-    /// list follows the Flash message's shape unless the message is Unity-only.
-    /// </remarks>
     public void Send(Header header, params object[] values)
     {
-        if (CurrentClient is ClientType.Unity && header.Direction is Direction.In)
-        {
-            if (!Ext.Messages.TryGetIdentifier(header, out Identifier incoming_identifier))
-                throw new InvalidOperationException($"Unknown incoming Unity header '{header.Value}'.");
-            string name = incoming_identifier.Name;
-            if (Ext.Messages.Map.TryTranslate(ClientType.Unity, ClientType.Flash, Direction.In, name, out string flash_name))
-                name = flash_name;
-            if (PreferredIncomingView(name, ClientType.None) is ClientType.Unity)
-            {
-                using var native_packet = new Packet(header, ClientType.Unity);
-                native_packet.Writer().WriteValues(values);
-                SendNativeUnityIncoming(name, native_packet);
-            }
-            else
-            {
-                SendIncomingFlashValues(name, header, values);
-            }
-            return;
-        }
-
-        if (CurrentClient is ClientType.Unity && header.Direction is Direction.Out)
-        {
-            if (!Ext.Messages.TryGetIdentifier(header, out Identifier outgoing_identifier))
-                throw new InvalidOperationException($"Unknown outgoing Unity header '{header.Value}'.");
-            SendNamed(Direction.Out, outgoing_identifier.Name, values, header);
-            return;
-        }
-
         using var packet = new Packet(header, CurrentClient);
         packet.Writer().WriteValues(values);
         Ext.Send(packet);
-    }
-
-    private Header IncomingHeader(string name)
-    {
-        var identifier = new Identifier(ClientType.None, Direction.In, name);
-        return Ext.Messages.TryGetHeader(identifier, out Header header)
-            ? header
-            : throw new InvalidOperationException($"Unknown incoming message '{name}'.");
-    }
-
-    private void SendIncomingFlashValues(string name, Header header, object[] values)
-    {
-        ValidateFlashIds(values);
-        using var flash_packet = new Packet(header, ClientType.Flash);
-        flash_packet.Writer().WriteValues(values);
-        SendIncomingFlashPacket(name, header, flash_packet);
-    }
-
-    private void SendIncomingFlashPacket(IPacket flash_packet)
-    {
-        if (!Ext.Messages.TryGetIdentifier(flash_packet.Header, out Identifier identifier))
-            throw new InvalidOperationException($"Unknown incoming Unity header '{flash_packet.Header.Value}'.");
-        SendIncomingFlashPacket(identifier.Name, flash_packet.Header, flash_packet);
-    }
-
-    private void SendIncomingFlashPacket(string name, Header header, IPacket flash_packet)
-    {
-        if (Ext.Messages.Map.TryTranslate(ClientType.Unity, ClientType.Flash, Direction.In, name, out string flash_name))
-            name = flash_name;
-        var context = new ParserContext(
-            Ext.Messages,
-            Ext.Messages.GetWireProfile(ClientType.Unity));
-        using Packet unity_packet = UnityIncomingCompatibility.Translate(name, header, flash_packet, context);
-        Ext.Send(unity_packet);
-    }
-
-    private void SendNativeUnityIncoming(string name, IPacket packet)
-    {
-        if (Ext.Messages.Map.TryTranslate(ClientType.Unity, ClientType.Flash, Direction.In, name, out string flash_name))
-            name = flash_name;
-        var context = new ParserContext(
-            Ext.Messages,
-            Ext.Messages.GetWireProfile(ClientType.Unity));
-        using var validation = new Packet(packet.Header, ClientType.Unity) { Context = context };
-        validation.WriteSpan(packet.Buffer.Span);
-        validation.Position = 0;
-        UnityIncomingCompatibility.ValidateNative(name, validation);
-        Ext.Send(packet);
-    }
-
-    private void ValidateNativeUnityOutgoing(IPacket packet)
-    {
-        if (!Ext.Messages.TryGetIdentifier(packet.Header, out Identifier identifier))
-            throw new InvalidOperationException($"Unknown outgoing Unity header '{packet.Header.Value}'.");
-        if (!Ext.Messages.TryGetOutgoingSchemas(
-                ClientType.Unity,
-                packet.Header,
-                out IReadOnlyList<OutgoingMessageSchema> schemas) ||
-            schemas.Count == 0)
-        {
-            throw new NotSupportedException($"Unity message '{identifier.Name}' requires a verified wire schema.");
-        }
-        if (OutgoingSchemaMatcher.TryMatch(packet, schemas, out bool has_supported_schema))
-            return;
-        if (!has_supported_schema)
-            throw new NotSupportedException($"Unity message '{identifier.Name}' has no supported verified wire schema.");
-        throw new NotSupportedException($"Unity message '{identifier.Name}' does not match its verified wire schema.");
-    }
-
-    private void SendOutgoingFlashPacket(IPacket flash_packet)
-    {
-        if (!Ext.Messages.TryGetIdentifier(flash_packet.Header, out Identifier identifier))
-            throw new InvalidOperationException($"Unknown outgoing Unity header '{flash_packet.Header.Value}'.");
-
-        string name = identifier.Name;
-        object[] values = UnityOutgoingInterception.ReadFlashValues(name, flash_packet, Ext.Messages);
-        bool route_placement = name.Equals(Msg.Out.PlaceRoomItem, StringComparison.OrdinalIgnoreCase) ||
-            name.Equals(Msg.Out.PlaceWallItem, StringComparison.OrdinalIgnoreCase);
-        if (route_placement)
-            name = Msg.Out.PlaceObject;
-        SendNamed(Direction.Out, name, values, route_placement ? null : flash_packet.Header);
-    }
-
-    private static void ValidateFlashIds(IEnumerable<object> values)
-    {
-        foreach (object value in values)
-        {
-            if (value is Id id && ((long)id < int.MinValue || (long)id > int.MaxValue))
-                throw new ArgumentOutOfRangeException(nameof(values), id, "A Flash packet cannot represent an identifier outside the signed 32-bit range.");
-            if (value is IComposer)
-                throw new ArgumentException("Nested packet composers cannot be validated for Flash identifier width.", nameof(values));
-        }
     }
 
     /// <summary>

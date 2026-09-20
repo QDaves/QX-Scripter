@@ -16,12 +16,6 @@ public static class HClientType
             client = ClientType.Flash;
             return true;
         }
-        if (string.Equals(name, "UNITY", StringComparison.OrdinalIgnoreCase) ||
-            string.Equals(name, "NITRO", StringComparison.OrdinalIgnoreCase))
-        {
-            client = ClientType.Unity;
-            return true;
-        }
         client = ClientType.None;
         return false;
     }

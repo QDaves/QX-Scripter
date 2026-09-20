@@ -13,22 +13,17 @@ public enum PollQuestionType
 public sealed record PollChoice(string Value, string Text, int Type) : IParserComposer<PollChoice>
 {
     public static PollChoice Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static PollChoice ParseFlash(in PacketReader p) => ParseChoice(in p);
-
-    private static PollChoice ParseUnity(in PacketReader p) => ParseChoice(in p);
 
     private static PollChoice ParseChoice(in PacketReader p) =>
         new(p.ReadString(), p.ReadString(), p.ReadInt());
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(PollChoice value, in PacketWriter p) =>
-        ComposeChoice(Prepare(value, in p), in p);
-
-    private static void ComposeUnity(PollChoice value, in PacketWriter p) =>
         ComposeChoice(Prepare(value, in p), in p);
 
     private static void ComposeChoice(PollChoice value, in PacketWriter p)
@@ -61,7 +56,7 @@ public sealed record PollQuestion(
     public bool HasChoices => Type is PollQuestionType.RadioButtons or PollQuestionType.Checkboxes;
 
     public static PollQuestion Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static PollQuestion ParseFlash(in PacketReader p)
     {
@@ -102,35 +97,12 @@ public sealed record PollQuestion(
             answer_count);
     }
 
-    private static PollQuestion ParseUnity(in PacketReader p)
-    {
-        Id question_id = p.ReadLong();
-        int sort_order = p.ReadInt();
-        var type = (PollQuestionType)p.ReadInt();
-        string text = p.ReadString();
-        int category = p.ReadInt();
-        int count = PollWire.ReadUnityCount(
-            in p,
-            PollWire.ChoiceMinimumBytes,
-            nameof(Choices));
-        var choices = new PollChoice[count];
-        for (int index = 0; index < choices.Length; index++)
-            choices[index] = p.Parse<PollChoice>();
-        return new PollQuestion(
-            question_id,
-            sort_order,
-            type,
-            text,
-            category,
-            PollWire.Freeze(choices));
-    }
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(PollQuestion value, in PacketWriter p)
     {
-        PollQuestion prepared = Prepare(value, true, in p);
+        PollQuestion prepared = Prepare(value, in p);
         int question_id = PollWire.RequireInt32Id(prepared.QuestionId, nameof(QuestionId));
         int answer_count = prepared.FlashAnswerCount ?? prepared.Choices.Count;
         p.WriteInt(question_id);
@@ -144,20 +116,7 @@ public sealed record PollQuestion(
             p.Compose(choice);
     }
 
-    private static void ComposeUnity(PollQuestion value, in PacketWriter p)
-    {
-        PollQuestion prepared = Prepare(value, false, in p);
-        p.WriteLong(prepared.QuestionId);
-        p.WriteInt(prepared.SortOrder);
-        p.WriteInt((int)prepared.Type);
-        p.WriteString(prepared.Text);
-        p.WriteInt(prepared.Category);
-        PollWire.WriteUnityCount(prepared.Choices.Count, in p);
-        foreach (PollChoice choice in prepared.Choices)
-            p.Compose(choice);
-    }
-
-    internal static PollQuestion Prepare(PollQuestion value, bool flash, in PacketWriter p)
+    internal static PollQuestion Prepare(PollQuestion value, in PacketWriter p)
     {
         ArgumentNullException.ThrowIfNull(value);
         PollWire.RequireString(value.Text, nameof(Text), in p);
@@ -165,7 +124,6 @@ public sealed record PollQuestion(
         for (int index = 0; index < choices.Length; index++)
             choices[index] = PollChoice.Prepare(choices[index], in p);
 
-        if (flash)
         {
             _ = PollWire.RequireInt32Id(value.QuestionId, nameof(QuestionId));
             int answer_count = value.FlashAnswerCount ?? choices.Length;
@@ -177,15 +135,6 @@ public sealed record PollQuestion(
             }
             if (!HasChoiceLayout(value.Type) && choices.Length != 0)
                 throw new InvalidDataException("Flash text questions cannot contain choice payloads.");
-        }
-        else
-        {
-            if (value.FlashAnswerType is not null || value.FlashAnswerCount is not null)
-            {
-                throw new InvalidDataException(
-                    "Unity poll questions cannot contain Flash answer metadata.");
-            }
-            PollWire.RequireUnityCount(choices.Length, nameof(Choices));
         }
 
         return value with { Choices = PollWire.Freeze(choices) };
@@ -200,7 +149,7 @@ public sealed record PollQuestionGroup(
     IReadOnlyList<PollQuestion> Children) : IParserComposer<PollQuestionGroup>
 {
     public static PollQuestionGroup Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static PollQuestionGroup ParseFlash(in PacketReader p)
     {
@@ -215,52 +164,27 @@ public sealed record PollQuestionGroup(
         return new PollQuestionGroup(question, PollWire.Freeze(children));
     }
 
-    private static PollQuestionGroup ParseUnity(in PacketReader p)
-    {
-        PollQuestion question = p.Parse<PollQuestion>();
-        int count = PollWire.ReadUnityCount(
-            in p,
-            PollWire.UnityQuestionMinimumBytes,
-            nameof(Children));
-        var children = new PollQuestion[count];
-        for (int index = 0; index < children.Length; index++)
-            children[index] = p.Parse<PollQuestion>();
-        return new PollQuestionGroup(question, PollWire.Freeze(children));
-    }
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(PollQuestionGroup value, in PacketWriter p)
     {
-        PollQuestionGroup prepared = Prepare(value, true, in p);
+        PollQuestionGroup prepared = Prepare(value, in p);
         p.Compose(prepared.Question);
         p.WriteInt(prepared.Children.Count);
         foreach (PollQuestion child in prepared.Children)
             p.Compose(child);
     }
 
-    private static void ComposeUnity(PollQuestionGroup value, in PacketWriter p)
-    {
-        PollQuestionGroup prepared = Prepare(value, false, in p);
-        p.Compose(prepared.Question);
-        PollWire.WriteUnityCount(prepared.Children.Count, in p);
-        foreach (PollQuestion child in prepared.Children)
-            p.Compose(child);
-    }
-
     internal static PollQuestionGroup Prepare(
         PollQuestionGroup value,
-        bool flash,
         in PacketWriter p)
     {
         ArgumentNullException.ThrowIfNull(value);
-        PollQuestion question = PollQuestion.Prepare(value.Question, flash, in p);
+        PollQuestion question = PollQuestion.Prepare(value.Question, in p);
         PollQuestion[] children = PollWire.SnapshotReferences(value.Children, nameof(Children));
-        if (!flash)
-            PollWire.RequireUnityCount(children.Length, nameof(Children));
         for (int index = 0; index < children.Length; index++)
-            children[index] = PollQuestion.Prepare(children[index], flash, in p);
+            children[index] = PollQuestion.Prepare(children[index], in p);
         return new PollQuestionGroup(question, PollWire.Freeze(children));
     }
 }
@@ -270,22 +194,12 @@ public sealed record PollResponse(
     IReadOnlyList<string> Answers) : IParserComposer<PollResponse>
 {
     public static PollResponse Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static PollResponse ParseFlash(in PacketReader p)
     {
         Id question_id = p.ReadInt();
         int count = PollWire.ReadFlashCount(
-            in p,
-            PollWire.StringMinimumBytes,
-            nameof(Answers));
-        return new PollResponse(question_id, ReadAnswers(count, in p));
-    }
-
-    private static PollResponse ParseUnity(in PacketReader p)
-    {
-        Id question_id = p.ReadLong();
-        int count = PollWire.ReadUnityCount(
             in p,
             PollWire.StringMinimumBytes,
             nameof(Answers));
@@ -301,34 +215,22 @@ public sealed record PollResponse(
     }
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(PollResponse value, in PacketWriter p)
     {
-        PollResponse prepared = Prepare(value, true, in p);
+        PollResponse prepared = Prepare(value, in p);
         p.WriteInt(PollWire.RequireInt32Id(prepared.QuestionId, nameof(QuestionId)));
         p.WriteInt(prepared.Answers.Count);
         foreach (string answer in prepared.Answers)
             p.WriteString(answer);
     }
 
-    private static void ComposeUnity(PollResponse value, in PacketWriter p)
-    {
-        PollResponse prepared = Prepare(value, false, in p);
-        p.WriteLong(prepared.QuestionId);
-        PollWire.WriteUnityCount(prepared.Answers.Count, in p);
-        foreach (string answer in prepared.Answers)
-            p.WriteString(answer);
-    }
-
-    internal static PollResponse Prepare(PollResponse value, bool flash, in PacketWriter p)
+    internal static PollResponse Prepare(PollResponse value, in PacketWriter p)
     {
         ArgumentNullException.ThrowIfNull(value);
-        if (flash)
-            _ = PollWire.RequireInt32Id(value.QuestionId, nameof(QuestionId));
+        _ = PollWire.RequireInt32Id(value.QuestionId, nameof(QuestionId));
         string[] answers = PollWire.SnapshotStrings(value.Answers, nameof(Answers), in p);
-        if (!flash)
-            PollWire.RequireUnityCount(answers.Length, nameof(Answers));
         return value with { Answers = PollWire.Freeze(answers) };
     }
 }
@@ -339,11 +241,7 @@ internal static class PollWire
     internal const int ChoiceMinimumBytes = sizeof(short) + sizeof(short) + sizeof(int);
     internal const int FlashQuestionMinimumBytes =
         sizeof(int) + sizeof(int) + sizeof(int) + sizeof(short) + sizeof(int) + sizeof(int) + sizeof(int);
-    internal const int UnityQuestionMinimumBytes =
-        sizeof(long) + sizeof(int) + sizeof(int) + sizeof(short) + sizeof(int) + sizeof(short);
     internal const int FlashGroupMinimumBytes = FlashQuestionMinimumBytes + sizeof(int);
-    internal const int UnityGroupMinimumBytes = UnityQuestionMinimumBytes + sizeof(short);
-    internal const int UnityResponseMinimumBytes = sizeof(long) + sizeof(short);
 
     internal static int ReadFlashCount(
         in PacketReader p,
@@ -352,16 +250,6 @@ internal static class PollWire
         int trailing_bytes = 0)
     {
         int count = p.ReadInt();
-        return RequireCount(count, p.Available - trailing_bytes, minimum_bytes, name);
-    }
-
-    internal static int ReadUnityCount(
-        in PacketReader p,
-        int minimum_bytes,
-        string name,
-        int trailing_bytes = 0)
-    {
-        int count = unchecked((ushort)p.ReadShort());
         return RequireCount(count, p.Available - trailing_bytes, minimum_bytes, name);
     }
 
@@ -395,12 +283,6 @@ internal static class PollWire
         }
     }
 
-    internal static void RequireUnityCount(int count, string name)
-    {
-        if ((uint)count > ushort.MaxValue)
-            throw new InvalidDataException($"{name} count {count} exceeds the Unity wire limit.");
-    }
-
     internal static void RequireString(string value, string name, in PacketWriter p)
     {
         ArgumentNullException.ThrowIfNull(value, name);
@@ -412,12 +294,6 @@ internal static class PollWire
     {
         if (p.Available != 0)
             throw new InvalidDataException($"{name} contains {p.Available} unexpected bytes.");
-    }
-
-    internal static void WriteUnityCount(int count, in PacketWriter p)
-    {
-        RequireUnityCount(count, nameof(count));
-        p.WriteShort(unchecked((short)(ushort)count));
     }
 
     internal static IReadOnlyList<T> Freeze<T>(T[] values) => Array.AsReadOnly(values);

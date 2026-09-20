@@ -370,10 +370,7 @@ public sealed class GameData
     private sealed class DefaultGameDataTransport : IGameDataTransport
     {
         private static readonly HttpClient http = CreateClient();
-        private readonly string cache_root = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-            "QX Scripter",
-            "gamedata");
+        private readonly string cache_root = Path.Combine(StoragePaths.Cache, "gamedata");
 
         public async Task<IReadOnlyDictionary<string, string>> LoadHashesAsync(
             string web_host,

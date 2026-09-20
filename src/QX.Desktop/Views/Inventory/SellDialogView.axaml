@@ -1,0 +1,135 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:c="using:Qx.Desktop.Controls"
+             xmlns:vm="using:Qx.Presentation.ViewModels.Inventory"
+             x:Class="Qx.Desktop.Views.Inventory.SellDialogView"
+             x:DataType="vm:SellDialogViewModel">
+  <c:Dialog Width="{DynamicResource Inventory.SellDialogWidth}"
+            Title="{Binding Title}"
+            Icon="{Binding Icon}"
+            Tone="{Binding Tone}"
+            CloseCommand="{Binding CancelCommand}">
+    <StackPanel Spacing="12">
+      <WrapPanel ItemSpacing="18" LineSpacing="8">
+        <RadioButton GroupName="SellPricing" Content="Market price" IsChecked="{Binding IsMarketMode, Mode=TwoWay}" />
+        <StackPanel Orientation="Horizontal" Spacing="8">
+          <RadioButton GroupName="SellPricing" Content="Undercut by" IsChecked="{Binding IsUndercutMode, Mode=TwoWay}" />
+          <TextBox Classes="small mono"
+                   Width="{DynamicResource Inventory.SellNumberWidth}"
+                   Text="{Binding UndercutText, Mode=TwoWay}"
+                   AutomationProperties.Name="Undercut amount" />
+        </StackPanel>
+        <StackPanel Orientation="Horizontal" Spacing="8">
+          <RadioButton GroupName="SellPricing" Content="Fixed" IsChecked="{Binding IsFixedMode, Mode=TwoWay}" />
+          <TextBox Classes="small mono"
+                   Width="{DynamicResource Inventory.SellNumberWidth}"
+                   Text="{Binding FixedText, Mode=TwoWay}"
+                   AutomationProperties.Name="Fixed price" />
+        </StackPanel>
+      </WrapPanel>
+      <StackPanel Orientation="Horizontal" Spacing="12" IsVisible="{Binding HasUnpriced}">
+        <TextBlock Text="{Binding UnpricedNote}"
+                   Classes="small secondary"
+                   MaxWidth="{DynamicResource Inventory.SellNoteWidth}"
+                   TextWrapping="Wrap"
+                   VerticalAlignment="Center" />
+        <TextBox Classes="small mono"
+                 Width="{DynamicResource Inventory.SellNumberWidth}"
+                 VerticalAlignment="Center"
+                 Text="{Binding UnpricedText, Mode=TwoWay}"
+                 AutomationProperties.Name="Price for unpriced kinds" />
+      </StackPanel>
+      <Border Classes="panel" MaxHeight="{DynamicResource Inventory.SellGridHeight}">
+        <DataGrid Name="Rows"
+                  ItemsSource="{Binding Rows}"
+                  CanUserSortColumns="False"
+                  CanUserResizeColumns="False"
+                  CanUserReorderColumns="False"
+                  SelectionMode="Single"
+                  AutomationProperties.Name="Kinds to sell">
+          <DataGrid.Styles>
+            <Style Selector="DataGridRow:selected /template/ Rectangle#SelectionMarker">
+              <Setter Property="IsVisible" Value="False" />
+            </Style>
+          </DataGrid.Styles>
+          <DataGrid.Columns>
+            <DataGridTemplateColumn x:DataType="vm:SellRowViewModel" Header="Item" Width="2*">
+              <DataGridTemplateColumn.CellTemplate>
+                <DataTemplate x:DataType="vm:SellRowViewModel">
+                  <TextBlock Text="{Binding Name}" Classes="strong" Margin="12,0" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                </DataTemplate>
+              </DataGridTemplateColumn.CellTemplate>
+            </DataGridTemplateColumn>
+            <DataGridTemplateColumn x:DataType="vm:SellRowViewModel" Header="Owned" Width="80">
+              <DataGridTemplateColumn.CellTemplate>
+                <DataTemplate x:DataType="vm:SellRowViewModel">
+                  <TextBlock Text="{Binding OwnedText}" Classes="mono secondary" Margin="12,0" VerticalAlignment="Center" />
+                </DataTemplate>
+              </DataGridTemplateColumn.CellTemplate>
+            </DataGridTemplateColumn>
+            <DataGridTemplateColumn x:DataType="vm:SellRowViewModel" Header="Market" Width="110">
+              <DataGridTemplateColumn.CellTemplate>
+                <DataTemplate x:DataType="vm:SellRowViewModel">
+                  <TextBlock Text="{Binding MarketText}" Classes="mono secondary" Margin="12,0" VerticalAlignment="Center" />
+                </DataTemplate>
+              </DataGridTemplateColumn.CellTemplate>
+            </DataGridTemplateColumn>
+            <DataGridTemplateColumn x:DataType="vm:SellRowViewModel" Header="Sell" Width="116">
+              <DataGridTemplateColumn.CellTemplate>
+                <DataTemplate x:DataType="vm:SellRowViewModel">
+                  <StackPanel Orientation="Horizontal" Spacing="4" Margin="12,0" VerticalAlignment="Center">
+                    <Button Classes="icon small"
+                            Command="{Binding DecreaseCommand}"
+                            ToolTip.Tip="Sell one fewer"
+                            AutomationProperties.Name="Sell one fewer">
+                      <c:Icon Kind="Minus" Size="14" />
+                    </Button>
+                    <TextBlock Text="{Binding Amount}"
+                               Classes="mono"
+                               Width="{DynamicResource Inventory.SellAmountWidth}"
+                               TextAlignment="Center"
+                               VerticalAlignment="Center" />
+                    <Button Classes="icon small"
+                            Command="{Binding IncreaseCommand}"
+                            ToolTip.Tip="Sell one more"
+                            AutomationProperties.Name="Sell one more">
+                      <c:Icon Kind="Add" Size="14" />
+                    </Button>
+                  </StackPanel>
+                </DataTemplate>
+              </DataGridTemplateColumn.CellTemplate>
+            </DataGridTemplateColumn>
+            <DataGridTemplateColumn x:DataType="vm:SellRowViewModel" Header="Price" Width="106">
+              <DataGridTemplateColumn.CellTemplate>
+                <DataTemplate x:DataType="vm:SellRowViewModel">
+                  <TextBox Classes="small mono"
+                           Margin="12,0"
+                           Width="{DynamicResource Inventory.SellPriceWidth}"
+                           HorizontalAlignment="Left"
+                           VerticalAlignment="Center"
+                           Text="{Binding PriceText, Mode=TwoWay}"
+                           KeyDown="OnPriceKey"
+                           LostFocus="OnPriceLost"
+                           AutomationProperties.Name="Price" />
+                </DataTemplate>
+              </DataGridTemplateColumn.CellTemplate>
+            </DataGridTemplateColumn>
+          </DataGrid.Columns>
+        </DataGrid>
+      </Border>
+    </StackPanel>
+    <c:Dialog.Hint>
+      <TextBlock Text="{Binding Summary}" TextWrapping="Wrap" />
+    </c:Dialog.Hint>
+    <c:Dialog.Buttons>
+      <StackPanel Orientation="Horizontal" Spacing="8">
+        <Button Classes="large" MinWidth="88" Content="Cancel" IsCancel="True" Command="{Binding CancelCommand}" />
+        <Button Classes="large primary"
+                MinWidth="88"
+                IsDefault="True"
+                Content="{Binding SellText}"
+                Command="{Binding SellCommand}" />
+      </StackPanel>
+    </c:Dialog.Buttons>
+  </c:Dialog>
+</UserControl>

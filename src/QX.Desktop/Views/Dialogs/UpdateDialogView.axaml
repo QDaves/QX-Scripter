@@ -1,0 +1,41 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:c="using:Qx.Desktop.Controls"
+             xmlns:d="using:Qx.Presentation.Dialogs"
+             x:Class="Qx.Desktop.Views.Dialogs.UpdateDialogView"
+             x:DataType="d:UpdateDialogViewModel">
+  <c:Dialog CloseCommand="{Binding CancelCommand}"
+            Width="{DynamicResource QxDialogWidthUpdate}"
+            Title="{Binding Title}"
+            Icon="{Binding Icon}"
+            Tone="{Binding Tone}">
+    <StackPanel Spacing="8">
+      <TextBlock Text="{Binding Headline}" TextWrapping="Wrap" LineHeight="{DynamicResource QxLineHeightBody}" />
+      <Border Classes="well">
+        <StackPanel Spacing="4">
+          <TextBlock Text="{Binding ReleaseLine}" Classes="strong primary" TextWrapping="Wrap" />
+          <StackPanel Orientation="Horizontal" Spacing="6">
+            <TextBlock Text="{Binding InstalledVersion}" Classes="mono caption" />
+            <c:Icon Kind="ArrowRight" Size="12" Classes="tertiary" VerticalAlignment="Center" />
+            <TextBlock Text="{Binding AvailableVersion}" Classes="mono caption" />
+          </StackPanel>
+        </StackPanel>
+      </Border>
+      <TextBlock Text="{Binding Note}" Classes="small tertiary" TextWrapping="Wrap" />
+      <TextBlock Text="{Binding Failure}"
+                 Classes="small danger"
+                 TextWrapping="Wrap"
+                 IsVisible="{Binding HasFailure}" />
+    </StackPanel>
+    <c:Dialog.Buttons>
+      <StackPanel Orientation="Horizontal" Spacing="8">
+        <Button Classes="large" MinWidth="88" Content="{Binding LaterText}" IsCancel="True" Command="{Binding LaterCommand}" />
+        <Button Classes="large primary"
+                MinWidth="88"
+                IsDefault="True"
+                Content="{Binding OpenText}"
+                Command="{Binding OpenCommand}" />
+      </StackPanel>
+    </c:Dialog.Buttons>
+  </c:Dialog>
+</UserControl>

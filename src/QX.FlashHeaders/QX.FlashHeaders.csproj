@@ -10,6 +10,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\QX.Core\QX.Core.csproj" />
     <ProjectReference Include="..\Flazzy\Flazzy.csproj" />
     <PackageReference Include="SharpCompress" Version="0.50.0" />
   </ItemGroup>

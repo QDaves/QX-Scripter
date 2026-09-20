@@ -1,0 +1,58 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+  <Styles.Resources>
+    <ResourceDictionary>
+      <ResourceDictionary.MergedDictionaries>
+        <ResourceInclude Source="avares://QX/Themes/Tokens.axaml" />
+        <ResourceInclude Source="avares://QX/Themes/Icons.axaml" />
+        <ResourceInclude Source="avares://QX/Themes/Brand.axaml" />
+        <ResourceInclude Source="avares://QX/Themes/WindowDecorations.axaml" />
+        <ResourceInclude Source="avares://QX/Themes/DataGrid.axaml" />
+        <ResourceInclude Source="avares://QX/Themes/Controls/Window.axaml" />
+        <ResourceInclude Source="avares://QX/Themes/Controls/Buttons.axaml" />
+        <ResourceInclude Source="avares://QX/Themes/Controls/Inputs.axaml" />
+        <ResourceInclude Source="avares://QX/Themes/Controls/Popups.axaml" />
+        <ResourceInclude Source="avares://QX/Themes/Controls/Selection.axaml" />
+        <ResourceInclude Source="avares://QX/Themes/Controls/Tabs.axaml" />
+        <ResourceInclude Source="avares://QX/Themes/Controls/Lists.axaml" />
+        <ResourceInclude Source="avares://QX/Themes/Controls/Badges.axaml" />
+        <ResourceInclude Source="avares://QX/Themes/Controls/Page.axaml" />
+        <ResourceInclude Source="avares://QX/Themes/Controls/Overlays.axaml" />
+        <ResourceInclude Source="avares://QX/Themes/Controls/RunButton.axaml" />
+        <ResourceInclude Source="avares://QX/Themes/Controls/Shell.axaml" />
+        <ResourceInclude Source="avares://QX/Themes/Controls/Media.axaml" />
+        <ResourceInclude Source="avares://QX/Themes/Controls/Console.axaml" />
+        <ResourceInclude Source="avares://QX/Themes/Areas/Library.axaml" />
+        <ResourceInclude Source="avares://QX/Themes/Areas/Log.axaml" />
+        <ResourceInclude Source="avares://QX/Themes/Areas/Room.axaml" />
+        <ResourceInclude Source="avares://QX/Themes/Areas/General.axaml" />
+        <ResourceInclude Source="avares://QX/Themes/Areas/Chat.axaml" />
+        <ResourceInclude Source="avares://QX/Themes/Areas/Friends.axaml" />
+        <ResourceInclude Source="avares://QX/Themes/Areas/Navigator.axaml" />
+        <ResourceInclude Source="avares://QX/Themes/Areas/Inventory.axaml" />
+        <ResourceInclude Source="avares://QX/Themes/Areas/Wardrobe.axaml" />
+        <ResourceInclude Source="avares://QX/Themes/Areas/GameCatalog.axaml" />
+        <ResourceInclude Source="avares://QX/Themes/Areas/Settings.axaml" />
+        <ResourceInclude Source="avares://QX/Themes/Areas/About.axaml" />
+        <ResourceInclude Source="avares://QX/Themes/Areas/BugReports.axaml" />
+        <ResourceInclude Source="avares://QX/Themes/Areas/ScriptPanels.axaml" />
+        <ResourceInclude Source="avares://QX/Themes/Areas/ApiBrowser.axaml" />
+        <ResourceInclude Source="avares://QX/Themes/Areas/CommandPalette.axaml" />
+      </ResourceDictionary.MergedDictionaries>
+    </ResourceDictionary>
+  </Styles.Resources>
+
+  <FluentTheme>
+    <FluentTheme.Palettes>
+      <ColorPaletteResources x:Key="Light" Accent="#FF5B4BD6" RegionColor="#FFFFFFFF" ErrorText="#FFB42D32" BaseHigh="#FF16181D" AltHigh="#FFFFFFFF" ChromeMediumLow="#FFF3F4F7" />
+      <ColorPaletteResources x:Key="Dark" Accent="#FF6E5EE6" RegionColor="#FF15171C" ErrorText="#FFF47F7F" BaseHigh="#FFE8EAF0" AltHigh="#FF15171C" ChromeMediumLow="#FF101216" />
+    </FluentTheme.Palettes>
+  </FluentTheme>
+  <StyleInclude Source="avares://Avalonia.Controls.DataGrid/Themes/Fluent.xaml" />
+  <StyleInclude Source="avares://AvaloniaEdit/Themes/Fluent/AvaloniaEdit.xaml" />
+  <StyleInclude Source="avares://QX/Themes/Typography.axaml" />
+  <StyleInclude Source="avares://QX/Themes/Classes.axaml" />
+  <StyleInclude Source="avares://QX/Themes/Editor.axaml" />
+
+</Styles>

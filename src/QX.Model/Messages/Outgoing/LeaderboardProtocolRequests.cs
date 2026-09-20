@@ -10,7 +10,7 @@ public sealed record LeaderboardRequest(
     int WindowSize) : IParserComposer<LeaderboardRequest>
 {
     public static LeaderboardRequest Parse(in PacketReader p) =>
-        ModernWireClients.ParseFlash(in p, ParseFlash);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static LeaderboardRequest ParseFlash(in PacketReader p)
     {
@@ -26,7 +26,7 @@ public sealed record LeaderboardRequest(
     }
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.ComposeFlash(this, in p, ComposeFlash);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(LeaderboardRequest value, in PacketWriter p)
     {
@@ -48,7 +48,7 @@ public sealed record WeeklyLeaderboardRequest(
     int WindowSize) : IParserComposer<WeeklyLeaderboardRequest>
 {
     public static WeeklyLeaderboardRequest Parse(in PacketReader p) =>
-        ModernWireClients.ParseFlash(in p, ParseFlash);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static WeeklyLeaderboardRequest ParseFlash(in PacketReader p)
     {
@@ -69,7 +69,7 @@ public sealed record WeeklyLeaderboardRequest(
     }
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.ComposeFlash(this, in p, ComposeFlash);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(WeeklyLeaderboardRequest value, in PacketWriter p)
     {

@@ -6,7 +6,7 @@ namespace Qx.Model.Messages.Incoming;
 public sealed record WalletBalanceRequest : IParserComposer<WalletBalanceRequest>
 {
     public static WalletBalanceRequest Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static WalletBalanceRequest ParseFlash(in PacketReader p)
     {
@@ -14,20 +14,10 @@ public sealed record WalletBalanceRequest : IParserComposer<WalletBalanceRequest
         return new WalletBalanceRequest();
     }
 
-    private static WalletBalanceRequest ParseUnity(in PacketReader p)
-    {
-        EconomyWire.RequireEmpty(in p, nameof(WalletBalanceRequest));
-        return new WalletBalanceRequest();
-    }
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(WalletBalanceRequest value, in PacketWriter p)
-    {
-    }
-
-    private static void ComposeUnity(WalletBalanceRequest value, in PacketWriter p)
     {
     }
 }
@@ -50,7 +40,7 @@ public sealed record CreditBalance(string Balance) : IParserComposer<CreditBalan
     }
 
     public static CreditBalance Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static CreditBalance ParseFlash(in PacketReader p)
     {
@@ -59,23 +49,10 @@ public sealed record CreditBalance(string Balance) : IParserComposer<CreditBalan
         return value;
     }
 
-    private static CreditBalance ParseUnity(in PacketReader p)
-    {
-        var value = new CreditBalance(p.ReadString());
-        EconomyWire.RequireEmpty(in p, nameof(CreditBalance));
-        return value;
-    }
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(CreditBalance value, in PacketWriter p)
-    {
-        EconomyWire.RequireString(value.Balance, nameof(Balance), in p);
-        p.WriteString(value.Balance);
-    }
-
-    private static void ComposeUnity(CreditBalance value, in PacketWriter p)
     {
         EconomyWire.RequireString(value.Balance, nameof(Balance), in p);
         p.WriteString(value.Balance);
@@ -86,7 +63,7 @@ public sealed record ActivityPointNotification(int Amount, int Change, int Type)
     : IParserComposer<ActivityPointNotification>
 {
     public static ActivityPointNotification Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static ActivityPointNotification ParseFlash(in PacketReader p)
     {
@@ -95,24 +72,10 @@ public sealed record ActivityPointNotification(int Amount, int Change, int Type)
         return value;
     }
 
-    private static ActivityPointNotification ParseUnity(in PacketReader p)
-    {
-        var value = new ActivityPointNotification(p.ReadInt(), p.ReadInt(), p.ReadInt());
-        EconomyWire.RequireEmpty(in p, nameof(ActivityPointNotification));
-        return value;
-    }
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(ActivityPointNotification value, in PacketWriter p)
-    {
-        p.WriteInt(value.Amount);
-        p.WriteInt(value.Change);
-        p.WriteInt(value.Type);
-    }
-
-    private static void ComposeUnity(ActivityPointNotification value, in PacketWriter p)
     {
         p.WriteInt(value.Amount);
         p.WriteInt(value.Change);
@@ -142,7 +105,7 @@ public sealed record ActivityPoints : IParserComposer<ActivityPoints>
     public int Get(int type) => Points.Where(point => point.Type == type).Select(point => point.Amount).FirstOrDefault();
 
     public static ActivityPoints Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static ActivityPoints ParseFlash(in PacketReader p)
     {
@@ -159,39 +122,13 @@ public sealed record ActivityPoints : IParserComposer<ActivityPoints>
         return value;
     }
 
-    private static ActivityPoints ParseUnity(in PacketReader p)
-    {
-        int count = EconomyWire.RequireCount(
-            unchecked((ushort)p.ReadShort()),
-            p.Available,
-            EconomyWire.ActivityPointBytes,
-            nameof(Points));
-        var points = new ActivityPoint[count];
-        for (int index = 0; index < points.Length; index++)
-            points[index] = new ActivityPoint(p.ReadInt(), p.ReadInt());
-        var value = new ActivityPoints(points);
-        EconomyWire.RequireEmpty(in p, nameof(ActivityPoints));
-        return value;
-    }
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(ActivityPoints value, in PacketWriter p)
     {
-        ActivityPoint[] points = EconomyWire.PreparePoints(value.Points, false);
+        ActivityPoint[] points = EconomyWire.PreparePoints(value.Points);
         p.WriteInt(points.Length);
-        foreach (ActivityPoint point in points)
-        {
-            p.WriteInt(point.Type);
-            p.WriteInt(point.Amount);
-        }
-    }
-
-    private static void ComposeUnity(ActivityPoints value, in PacketWriter p)
-    {
-        ActivityPoint[] points = EconomyWire.PreparePoints(value.Points, true);
-        p.WriteShort(unchecked((short)(ushort)points.Length));
         foreach (ActivityPoint point in points)
         {
             p.WriteInt(point.Type);
@@ -228,13 +165,10 @@ internal static class EconomyWire
     }
 
     internal static ActivityPoint[] PreparePoints(
-        IReadOnlyList<ActivityPoint> values,
-        bool unity)
+        IReadOnlyList<ActivityPoint> values)
     {
         ArgumentNullException.ThrowIfNull(values);
         ActivityPoint[] snapshot = values.ToArray();
-        if (unity && snapshot.Length > ushort.MaxValue)
-            throw new InvalidDataException($"{nameof(ActivityPoints.Points)} count {snapshot.Length} exceeds the Unity wire limit.");
         return snapshot;
     }
 

@@ -1,4 +1,4 @@
-﻿using Qx.Game;
+using Qx.Game;
 using Qx.Game.Application;
 using Qx.Game.Snapshots;
 using Qx.Model;
@@ -311,11 +311,7 @@ public partial class ScriptGlobals
                 block.ActionAllowed,
                 block.ForceClosed,
                 block.ViewMode,
-                block.Rooms.Select(RoomFromSnapshot).ToArray(),
-                block.UnityMetadata.Select(metadata => new NavigatorRoomMetadata(
-                    metadata.RoomId,
-                    metadata.FirstValue,
-                    metadata.SecondValue)).ToArray())).ToArray());
+                block.Rooms.Select(RoomFromSnapshot).ToArray())).ToArray());
 
     private static RoomData RoomFromSnapshot(RoomDataSnapshot room) => new()
     {

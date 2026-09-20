@@ -1,0 +1,117 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:c="using:Qx.Desktop.Controls"
+             xmlns:vm="using:Qx.Presentation.ViewModels.Editor"
+             xmlns:output="using:Qx.Presentation.Services.Output"
+             x:Class="Qx.Desktop.Views.Editor.OutputConsoleView"
+             x:DataType="vm:OutputConsoleViewModel">
+
+  <UserControl.Styles>
+    <Style Selector="Panel.wrapped c|ConsoleLine">
+      <Setter Property="IsWrapped" Value="True" />
+    </Style>
+  </UserControl.Styles>
+
+  <Border BorderBrush="{DynamicResource QxBorderSubtleBrush}"
+          BorderThickness="0,1,0,0"
+          Background="{DynamicResource QxSurfaceBaseBrush}">
+    <Grid RowDefinitions="Auto,*">
+
+      <Grid Grid.Row="0"
+            Height="{DynamicResource QxConsoleHeaderHeight}"
+            Margin="16,0,8,0"
+            ColumnDefinitions="Auto,*,Auto">
+        <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+          <TextBlock Text="Output" FontSize="{DynamicResource QxFontSizeSmall}" FontWeight="SemiBold" />
+          <TextBlock Classes="mono caption tertiary"
+                     VerticalAlignment="Center"
+                     Text="{Binding CountText}" />
+        </StackPanel>
+        <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="2" VerticalAlignment="Center">
+          <c:SearchBox Name="Filter"
+                       Classes="small"
+                       Width="200"
+                       Margin="0,0,6,0"
+                       PlaceholderText="Filter output"
+                       Text="{Binding FilterText, Mode=TwoWay}" />
+          <ToggleButton Classes="icon small"
+                        IsChecked="{Binding ProblemsOnly, Mode=TwoWay}"
+                        ToolTip.Tip="Show warnings and errors only"
+                        AutomationProperties.Name="Show warnings and errors only">
+            <c:Icon Kind="Problems" Size="14" />
+          </ToggleButton>
+          <c:Badge Name="Problems"
+                   Margin="4,0"
+                   VerticalAlignment="Center"
+                   Text="{Binding ProblemText}"
+                   IsVisible="{Binding HasProblems}" />
+          <Button Name="NextError"
+                  Classes="icon small"
+                  IsVisible="{Binding HasErrors}"
+                  ToolTip.Tip="Go to the next error (F8)"
+                  AutomationProperties.Name="Go to the next error">
+            <c:Icon Kind="ErrorNext" Size="14" />
+          </Button>
+          <Rectangle Classes="divider-vertical" />
+          <ToggleButton Name="Wrap"
+                        Classes="icon small"
+                        ToolTip.Tip="Wrap output lines"
+                        AutomationProperties.Name="Wrap output lines">
+            <c:Icon Name="WrapGlyph" Kind="Wrap" Size="14" />
+          </ToggleButton>
+          <c:CopyButton Classes="icon small"
+                        Command="{Binding Copy.CopyCommand}"
+                        IsCopied="{Binding Copy.Copied}"
+                        ToolTip.Tip="Copy the shown output"
+                        AutomationProperties.Name="Copy the shown output">
+            <c:Icon Kind="Copy" Size="14" />
+          </c:CopyButton>
+          <Button Classes="icon small"
+                  Command="{Binding ClearCommand}"
+                  ToolTip.Tip="Clear output"
+                  AutomationProperties.Name="Clear output">
+            <c:Icon Kind="ClearAll" Size="14" />
+          </Button>
+          <Rectangle Classes="divider-vertical" />
+          <Button Name="Collapse"
+                  Classes="icon small"
+                  Command="{Binding ToggleCollapsedCommand}"
+                  AutomationProperties.Name="Show or hide output">
+            <c:Icon Name="CollapseGlyph" Kind="ChevronDown" Size="14" />
+          </Button>
+        </StackPanel>
+      </Grid>
+
+      <Panel Name="Body" Grid.Row="1" IsVisible="{Binding !IsCollapsed}">
+        <ListBox Name="Lines"
+                 ItemsSource="{Binding Visible}"
+                 ItemContainerTheme="{StaticResource QxConsoleLineItem}"
+                 SelectionMode="Multiple"
+                 Padding="0,0,0,8"
+                 Background="Transparent"
+                 BorderThickness="0">
+          <ListBox.ItemTemplate>
+            <DataTemplate x:DataType="output:OutputLine">
+              <c:ConsoleLine Time="{Binding At, Converter={StaticResource QxTimeText}}"
+                             Level="{Binding Level}"
+                             Text="{Binding Text}" />
+            </DataTemplate>
+          </ListBox.ItemTemplate>
+        </ListBox>
+        <Button Classes="primary small"
+                Margin="0,0,0,16"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Bottom"
+                IsVisible="{Binding HasPending}"
+                Command="{Binding JumpToLatestCommand}">
+          <StackPanel Orientation="Horizontal" Spacing="6">
+            <c:Icon Kind="ArrowDown" Size="12" />
+            <TextBlock Text="{Binding PendingText}" />
+          </StackPanel>
+        </Button>
+      </Panel>
+
+    </Grid>
+  </Border>
+
+</UserControl>

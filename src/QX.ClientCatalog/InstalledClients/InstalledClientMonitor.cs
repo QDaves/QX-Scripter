@@ -12,7 +12,7 @@ public sealed class InstalledClientMonitor : IAsyncDisposable
     readonly InstalledClientWatchSet _watch_set;
     readonly SemaphoreSlim _reconcile_gate = new(1, 1);
     readonly object _state_gate = new();
-    readonly Dictionary<string, StableObservation> _observations = new(StringComparer.OrdinalIgnoreCase);
+    readonly Dictionary<string, StableObservation> _observations = new(StoragePaths.FileComparer);
     readonly Dictionary<InstalledClientFamily, PublishedCandidate> _published = [];
     readonly Dictionary<InstalledClientFamily, MissingObservation> _missing = [];
     CancellationTokenSource? _stop;
@@ -150,7 +150,7 @@ public sealed class InstalledClientMonitor : IAsyncDisposable
                 _discovery.Find,
                 cancellation_token).ConfigureAwait(false);
             DateTimeOffset now = DateTimeOffset.UtcNow;
-            var present = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var present = new HashSet<string>(StoragePaths.FileComparer);
             var stable = new List<InstalledClientCandidate>();
 
             foreach (InstalledClientCandidate candidate in discovered)
@@ -187,14 +187,6 @@ public sealed class InstalledClientMonitor : IAsyncDisposable
                     InstalledClientFamily.Flash,
                     Verify)),
                 discovered.Where(candidate => candidate.Family == InstalledClientFamily.Flash).ToArray(),
-                now);
-            ReconcilePublished(
-                InstalledClientFamily.Unity,
-                Published(SelectLatestVerified(
-                    stable,
-                    InstalledClientFamily.Unity,
-                    Verify)),
-                discovered.Where(candidate => candidate.Family == InstalledClientFamily.Unity).ToArray(),
                 now);
         }
         finally
@@ -240,7 +232,7 @@ public sealed class InstalledClientMonitor : IAsyncDisposable
                 string.Equals(
                     CandidateKey(current.Candidate),
                     CandidateKey(candidate.Candidate),
-                    StringComparison.OrdinalIgnoreCase) ||
+                    StoragePaths.FileComparison) ||
                 IsNewer(candidate.Candidate, current.Candidate)))
         {
             _missing.Remove(family);
@@ -249,7 +241,7 @@ public sealed class InstalledClientMonitor : IAsyncDisposable
         }
 
         bool current_discovered = discovered.Any(found =>
-            string.Equals(CandidateKey(found), CandidateKey(current.Candidate), StringComparison.OrdinalIgnoreCase));
+            string.Equals(CandidateKey(found), CandidateKey(current.Candidate), StoragePaths.FileComparison));
         if (current_discovered)
         {
             _missing.Remove(family);
@@ -450,7 +442,7 @@ public sealed class InstalledClientMonitor : IAsyncDisposable
             .Where(candidate => candidate.Family == family)
             .OrderByDescending(candidate => candidate.LastModified)
             .ThenByDescending(candidate => ParseVersion(candidate.Version))
-            .ThenByDescending(candidate => candidate.Path, StringComparer.OrdinalIgnoreCase))
+            .ThenByDescending(candidate => candidate.Path, StoragePaths.FileComparer))
         {
             string? revision = verify(candidate);
             if (!string.IsNullOrEmpty(revision))
@@ -470,7 +462,7 @@ public sealed class InstalledClientMonitor : IAsyncDisposable
         };
         try
         {
-            foreach (string path in candidate.Files.Order(StringComparer.OrdinalIgnoreCase))
+            foreach (string path in candidate.Files.Order(StoragePaths.FileComparer))
             {
                 var file = new FileInfo(path);
                 if (!file.Exists)
@@ -503,7 +495,7 @@ public sealed class InstalledClientMonitor : IAsyncDisposable
         int version = ParseVersion(candidate.Version).CompareTo(ParseVersion(current.Version));
         if (version != 0)
             return version > 0;
-        return string.Compare(candidate.Path, current.Path, StringComparison.OrdinalIgnoreCase) > 0;
+        return string.Compare(candidate.Path, current.Path, StoragePaths.FileComparison) > 0;
     }
 
     static TimeSpan Max(TimeSpan first, TimeSpan second) => first >= second ? first : second;

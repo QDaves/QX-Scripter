@@ -2,24 +2,6 @@ using Qx.Model.Messages.Incoming;
 
 namespace Qx.Scripting;
 
-/// <content>
-/// Gift event subscriptions.
-/// <para>
-/// Every <c>On*</c> method registers a handler and returns the handle that removes it again. The
-/// subscription is also tracked by the script and torn down when the script stops, so the handle
-/// only has to be kept when the script wants to unsubscribe earlier. Disposing it more than once
-/// is harmless.
-/// </para>
-/// <para>
-/// Handlers run inline on the interception thread while the triggering packet is dispatched, not
-/// on the script thread, and after the cached gift state has already been updated. Keep them short
-/// and do not block inside them.
-/// </para>
-/// <para>
-/// Four of these are Flash only, marked individually below: the tracker registers those handlers
-/// for the Flash client alone, so they never fire on a Unity session.
-/// </para>
-/// </content>
 public partial class ScriptGlobals
 {
     /// <summary>
@@ -68,47 +50,21 @@ public partial class ScriptGlobals
         => Subscribe(handler, value => Gifts.PresentOpenedReceived += value,
             value => Gifts.PresentOpenedReceived -= value);
 
-    /// <summary>
-    /// Raised when a gift purchase failed because the recipient name does not exist. The message
-    /// carries no payload, so it does not say which purchase failed.
-    /// </summary>
-    /// <param name="handler">Invoked with no arguments.</param>
-    /// <returns>A handle that removes the handler when disposed.</returns>
-    /// <exception cref="ObjectDisposedException">The script globals have already been disposed.</exception>
-    /// <remarks>Flash only; never fires on a Unity session.</remarks>
     public IDisposable OnGiftReceiverNotFound(Action handler)
-        => Subscribe(handler, value => Gifts.GiftReceiverNotFound += value,
-            value => Gifts.GiftReceiverNotFound -= value);
+    => Subscribe(handler, value => Gifts.GiftReceiverNotFound += value,
+        value => Gifts.GiftReceiverNotFound -= value);
 
-    /// <summary>Raised when the server announces that club gifts are waiting to be claimed.</summary>
-    /// <param name="handler">Receives how many gifts are waiting.</param>
-    /// <returns>A handle that removes the handler when disposed.</returns>
-    /// <exception cref="ObjectDisposedException">The script globals have already been disposed.</exception>
-    /// <remarks>Flash only; never fires on a Unity session.</remarks>
     public IDisposable OnClubGiftNotification(Action<ClubGiftNotification> handler)
-        => Subscribe(handler, value => Gifts.ClubGiftNotificationReceived += value,
-            value => Gifts.ClubGiftNotificationReceived -= value);
+    => Subscribe(handler, value => Gifts.ClubGiftNotificationReceived += value,
+        value => Gifts.ClubGiftNotificationReceived -= value);
 
-    /// <summary>Raised when the server reports whether one catalog offer may be sent as a gift.</summary>
-    /// <param name="handler">Receives the offer id and the answer.</param>
-    /// <returns>A handle that removes the handler when disposed.</returns>
-    /// <exception cref="ObjectDisposedException">The script globals have already been disposed.</exception>
-    /// <remarks>Flash only; never fires on a Unity session.</remarks>
     public IDisposable OnOfferGiftabilityChanged(Action<IsOfferGiftable> handler)
-        => Subscribe(handler, value => Gifts.OfferGiftabilityChanged += value,
-            value => Gifts.OfferGiftabilityChanged -= value);
+    => Subscribe(handler, value => Gifts.OfferGiftabilityChanged += value,
+        value => Gifts.OfferGiftabilityChanged -= value);
 
-    /// <summary>
-    /// Raised when the new-user gift offer arrives or changes, carrying the choosable gift steps
-    /// of the onboarding flow.
-    /// </summary>
-    /// <param name="handler">Receives the offer.</param>
-    /// <returns>A handle that removes the handler when disposed.</returns>
-    /// <exception cref="ObjectDisposedException">The script globals have already been disposed.</exception>
-    /// <remarks>Flash only; never fires on a Unity session.</remarks>
     public IDisposable OnNewUserGiftOfferChanged(Action<NuxGiftOffer> handler)
-        => Subscribe(handler, value => Gifts.NewUserOfferChanged += value,
-            value => Gifts.NewUserOfferChanged -= value);
+    => Subscribe(handler, value => Gifts.NewUserOfferChanged += value,
+        value => Gifts.NewUserOfferChanged -= value);
 
     /// <summary>
     /// Raised when the hotel reports that the account has not finished the new-user flow.

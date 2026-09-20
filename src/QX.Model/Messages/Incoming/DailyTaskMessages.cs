@@ -72,7 +72,7 @@ public sealed record DailyTaskReward : IParserComposer<DailyTaskReward>
     }
 
     public static DailyTaskReward Parse(in PacketReader p) =>
-        ModernWireClients.ParseFlash(in p, ParseFlash);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static DailyTaskReward ParseFlash(in PacketReader p)
     {
@@ -83,7 +83,7 @@ public sealed record DailyTaskReward : IParserComposer<DailyTaskReward>
     }
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.ComposeFlash(this, in p, ComposeFlash);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(DailyTaskReward value, in PacketWriter p)
     {
@@ -325,7 +325,7 @@ public sealed record DailyTask : IParserComposer<DailyTask>
     public bool IsClaimable => Status == DailyTaskStatus.Completed;
 
     public static DailyTask Parse(in PacketReader p) =>
-        ModernWireClients.ParseFlash(in p, ParseFlash);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static DailyTask ParseFlash(in PacketReader p)
     {
@@ -337,7 +337,7 @@ public sealed record DailyTask : IParserComposer<DailyTask>
     }
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.ComposeFlash(this, in p, ComposeFlash);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(DailyTask value, in PacketWriter p)
     {
@@ -504,13 +504,13 @@ public sealed record DailyTasksActiveList : IParserComposer<DailyTasksActiveList
     }
 
     public static DailyTasksActiveList Parse(in PacketReader p) =>
-        ModernWireClients.ParseFlash(in p, ParseFlash);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static DailyTasksActiveList ParseFlash(in PacketReader p) =>
         new(DailyTaskListWire.Parse(in p, nameof(DailyTasksActiveList)));
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.ComposeFlash(this, in p, ComposeFlash);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(DailyTasksActiveList value, in PacketWriter p)
     {
@@ -543,13 +543,13 @@ public sealed record DailyTasksTasksAdded : IParserComposer<DailyTasksTasksAdded
     }
 
     public static DailyTasksTasksAdded Parse(in PacketReader p) =>
-        ModernWireClients.ParseFlash(in p, ParseFlash);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static DailyTasksTasksAdded ParseFlash(in PacketReader p) =>
         new(DailyTaskListWire.Parse(in p, nameof(DailyTasksTasksAdded)));
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.ComposeFlash(this, in p, ComposeFlash);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(DailyTasksTasksAdded value, in PacketWriter p)
     {
@@ -628,7 +628,7 @@ public sealed record DailyTasksTaskUpdate(
     int SecondsLeftAtArrival) : IParserComposer<DailyTasksTaskUpdate>
 {
     public static DailyTasksTaskUpdate Parse(in PacketReader p) =>
-        ModernWireClients.ParseFlash(in p, ParseFlash);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static DailyTasksTaskUpdate ParseFlash(in PacketReader p)
     {
@@ -647,7 +647,7 @@ public sealed record DailyTasksTaskUpdate(
     }
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.ComposeFlash(this, in p, ComposeFlash);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(DailyTasksTaskUpdate value, in PacketWriter p)
     {

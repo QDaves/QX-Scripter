@@ -25,7 +25,7 @@ public static class ApplicationMcpTools
     {
         Name = "list_application_members",
         Title = "List application members",
-        Description = "List the shared QX application queries, operations and events with live Flash/Unity availability.",
+        Description = "List the shared QX application queries, operations and events with live Flash availability.",
         InputSchema = EmptySchema(),
         OutputSchema = new Dictionary<string, object?>
         {

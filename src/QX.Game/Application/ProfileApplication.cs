@@ -106,9 +106,6 @@ internal sealed class ProfileApplication : IApplicationFeature, IProfileOperatio
                 new ApplicationCallBinding<ProfileUserRequest, ProfileDispatchResult>(
                     ProfileApplicationDescriptors.IgnoreAddById,
                     IgnoreUserById),
-                new ApplicationCallBinding<ProfileUserNameRequest, ProfileDispatchResult>(
-                    ProfileApplicationDescriptors.IgnoreAddByName,
-                    IgnoreUserByName),
                 new ApplicationCallBinding<ProfileIgnoreRemoveRequest, ProfileDispatchResult>(
                     ProfileApplicationDescriptors.IgnoreRemove,
                     UnignoreUser),
@@ -282,20 +279,6 @@ internal sealed class ProfileApplication : IApplicationFeature, IProfileOperatio
             new IgnoreUserByIdRequest(request.UserId),
             cancellation_token,
             request.UserId);
-    }
-
-    public ValueTask<ProfileDispatchResult> IgnoreUserByName(
-        ProfileUserNameRequest request,
-        CancellationToken cancellation_token)
-    {
-        ThrowIfDisposed();
-        ArgumentNullException.ThrowIfNull(request);
-        ValidateText(request.UserName, nameof(request.UserName), false);
-        return Dispatch(
-            MessageContracts.Users.Ignore.AddByNameRequest,
-            new IgnoreUserByNameRequest(request.UserName),
-            cancellation_token,
-            target_name: request.UserName);
     }
 
     public ValueTask<ProfileDispatchResult> UnignoreUser(
@@ -787,8 +770,6 @@ internal sealed class ProfileApplication : IApplicationFeature, IProfileOperatio
                     right_sanctions.Sanctions is not null &&
                     left_sanctions.Sanctions.Sanctions.SequenceEqual(
                         right_sanctions.Sanctions.Sanctions),
-                AccountSanctionStatusKind.CallForHelp =>
-                    left_sanctions.CallForHelp == right_sanctions.CallForHelp,
                 _ => false
             };
         }
@@ -914,8 +895,7 @@ internal sealed class ProfileApplication : IApplicationFeature, IProfileOperatio
             sanctions.Count,
             offset,
             NextOffset(offset, page.Count, sanctions.Count),
-            page,
-            state.Sanctions?.CallForHelp);
+            page);
     }
 
     private static IReadOnlyList<T> Slice<T>(
@@ -1502,7 +1482,6 @@ internal sealed class RemotePeopleApplication : IApplicationFeature, IRemotePeop
         ArgumentNullException.ThrowIfNull(value);
         ProfileApplicationCollectionLimits.Validate(value.Groups.Count, "profile group");
         ProfileApplicationCollectionLimits.Validate(value.BadgeRarities.Count, "profile badge-rarity");
-        ProfileApplicationCollectionLimits.Validate(value.OldNames.Count, "profile old-name");
         var groups = new ProfileGroup[value.Groups.Count];
         for (int index = 0; index < groups.Length; index++)
         {
@@ -1540,9 +1519,7 @@ internal sealed class RemotePeopleApplication : IApplicationFeature, IRemotePeop
             value.TotalBadges,
             value.AchievementLevel,
             Array.AsReadOnly(value.BadgeRarities.ToArray()),
-            value.TotalBadgesRank,
-            value.NameColor,
-            Array.AsReadOnly(value.OldNames.ToArray()));
+            value.TotalBadgesRank);
     }
 
     private static IReadOnlyList<RelationshipEntry> Relationships(
@@ -1744,11 +1721,6 @@ internal sealed class GroupReadsApplication : IApplicationFeature
         ValidateGeneration(request.ExpectedSessionGeneration, nameof(request.ExpectedSessionGeneration));
         GroupReadScope scope = CaptureScope(request.ExpectedSessionGeneration, cancellation_token);
         ValidateWireId(scope.Session.Client, request.GroupId, nameof(request.GroupId));
-        if (scope.Session.Client is ClientType.Unity &&
-            request.SearchType is not GuildMemberSearchType.All)
-        {
-            throw new NotSupportedException("Unity group-member reads support only the All search type.");
-        }
         GuildMembers response = await requests.RequestAsync(
             MessageContracts.Groups.Members.Request,
             new GetGuildMembersRequest(
@@ -2096,8 +2068,7 @@ internal sealed class GroupReadsApplication : IApplicationFeature
             value.OpenDetails,
             value.MembersCanDecorate,
             value.PendingMemberCount,
-            value.HasBoard,
-            value.UnityExtensionId);
+            value.HasBoard);
     }
 
     private static IReadOnlyList<GuildMember> Members(IReadOnlyList<GuildMember> values)

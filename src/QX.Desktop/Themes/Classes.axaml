@@ -1,0 +1,112 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+  <Style Selector="Border.hairline-bottom">
+    <Setter Property="BorderBrush" Value="{DynamicResource QxBorderSubtleBrush}" />
+    <Setter Property="BorderThickness" Value="0,0,0,1" />
+  </Style>
+  <Style Selector="Border.hairline-top">
+    <Setter Property="BorderBrush" Value="{DynamicResource QxBorderSubtleBrush}" />
+    <Setter Property="BorderThickness" Value="0,1,0,0" />
+  </Style>
+  <Style Selector="Border.hairline-left">
+    <Setter Property="BorderBrush" Value="{DynamicResource QxBorderSubtleBrush}" />
+    <Setter Property="BorderThickness" Value="1,0,0,0" />
+  </Style>
+  <Style Selector="Border.hairline-right">
+    <Setter Property="BorderBrush" Value="{DynamicResource QxBorderSubtleBrush}" />
+    <Setter Property="BorderThickness" Value="0,0,1,0" />
+  </Style>
+  <Style Selector="Rectangle.divider-vertical">
+    <Setter Property="Width" Value="1" />
+    <Setter Property="Height" Value="16" />
+    <Setter Property="Fill" Value="{DynamicResource QxBorderDefaultBrush}" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+  </Style>
+  <Style Selector="Rectangle.rail-separator">
+    <Setter Property="Width" Value="24" />
+    <Setter Property="Height" Value="1" />
+    <Setter Property="Margin" Value="0,6" />
+    <Setter Property="HorizontalAlignment" Value="Center" />
+    <Setter Property="Fill" Value="{DynamicResource QxBorderDefaultBrush}" />
+  </Style>
+  <Style Selector="Rectangle.rule">
+    <Setter Property="Height" Value="1" />
+    <Setter Property="Fill" Value="{DynamicResource QxBorderSubtleBrush}" />
+  </Style>
+
+  <Style Selector="Border.panel">
+    <Setter Property="Background" Value="{DynamicResource QxSurfaceBaseBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource QxBorderSubtleBrush}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="{DynamicResource QxRadiusMd}" />
+  </Style>
+
+  <Style Selector="Border.well">
+    <Setter Property="Background" Value="{DynamicResource QxSurfaceSunkenBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource QxBorderSubtleBrush}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="{DynamicResource QxRadiusSm}" />
+    <Setter Property="Padding" Value="10,0" />
+    <Setter Property="MinHeight" Value="32" />
+  </Style>
+
+  <Style Selector="Border.value-chip">
+    <Setter Property="Background" Value="{DynamicResource QxAccentSoftBrush}" />
+    <Setter Property="CornerRadius" Value="{DynamicResource QxRadiusXs}" />
+    <Setter Property="Padding" Value="6,0" />
+    <Setter Property="Height" Value="20" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+  </Style>
+  <Style Selector="Border.value-chip > TextBlock">
+    <Setter Property="FontFamily" Value="{DynamicResource QxMonoFont}" />
+    <Setter Property="FontSize" Value="{DynamicResource QxFontSizeCodeSmall}" />
+    <Setter Property="FontWeight" Value="Medium" />
+    <Setter Property="Foreground" Value="{DynamicResource QxAccentBrush}" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+  </Style>
+
+  <Style Selector="Border.tile-badge">
+    <Setter Property="Background" Value="{DynamicResource QxSurfaceOverlayBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource QxBorderSubtleBrush}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="{DynamicResource QxRadiusXs}" />
+    <Setter Property="Padding" Value="4,0" />
+    <Setter Property="Height" Value="16" />
+    <Setter Property="Margin" Value="4" />
+  </Style>
+  <Style Selector="Border.tile-badge > TextBlock">
+    <Setter Property="FontFamily" Value="{DynamicResource QxMonoFont}" />
+    <Setter Property="FontSize" Value="{DynamicResource QxFontSizeCodeCaption}" />
+    <Setter Property="Foreground" Value="{DynamicResource QxTextSecondaryBrush}" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+  </Style>
+
+  <Style Selector="Border.editor-gutter-rule">
+    <Setter Property="Width" Value="1" />
+    <Setter Property="Background" Value="{DynamicResource QxBorderSubtleBrush}" />
+  </Style>
+
+  <Style Selector=":is(Panel).hover-actions">
+    <Setter Property="Opacity" Value="0" />
+    <Setter Property="IsHitTestVisible" Value="False" />
+    <Setter Property="Transitions">
+      <Transitions>
+        <DoubleTransition Property="Opacity" Duration="0:0:0.1" />
+      </Transitions>
+    </Setter>
+  </Style>
+  <Style Selector=":is(Control).hover-host:pointerover :is(Panel).hover-actions">
+    <Setter Property="Opacity" Value="1" />
+    <Setter Property="IsHitTestVisible" Value="True" />
+  </Style>
+  <Style Selector=":is(Control).hover-host:focus-within :is(Panel).hover-actions">
+    <Setter Property="Opacity" Value="1" />
+    <Setter Property="IsHitTestVisible" Value="True" />
+  </Style>
+  <Style Selector=":is(Control).hover-host.hovered :is(Panel).hover-actions">
+    <Setter Property="Opacity" Value="1" />
+    <Setter Property="IsHitTestVisible" Value="True" />
+  </Style>
+
+</Styles>

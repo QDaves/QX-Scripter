@@ -44,8 +44,7 @@ public enum MarketplaceOfferType
     LimitedEdition = 3,
     /// <summary>
     /// 4: a floor item that has already been used, which additionally carries a used flag.
-    /// Rejected on legacy Flash builds, whose offer layout only knows types 1 to 3, and never
-    /// sent by Unity.
+    /// Rejected on legacy Flash builds, whose offer layout only knows types 1 to 3.
     /// </summary>
     UsableFloor = 4
 }

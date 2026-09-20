@@ -295,12 +295,12 @@ internal sealed class RoomItemApplication : IApplicationFeature
         typeof(int),
         true,
         null,
-        "Integer value sent to the active client dialect.");
+        "Integer value sent to Flash.");
 
     private static ApplicationParameterDescriptor StringParameter(string name) => new(
         name,
         typeof(string),
         true,
         null,
-        "String value sent to the active client dialect.");
+        "String value sent to Flash.");
 }

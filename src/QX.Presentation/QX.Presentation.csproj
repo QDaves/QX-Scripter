@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>Qx.Presentation</RootNamespace>
+    <AssemblyName>QX.Presentation</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.12" />
+    <PackageReference Include="Microsoft.VisualStudio.Threading.Analyzers" Version="18.7.23" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Flazzy\Flazzy.csproj" />
+    <ProjectReference Include="..\QX.Core\QX.Core.csproj" />
+    <ProjectReference Include="..\QX.Game\QX.Game.csproj" />
+    <ProjectReference Include="..\QX.Hosting\QX.Hosting.csproj" />
+    <ProjectReference Include="..\QX.Interception\QX.Interception.csproj" />
+    <ProjectReference Include="..\QX.Mcp\QX.Mcp.csproj" />
+    <ProjectReference Include="..\QX.Model\QX.Model.csproj" />
+    <ProjectReference Include="..\QX.Protocol\QX.Protocol.csproj" />
+    <ProjectReference Include="..\QX.Scripting\QX.Scripting.csproj" />
+  </ItemGroup>
+
+</Project>

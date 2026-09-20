@@ -26,11 +26,9 @@ public sealed class FloorItem : Furni, IParserComposer<FloorItem>
     public FloorItem() { }
 
     public static FloorItem Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static FloorItem ParseFlash(in PacketReader p) => ParseItem(in p);
-
-    private static FloorItem ParseUnity(in PacketReader p) => ParseItem(in p);
 
     private static FloorItem ParseItem(in PacketReader p)
     {
@@ -69,11 +67,9 @@ public sealed class FloorItem : Furni, IParserComposer<FloorItem>
     }
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(FloorItem value, in PacketWriter p) => value.ComposeItem(in p);
-
-    private static void ComposeUnity(FloorItem value, in PacketWriter p) => value.ComposeItem(in p);
 
     private void ComposeItem(in PacketWriter p)
     {

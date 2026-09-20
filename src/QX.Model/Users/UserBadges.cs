@@ -63,7 +63,7 @@ public sealed record UserBadges : IParserComposer<UserBadges>
     }
 
     public static UserBadges Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static UserBadges ParseFlash(in PacketReader p)
     {
@@ -90,22 +90,11 @@ public sealed record UserBadges : IParserComposer<UserBadges>
         return new UserBadges(user_id, badges);
     }
 
-    private static UserBadges ParseUnity(in PacketReader p)
-    {
-        ReadHeader(in p, out Id user_id, out int count);
-        SelectedBadge[] badges = ParseEntries(in p, count, false);
-        AchievementBadgeWire.RequireEmpty(in p, nameof(UserBadges));
-        return new UserBadges(user_id, badges);
-    }
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(UserBadges value, in PacketWriter p) =>
-        ComposeMessage(value, true, in p);
-
-    private static void ComposeUnity(UserBadges value, in PacketWriter p) =>
-        ComposeMessage(value, false, in p);
+        ComposeMessage(value, in p);
 
     private static void ReadHeader(
         in PacketReader p,
@@ -187,7 +176,6 @@ public sealed record UserBadges : IParserComposer<UserBadges>
 
     private static void ComposeMessage(
         UserBadges value,
-        bool allows_rarity_data,
         in PacketWriter p)
     {
         ArgumentNullException.ThrowIfNull(value);
@@ -201,8 +189,6 @@ public sealed record UserBadges : IParserComposer<UserBadges>
             SelectedBadge badge = value.Badges[index];
             if (has_rarity_data is bool expected && expected != badge.HasRarityData)
                 throw new InvalidDataException("Selected badge entries cannot mix wire layouts.");
-            if (!allows_rarity_data && badge.HasRarityData)
-                throw new InvalidDataException("Unity selected badges cannot contain rarity data.");
             has_rarity_data = badge.HasRarityData;
             strings.Require(badge.Code, nameof(SelectedBadge.Code), in p);
             badges[index] = new SelectedBadgeWireValue(

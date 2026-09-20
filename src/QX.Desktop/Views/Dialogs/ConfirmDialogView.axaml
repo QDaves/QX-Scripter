@@ -1,0 +1,26 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:c="using:Qx.Desktop.Controls"
+             xmlns:d="using:Qx.Presentation.Dialogs"
+             x:Class="Qx.Desktop.Views.Dialogs.ConfirmDialogView"
+             x:DataType="d:ConfirmDialogViewModel">
+  <c:Dialog CloseCommand="{Binding CancelCommand}"
+            Title="{Binding Title}"
+            Icon="{Binding Icon}"
+            Tone="{Binding Tone}"
+            Caption="{Binding Caption}">
+    <TextBlock Text="{Binding Message}" TextWrapping="Wrap" LineHeight="{DynamicResource QxLineHeightBody}" />
+    <c:Dialog.Buttons>
+      <StackPanel Orientation="Horizontal" Spacing="8">
+        <Button Classes="large" MinWidth="88" Content="Cancel" IsCancel="True" Command="{Binding CancelCommand}" />
+        <Button Classes="large"
+                Classes.primary="{Binding !IsDestructive}"
+                Classes.danger="{Binding IsDestructive}"
+                MinWidth="88"
+                IsDefault="True"
+                Content="{Binding AcceptText}"
+                Command="{Binding AcceptCommand}" />
+      </StackPanel>
+    </c:Dialog.Buttons>
+  </c:Dialog>
+</UserControl>

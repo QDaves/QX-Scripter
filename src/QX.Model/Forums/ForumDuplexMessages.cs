@@ -42,7 +42,7 @@ public sealed record PostMessage : IParserComposer<PostMessage>
 
     private static PostMessage ParseRoot(in PacketReader p)
     {
-        PostMessage value = ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        PostMessage value = FlashWire.Parse(in p, ParseFlash);
         ForumProtocol.RequireEmpty(in p, nameof(PostMessage));
         return value;
     }
@@ -61,22 +61,8 @@ public sealed record PostMessage : IParserComposer<PostMessage>
         };
     }
 
-    private static PostMessage ParseUnity(in PacketReader p)
-    {
-        return p.Header.Direction switch
-        {
-            Direction.In => ForumProtocol.UnsupportedUnity<PostMessage>(p.Client),
-            Direction.Out => new PostMessage(
-                ForumRequestProtocol.ReadUnityGroupId(in p),
-                ForumRequestProtocol.ReadIntId(in p),
-                ReadRequestString(in p, nameof(Subject), 2),
-                ReadRequestString(in p, nameof(MessageText), 0)),
-            _ => throw new InvalidDataException($"Unsupported forum message direction {p.Header.Direction}.")
-        };
-    }
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static PostMessage ParseIncoming(in PacketReader p)
     {
@@ -136,30 +122,6 @@ public sealed record PostMessage : IParserComposer<PostMessage>
                 throw new InvalidDataException($"Unsupported forum message direction {p.Header.Direction}.");
         }
     }
-
-    private static void ComposeUnity(PostMessage value, in PacketWriter p)
-    {
-        switch (p.Header.Direction)
-        {
-            case Direction.In:
-                ForumProtocol.UnsupportedUnity(p.Client);
-                return;
-            case Direction.Out:
-                if (value.Message is not null)
-                    throw new InvalidDataException("Outgoing PostMessage cannot contain a parsed forum post.");
-                ForumProtocol.RequireFlashId(value.ThreadId, "thread");
-                ForumStringBudget request_budget = ForumProtocol.NewStringBudget();
-                request_budget.Require(value.Subject, nameof(Subject), in p);
-                request_budget.Require(value.MessageText, nameof(MessageText), in p);
-                ForumRequestProtocol.WriteUnityGroupId(in p, value.GroupId);
-                ForumRequestProtocol.WriteIntId(in p, value.ThreadId, "thread");
-                p.WriteString(value.Subject);
-                p.WriteString(value.MessageText);
-                return;
-            default:
-                throw new InvalidDataException($"Unsupported forum message direction {p.Header.Direction}.");
-        }
-    }
 }
 
 public sealed record UpdateThread : IParserComposer<UpdateThread>
@@ -197,7 +159,7 @@ public sealed record UpdateThread : IParserComposer<UpdateThread>
 
     private static UpdateThread ParseRoot(in PacketReader p)
     {
-        UpdateThread value = ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        UpdateThread value = FlashWire.Parse(in p, ParseFlash);
         ForumProtocol.RequireEmpty(in p, nameof(UpdateThread));
         return value;
     }
@@ -216,22 +178,8 @@ public sealed record UpdateThread : IParserComposer<UpdateThread>
         };
     }
 
-    private static UpdateThread ParseUnity(in PacketReader p)
-    {
-        return p.Header.Direction switch
-        {
-            Direction.In => ForumProtocol.UnsupportedUnity<UpdateThread>(p.Client),
-            Direction.Out => new UpdateThread(
-                ForumRequestProtocol.ReadUnityGroupId(in p),
-                ForumRequestProtocol.ReadIntId(in p),
-                p.ReadBool(),
-                p.ReadBool()),
-            _ => throw new InvalidDataException($"Unsupported forum thread direction {p.Header.Direction}.")
-        };
-    }
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static UpdateThread ParseIncoming(in PacketReader p)
     {
@@ -264,27 +212,6 @@ public sealed record UpdateThread : IParserComposer<UpdateThread>
                 ForumProtocol.RequireFlashId(value.GroupId, "forum group");
                 ForumProtocol.RequireFlashId(value.ThreadId, "thread");
                 ForumRequestProtocol.WriteFlashGroupId(in p, value.GroupId);
-                ForumRequestProtocol.WriteIntId(in p, value.ThreadId, "thread");
-                p.WriteBool(value.IsSticky);
-                p.WriteBool(value.IsLocked);
-                return;
-            default:
-                throw new InvalidDataException($"Unsupported forum thread direction {p.Header.Direction}.");
-        }
-    }
-
-    private static void ComposeUnity(UpdateThread value, in PacketWriter p)
-    {
-        switch (p.Header.Direction)
-        {
-            case Direction.In:
-                ForumProtocol.UnsupportedUnity(p.Client);
-                return;
-            case Direction.Out:
-                if (value.Thread is not null)
-                    throw new InvalidDataException("Outgoing UpdateThread cannot contain a parsed forum thread.");
-                ForumProtocol.RequireFlashId(value.ThreadId, "thread");
-                ForumRequestProtocol.WriteUnityGroupId(in p, value.GroupId);
                 ForumRequestProtocol.WriteIntId(in p, value.ThreadId, "thread");
                 p.WriteBool(value.IsSticky);
                 p.WriteBool(value.IsLocked);

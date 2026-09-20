@@ -1,0 +1,16 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:c="using:Qx.Desktop.Controls">
+
+  <x:Double x:Key="General.NumberWidth">132</x:Double>
+
+  <ControlTheme x:Key="General.RuleRow" TargetType="c:SettingRow" BasedOn="{StaticResource {x:Type c:SettingRow}}">
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="Padding" Value="16,8" />
+    <Setter Property="MinHeight" Value="44" />
+    <Style Selector="^:disabled">
+      <Setter Property="Opacity" Value="{DynamicResource QxDisabledOpacity}" />
+    </Style>
+  </ControlTheme>
+
+</ResourceDictionary>

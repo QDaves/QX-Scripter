@@ -23,20 +23,7 @@ public sealed record FriendListUpdate(
         Updates.Where(u => u.Kind == kind && u.Friend is not null).Select(u => u.Friend!);
 
     public static FriendListUpdate Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
-
-    private static FriendListUpdate ParseUnity(in PacketReader p)
-    {
-        FriendCategory[] categories = p.ParseArray<FriendCategory>();
-        Id[] removed = p.ReadIdArray();
-        Friend[] added = p.ParseArray<Friend>();
-        Friend[] updated = p.ParseArray<Friend>();
-        var entries = new List<FriendUpdateEntry>(removed.Length + added.Length + updated.Length);
-        entries.AddRange(removed.Select(id => new FriendUpdateEntry(FriendUpdateKind.Removed, id, null)));
-        entries.AddRange(added.Select(friend => new FriendUpdateEntry(FriendUpdateKind.Added, -1, friend)));
-        entries.AddRange(updated.Select(friend => new FriendUpdateEntry(FriendUpdateKind.Updated, -1, friend)));
-        return new FriendListUpdate(categories, entries);
-    }
+        FlashWire.Parse(in p, ParseFlash);
 
     private static FriendListUpdate ParseFlash(in PacketReader p)
     {
@@ -68,17 +55,7 @@ public sealed record FriendListUpdate(
         foreach (FriendUpdateEntry entry in Updates)
             Validate(entry);
 
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
-    }
-
-    private static void ComposeUnity(FriendListUpdate value, in PacketWriter p)
-    {
-        p.ComposeArray(value.Categories);
-        p.WriteIdArray(value.Updates
-            .Where(entry => entry.Kind == FriendUpdateKind.Removed)
-            .Select(entry => entry.RemovedId));
-        p.ComposeArray(value.Added);
-        p.ComposeArray(value.Updated);
+        FlashWire.Compose(this, in p, ComposeFlash);
     }
 
     private static void ComposeFlash(FriendListUpdate value, in PacketWriter p)

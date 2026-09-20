@@ -1,0 +1,106 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:c="using:Qx.Desktop.Controls"
+             xmlns:vm="using:Qx.Presentation.ViewModels.General"
+             x:Class="Qx.Desktop.Views.General.GeneralView"
+             x:DataType="vm:GeneralViewModel">
+
+  <UserControl.DataTemplates>
+
+    <DataTemplate DataType="vm:GeneralSwitchViewModel" x:DataType="vm:GeneralSwitchViewModel">
+      <StackPanel>
+        <c:SettingRow Theme="{StaticResource General.RuleRow}"
+                      Label="{Binding Label}"
+                      Description="{Binding Description}"
+                      IsEnabled="{Binding IsEnabled}">
+          <ToggleSwitch IsChecked="{Binding IsOn, Mode=TwoWay}" AutomationProperties.Name="{Binding Label}" />
+        </c:SettingRow>
+        <Border Classes="hairline-top" IsVisible="{Binding !IsLast}" />
+      </StackPanel>
+    </DataTemplate>
+
+    <DataTemplate DataType="vm:GeneralNumberViewModel" x:DataType="vm:GeneralNumberViewModel">
+      <StackPanel>
+        <c:SettingRow Theme="{StaticResource General.RuleRow}"
+                      Label="{Binding Label}"
+                      IsEnabled="{Binding IsEnabled}">
+          <StackPanel HorizontalAlignment="Right">
+            <TextBox Classes="mono"
+                     Width="{DynamicResource General.NumberWidth}"
+                     Text="{Binding Text, Mode=TwoWay}"
+                     KeyDown="OnNumberKey"
+                     LostFocus="OnNumberLost"
+                     AutomationProperties.Name="{Binding AutomationName}">
+              <TextBox.InnerRightContent>
+                <TextBlock Text="{Binding Unit}"
+                           Classes="small tertiary"
+                           Margin="0,0,8,0"
+                           VerticalAlignment="Center" />
+              </TextBox.InnerRightContent>
+            </TextBox>
+            <TextBlock Text="{Binding Range}" Classes="helper" HorizontalAlignment="Right" />
+          </StackPanel>
+        </c:SettingRow>
+        <Border Classes="hairline-top" IsVisible="{Binding !IsLast}" />
+      </StackPanel>
+    </DataTemplate>
+
+    <DataTemplate DataType="vm:GeneralChoiceViewModel" x:DataType="vm:GeneralChoiceViewModel">
+      <StackPanel>
+        <c:SettingRow Theme="{StaticResource General.RuleRow}"
+                      Classes="stacked"
+                      Label="{Binding Label}"
+                      Description="{Binding Description}"
+                      IsEnabled="{Binding IsEnabled}">
+          <c:SegmentedControl ItemsSource="{Binding Options}"
+                              SelectedIndex="{Binding SelectedIndex, Mode=TwoWay}"
+                              HorizontalAlignment="Stretch"
+                              AutomationProperties.Name="{Binding Label}">
+            <c:SegmentedControl.ItemTemplate>
+              <DataTemplate x:DataType="vm:GeneralOption">
+                <c:Segment Text="{Binding Text}" ToolTip.Tip="{Binding Tip}" />
+              </DataTemplate>
+            </c:SegmentedControl.ItemTemplate>
+          </c:SegmentedControl>
+        </c:SettingRow>
+        <Border Classes="hairline-top" IsVisible="{Binding !IsLast}" />
+      </StackPanel>
+    </DataTemplate>
+
+    <DataTemplate DataType="vm:GeneralSectionViewModel" x:DataType="vm:GeneralSectionViewModel">
+      <c:Section Classes="compact" Title="{Binding Title}" Description="{Binding Description}">
+        <ItemsControl ItemsSource="{Binding Rows}" Classes="bounded">
+          <ItemsControl.ItemsPanel>
+            <ItemsPanelTemplate>
+              <StackPanel />
+            </ItemsPanelTemplate>
+          </ItemsControl.ItemsPanel>
+        </ItemsControl>
+      </c:Section>
+    </DataTemplate>
+
+  </UserControl.DataTemplates>
+
+  <c:PageLayout Page="{Binding}">
+    <ScrollViewer Padding="{DynamicResource QxPageBodyPadding}" HorizontalScrollBarVisibility="Disabled">
+      <c:AdaptiveColumns MinColumnWidth="{DynamicResource QxFormColumnMinWidth}"
+                         ColumnSpacing="{DynamicResource QxFormColumnGap}"
+                         RowSpacing="{DynamicResource QxFormColumnGap}">
+        <ItemsControl ItemsSource="{Binding FirstColumn}" Classes="bounded">
+          <ItemsControl.ItemsPanel>
+            <ItemsPanelTemplate>
+              <StackPanel Spacing="{DynamicResource QxFormColumnGap}" />
+            </ItemsPanelTemplate>
+          </ItemsControl.ItemsPanel>
+        </ItemsControl>
+        <ItemsControl ItemsSource="{Binding SecondColumn}" Classes="bounded">
+          <ItemsControl.ItemsPanel>
+            <ItemsPanelTemplate>
+              <StackPanel Spacing="{DynamicResource QxFormColumnGap}" />
+            </ItemsPanelTemplate>
+          </ItemsControl.ItemsPanel>
+        </ItemsControl>
+      </c:AdaptiveColumns>
+    </ScrollViewer>
+  </c:PageLayout>
+</UserControl>

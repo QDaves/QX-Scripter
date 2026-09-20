@@ -15,14 +15,13 @@ internal static class HabbiconWire
 
     public static void RequireSupportedClient(ClientType client)
     {
-        if (client is not (ClientType.Flash or ClientType.Unity))
+        if (client is not (ClientType.Flash))
             throw new UnsupportedClientException(client);
     }
 
     public static int CountWidth(ClientType client) => client switch
     {
         ClientType.Flash => sizeof(int),
-        ClientType.Unity => sizeof(short),
         _ => throw new UnsupportedClientException(client)
     };
 
@@ -41,7 +40,6 @@ internal static class HabbiconWire
         int count = p.Client switch
         {
             ClientType.Flash => p.ReadInt(),
-            ClientType.Unity => unchecked((ushort)p.ReadShort()),
             _ => throw new UnsupportedClientException(p.Client)
         };
         RequireCount(count, name);
@@ -99,10 +97,7 @@ internal static class HabbiconWire
     {
         RequireSupportedClient(p.Client);
         RequireCount(count, nameof(count));
-        if (p.Client is ClientType.Flash)
-            p.WriteInt(count);
-        else
-            p.WriteShort(unchecked((short)count));
+        p.WriteInt(count);
     }
 
     public static void RequireEmpty(in PacketReader p, string name)

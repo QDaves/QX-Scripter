@@ -277,8 +277,6 @@ internal sealed class RoomPlacementApplication : IApplicationFeature, IRoomPlace
             request.ExpectedSessionGeneration,
             request.ExpectedRoomGeneration,
             cancellation_token);
-        if (request.Confirmed && scope.Session.Client is ClientType.Unity)
-            throw new NotSupportedException("Unity room-item pickup cannot represent Flash confirmation.");
         int category = request.ItemKind is RoomPlacementItemKind.Floor ? 2 : 1;
         long room_revision = scope.RoomRevision;
         message_dispatcher.Dispatch(

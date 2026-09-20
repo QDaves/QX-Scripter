@@ -1,0 +1,52 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:c="using:Qx.Desktop.Controls"
+             xmlns:vm="using:Qx.Presentation.ViewModels.Shell"
+             x:Class="Qx.Desktop.Views.Shell.Rail"
+             x:DataType="vm:ShellViewModel"
+             Width="{DynamicResource QxRailWidth}">
+
+  <UserControl.Resources>
+    <DataTemplate x:Key="RailItem" x:DataType="vm:RailItemViewModel">
+      <RadioButton Theme="{StaticResource QxRailItem}"
+                   GroupName="QxRail"
+                   IsChecked="{Binding IsSelected, Mode=TwoWay}"
+                   Command="{Binding Command}"
+                   ToolTip.Tip="{Binding Tip}"
+                   ToolTip.Placement="Right"
+                   AutomationProperties.Name="{Binding Tip}">
+        <c:Icon Kind="{Binding Icon}" Size="18" />
+      </RadioButton>
+    </DataTemplate>
+  </UserControl.Resources>
+
+  <Border Background="{DynamicResource QxSurfaceChromeBrush}"
+          BorderBrush="{DynamicResource QxBorderSubtleBrush}"
+          BorderThickness="0,0,1,0">
+    <Grid RowDefinitions="Auto,Auto,*,Auto,Auto" Margin="0,6,0,8">
+      <StackPanel Grid.Row="0" Spacing="2">
+        <ItemsControl Theme="{StaticResource QxRailGroup}"
+                      ItemTemplate="{StaticResource RailItem}"
+                      ItemsSource="{Binding WorkspaceItems}" />
+      </StackPanel>
+
+      <Rectangle Grid.Row="1" Classes="rail-separator" />
+
+      <ScrollViewer Grid.Row="2"
+                    HorizontalScrollBarVisibility="Disabled"
+                    VerticalScrollBarVisibility="Hidden">
+        <ItemsControl Theme="{StaticResource QxRailGroup}"
+                      ItemTemplate="{StaticResource RailItem}"
+                      ItemsSource="{Binding GameItems}" />
+      </ScrollViewer>
+
+      <Rectangle Grid.Row="3" Classes="rail-separator" />
+
+      <ItemsControl Grid.Row="4"
+                    Theme="{StaticResource QxRailGroup}"
+                    ItemTemplate="{StaticResource RailItem}"
+                    ItemsSource="{Binding SupportItems}" />
+    </Grid>
+  </Border>
+
+</UserControl>

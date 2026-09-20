@@ -11,11 +11,9 @@ public sealed record BadgeReceived(
     public bool HasRarityData => OwnerCount.HasValue && RarityId.HasValue;
 
     public static BadgeReceived Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static BadgeReceived ParseFlash(in PacketReader p) => ParseMessage(in p);
-
-    private static BadgeReceived ParseUnity(in PacketReader p) => ParseMessage(in p);
 
     private static BadgeReceived ParseMessage(in PacketReader p)
     {
@@ -45,12 +43,9 @@ public sealed record BadgeReceived(
     }
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(BadgeReceived value, in PacketWriter p) =>
-        value.ComposeMessage(in p);
-
-    private static void ComposeUnity(BadgeReceived value, in PacketWriter p) =>
         value.ComposeMessage(in p);
 
     private void ComposeMessage(in PacketWriter p)

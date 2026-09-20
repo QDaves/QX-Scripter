@@ -27,7 +27,6 @@ public sealed record GuildMember(
     string MemberSince) : IParserComposer<GuildMember>
 {
     internal const int FlashMinimumSize = sizeof(int) * 2 + sizeof(ushort) * 3;
-    internal const int UnityMinimumSize = sizeof(int) + sizeof(long) + sizeof(ushort) * 3;
 
     public bool IsOwner => Type is GuildMemberType.Owner;
     public bool IsAdministrator => Type is GuildMemberType.Administrator;
@@ -39,7 +38,7 @@ public sealed record GuildMember(
     public bool IsBlocked => Type is GuildMemberType.Blocked;
 
     public static GuildMember Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static GuildMember ParseFlash(in PacketReader p) =>
         new(
@@ -49,20 +48,12 @@ public sealed record GuildMember(
             p.ReadString(),
             p.ReadString());
 
-    private static GuildMember ParseUnity(in PacketReader p) =>
-        new(
-            (GuildMemberType)p.ReadInt(),
-            p.ReadLong(),
-            p.ReadString(),
-            p.ReadString(),
-            p.ReadString());
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(GuildMember value, in PacketWriter p)
     {
-        Validate(value, true, in p);
+        Validate(value, in p);
         p.WriteInt((int)value.Type);
         p.WriteInt(PeopleWire.RequireFlashId(value.Id, nameof(Id)));
         p.WriteString(value.Name);
@@ -70,21 +61,10 @@ public sealed record GuildMember(
         p.WriteString(value.MemberSince);
     }
 
-    private static void ComposeUnity(GuildMember value, in PacketWriter p)
-    {
-        Validate(value, false, in p);
-        p.WriteInt((int)value.Type);
-        p.WriteLong(value.Id);
-        p.WriteString(value.Name);
-        p.WriteString(value.Figure);
-        p.WriteString(value.MemberSince);
-    }
-
-    internal static void Validate(GuildMember value, bool flash, in PacketWriter p)
+    internal static void Validate(GuildMember value, in PacketWriter p)
     {
         ArgumentNullException.ThrowIfNull(value);
-        if (flash)
-            _ = PeopleWire.RequireFlashId(value.Id, nameof(Id));
+        _ = PeopleWire.RequireFlashId(value.Id, nameof(Id));
         PeopleWire.RequireString(value.Name, nameof(Name), in p);
         PeopleWire.RequireString(value.Figure, nameof(Figure), in p);
         PeopleWire.RequireString(value.MemberSince, nameof(MemberSince), in p);
@@ -176,7 +156,7 @@ public sealed record GuildMembers : IParserComposer<GuildMembers>
     public bool HasNextPage => PageIndex + 1 < TotalPages;
 
     public static GuildMembers Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static GuildMembers ParseFlash(in PacketReader p)
     {
@@ -203,31 +183,6 @@ public sealed record GuildMembers : IParserComposer<GuildMembers>
         return value;
     }
 
-    private static GuildMembers ParseUnity(in PacketReader p)
-    {
-        Id group_id = p.ReadLong();
-        string group_name = p.ReadString();
-        Id base_room_id = p.ReadLong();
-        string badge_code = p.ReadString();
-        int total_entries = p.ReadInt();
-        int count = PeopleWire.ReadUnityCount(in p, GuildMember.UnityMinimumSize, nameof(Entries));
-        GuildMember[] entries = ReadEntries(in p, count);
-        var value = new GuildMembers(
-            group_id,
-            group_name,
-            base_room_id,
-            badge_code,
-            total_entries,
-            entries,
-            p.ReadBool(),
-            p.ReadInt(),
-            p.ReadInt(),
-            null,
-            p.ReadString());
-        PeopleWire.RequireEmpty(in p, nameof(GuildMembers));
-        return value;
-    }
-
     private static GuildMember[] ReadEntries(in PacketReader p, int count)
     {
         var entries = new GuildMember[count];
@@ -237,11 +192,11 @@ public sealed record GuildMembers : IParserComposer<GuildMembers>
     }
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(GuildMembers value, in PacketWriter p)
     {
-        GuildMembers prepared = Prepare(value, true, in p);
+        GuildMembers prepared = Prepare(value, in p);
         p.WriteInt(PeopleWire.RequireFlashId(prepared.GroupId, nameof(GroupId)));
         p.WriteString(prepared.GroupName);
         p.WriteInt(PeopleWire.RequireFlashId(prepared.BaseRoomId, nameof(BaseRoomId)));
@@ -257,24 +212,7 @@ public sealed record GuildMembers : IParserComposer<GuildMembers>
         p.WriteString(prepared.UserNameFilter);
     }
 
-    private static void ComposeUnity(GuildMembers value, in PacketWriter p)
-    {
-        GuildMembers prepared = Prepare(value, false, in p);
-        p.WriteLong(prepared.GroupId);
-        p.WriteString(prepared.GroupName);
-        p.WriteLong(prepared.BaseRoomId);
-        p.WriteString(prepared.BadgeCode);
-        p.WriteInt(prepared.TotalEntries);
-        PeopleWire.WriteUnityCount(prepared.Entries.Count, in p);
-        foreach (GuildMember entry in prepared.Entries)
-            p.Compose(entry);
-        p.WriteBool(prepared.IsAllowedToManage);
-        p.WriteInt(prepared.PageSize);
-        p.WriteInt(prepared.PageIndex);
-        p.WriteString(prepared.UserNameFilter);
-    }
-
-    private static GuildMembers Prepare(GuildMembers value, bool flash, in PacketWriter p)
+    private static GuildMembers Prepare(GuildMembers value, in PacketWriter p)
     {
         ArgumentNullException.ThrowIfNull(value);
         GuildMember[] entries = PeopleWire.SnapshotReferences(value.Entries, nameof(Entries));
@@ -294,7 +232,6 @@ public sealed record GuildMembers : IParserComposer<GuildMembers>
         PeopleWire.RequireString(prepared.GroupName, nameof(GroupName), in p);
         PeopleWire.RequireString(prepared.BadgeCode, nameof(BadgeCode), in p);
         PeopleWire.RequireString(prepared.UserNameFilter, nameof(UserNameFilter), in p);
-        if (flash)
         {
             _ = PeopleWire.RequireFlashId(prepared.GroupId, nameof(GroupId));
             _ = PeopleWire.RequireFlashId(prepared.BaseRoomId, nameof(BaseRoomId));
@@ -304,14 +241,8 @@ public sealed record GuildMembers : IParserComposer<GuildMembers>
                 throw new InvalidDataException("Flash GuildMembers requires a valid search type.");
             }
         }
-        else
-        {
-            if (prepared.SearchType is not null)
-                throw new InvalidDataException("Unity GuildMembers cannot contain a search type.");
-            PeopleWire.RequireUnityCount(prepared.Entries.Count, nameof(Entries));
-        }
         foreach (GuildMember entry in prepared.Entries)
-            GuildMember.Validate(entry, flash, in p);
+            GuildMember.Validate(entry, in p);
         return prepared;
     }
 }

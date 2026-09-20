@@ -62,11 +62,9 @@ public sealed class PetInfo : IParserComposer<PetInfo>
     public PetInfo() { }
 
     public static PetInfo Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static PetInfo ParseFlash(in PacketReader p) => ParseMessage(in p);
-
-    private static PetInfo ParseUnity(in PacketReader p) => ParseMessage(in p);
 
     private static PetInfo ParseMessage(in PacketReader p)
     {
@@ -111,11 +109,9 @@ public sealed class PetInfo : IParserComposer<PetInfo>
     }
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(PetInfo value, in PacketWriter p) => ComposeMessage(value, in p);
-
-    private static void ComposeUnity(PetInfo value, in PacketWriter p) => ComposeMessage(value, in p);
 
     private static void ComposeMessage(PetInfo value, in PacketWriter p)
     {

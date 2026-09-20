@@ -35,13 +35,10 @@ public sealed class WiredVariable : IParserComposer<WiredVariable>, IWiredContex
     public bool IsReadOnly => !CanWriteValue;
 
     public static WiredVariable Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static WiredVariable ParseFlash(in PacketReader p) =>
         Read(in p, p.ReadString(), p.ReadInt());
-
-    private static WiredVariable ParseUnity(in PacketReader p) =>
-        Read(in p, p.ReadId().ToString(), 0);
 
     private static WiredVariable Read(
         in PacketReader p,
@@ -89,20 +86,13 @@ public sealed class WiredVariable : IParserComposer<WiredVariable>, IWiredContex
     }
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(WiredVariable value, in PacketWriter p)
     {
-        Validate(value, in p, false);
+        Validate(value, in p);
         p.WriteString(value.VariableId);
         p.WriteInt(value.VariableType);
-        WriteCommon(value, in p);
-    }
-
-    private static void ComposeUnity(WiredVariable value, in PacketWriter p)
-    {
-        Validate(value, in p, true);
-        p.WriteId((Id)value.VariableId);
         WriteCommon(value, in p);
     }
 
@@ -131,29 +121,19 @@ public sealed class WiredVariable : IParserComposer<WiredVariable>, IWiredContex
         }
     }
 
-    internal static void Validate(WiredVariable value, in PacketWriter p, bool unity)
+    internal static void Validate(WiredVariable value, in PacketWriter p)
     {
         ArgumentNullException.ThrowIfNull(value);
         WiredWire.RequireString(value.VariableName, nameof(VariableName), in p);
-        if (unity)
-        {
-            if (value.VariableType != 0)
-                throw new NotSupportedException("Unity wired variables cannot represent VariableType.");
-            if (!Id.TryParse(value.VariableId, out _))
-                throw new InvalidDataException("Unity wired variable identifiers must be numeric IDs.");
-        }
-        else
         {
             WiredWire.RequireString(value.VariableId, nameof(VariableId), in p);
         }
 
         if (value.TextConnector is null)
             return;
-        WiredWire.RequireUnityCount(value.TextConnector.Count, nameof(TextConnector));
         foreach (KeyValuePair<Id, string> connector in value.TextConnector)
         {
-            if (!unity)
-                _ = WiredWire.FlashId(connector.Key);
+            _ = WiredWire.FlashId(connector.Key);
             WiredWire.RequireString(connector.Value, nameof(TextConnector), in p);
         }
     }
@@ -163,16 +143,13 @@ public sealed class WiredVariable : IParserComposer<WiredVariable>, IWiredContex
 public readonly record struct ObjectIdAndValuePair(Id ObjectId, long Value) : IParserComposer<ObjectIdAndValuePair>
 {
     public static ObjectIdAndValuePair Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static ObjectIdAndValuePair ParseFlash(in PacketReader p) =>
         new(p.ReadInt(), p.ReadInt());
 
-    private static ObjectIdAndValuePair ParseUnity(in PacketReader p) =>
-        new(p.ReadLong(), p.ReadLong());
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(ObjectIdAndValuePair value, in PacketWriter p)
     {
@@ -180,12 +157,6 @@ public readonly record struct ObjectIdAndValuePair(Id ObjectId, long Value) : IP
         int stored_value = checked((int)value.Value);
         p.WriteInt(object_id);
         p.WriteInt(stored_value);
-    }
-
-    private static void ComposeUnity(ObjectIdAndValuePair value, in PacketWriter p)
-    {
-        p.WriteLong(value.ObjectId);
-        p.WriteLong(value.Value);
     }
 }
 
@@ -226,7 +197,7 @@ public sealed record VariableInfoAndValue(WiredVariable Variable, long Value)
     : IParserComposer<VariableInfoAndValue>, IWiredContextEntry
 {
     public static VariableInfoAndValue Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static VariableInfoAndValue ParseFlash(in PacketReader p)
     {
@@ -234,26 +205,14 @@ public sealed record VariableInfoAndValue(WiredVariable Variable, long Value)
         return new VariableInfoAndValue(variable, p.ReadInt());
     }
 
-    private static VariableInfoAndValue ParseUnity(in PacketReader p)
-    {
-        WiredVariable variable = WiredVariable.Parse(p);
-        return new VariableInfoAndValue(variable, p.ReadLong());
-    }
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(VariableInfoAndValue value, in PacketWriter p)
     {
         int stored_value = checked((int)value.Value);
         value.Variable.Compose(in p);
         p.WriteInt(stored_value);
-    }
-
-    private static void ComposeUnity(VariableInfoAndValue value, in PacketWriter p)
-    {
-        value.Variable.Compose(in p);
-        p.WriteLong(value.Value);
     }
 }
 
@@ -387,11 +346,9 @@ public sealed record WiredContext(IReadOnlyList<WiredContextEntry> Entries) : IP
     }
 
     public static WiredContext Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static WiredContext ParseFlash(in PacketReader p) => Read(in p);
-
-    private static WiredContext ParseUnity(in PacketReader p) => Read(in p);
 
     private static WiredContext Read(in PacketReader p)
     {
@@ -416,17 +373,14 @@ public sealed record WiredContext(IReadOnlyList<WiredContextEntry> Entries) : IP
     }
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(WiredContext value, in PacketWriter p) =>
-        Write(value, in p, false);
+        Write(value, in p);
 
-    private static void ComposeUnity(WiredContext value, in PacketWriter p) =>
-        Write(value, in p, true);
-
-    private static void Write(WiredContext value, in PacketWriter p, bool unity)
+    private static void Write(WiredContext value, in PacketWriter p)
     {
-        value.Validate(in p, unity);
+        value.Validate(in p);
         p.WriteLength((Length)value.Entries.Count);
         foreach (WiredContextEntry e in value.Entries)
         {
@@ -435,10 +389,9 @@ public sealed record WiredContext(IReadOnlyList<WiredContextEntry> Entries) : IP
         }
     }
 
-    internal void Validate(in PacketWriter p, bool unity)
+    internal void Validate(in PacketWriter p)
     {
         ArgumentNullException.ThrowIfNull(Entries);
-        WiredWire.RequireUnityCount(Entries.Count, nameof(Entries));
         foreach (WiredContextEntry entry in Entries)
         {
             ArgumentNullException.ThrowIfNull(entry);
@@ -447,36 +400,30 @@ public sealed record WiredContext(IReadOnlyList<WiredContextEntry> Entries) : IP
                 case (TagRoomVariables, AllVariablesInRoom):
                     break;
                 case (TagFurniVariableInfo or TagUserVariableInfo, VariableInfoAndHolders holders):
-                    ValidateVariableInfoAndHolders(holders, in p, unity);
+                    ValidateVariableInfoAndHolders(holders, in p);
                     break;
                 case (TagGlobalVariableInfo, VariableInfoAndValue global):
-                    WiredVariable.Validate(global.Variable, in p, unity);
-                    if (!unity)
-                        _ = checked((int)global.Value);
+                    WiredVariable.Validate(global.Variable, in p);
+                    _ = checked((int)global.Value);
                     break;
                 case (TagReferenceVariables, SharedVariableList shared):
-                    WiredWire.RequireUnityCount(shared.SharedVariables.Count, nameof(shared.SharedVariables));
-                    foreach (SharedVariable variable in shared.SharedVariables)
+                    ; foreach (SharedVariable variable in shared.SharedVariables)
                     {
                         ArgumentNullException.ThrowIfNull(variable);
-                        if (!unity)
-                            _ = WiredWire.FlashId(variable.RoomId);
+                        _ = WiredWire.FlashId(variable.RoomId);
                         WiredWire.RequireString(variable.RoomName, nameof(variable.RoomName), in p);
-                        WiredVariable.Validate(variable.WiredVariable, in p, unity);
+                        WiredVariable.Validate(variable.WiredVariable, in p);
                     }
                     break;
                 case (TagRulesetVariables, VariableList variables):
-                    WiredWire.RequireUnityCount(variables.Variables.Count, nameof(variables.Variables));
-                    foreach (WiredVariable variable in variables.Variables)
-                        WiredVariable.Validate(variable, in p, unity);
+                    ; foreach (WiredVariable variable in variables.Variables)
+                        WiredVariable.Validate(variable, in p);
                     break;
                 case (TagReferencePlaceholders, SharedGlobalPlaceholderList placeholders):
-                    WiredWire.RequireUnityCount(placeholders.SharedPlaceholders.Count, nameof(placeholders.SharedPlaceholders));
-                    foreach (SharedGlobalPlaceholder placeholder in placeholders.SharedPlaceholders)
+                    ; foreach (SharedGlobalPlaceholder placeholder in placeholders.SharedPlaceholders)
                     {
                         ArgumentNullException.ThrowIfNull(placeholder);
-                        if (!unity)
-                            _ = WiredWire.FlashId(placeholder.RoomId);
+                        _ = WiredWire.FlashId(placeholder.RoomId);
                         WiredWire.RequireString(placeholder.RoomName, nameof(placeholder.RoomName), in p);
                         WiredWire.RequireString(placeholder.PlaceholderName, nameof(placeholder.PlaceholderName), in p);
                     }
@@ -489,19 +436,14 @@ public sealed record WiredContext(IReadOnlyList<WiredContextEntry> Entries) : IP
 
     private static void ValidateVariableInfoAndHolders(
         VariableInfoAndHolders value,
-        in PacketWriter p,
-        bool unity)
+        in PacketWriter p)
     {
-        WiredVariable.Validate(value.Variable, in p, unity);
+        WiredVariable.Validate(value.Variable, in p);
         ArgumentNullException.ThrowIfNull(value.Holders);
-        WiredWire.RequireUnityCount(value.Holders.Count, nameof(value.Holders));
         foreach (ObjectIdAndValuePair holder in value.Holders)
         {
-            if (!unity)
-            {
-                _ = WiredWire.FlashId(holder.ObjectId);
-                _ = checked((int)holder.Value);
-            }
+            _ = WiredWire.FlashId(holder.ObjectId);
+            _ = checked((int)holder.Value);
         }
     }
 }

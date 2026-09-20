@@ -27,13 +27,11 @@ public sealed class Friend : IParserComposer<Friend>
     public bool IsPocketHabboUser { get; set; }
     public Relation Relation { get; set; }
     public long LastOnline { get; set; }
-    public short UnityStatus { get; set; }
-    public short UnityPlatform { get; set; }
 
     public Friend() { }
 
     public static Friend Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static Friend ParseFlash(in PacketReader p)
     {
@@ -56,29 +54,8 @@ public sealed class Friend : IParserComposer<Friend>
         };
     }
 
-    private static Friend ParseUnity(in PacketReader p)
-    {
-        return new Friend
-        {
-            Id = p.ReadId(),
-            Name = p.ReadString(),
-            Gender = (Gender)p.ReadInt(),
-            IsOnline = p.ReadBool(),
-            CanFollow = p.ReadBool(),
-            Figure = p.ReadString(),
-            LastOnline = p.ReadLong(),
-            Motto = p.ReadString(),
-            IsAcceptingOfflineMessages = p.ReadBool(),
-            IsVipMember = p.ReadBool(),
-            IsPocketHabboUser = p.ReadBool(),
-            Relation = (Relation)p.ReadShort(),
-            UnityStatus = p.ReadShort(),
-            UnityPlatform = p.ReadShort()
-        };
-    }
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(Friend value, in PacketWriter p)
     {
@@ -96,24 +73,6 @@ public sealed class Friend : IParserComposer<Friend>
         p.WriteBool(value.IsVipMember);
         p.WriteBool(value.IsPocketHabboUser);
         p.WriteShort((short)value.Relation);
-    }
-
-    private static void ComposeUnity(Friend value, in PacketWriter p)
-    {
-        p.WriteId(value.Id);
-        p.WriteString(value.Name);
-        p.WriteInt((int)value.Gender);
-        p.WriteBool(value.IsOnline);
-        p.WriteBool(value.CanFollow);
-        p.WriteString(value.Figure);
-        p.WriteLong(value.LastOnline);
-        p.WriteString(value.Motto);
-        p.WriteBool(value.IsAcceptingOfflineMessages);
-        p.WriteBool(value.IsVipMember);
-        p.WriteBool(value.IsPocketHabboUser);
-        p.WriteShort((short)value.Relation);
-        p.WriteShort(value.UnityStatus);
-        p.WriteShort(value.UnityPlatform);
     }
 
     public override string ToString() => Name;

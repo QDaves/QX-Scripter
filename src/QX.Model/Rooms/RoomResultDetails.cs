@@ -50,10 +50,10 @@ public sealed class RoomChatSettings : IParserComposer<RoomChatSettings>
     internal GuestRoomResultWireLayout? ParsedLayout { get; set; }
 
     public static RoomChatSettings Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     internal static RoomChatSettings ParseEmbedded(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseEmbeddedFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseEmbeddedFlash);
 
     private static RoomChatSettings ParseFlash(in PacketReader p)
     {
@@ -104,21 +104,11 @@ public sealed class RoomChatSettings : IParserComposer<RoomChatSettings>
         return settings;
     }
 
-    private static RoomChatSettings ParseUnity(in PacketReader p) => new()
-    {
-        Flow = (RoomChatFlowMode)p.ReadInt(),
-        BubbleWidth = (RoomChatBubbleWidth)p.ReadInt(),
-        ScrollSpeed = (RoomChatScrollSpeed)p.ReadInt(),
-        TalkHearingDistance = p.ReadInt(),
-        FloodProtection = (RoomChatFloodSensitivity)p.ReadInt(),
-        ParsedLayout = GuestRoomResultWireLayout.Unity
-    };
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     internal void ComposeEmbedded(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeEmbeddedFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeEmbeddedFlash);
 
     private static void ComposeFlash(RoomChatSettings value, in PacketWriter p)
     {
@@ -144,15 +134,6 @@ public sealed class RoomChatSettings : IParserComposer<RoomChatSettings>
             p.WriteInt((int)value.ScrollSpeed);
             p.WriteInt(value.TalkHearingDistance);
         }
-        p.WriteInt((int)value.FloodProtection);
-    }
-
-    private static void ComposeUnity(RoomChatSettings value, in PacketWriter p)
-    {
-        p.WriteInt((int)value.Flow);
-        p.WriteInt((int)value.BubbleWidth);
-        p.WriteInt((int)value.ScrollSpeed);
-        p.WriteInt(value.TalkHearingDistance);
         p.WriteInt((int)value.FloodProtection);
     }
 }
@@ -185,10 +166,7 @@ internal static class GuestRoomResultLayout
     {
         if (Known(p.Context?.WireProfile, p.Client) is { } known)
             return known;
-        if (p.Client is ClientType.Flash)
-            return FromRemainder(p.Available);
-        return p.Context?.WireProfile.RequireGuestRoomResultLayout(p.Client) ??
-            throw new NotSupportedException("Guest room result details require an exact wire profile.");
+        return FromRemainder(p.Available);
     }
 
     internal static GuestRoomResultWireLayout Resolve(
@@ -212,8 +190,6 @@ internal static class GuestRoomResultLayout
         return client switch
         {
             ClientType.Flash => wire.FlashGuestRoomResultLayout,
-            ClientType.Unity when wire.UnityGuestRoomResultHasExtendedData is true =>
-                GuestRoomResultWireLayout.Unity,
             _ => null
         };
     }
@@ -254,8 +230,6 @@ public sealed class RoomResultDetails : IParserComposer<RoomResultDetails>
     public bool CanMute { get; set; }
     public RoomChatSettings Chat { get; set; } = new();
     public bool? OpeningConnection { get; set; }
-    public Id UnityContextId { get; set; }
-    public RoomThumbnailData? UnityThumbnail { get; set; }
 
     /// <inheritdoc cref="RoomChatSettings.ParsedLayout"/>
     internal GuestRoomResultWireLayout? ParsedLayout { get; set; }
@@ -286,12 +260,6 @@ public sealed class RoomResultDetails : IParserComposer<RoomResultDetails>
         {
             details.OpeningConnection = p.ReadBool();
         }
-        else if (layout is GuestRoomResultWireLayout.Unity)
-        {
-            details.UnityContextId = p.ReadId();
-            if (p.ReadBool())
-                details.UnityThumbnail = p.Parse<RoomThumbnailData>();
-        }
 
         return details;
     }
@@ -313,13 +281,6 @@ public sealed class RoomResultDetails : IParserComposer<RoomResultDetails>
         {
             p.WriteBool(OpeningConnection ??
                 throw new InvalidOperationException("The compact Flash layout requires an opening-connection value."));
-        }
-        else if (layout is GuestRoomResultWireLayout.Unity)
-        {
-            p.WriteId(UnityContextId);
-            p.WriteBool(UnityThumbnail is not null);
-            if (UnityThumbnail is not null)
-                p.Compose(UnityThumbnail);
         }
     }
 }

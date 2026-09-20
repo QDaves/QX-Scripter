@@ -25,7 +25,7 @@ public sealed record BotInventory(IReadOnlyList<InventoryBot> Bots) : IParserCom
 
     private static void RequireSupportedClient(ClientType client)
     {
-        if (client is not (ClientType.Flash or ClientType.Unity))
+        if (client is not (ClientType.Flash))
             throw new UnsupportedClientException(client);
     }
 }
@@ -35,32 +35,14 @@ public sealed record BotAddedToInventory(InventoryBot Bot, bool BoughtAsGift)
 {
     public static BotAddedToInventory Parse(in PacketReader p)
     {
-        if (p.Client is ClientType.Flash)
-        {
-            bool bought_as_gift = p.ReadBool();
-            return new BotAddedToInventory(p.Parse<InventoryBot>(), bought_as_gift);
-        }
-        if (p.Client is ClientType.Unity)
-            return new BotAddedToInventory(p.Parse<InventoryBot>(), p.ReadBool());
-        throw new UnsupportedClientException(p.Client);
+        bool bought_as_gift = p.ReadBool();
+        return new BotAddedToInventory(p.Parse<InventoryBot>(), bought_as_gift);
     }
 
     public void Compose(in PacketWriter p)
     {
-        if (p.Client is ClientType.Flash)
-        {
-            p.WriteBool(BoughtAsGift);
-            p.Compose(Bot);
-        }
-        else if (p.Client is ClientType.Unity)
-        {
-            p.Compose(Bot);
-            p.WriteBool(BoughtAsGift);
-        }
-        else
-        {
-            throw new UnsupportedClientException(p.Client);
-        }
+        p.WriteBool(BoughtAsGift);
+        p.Compose(Bot);
     }
 }
 
@@ -80,7 +62,7 @@ public sealed record BotRemovedFromInventory(int BotId) : IParserComposer<BotRem
 
     private static void RequireSupportedClient(ClientType client)
     {
-        if (client is not (ClientType.Flash or ClientType.Unity))
+        if (client is not (ClientType.Flash))
             throw new UnsupportedClientException(client);
     }
 }
@@ -89,32 +71,13 @@ public sealed record BotReceived(InventoryBot Bot, bool OpenInventory) : IParser
 {
     public static BotReceived Parse(in PacketReader p)
     {
-        if (p.Client is ClientType.Flash)
-            return new BotReceived(p.Parse<InventoryBot>(), p.ReadBool());
-        if (p.Client is ClientType.Unity)
-        {
-            bool open_inventory = p.ReadBool();
-            return new BotReceived(p.Parse<InventoryBot>(), open_inventory);
-        }
-        throw new UnsupportedClientException(p.Client);
+        return new BotReceived(p.Parse<InventoryBot>(), p.ReadBool());
     }
 
     public void Compose(in PacketWriter p)
     {
-        if (p.Client is ClientType.Flash)
-        {
-            p.Compose(Bot);
-            p.WriteBool(OpenInventory);
-        }
-        else if (p.Client is ClientType.Unity)
-        {
-            p.WriteBool(OpenInventory);
-            p.Compose(Bot);
-        }
-        else
-        {
-            throw new UnsupportedClientException(p.Client);
-        }
+        p.Compose(Bot);
+        p.WriteBool(OpenInventory);
     }
 }
 
@@ -137,7 +100,7 @@ public sealed record BotCommandConfigurationData(int BotId, int CommandId, strin
 
     private static void RequireSupportedClient(ClientType client)
     {
-        if (client is not (ClientType.Flash or ClientType.Unity))
+        if (client is not (ClientType.Flash))
             throw new UnsupportedClientException(client);
     }
 }
@@ -169,8 +132,6 @@ public sealed record BotSkillListUpdate(int BotId, IReadOnlyList<BotSkill> Skill
 
     private static void RequireFlash(ClientType client)
     {
-        if (client is not ClientType.Flash)
-            throw new UnsupportedClientException(client);
     }
 }
 
@@ -192,7 +153,7 @@ public sealed record PlaceBot(Id BotId, int X, int Y) : IParserComposer<PlaceBot
 
     private static void RequireSupportedClient(ClientType client)
     {
-        if (client is not (ClientType.Flash or ClientType.Unity))
+        if (client is not (ClientType.Flash))
             throw new UnsupportedClientException(client);
     }
 }
@@ -209,7 +170,7 @@ public sealed record GetBotInventory : IParserComposer<GetBotInventory>
 
     private static void RequireSupportedClient(ClientType client)
     {
-        if (client is not (ClientType.Flash or ClientType.Unity))
+        if (client is not (ClientType.Flash))
             throw new UnsupportedClientException(client);
     }
 }
@@ -232,7 +193,7 @@ public sealed record CommandBot(Id BotId, int CommandId, string Data) : IParserC
 
     private static void RequireSupportedClient(ClientType client)
     {
-        if (client is not (ClientType.Flash or ClientType.Unity))
+        if (client is not (ClientType.Flash))
             throw new UnsupportedClientException(client);
     }
 }
@@ -240,22 +201,16 @@ public sealed record CommandBot(Id BotId, int CommandId, string Data) : IParserC
 public sealed record RemoveBotFromFlat(Id BotId) : IParserComposer<RemoveBotFromFlat>
 {
     public static RemoveBotFromFlat Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static RemoveBotFromFlat ParseFlash(in PacketReader p) =>
         new(p.ReadInt());
 
-    private static RemoveBotFromFlat ParseUnity(in PacketReader p) =>
-        new(p.ReadLong());
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(RemoveBotFromFlat value, in PacketWriter p) =>
         p.WriteInt(checked((int)value.BotId));
-
-    private static void ComposeUnity(RemoveBotFromFlat value, in PacketWriter p) =>
-        p.WriteLong(value.BotId);
 }
 
 public sealed record GetBotCommandConfigurationData(Id BotId, int CommandId)
@@ -276,7 +231,7 @@ public sealed record GetBotCommandConfigurationData(Id BotId, int CommandId)
 
     private static void RequireSupportedClient(ClientType client)
     {
-        if (client is not (ClientType.Flash or ClientType.Unity))
+        if (client is not (ClientType.Flash))
             throw new UnsupportedClientException(client);
     }
 }

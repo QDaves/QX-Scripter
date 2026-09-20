@@ -1,0 +1,87 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:c="using:Qx.Desktop.Controls"
+             xmlns:vm="using:Qx.Presentation.ViewModels.Shell"
+             x:Class="Qx.Desktop.Views.Shell.TitleBar"
+             x:DataType="vm:ShellViewModel"
+             Height="{DynamicResource QxTitleBarHeight}">
+
+  <Panel>
+    <Border Name="Drag"
+            Background="{DynamicResource QxSurfaceChromeBrush}"
+            BorderBrush="{DynamicResource QxBorderSubtleBrush}"
+            BorderThickness="0,0,0,1"
+            WindowDecorationProperties.ElementRole="TitleBar" />
+
+    <Grid ColumnDefinitions="*,Auto,*">
+      <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+        <Panel Name="LeadingReserve" Width="0" />
+        <Panel Width="{DynamicResource QxRailWidth}">
+          <c:QxMark Height="16"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    Foreground="{DynamicResource QxBrandBrush}" />
+        </Panel>
+        <TextBlock Text="Scripter"
+                   VerticalAlignment="Center"
+                   FontWeight="SemiBold"
+                   Foreground="{DynamicResource QxTextPrimaryBrush}" />
+        <c:Icon Kind="ChevronRight" Size="14" Margin="6,0" Classes="tertiary" VerticalAlignment="Center" />
+        <TextBlock Text="{Binding PageTitle}"
+                   VerticalAlignment="Center"
+                   FontWeight="Medium"
+                   Classes="secondary"
+                   TextTrimming="CharacterEllipsis"
+                   MaxWidth="{DynamicResource QxTitleContextMaxWidth}" />
+      </StackPanel>
+
+      <Button Grid.Column="1"
+              Theme="{StaticResource QxCommandTrigger}"
+              VerticalAlignment="Center"
+              Command="{Binding OpenPaletteCommand}"
+              AutomationProperties.Name="Open the command palette">
+        <Grid ColumnDefinitions="Auto,*,Auto">
+          <c:Icon Kind="Search" Size="14" VerticalAlignment="Center" Foreground="{Binding $parent[Button].Foreground}" />
+          <TextBlock Grid.Column="1"
+                     Margin="8,0,0,0"
+                     VerticalAlignment="Center"
+                     Text="{Binding PaletteText}"
+                     TextTrimming="CharacterEllipsis" />
+          <ItemsControl Grid.Column="2" Classes="bounded" ItemsSource="{Binding PaletteKeys}" VerticalAlignment="Center">
+            <ItemsControl.ItemsPanel>
+              <ItemsPanelTemplate>
+                <StackPanel Orientation="Horizontal" Spacing="2" />
+              </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="x:String">
+                <c:Kbd Text="{Binding}" />
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </Grid>
+      </Button>
+
+      <StackPanel Grid.Column="2"
+                  Orientation="Horizontal"
+                  HorizontalAlignment="Right"
+                  VerticalAlignment="Center"
+                  Spacing="2">
+        <ToggleButton Classes="icon"
+                      IsChecked="{Binding IsTopmost, Mode=TwoWay}"
+                      ToolTip.Tip="{Binding TopmostTip}"
+                      AutomationProperties.Name="Keep the window on top">
+          <c:Icon Kind="{Binding TopmostIcon}" Size="16" />
+        </ToggleButton>
+        <Button Classes="icon"
+                Command="{Binding ToggleThemeCommand}"
+                ToolTip.Tip="{Binding ThemeTip}"
+                AutomationProperties.Name="Switch theme">
+          <c:Icon Kind="{Binding ThemeIcon}" Size="16" />
+        </Button>
+        <Panel Name="TrailingReserve" Width="0" Margin="{DynamicResource QxCaptionReserveMargin}" />
+      </StackPanel>
+    </Grid>
+  </Panel>
+
+</UserControl>

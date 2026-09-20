@@ -5,11 +5,9 @@ namespace Qx.Model.Messages.Incoming;
 public sealed record PurchaseError(int ErrorCode) : IParserComposer<PurchaseError>
 {
     public static PurchaseError Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static PurchaseError ParseFlash(in PacketReader p) => ParseResult(in p);
-
-    private static PurchaseError ParseUnity(in PacketReader p) => ParseResult(in p);
 
     private static PurchaseError ParseResult(in PacketReader p)
     {
@@ -19,11 +17,8 @@ public sealed record PurchaseError(int ErrorCode) : IParserComposer<PurchaseErro
     }
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(PurchaseError value, in PacketWriter p) =>
-        p.WriteInt(value.ErrorCode);
-
-    private static void ComposeUnity(PurchaseError value, in PacketWriter p) =>
         p.WriteInt(value.ErrorCode);
 }

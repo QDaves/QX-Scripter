@@ -43,13 +43,6 @@ public abstract class Avatar : IParserComposer<Avatar>
         p.WriteString(Motto);
         p.WriteString(Figure);
         p.WriteInt(Index);
-        if (p.Client is ClientType.Unity)
-        {
-            p.WriteInt(Location.X);
-            p.WriteInt(Location.Y);
-            p.WriteString((FloatString)Location.Z);
-        }
-        else
         {
             p.Compose(Location);
         }
@@ -64,9 +57,7 @@ public abstract class Avatar : IParserComposer<Avatar>
         string motto = p.ReadString();
         string figure = p.ReadString();
         int index = p.ReadInt();
-        Tile location = p.Client is ClientType.Unity
-            ? new Tile(p.ReadInt(), p.ReadInt(), (float)(FloatString)p.ReadString())
-            : p.Parse<Tile>();
+        Tile location = p.Parse<Tile>();
         int direction = p.ReadInt();
         var type = (AvatarType)p.ReadInt();
 
@@ -77,16 +68,6 @@ public abstract class Avatar : IParserComposer<Avatar>
             AvatarType.PublicBot or AvatarType.PrivateBot => new Bot(type, id, index, in p),
             _ => throw new Exception($"Unknown avatar type: {type}.")
         };
-
-        if (p.Client is ClientType.Unity && avatar is User user)
-        {
-            user.BadgeCode = p.ReadString();
-            user.GroupBadge = p.ReadString();
-            int count = p.ReadLength();
-            user.GroupPayload.Capacity = checked(count * 3);
-            for (int i = 0; i < count * 3; i++)
-                user.GroupPayload.Add(p.ReadInt());
-        }
 
         avatar.Name = name;
         avatar.Motto = motto;
@@ -125,8 +106,7 @@ public sealed class User : Avatar
         FigureExtra = p.ReadString();
         AchievementScore = p.ReadInt();
         IsStaff = p.ReadBool();
-        if (p.Client is ClientType.Flash)
-            BadgeRank = p.ReadInt();
+        BadgeRank = p.ReadInt();
     }
 
     public override void Compose(in PacketWriter p)
@@ -139,18 +119,6 @@ public sealed class User : Avatar
         p.WriteString(FigureExtra);
         p.WriteInt(AchievementScore);
         p.WriteBool(IsStaff);
-        if (p.Client is ClientType.Unity)
-        {
-            if (GroupPayload.Count % 3 != 0)
-                throw new InvalidOperationException("The group payload must contain complete groups of three integers.");
-
-            p.WriteString(BadgeCode);
-            p.WriteString(GroupBadge);
-            p.WriteLength((Length)(GroupPayload.Count / 3));
-            foreach (int value in GroupPayload)
-                p.WriteInt(value);
-        }
-        else if (p.Client is ClientType.Flash)
         {
             p.WriteInt(BadgeRank);
         }

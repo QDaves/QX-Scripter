@@ -1,0 +1,121 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:c="using:Qx.Desktop.Controls"
+                    xmlns:conv="using:Qx.Desktop.Converters">
+
+  <conv:RunState x:Key="QxRunState" />
+
+  <ControlTheme x:Key="{x:Type c:RunButton}" TargetType="c:RunButton">
+    <Setter Property="Background" Value="{DynamicResource QxAccentSoftBrush}" />
+    <Setter Property="Foreground" Value="{DynamicResource QxAccentBrush}" />
+    <Setter Property="BorderBrush" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="{DynamicResource QxRadiusSm}" />
+    <Setter Property="Padding" Value="12,0" />
+    <Setter Property="MinHeight" Value="{DynamicResource QxControlHeightMd}" />
+    <Setter Property="FontSize" Value="{DynamicResource QxFontSizeBody}" />
+    <Setter Property="FontWeight" Value="Medium" />
+    <Setter Property="HorizontalAlignment" Value="Left" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+    <Setter Property="ClipToBounds" Value="False" />
+    <Setter Property="ToolTip.Tip" Value="Run script (F5)" />
+    <Setter Property="AutomationProperties.Name" Value="Run script" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Panel>
+          <Border Name="PART_Root"
+                  Background="{TemplateBinding Background}"
+                  BorderBrush="{TemplateBinding BorderBrush}"
+                  BorderThickness="{TemplateBinding BorderThickness}"
+                  CornerRadius="{TemplateBinding CornerRadius}">
+            <Border.Transitions>
+              <Transitions>
+                <BrushTransition Property="Background" Duration="0:0:0.1" />
+                <BrushTransition Property="BorderBrush" Duration="0:0:0.1" />
+              </Transitions>
+            </Border.Transitions>
+            <Panel>
+              <Border Name="PART_State" Background="Transparent" CornerRadius="{TemplateBinding CornerRadius}" IsHitTestVisible="False" />
+              <Grid Margin="{TemplateBinding Padding}" ColumnDefinitions="28,Auto,28" ColumnSpacing="6" VerticalAlignment="Center" HorizontalAlignment="Center">
+                <c:Icon Name="PART_Glyph" Kind="{TemplateBinding Glyph}" Size="14" VerticalAlignment="Center" HorizontalAlignment="Center" />
+                <Panel Grid.Column="1" VerticalAlignment="Center">
+                  <TextBlock Text="Compiling" Opacity="0" IsHitTestVisible="False" />
+                  <TextBlock Name="PART_Label" Text="{TemplateBinding Label}" HorizontalAlignment="Center" />
+                </Panel>
+                <c:Kbd Name="PART_Keycap" Grid.Column="2" Text="F5" HorizontalAlignment="Center" Opacity="0" />
+              </Grid>
+            </Panel>
+          </Border>
+          <Rectangle Name="PART_Comet"
+                     RadiusX="4"
+                     RadiusY="4"
+                     Stroke="{TemplateBinding Foreground}"
+                     StrokeThickness="1.5"
+                     StrokeLineCap="Round"
+                     IsHitTestVisible="False"
+                     IsVisible="False" />
+          <Border Name="PART_FocusRing"
+                  Margin="{DynamicResource QxFocusRingMargin}"
+                  BorderThickness="{DynamicResource QxFocusRingThickness}"
+                  BorderBrush="{DynamicResource QxFocusRingBrush}"
+                  CornerRadius="{DynamicResource QxRadiusFocusSm}"
+                  IsHitTestVisible="False"
+                  IsVisible="False" />
+        </Panel>
+      </ControlTemplate>
+    </Setter>
+    <Style Selector="^:keycap /template/ c|Kbd#PART_Keycap">
+      <Setter Property="Opacity" Value="1" />
+    </Style>
+    <Style Selector="^:active /template/ Rectangle#PART_Comet">
+      <Setter Property="IsVisible" Value="True" />
+    </Style>
+    <Style Selector="^:idle:pointerover">
+      <Setter Property="BorderBrush" Value="{DynamicResource QxAccentBrush}" />
+    </Style>
+    <Style Selector="^:pointerover /template/ Border#PART_State">
+      <Setter Property="Background" Value="{DynamicResource QxFillHoverBrush}" />
+    </Style>
+    <Style Selector="^:pressed /template/ Border#PART_State">
+      <Setter Property="Background" Value="{DynamicResource QxFillPressedBrush}" />
+    </Style>
+    <Style Selector="^:compiling">
+      <Setter Property="Background" Value="{DynamicResource QxWarningSoftBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource QxWarningBrush}" />
+      <Setter Property="ToolTip.Tip" Value="Compiling" />
+      <Setter Property="AutomationProperties.Name" Value="Compiling" />
+    </Style>
+    <Style Selector="^:running">
+      <Setter Property="Background" Value="{DynamicResource QxDangerSoftBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource QxDangerBrush}" />
+      <Setter Property="ToolTip.Tip" Value="Stop script (F5)" />
+      <Setter Property="AutomationProperties.Name" Value="Stop script" />
+    </Style>
+    <Style Selector="^:running:pointerover">
+      <Setter Property="BorderBrush" Value="{DynamicResource QxDangerBrush}" />
+    </Style>
+    <Style Selector="^:ready">
+      <Setter Property="ToolTip.Tip" Value="UI ready. Click to stop (F5)" />
+      <Setter Property="AutomationProperties.Name" Value="Stop the armed script" />
+    </Style>
+    <Style Selector="^:ready:pointerover">
+      <Setter Property="BorderBrush" Value="{DynamicResource QxAccentBrush}" />
+    </Style>
+    <Style Selector="^:stopping">
+      <Setter Property="Background" Value="{DynamicResource QxFillHoverBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource QxTextSecondaryBrush}" />
+      <Setter Property="ToolTip.Tip" Value="Stopping script" />
+      <Setter Property="AutomationProperties.Name" Value="Stopping script" />
+    </Style>
+    <Style Selector="^:busy">
+      <Setter Property="IsHitTestVisible" Value="False" />
+    </Style>
+    <Style Selector="^:focus-visible /template/ Border#PART_FocusRing">
+      <Setter Property="IsVisible" Value="True" />
+    </Style>
+    <Style Selector="^:disabled">
+      <Setter Property="Opacity" Value="{DynamicResource QxDisabledOpacity}" />
+    </Style>
+  </ControlTheme>
+
+</ResourceDictionary>

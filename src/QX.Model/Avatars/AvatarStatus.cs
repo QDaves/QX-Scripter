@@ -95,16 +95,10 @@ public sealed class AvatarStatus : IParserComposer<AvatarStatus>
     private AvatarStatus(in PacketReader p)
     {
         Index = p.ReadInt();
-        Location = p.Client is ClientType.Unity
-            ? new Tile(p.ReadInt(), p.ReadInt(), (float)(FloatString)p.ReadString())
-            : p.Parse<Tile>();
+        Location = p.Parse<Tile>();
         HeadDirection = p.ReadInt();
         Direction = p.ReadInt();
-        if (p.Client is ClientType.Flash)
-            JumpingPower = p.ReadInt();
-        else if (p.Client is ClientType.Unity &&
-                 (p.Context is null || p.Context.WireProfile.RequireUnityAvatarStatusTargetId()))
-            TargetId = p.ReadInt();
+        JumpingPower = p.ReadInt();
         ParseStatus(p.ReadString());
     }
 
@@ -113,23 +107,12 @@ public sealed class AvatarStatus : IParserComposer<AvatarStatus>
     public void Compose(in PacketWriter p)
     {
         p.WriteInt(Index);
-        if (p.Client is ClientType.Unity)
-        {
-            p.WriteInt(Location.X);
-            p.WriteInt(Location.Y);
-            p.WriteString((FloatString)Location.Z);
-        }
-        else
         {
             p.Compose(Location);
         }
         p.WriteInt(HeadDirection);
         p.WriteInt(Direction);
-        if (p.Client is ClientType.Flash)
-            p.WriteInt(JumpingPower);
-        else if (p.Client is ClientType.Unity &&
-                 (p.Context is null || p.Context.WireProfile.RequireUnityAvatarStatusTargetId()))
-            p.WriteInt(TargetId);
+        p.WriteInt(JumpingPower);
         p.WriteString(CompileStatus());
     }
 

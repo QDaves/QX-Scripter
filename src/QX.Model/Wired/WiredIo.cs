@@ -17,12 +17,6 @@ internal static class WiredWire
 {
     public static int FlashId(Id value) => checked((int)(long)value);
 
-    public static MessageWireProfile RequireUnityConfigurationProfile(in PacketReader p) =>
-        RequireUnityConfigurationProfile(p.Context?.WireProfile);
-
-    public static MessageWireProfile RequireUnityConfigurationProfile(in PacketWriter p) =>
-        RequireUnityConfigurationProfile(p.Context?.WireProfile);
-
     public static void RequireEmpty(in PacketReader p, string name)
     {
         if (p.Available != 0)
@@ -34,12 +28,6 @@ internal static class WiredWire
         ArgumentNullException.ThrowIfNull(value, name);
         if (p.Encoding.GetByteCount(value) > ushort.MaxValue)
             throw new ArgumentException($"{name} exceeds the wire string limit.", name);
-    }
-
-    public static void RequireUnityCount(int count, string name)
-    {
-        if ((uint)count > ushort.MaxValue)
-            throw new InvalidDataException($"{name} count {count} exceeds the Unity wire limit.");
     }
 
     public static void RequireFlashCount(int count, string name)
@@ -75,16 +63,5 @@ internal static class WiredWire
         foreach (T value in copy)
             ArgumentNullException.ThrowIfNull(value, name);
         return Array.AsReadOnly(copy);
-    }
-
-    private static MessageWireProfile RequireUnityConfigurationProfile(MessageWireProfile? profile)
-    {
-        if (profile is not MessageWireProfile value)
-            throw new NotSupportedException("The Unity wired configuration has no wire-profile context.");
-        if (!value.IsAnalyzed)
-            throw new WireProfilePendingException("Unity wired configuration");
-        if (!value.IsExact)
-            throw new NotSupportedException("The active Unity session has no compatible wired configuration layout.");
-        return value;
     }
 }

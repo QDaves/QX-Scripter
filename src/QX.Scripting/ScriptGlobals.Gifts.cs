@@ -1,25 +1,9 @@
-﻿using Qx.Model.Messages.Incoming;
+using Qx.Model.Messages.Incoming;
 using Qx;
 using Qx.Game.Application;
 
 namespace Qx.Scripting;
 
-/// <content>
-/// Gifts, presents and club gifts: cached gift state plus the fire-and-forget requests and actions
-/// that drive it.
-/// <para>
-/// Gift wrapping, present opening, club gifts and gift purchasing work on both the Flash and the
-/// Unity client. Four pieces are Flash only, because their payloads are Flash-shaped and the
-/// tracker registers them for the Flash client alone: the "recipient does not exist" signal, the
-/// club-gift-waiting notification, the per-offer giftability answer, and the new-user gift offer.
-/// </para>
-/// <para>
-/// Nothing here blocks or returns a value. Each request sends one message and returns
-/// immediately; the answer surfaces later through the cached state and the gift events. To wait
-/// for a specific reply, subscribe first and then send the request.
-/// </para>
-/// <para>The cached state is cleared when the session resets.</para>
-/// </content>
 public partial class ScriptGlobals
 {
     /// <summary>
@@ -51,19 +35,9 @@ public partial class ScriptGlobals
     /// </summary>
     public PresentOpened? LastOpenedPresent => Gifts.LastOpenedPresent;
 
-    /// <summary>
-    /// The most recent "you have club gifts waiting" announcement, carrying how many are waiting.
-    /// <see langword="null"/> when none has arrived.
-    /// </summary>
-    /// <remarks>Flash only; this never becomes non-null on a Unity session.</remarks>
     public ClubGiftNotification? LatestClubGiftNotification =>
-        Gifts.LatestNotification;
+    Gifts.LatestNotification;
 
-    /// <summary>
-    /// The new-user gift offer: the chooseable gift steps of the onboarding flow.
-    /// <see langword="null"/> when the server has not offered one.
-    /// </summary>
-    /// <remarks>Flash only; this never becomes non-null on a Unity session.</remarks>
     public NuxGiftOffer? NewUserGiftOffer => Gifts.NewUserOffer;
 
     public IReadOnlyDictionary<int, bool> OfferGiftability =>
@@ -83,29 +57,10 @@ public partial class ScriptGlobals
     /// <param name="furni_id">The floor item id of the present in the room.</param>
     public void OpenPresent(Id furni_id) => Gifts.OpenPresent(furni_id);
 
-    /// <summary>
-    /// Buys a catalog offer as a gift for another user, with wrapping, a message and an optional
-    /// incognito flag. Returns immediately; failure to find the recipient surfaces as the
-    /// receiver-not-found event.
-    /// </summary>
-    /// <param name="request">
-    /// The full purchase: catalog page and offer id, extra data, recipient name, gift message, box
-    /// and ribbon type, colour, and whether the sender stays anonymous. The quantity field is
-    /// Unity only and is filled in with 1 automatically when a Unity session leaves it unset.
-    /// </param>
-    /// <exception cref="ArgumentNullException"><paramref name="request"/> is null.</exception>
     public void PurchaseFromCatalogAsGift(
-        PurchaseFromCatalogAsGift request) =>
-        Gifts.Purchase(request);
+    PurchaseFromCatalogAsGift request) =>
+    Gifts.Purchase(request);
 
-    /// <summary>
-    /// Asks for the club gift catalogue. Returns immediately; the answer lands in the club-gift
-    /// state and raises the club-gift event.
-    /// </summary>
-    /// <remarks>
-    /// The outgoing message differs by client — Flash sends <c>GetClubGift</c>, Unity sends
-    /// <c>GetSelectableClubGiftInfo</c> — and the right one is chosen automatically.
-    /// </remarks>
     public void RequestClubGifts() => Gifts.RequestClubGifts();
 
     /// <summary>
@@ -117,31 +72,12 @@ public partial class ScriptGlobals
     public void SelectClubGift(string product_code) =>
         Gifts.SelectClubGift(product_code);
 
-    /// <summary>
-    /// Asks whether one catalog offer may be sent as a gift. Returns immediately; the answer lands
-    /// in the giftability map and raises the giftability event.
-    /// </summary>
-    /// <param name="offer_id">The catalog offer id.</param>
-    /// <remarks>Flash only. On a Unity session the answer is never accepted.</remarks>
     public void RequestOfferGiftability(int offer_id) =>
-        Gifts.RequestOfferGiftability(offer_id);
+    Gifts.RequestOfferGiftability(offer_id);
 
-    /// <summary>
-    /// Submits the choices for the new-user gift flow. Returns immediately.
-    /// </summary>
-    /// <param name="selections">
-    /// One entry per step: the day index, the step index and the index of the chosen gift within
-    /// that step, all taken from the new-user gift offer.
-    /// </param>
-    /// <exception cref="ArgumentNullException"><paramref name="selections"/> is null.</exception>
-    /// <remarks>
-    /// The outgoing message differs by client — Flash sends <c>NewUserExperienceGetGifts</c>,
-    /// Unity sends <c>NuxGetGifts</c> — and the right one is chosen automatically. The offer that
-    /// supplies the indices is however only decoded on Flash.
-    /// </remarks>
     public void SelectNewUserGifts(
-        params NuxGiftSelection[] selections) =>
-        Gifts.SelectNewUserGifts(selections);
+    params NuxGiftSelection[] selections) =>
+    Gifts.SelectNewUserGifts(selections);
 
     /// <summary>
     /// Whether the hotel has said the account still has the new-user flow to finish.

@@ -1,0 +1,201 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:c="using:Qx.Desktop.Controls"
+             xmlns:vm="using:Qx.Presentation.ViewModels.Settings"
+             x:Class="Qx.Desktop.Views.Settings.SettingsView"
+             x:DataType="vm:SettingsViewModel">
+  <c:PageLayout Page="{Binding}" Notices="{Binding Notices}">
+    <ScrollViewer Padding="{DynamicResource QxPageBodyPadding}" HorizontalScrollBarVisibility="Disabled">
+      <StackPanel Spacing="24">
+        <c:AdaptiveColumns ColumnSpacing="24" RowSpacing="24" MinColumnWidth="{DynamicResource QxFormColumnMinWidth}">
+
+          <StackPanel Spacing="24">
+
+            <c:Section Title="Appearance">
+              <StackPanel>
+                <c:SettingRow Label="Theme" Description="Match your system, or force light or dark.">
+                  <c:SegmentedControl SelectedIndex="{Binding SelectedThemeIndex, Mode=TwoWay}" AutomationProperties.Name="Theme">
+                    <ListBoxItem AutomationProperties.Name="Use the system theme">
+                      <c:Segment Text="System" />
+                    </ListBoxItem>
+                    <ListBoxItem AutomationProperties.Name="Use the light theme">
+                      <c:Segment Text="Light" />
+                    </ListBoxItem>
+                    <ListBoxItem AutomationProperties.Name="Use the dark theme">
+                      <c:Segment Text="Dark" />
+                    </ListBoxItem>
+                  </c:SegmentedControl>
+                </c:SettingRow>
+                <c:SettingRow Label="Editor font size" Description="Size of the code editor text.">
+                  <Border Background="{DynamicResource QxSurfaceSunkenBrush}"
+                          BorderBrush="{DynamicResource QxBorderSubtleBrush}"
+                          BorderThickness="1"
+                          CornerRadius="{DynamicResource QxRadiusSm}"
+                          Padding="1">
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                      <Button Classes="icon small" Command="{Binding DecreaseFontCommand}" AutomationProperties.Name="Smaller editor font">
+                        <c:Icon Kind="Minus" Size="14" />
+                      </Button>
+                      <TextBlock Text="{Binding EditorFontSizeText}" MinWidth="52" TextAlignment="Center" VerticalAlignment="Center" Classes="body strong" />
+                      <Button Classes="icon small" Command="{Binding IncreaseFontCommand}" AutomationProperties.Name="Larger editor font">
+                        <c:Icon Kind="Add" Size="14" />
+                      </Button>
+                    </StackPanel>
+                  </Border>
+                </c:SettingRow>
+              </StackPanel>
+            </c:Section>
+
+            <c:Section Title="Session" Description="What happens when QX starts, and how its window behaves.">
+              <StackPanel>
+                <c:SettingRow Label="Reopen the scripts I had open">
+                  <ToggleSwitch IsChecked="{Binding RestoreSession, Mode=TwoWay}" AutomationProperties.Name="Reopen previously open scripts on start" />
+                </c:SettingRow>
+                <c:SettingRow Label="Keep the window on top">
+                  <ToggleSwitch IsChecked="{Binding KeepOnTop, Mode=TwoWay}" AutomationProperties.Name="Keep the window on top of other windows" />
+                </c:SettingRow>
+              </StackPanel>
+            </c:Section>
+
+            <c:Section Title="Scripts folder" Description="Where your saved scripts live.">
+              <Grid ColumnDefinitions="*,Auto" Margin="16,12">
+                <TextBox Grid.Column="0"
+                         Classes="mono"
+                         IsReadOnly="True"
+                         VerticalAlignment="Center"
+                         Text="{Binding ScriptsFolder}"
+                         AutomationProperties.Name="Scripts folder path" />
+                <Button Grid.Column="1" Margin="8,0,0,0" Command="{Binding OpenScriptsFolderCommand}" AutomationProperties.Name="Open scripts folder">
+                  <StackPanel Orientation="Horizontal" Spacing="6">
+                    <c:Icon Kind="FolderOpen" Size="14" />
+                    <TextBlock Text="Open" />
+                  </StackPanel>
+                </Button>
+              </Grid>
+            </c:Section>
+
+          </StackPanel>
+
+          <StackPanel Spacing="24">
+
+            <c:Section Title="MCP server" Description="Let MCP clients drive QX. Changes reach the running server at once.">
+              <c:Section.Actions>
+                <Panel VerticalAlignment="Center">
+                  <TextBlock Text="Running" Classes="body strong" IsVisible="{Binding IsMcpRunning}" />
+                  <TextBlock Text="Stopped" Classes="body strong tertiary" IsVisible="{Binding !IsMcpRunning}" />
+                </Panel>
+              </c:Section.Actions>
+              <StackPanel>
+                <c:SettingRow Classes="stacked" Label="Client URL">
+                  <StackPanel Spacing="6">
+                    <Grid ColumnDefinitions="*,Auto">
+                      <TextBox Grid.Column="0"
+                               Classes="mono"
+                               IsReadOnly="True"
+                               VerticalAlignment="Center"
+                               Text="{Binding McpUrlDisplay}"
+                               AutomationProperties.Name="MCP server address">
+                        <TextBox.InnerLeftContent>
+                          <c:Icon Kind="Lock" Size="14" Margin="8,0,0,0" IsVisible="{Binding IsMcpRunning}" Foreground="{DynamicResource QxTextTertiaryBrush}" />
+                        </TextBox.InnerLeftContent>
+                      </TextBox>
+                      <Button Grid.Column="1"
+                              Margin="8,0,0,0"
+                              Command="{Binding McpCopy.CopyCommand}"
+                              IsEnabled="{Binding IsMcpRunning}"
+                              ToolTip.Tip="Copy the client URL, access token included"
+                              AutomationProperties.Name="Copy MCP client URL with token">
+                        <Panel>
+                          <StackPanel Orientation="Horizontal" Spacing="6" IsVisible="{Binding !McpCopy.Copied}">
+                            <c:Icon Kind="Copy" Size="14" />
+                            <TextBlock Text="Copy" />
+                          </StackPanel>
+                          <StackPanel Orientation="Horizontal" Spacing="6" IsVisible="{Binding McpCopy.Copied}">
+                            <c:Icon Kind="Check" Size="14" Classes="success" />
+                            <TextBlock Text="Copied" Classes="success" />
+                          </StackPanel>
+                        </Panel>
+                      </Button>
+                    </Grid>
+                    <TextBlock Text="{Binding McpHint}" Classes="helper" TextWrapping="Wrap" />
+                  </StackPanel>
+                </c:SettingRow>
+                <c:SettingRow Label="Let clients compile and run scripts">
+                  <ToggleSwitch IsChecked="{Binding AllowExecute, Mode=TwoWay}" AutomationProperties.Name="Let clients compile and run scripts" />
+                </c:SettingRow>
+                <c:SettingRow Label="Let clients create, rename and delete scripts">
+                  <ToggleSwitch IsChecked="{Binding AllowFileWrite, Mode=TwoWay}" AutomationProperties.Name="Let clients create, rename and delete scripts" />
+                </c:SettingRow>
+                <c:SettingRow Label="Let clients read and edit open tabs">
+                  <ToggleSwitch IsChecked="{Binding AllowEditor, Mode=TwoWay}" AutomationProperties.Name="Let clients read and edit open tabs" />
+                </c:SettingRow>
+              </StackPanel>
+              <c:Section.Footer>
+                <Binding Path="CapabilityHint" />
+              </c:Section.Footer>
+            </c:Section>
+
+            <c:Section Title="Connection" Description="Live status of the tool's connections.">
+              <StackPanel>
+                <c:SettingRow Label="G-Earth">
+                  <Panel VerticalAlignment="Center">
+                    <TextBlock Text="Connected" Classes="body strong" IsVisible="{Binding GEarthConnected}" />
+                    <TextBlock Text="Not connected" Classes="body strong tertiary" IsVisible="{Binding !GEarthConnected}" />
+                  </Panel>
+                </c:SettingRow>
+                <c:SettingRow Label="G-Earth port">
+                  <TextBlock Text="{Binding GEarthPort}" Classes="mono secondary" VerticalAlignment="Center" />
+                </c:SettingRow>
+                <c:SettingRow Label="Client">
+                  <TextBlock Text="{Binding ClientText}" Classes="body strong" VerticalAlignment="Center" />
+                </c:SettingRow>
+              </StackPanel>
+            </c:Section>
+
+          </StackPanel>
+
+        </c:AdaptiveColumns>
+
+        <c:Section Title="Keyboard shortcuts" Description="Every shortcut this build knows.">
+          <ItemsControl ItemsSource="{Binding ShortcutGroups}" Margin="8,8,8,12">
+            <ItemsControl.ItemsPanel>
+              <ItemsPanelTemplate>
+                <c:AdaptiveColumns ColumnSpacing="24" RowSpacing="4" MinColumnWidth="280" />
+              </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="vm:ShortcutGroup">
+                <StackPanel Margin="8,4">
+                  <TextBlock Text="{Binding Name}" Classes="caption tertiary" Margin="8,8,8,4" />
+                  <ItemsControl ItemsSource="{Binding Rows}">
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate x:DataType="vm:ShortcutRow">
+                        <Grid ColumnDefinitions="*,Auto" Margin="8,5" MinHeight="22">
+                          <TextBlock Grid.Column="0" Text="{Binding Title}" Classes="body" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Margin="0,0,16,0" />
+                          <ItemsControl Grid.Column="1" ItemsSource="{Binding Keys}" IsVisible="{Binding HasKeys}" VerticalAlignment="Center" Classes="bounded">
+                            <ItemsControl.ItemsPanel>
+                              <ItemsPanelTemplate>
+                                <StackPanel Orientation="Horizontal" Spacing="2" />
+                              </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                              <DataTemplate x:DataType="x:String">
+                                <c:Kbd Text="{Binding}" />
+                              </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                          </ItemsControl>
+                          <TextBlock Grid.Column="1" Text="{Binding Note}" Classes="small tertiary" VerticalAlignment="Center" IsVisible="{Binding HasNote}" />
+                        </Grid>
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+                </StackPanel>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </c:Section>
+
+      </StackPanel>
+    </ScrollViewer>
+  </c:PageLayout>
+</UserControl>

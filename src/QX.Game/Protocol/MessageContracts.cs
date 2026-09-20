@@ -268,7 +268,6 @@ public static class MessageContracts
         Room.Lifecycle.Entry,
         Room.Lifecycle.Forward,
         Room.Lifecycle.ConnectionClosed,
-        Room.Lifecycle.NativeExit,
         Room.Lifecycle.Quit,
         Room.Environment.EntryTile,
         Room.Environment.Property,
@@ -290,7 +289,6 @@ public static class MessageContracts
         Room.Authority.Owner,
         Room.Authority.SpectatorGranted,
         Room.Authority.SpectatorRevoked,
-        Room.Authority.SpectatingEnded,
         Room.Occupants.Snapshot,
         Room.Occupants.Removed,
         Room.Occupants.Status,
@@ -490,7 +488,6 @@ public static class MessageContracts
         Users.Ignore.ListSnapshot,
         Users.Ignore.Updated,
         Users.Ignore.AddByIdRequest,
-        Users.Ignore.AddByNameRequest,
         Users.Ignore.Remove,
         Users.FigureSets.Added,
         Users.FigureSets.Removed,
@@ -512,85 +509,85 @@ public static class MessageContracts
     public static class Errors
     {
         public static readonly MessageContract<GenericError> Generic =
-            Modern<GenericError>(MessageKeys.Errors.Generic);
+            Flash<GenericError>(MessageKeys.Errors.Generic);
     }
 
     public static class Session
     {
         public static readonly MessageContract<DisconnectReason> DisconnectReason =
-            Modern<DisconnectReason>(MessageKeys.Session.DisconnectReason);
+            Flash<DisconnectReason>(MessageKeys.Session.DisconnectReason);
     }
 
     public static class Achievements
     {
         public static readonly MessageContract<AchievementsRequest> Request =
-            Modern<AchievementsRequest>(MessageKeys.Achievements.Request);
+            Flash<AchievementsRequest>(MessageKeys.Achievements.Request);
 
         public static readonly MessageContract<Qx.Model.Messages.Incoming.Achievements> Snapshot =
-            Modern<Qx.Model.Messages.Incoming.Achievements>(MessageKeys.Achievements.Snapshot);
+            Flash<Qx.Model.Messages.Incoming.Achievements>(MessageKeys.Achievements.Snapshot);
 
         public static readonly MessageContract<AchievementUpdate> Updated =
-            Modern<AchievementUpdate>(MessageKeys.Achievements.Updated);
+            Flash<AchievementUpdate>(MessageKeys.Achievements.Updated);
 
         public static readonly MessageContract<AchievementScore> Score =
             Flash<AchievementScore>(MessageKeys.Achievements.Score);
 
         public static readonly MessageContract<BadgePointLimitsRequest> PointLimitsRequest =
-            Modern<BadgePointLimitsRequest>(MessageKeys.Achievements.PointLimitsRequest);
+            Flash<BadgePointLimitsRequest>(MessageKeys.Achievements.PointLimitsRequest);
 
         public static readonly MessageContract<BadgePointLimits> PointLimits =
-            Modern<BadgePointLimits>(MessageKeys.Achievements.PointLimits);
+            Flash<BadgePointLimits>(MessageKeys.Achievements.PointLimits);
 
         public static readonly MessageContract<AchievementNotification> Notification =
-            Modern<AchievementNotification>(MessageKeys.Achievements.Notification);
+            Flash<AchievementNotification>(MessageKeys.Achievements.Notification);
     }
 
     public static class Badges
     {
         public static readonly MessageContract<BadgeInventoryRequest> Request =
-            Modern<BadgeInventoryRequest>(MessageKeys.Badges.Request);
+            Flash<BadgeInventoryRequest>(MessageKeys.Badges.Request);
 
         public static readonly MessageContract<BadgeInventory> Snapshot =
-            Modern<BadgeInventory>(MessageKeys.Badges.Snapshot);
+            Flash<BadgeInventory>(MessageKeys.Badges.Snapshot);
 
         public static readonly MessageContract<SelectedBadgesRequest> SelectedRequest =
-            Modern<SelectedBadgesRequest>(MessageKeys.Badges.SelectedRequest);
+            Flash<SelectedBadgesRequest>(MessageKeys.Badges.SelectedRequest);
 
         public static readonly MessageContract<BadgeReceived> Received =
-            Modern<BadgeReceived>(MessageKeys.Badges.Received);
+            Flash<BadgeReceived>(MessageKeys.Badges.Received);
 
         public static readonly MessageContract<UserBadges> Selected =
-            Modern<UserBadges>(MessageKeys.Badges.Selected);
+            Flash<UserBadges>(MessageKeys.Badges.Selected);
     }
 
     public static class Wallet
     {
         public static readonly MessageContract<WalletBalanceRequest> CreditsRequest =
-            Modern<WalletBalanceRequest>(MessageKeys.Wallet.CreditsRequest);
+            Flash<WalletBalanceRequest>(MessageKeys.Wallet.CreditsRequest);
 
         public static readonly MessageContract<CreditBalance> CreditsBalance =
-            Modern<CreditBalance>(MessageKeys.Wallet.CreditsBalance);
+            Flash<CreditBalance>(MessageKeys.Wallet.CreditsBalance);
 
         public static readonly MessageContract<ActivityPoints> ActivityPoints =
-            Modern<ActivityPoints>(MessageKeys.Wallet.ActivityPoints);
+            Flash<ActivityPoints>(MessageKeys.Wallet.ActivityPoints);
 
         public static readonly MessageContract<ActivityPointNotification> ActivityPointUpdated =
-            Modern<ActivityPointNotification>(MessageKeys.Wallet.ActivityPointUpdated);
+            Flash<ActivityPointNotification>(MessageKeys.Wallet.ActivityPointUpdated);
     }
 
     public static class Earnings
     {
         public static readonly MessageContract<EarningStatusRequest> StatusRequest =
-            Modern<EarningStatusRequest>(MessageKeys.Earnings.StatusRequest);
+            Flash<EarningStatusRequest>(MessageKeys.Earnings.StatusRequest);
 
         public static readonly MessageContract<EarningStatus> StatusSnapshot =
-            Modern<EarningStatus>(MessageKeys.Earnings.StatusSnapshot);
+            Flash<EarningStatus>(MessageKeys.Earnings.StatusSnapshot);
 
         public static readonly MessageContract<EarningClaimRequest> Claim =
-            Modern<EarningClaimRequest>(MessageKeys.Earnings.Claim);
+            Flash<EarningClaimRequest>(MessageKeys.Earnings.Claim);
 
         public static readonly MessageContract<EarningClaimResult> Claimed =
-            Modern<EarningClaimResult>(MessageKeys.Earnings.Claimed);
+            Flash<EarningClaimResult>(MessageKeys.Earnings.Claimed);
 
         public static readonly MessageContract<EarningNotification> Notification =
             Flash<EarningNotification>(MessageKeys.Earnings.Notification);
@@ -617,73 +614,73 @@ public static class MessageContracts
     public static class Quests
     {
         public static readonly MessageContract<GetQuests> Request =
-            Modern<GetQuests>(MessageKeys.Quests.Request);
+            Flash<GetQuests>(MessageKeys.Quests.Request);
 
         public static readonly MessageContract<global::Qx.Model.Messages.Incoming.Quests> Snapshot =
-            Modern<global::Qx.Model.Messages.Incoming.Quests>(MessageKeys.Quests.Snapshot);
+            Flash<global::Qx.Model.Messages.Incoming.Quests>(MessageKeys.Quests.Snapshot);
 
         public static readonly MessageContract<GetSeasonalQuests> SeasonalRequest =
-            Modern<GetSeasonalQuests>(MessageKeys.Quests.SeasonalRequest);
+            Flash<GetSeasonalQuests>(MessageKeys.Quests.SeasonalRequest);
 
         public static readonly MessageContract<QuestsSeasonal> SeasonalSnapshot =
-            Modern<QuestsSeasonal>(MessageKeys.Quests.SeasonalSnapshot);
+            Flash<QuestsSeasonal>(MessageKeys.Quests.SeasonalSnapshot);
 
         public static readonly MessageContract<Quest> Updated =
-            Modern<Quest>(MessageKeys.Quests.Updated);
+            Flash<Quest>(MessageKeys.Quests.Updated);
 
         public static readonly MessageContract<QuestCompleted> Completed =
-            Modern<QuestCompleted>(MessageKeys.Quests.Completed);
+            Flash<QuestCompleted>(MessageKeys.Quests.Completed);
 
         public static readonly MessageContract<QuestCancelled> Cancelled =
-            Modern<QuestCancelled>(MessageKeys.Quests.Cancelled);
+            Flash<QuestCancelled>(MessageKeys.Quests.Cancelled);
 
         public static readonly MessageContract<GetDailyQuest> DailyRequest =
-            Modern<GetDailyQuest>(MessageKeys.Quests.DailyRequest);
+            Flash<GetDailyQuest>(MessageKeys.Quests.DailyRequest);
 
         public static readonly MessageContract<QuestDaily> Daily =
-            Modern<QuestDaily>(MessageKeys.Quests.Daily);
+            Flash<QuestDaily>(MessageKeys.Quests.Daily);
 
         public static readonly MessageContract<AcceptQuest> Accept =
-            Modern<AcceptQuest>(MessageKeys.Quests.Accept);
+            Flash<AcceptQuest>(MessageKeys.Quests.Accept);
 
         public static readonly MessageContract<ActivateQuest> Activate =
-            Modern<ActivateQuest>(MessageKeys.Quests.Activate);
+            Flash<ActivateQuest>(MessageKeys.Quests.Activate);
 
         public static readonly MessageContract<RejectQuest> Reject =
-            Modern<RejectQuest>(MessageKeys.Quests.Reject);
+            Flash<RejectQuest>(MessageKeys.Quests.Reject);
 
         public static readonly MessageContract<CancelQuest> Cancel =
-            Modern<CancelQuest>(MessageKeys.Quests.Cancel);
+            Flash<CancelQuest>(MessageKeys.Quests.Cancel);
 
         public static readonly MessageContract<OpenQuestTracker> TrackerOpen =
-            Modern<OpenQuestTracker>(MessageKeys.Quests.TrackerOpen);
+            Flash<OpenQuestTracker>(MessageKeys.Quests.TrackerOpen);
 
         public static readonly MessageContract<FriendRequestQuestComplete> FriendRequestCompleted =
-            Modern<FriendRequestQuestComplete>(MessageKeys.Quests.FriendRequestCompleted);
+            Flash<FriendRequestQuestComplete>(MessageKeys.Quests.FriendRequestCompleted);
     }
 
     public static class Habbicons
     {
         public static readonly MessageContract<HabbiconShopRequest> ShopRequest =
-            Modern<HabbiconShopRequest>(MessageKeys.Habbicons.ShopRequest);
+            Flash<HabbiconShopRequest>(MessageKeys.Habbicons.ShopRequest);
 
         public static readonly MessageContract<HabbiconShopData> ShopSnapshot =
-            Modern<HabbiconShopData>(MessageKeys.Habbicons.ShopSnapshot);
+            Flash<HabbiconShopData>(MessageKeys.Habbicons.ShopSnapshot);
 
         public static readonly MessageContract<UserHabbicons> InventorySnapshot =
-            Modern<UserHabbicons>(MessageKeys.Habbicons.InventorySnapshot);
+            Flash<UserHabbicons>(MessageKeys.Habbicons.InventorySnapshot);
 
         public static readonly MessageContract<UserHabbiconStatusChanged> StatusUpdated =
-            Modern<UserHabbiconStatusChanged>(MessageKeys.Habbicons.StatusUpdated);
+            Flash<UserHabbiconStatusChanged>(MessageKeys.Habbicons.StatusUpdated);
 
         public static readonly MessageContract<HabbiconInfoRequest> InfoRequest =
-            Modern<HabbiconInfoRequest>(MessageKeys.Habbicons.InfoRequest);
+            Flash<HabbiconInfoRequest>(MessageKeys.Habbicons.InfoRequest);
 
         public static readonly MessageContract<HabbiconInfo> InfoSnapshot =
-            Modern<HabbiconInfo>(MessageKeys.Habbicons.InfoSnapshot);
+            Flash<HabbiconInfo>(MessageKeys.Habbicons.InfoSnapshot);
 
         public static readonly MessageContract<RoomUseHabbicon> RoomUsed =
-            Modern<RoomUseHabbicon>(MessageKeys.Habbicons.RoomUsed);
+            Flash<RoomUseHabbicon>(MessageKeys.Habbicons.RoomUsed);
 
         public static readonly MessageContract<HabbiconBuyRequest> Buy =
             Flash<HabbiconBuyRequest>(MessageKeys.Habbicons.Buy);
@@ -770,40 +767,40 @@ public static class MessageContracts
             Flash<UnreadForumsCount>(MessageKeys.Forums.UnreadCount);
 
         public static readonly MessageContract<GetForumStats> StatsRequest =
-            Modern<GetForumStats>(MessageKeys.Forums.StatsRequest);
+            Flash<GetForumStats>(MessageKeys.Forums.StatsRequest);
 
         public static readonly MessageContract<GetForumsList> ListRequest =
-            Modern<GetForumsList>(MessageKeys.Forums.ListRequest);
+            Flash<GetForumsList>(MessageKeys.Forums.ListRequest);
 
         public static readonly MessageContract<GetForumThreads> ThreadsRequest =
-            Modern<GetForumThreads>(MessageKeys.Forums.ThreadsRequest);
+            Flash<GetForumThreads>(MessageKeys.Forums.ThreadsRequest);
 
         public static readonly MessageContract<GetForumThreadMessages> MessagesRequest =
-            Modern<GetForumThreadMessages>(MessageKeys.Forums.MessagesRequest);
+            Flash<GetForumThreadMessages>(MessageKeys.Forums.MessagesRequest);
 
         public static readonly MessageContract<GetForumThread> ThreadRequest =
-            Modern<GetForumThread>(MessageKeys.Forums.ThreadRequest);
+            Flash<GetForumThread>(MessageKeys.Forums.ThreadRequest);
 
         public static readonly MessageContract<GetUnreadForumsCount> UnreadCountRequest =
-            Modern<GetUnreadForumsCount>(MessageKeys.Forums.UnreadCountRequest);
+            Flash<GetUnreadForumsCount>(MessageKeys.Forums.UnreadCountRequest);
 
         public static readonly MessageContract<PostMessage> Post =
-            Modern<PostMessage>(MessageKeys.Forums.Post);
+            Flash<PostMessage>(MessageKeys.Forums.Post);
 
         public static readonly MessageContract<ModerateForumThread> ThreadModerate =
-            Modern<ModerateForumThread>(MessageKeys.Forums.ThreadModerate);
+            Flash<ModerateForumThread>(MessageKeys.Forums.ThreadModerate);
 
         public static readonly MessageContract<ModerateForumMessage> MessageModerate =
-            Modern<ModerateForumMessage>(MessageKeys.Forums.MessageModerate);
+            Flash<ModerateForumMessage>(MessageKeys.Forums.MessageModerate);
 
         public static readonly MessageContract<UpdateForumSettings> SettingsUpdate =
-            Modern<UpdateForumSettings>(MessageKeys.Forums.SettingsUpdate);
+            Flash<UpdateForumSettings>(MessageKeys.Forums.SettingsUpdate);
 
         public static readonly MessageContract<UpdateForumReadMarkers> ReadMarkersUpdate =
-            Modern<UpdateForumReadMarkers>(MessageKeys.Forums.ReadMarkersUpdate);
+            Flash<UpdateForumReadMarkers>(MessageKeys.Forums.ReadMarkersUpdate);
 
         public static readonly MessageContract<UpdateThread> ThreadUpdate =
-            Modern<UpdateThread>(MessageKeys.Forums.ThreadUpdate);
+            Flash<UpdateThread>(MessageKeys.Forums.ThreadUpdate);
 
         public static readonly MessageContract<CallForHelpFromForumThread> ThreadReport =
             ForumThreadReport();
@@ -815,31 +812,31 @@ public static class MessageContracts
     public static class Catalog
     {
         public static readonly MessageContract<CatalogIndexRequest> IndexRequest =
-            Modern<CatalogIndexRequest>(MessageKeys.Catalog.IndexRequest);
+            Flash<CatalogIndexRequest>(MessageKeys.Catalog.IndexRequest);
 
         public static readonly MessageContract<CatalogIndex> IndexSnapshot =
-            Modern<CatalogIndex>(MessageKeys.Catalog.IndexSnapshot);
+            Flash<CatalogIndex>(MessageKeys.Catalog.IndexSnapshot);
 
         public static readonly MessageContract<CatalogPageRequest> PageRequest =
-            Modern<CatalogPageRequest>(MessageKeys.Catalog.PageRequest);
+            Flash<CatalogPageRequest>(MessageKeys.Catalog.PageRequest);
 
         public static readonly MessageContract<CatalogPage> PageSnapshot =
-            Modern<CatalogPage>(MessageKeys.Catalog.PageSnapshot);
+            Flash<CatalogPage>(MessageKeys.Catalog.PageSnapshot);
 
         public static readonly MessageContract<PurchaseFromCatalogRequest> Purchase =
-            Modern<PurchaseFromCatalogRequest>(MessageKeys.Catalog.Purchase);
+            Flash<PurchaseFromCatalogRequest>(MessageKeys.Catalog.Purchase);
 
         public static readonly MessageContract<PurchaseOK> Accepted =
-            Modern<PurchaseOK>(MessageKeys.Catalog.PurchaseAccepted);
+            Flash<PurchaseOK>(MessageKeys.Catalog.PurchaseAccepted);
 
         public static readonly MessageContract<PurchaseError> Failed =
-            Modern<PurchaseError>(MessageKeys.Catalog.PurchaseFailed);
+            Flash<PurchaseError>(MessageKeys.Catalog.PurchaseFailed);
 
         public static readonly MessageContract<PurchaseNotAllowed> Forbidden =
-            Modern<PurchaseNotAllowed>(MessageKeys.Catalog.PurchaseForbidden);
+            Flash<PurchaseNotAllowed>(MessageKeys.Catalog.PurchaseForbidden);
 
         public static readonly MessageContract<CatalogPublished> Published =
-            Modern<CatalogPublished>(MessageKeys.Catalog.Published);
+            Flash<CatalogPublished>(MessageKeys.Catalog.Published);
 
         public static readonly MessageContract<GetRoomAdPurchaseInfo> RoomAdInfoRequest =
             Flash<GetRoomAdPurchaseInfo>(MessageKeys.Catalog.RoomAdInfoRequest);
@@ -851,16 +848,16 @@ public static class MessageContracts
     public static class Gifts
     {
         public static readonly MessageContract<GiftWrappingConfiguration> WrappingConfiguration =
-            Modern<GiftWrappingConfiguration>(MessageKeys.Gifts.WrappingConfiguration);
+            Flash<GiftWrappingConfiguration>(MessageKeys.Gifts.WrappingConfiguration);
 
         public static readonly MessageContract<PresentOpened> PresentOpened =
-            Modern<PresentOpened>(MessageKeys.Gifts.PresentOpened);
+            Flash<PresentOpened>(MessageKeys.Gifts.PresentOpened);
 
         public static readonly MessageContract<ClubGiftInfo> ClubInfo =
-            Modern<ClubGiftInfo>(MessageKeys.Gifts.ClubInfo);
+            Flash<ClubGiftInfo>(MessageKeys.Gifts.ClubInfo);
 
         public static readonly MessageContract<ClubGiftSelected> ClubSelected =
-            Modern<ClubGiftSelected>(MessageKeys.Gifts.ClubSelected);
+            Flash<ClubGiftSelected>(MessageKeys.Gifts.ClubSelected);
 
         public static readonly MessageContract<GiftReceiverNotFound> ReceiverNotFound =
             Flash<GiftReceiverNotFound>(MessageKeys.Gifts.ReceiverNotFound);
@@ -875,33 +872,33 @@ public static class MessageContracts
             Flash<NuxGiftOffer>(MessageKeys.Gifts.NewUserOffer);
 
         public static readonly MessageContract<NuxNotComplete> NewUserIncomplete =
-            Modern<NuxNotComplete>(MessageKeys.Gifts.NewUserIncomplete);
+            Flash<NuxNotComplete>(MessageKeys.Gifts.NewUserIncomplete);
 
         public static readonly MessageContract<GetGiftWrappingConfiguration>
             WrappingConfigurationRequest =
-                Modern<GetGiftWrappingConfiguration>(
+                Flash<GetGiftWrappingConfiguration>(
                     MessageKeys.Gifts.WrappingConfigurationRequest);
 
         public static readonly MessageContract<PresentOpen> PresentOpen =
-            Modern<PresentOpen>(MessageKeys.Gifts.PresentOpen);
+            Flash<PresentOpen>(MessageKeys.Gifts.PresentOpen);
 
         public static readonly MessageContract<PurchaseFromCatalogAsGift> Purchase =
-            Modern<PurchaseFromCatalogAsGift>(MessageKeys.Gifts.Purchase);
+            Flash<PurchaseFromCatalogAsGift>(MessageKeys.Gifts.Purchase);
 
         public static readonly MessageContract<GetClubGift> ClubInfoRequest =
-            Modern<GetClubGift>(MessageKeys.Gifts.ClubInfoRequest);
+            Flash<GetClubGift>(MessageKeys.Gifts.ClubInfoRequest);
 
         public static readonly MessageContract<SelectClubGift> ClubSelect =
-            Modern<SelectClubGift>(MessageKeys.Gifts.ClubSelect);
+            Flash<SelectClubGift>(MessageKeys.Gifts.ClubSelect);
 
         public static readonly MessageContract<GetIsOfferGiftable> OfferGiftabilityRequest =
-            Modern<GetIsOfferGiftable>(MessageKeys.Gifts.OfferGiftabilityRequest);
+            Flash<GetIsOfferGiftable>(MessageKeys.Gifts.OfferGiftabilityRequest);
 
         public static readonly MessageContract<NuxGetGifts> NewUserSelect =
-            Modern<NuxGetGifts>(MessageKeys.Gifts.NewUserSelect);
+            Flash<NuxGetGifts>(MessageKeys.Gifts.NewUserSelect);
 
         public static readonly MessageContract<AdvanceNewUserFlowRequest> NewUserAdvance =
-            Modern<AdvanceNewUserFlowRequest>(MessageKeys.Gifts.NewUserAdvance);
+            Flash<AdvanceNewUserFlowRequest>(MessageKeys.Gifts.NewUserAdvance);
     }
 
     public static class Groups
@@ -909,43 +906,43 @@ public static class MessageContracts
         public static class Details
         {
             public static readonly MessageContract<GroupDetailsRequest> Request =
-                Modern<GroupDetailsRequest>(MessageKeys.Groups.Details.Request);
+                Flash<GroupDetailsRequest>(MessageKeys.Groups.Details.Request);
 
             public static readonly MessageContract<GroupData> Snapshot =
-                Modern<GroupData>(MessageKeys.Groups.Details.Snapshot);
+                Flash<GroupData>(MessageKeys.Groups.Details.Snapshot);
         }
 
         public static class Membership
         {
             public static readonly MessageContract<JoinGroupRequest> Join =
-                Modern<JoinGroupRequest>(MessageKeys.Groups.Membership.Join);
+                Flash<JoinGroupRequest>(MessageKeys.Groups.Membership.Join);
 
             public static readonly MessageContract<KickGroupMemberRequest> Kick =
-                Modern<KickGroupMemberRequest>(MessageKeys.Groups.Membership.Kick);
+                Flash<KickGroupMemberRequest>(MessageKeys.Groups.Membership.Kick);
 
             public static readonly MessageContract<ApproveGroupMemberRequest> Approve =
-                Modern<ApproveGroupMemberRequest>(MessageKeys.Groups.Membership.Approve);
+                Flash<ApproveGroupMemberRequest>(MessageKeys.Groups.Membership.Approve);
 
             public static readonly MessageContract<RejectGroupMemberRequest> Reject =
-                Modern<RejectGroupMemberRequest>(MessageKeys.Groups.Membership.Reject);
+                Flash<RejectGroupMemberRequest>(MessageKeys.Groups.Membership.Reject);
         }
 
         public static class Members
         {
             public static readonly MessageContract<GetGuildMembersRequest> Request =
-                Modern<GetGuildMembersRequest>(MessageKeys.Groups.Members.Request);
+                Flash<GetGuildMembersRequest>(MessageKeys.Groups.Members.Request);
 
             public static readonly MessageContract<GuildMembers> Snapshot =
-                Modern<GuildMembers>(MessageKeys.Groups.Members.Snapshot);
+                Flash<GuildMembers>(MessageKeys.Groups.Members.Snapshot);
         }
 
         public static class Memberships
         {
             public static readonly MessageContract<GuildMembershipsRequest> Request =
-                Modern<GuildMembershipsRequest>(MessageKeys.Groups.Memberships.Request);
+                Flash<GuildMembershipsRequest>(MessageKeys.Groups.Memberships.Request);
 
             public static readonly MessageContract<GuildMemberships> Snapshot =
-                Modern<GuildMemberships>(MessageKeys.Groups.Memberships.Snapshot);
+                Flash<GuildMemberships>(MessageKeys.Groups.Memberships.Snapshot);
         }
     }
 
@@ -954,104 +951,104 @@ public static class MessageContracts
         public static class State
         {
             public static readonly MessageContract<NavigatorMetadataRequest> MetadataRequest =
-                Modern<NavigatorMetadataRequest>(MessageKeys.Navigator.State.MetadataRequest);
+                Flash<NavigatorMetadataRequest>(MessageKeys.Navigator.State.MetadataRequest);
 
             public static readonly MessageContract<NavigatorMetaData> Metadata =
-                Modern<NavigatorMetaData>(MessageKeys.Navigator.State.Metadata);
+                Flash<NavigatorMetaData>(MessageKeys.Navigator.State.Metadata);
 
             public static readonly MessageContract<FlatCategoriesRequest> FlatCategoriesRequest =
-                Modern<FlatCategoriesRequest>(MessageKeys.Navigator.State.FlatCategoriesRequest);
+                Flash<FlatCategoriesRequest>(MessageKeys.Navigator.State.FlatCategoriesRequest);
 
             public static readonly MessageContract<UserFlatCats> FlatCategories =
-                Modern<UserFlatCats>(MessageKeys.Navigator.State.FlatCategories);
+                Flash<UserFlatCats>(MessageKeys.Navigator.State.FlatCategories);
 
             public static readonly MessageContract<NavigatorLiftedRooms> LiftedRooms =
-                Modern<NavigatorLiftedRooms>(MessageKeys.Navigator.State.LiftedRooms);
+                Flash<NavigatorLiftedRooms>(MessageKeys.Navigator.State.LiftedRooms);
 
             public static readonly MessageContract<NavigatorSettings> Settings =
-                Modern<NavigatorSettings>(MessageKeys.Navigator.State.Settings);
+                Flash<NavigatorSettings>(MessageKeys.Navigator.State.Settings);
 
             public static readonly MessageContract<NewNavigatorPreferences> Preferences =
-                Modern<NewNavigatorPreferences>(MessageKeys.Navigator.State.Preferences);
+                Flash<NewNavigatorPreferences>(MessageKeys.Navigator.State.Preferences);
         }
 
         public static class Search
         {
             public static readonly MessageContract<NavigatorSearchResult> Result =
-                Modern<NavigatorSearchResult>(MessageKeys.Navigator.Search.Result);
+                Flash<NavigatorSearchResult>(MessageKeys.Navigator.Search.Result);
 
             public static readonly MessageContract<NavigatorSearchResult> LegacyResult =
                 LegacyNavigatorSearchResult();
 
             public static readonly MessageContract<NavigatorViewSearchRequest> View =
-                Modern<NavigatorViewSearchRequest>(MessageKeys.Navigator.Search.View);
+                Flash<NavigatorViewSearchRequest>(MessageKeys.Navigator.Search.View);
 
             public static readonly MessageContract<NavigatorEmptySearchRequest> MyRooms =
-                Modern<NavigatorEmptySearchRequest>(MessageKeys.Navigator.Search.MyRooms);
+                Flash<NavigatorEmptySearchRequest>(MessageKeys.Navigator.Search.MyRooms);
 
             public static readonly MessageContract<NavigatorEmptySearchRequest> MyFavouriteRooms =
-                Modern<NavigatorEmptySearchRequest>(MessageKeys.Navigator.Search.MyFavouriteRooms);
+                Flash<NavigatorEmptySearchRequest>(MessageKeys.Navigator.Search.MyFavouriteRooms);
 
             public static readonly MessageContract<NavigatorEmptySearchRequest> MyRoomRights =
-                Modern<NavigatorEmptySearchRequest>(MessageKeys.Navigator.Search.MyRoomRights);
+                Flash<NavigatorEmptySearchRequest>(MessageKeys.Navigator.Search.MyRoomRights);
 
             public static readonly MessageContract<NavigatorEmptySearchRequest> MyRoomHistory =
-                Modern<NavigatorEmptySearchRequest>(MessageKeys.Navigator.Search.MyRoomHistory);
+                Flash<NavigatorEmptySearchRequest>(MessageKeys.Navigator.Search.MyRoomHistory);
 
             public static readonly MessageContract<NavigatorEmptySearchRequest> MyFrequentRoomHistory =
-                Modern<NavigatorEmptySearchRequest>(MessageKeys.Navigator.Search.MyFrequentRoomHistory);
+                Flash<NavigatorEmptySearchRequest>(MessageKeys.Navigator.Search.MyFrequentRoomHistory);
 
             public static readonly MessageContract<NavigatorEmptySearchRequest> MyFriendsRooms =
-                Modern<NavigatorEmptySearchRequest>(MessageKeys.Navigator.Search.MyFriendsRooms);
+                Flash<NavigatorEmptySearchRequest>(MessageKeys.Navigator.Search.MyFriendsRooms);
 
             public static readonly MessageContract<NavigatorEmptySearchRequest> RoomsWhereFriendsAre =
-                Modern<NavigatorEmptySearchRequest>(MessageKeys.Navigator.Search.RoomsWhereFriendsAre);
+                Flash<NavigatorEmptySearchRequest>(MessageKeys.Navigator.Search.RoomsWhereFriendsAre);
 
             public static readonly MessageContract<NavigatorEmptySearchRequest> MyGuildBases =
-                Modern<NavigatorEmptySearchRequest>(MessageKeys.Navigator.Search.MyGuildBases);
+                Flash<NavigatorEmptySearchRequest>(MessageKeys.Navigator.Search.MyGuildBases);
 
             public static readonly MessageContract<NavigatorTextSearchRequest> Text =
-                Modern<NavigatorTextSearchRequest>(MessageKeys.Navigator.Search.Text);
+                Flash<NavigatorTextSearchRequest>(MessageKeys.Navigator.Search.Text);
 
             public static readonly MessageContract<NavigatorTagSearchRequest> Popular =
-                Modern<NavigatorTagSearchRequest>(MessageKeys.Navigator.Search.Popular);
+                Flash<NavigatorTagSearchRequest>(MessageKeys.Navigator.Search.Popular);
 
             public static readonly MessageContract<NavigatorAdSearchRequest> HighestScoring =
-                Modern<NavigatorAdSearchRequest>(MessageKeys.Navigator.Search.HighestScoring);
+                Flash<NavigatorAdSearchRequest>(MessageKeys.Navigator.Search.HighestScoring);
 
             public static readonly MessageContract<NavigatorAdSearchRequest> GuildBases =
-                Modern<NavigatorAdSearchRequest>(MessageKeys.Navigator.Search.GuildBases);
+                Flash<NavigatorAdSearchRequest>(MessageKeys.Navigator.Search.GuildBases);
         }
 
         public static class Personalization
         {
             public static readonly MessageContract<NavigatorSavedSearches> SavedSearches =
-                Modern<NavigatorSavedSearches>(MessageKeys.Navigator.Personalization.SavedSearches);
+                Flash<NavigatorSavedSearches>(MessageKeys.Navigator.Personalization.SavedSearches);
 
             public static readonly MessageContract<AddSavedSearchRequest> SavedSearchAdd =
-                Modern<AddSavedSearchRequest>(MessageKeys.Navigator.Personalization.SavedSearchAdd);
+                Flash<AddSavedSearchRequest>(MessageKeys.Navigator.Personalization.SavedSearchAdd);
 
             public static readonly MessageContract<DeleteSavedSearchRequest> SavedSearchDelete =
-                Modern<DeleteSavedSearchRequest>(MessageKeys.Navigator.Personalization.SavedSearchDelete);
+                Flash<DeleteSavedSearchRequest>(MessageKeys.Navigator.Personalization.SavedSearchDelete);
 
             public static readonly MessageContract<CollapsedCategories> CollapsedCategories =
-                Modern<CollapsedCategories>(MessageKeys.Navigator.Personalization.CollapsedCategories);
+                Flash<CollapsedCategories>(MessageKeys.Navigator.Personalization.CollapsedCategories);
 
             public static readonly MessageContract<AddCollapsedCategoryRequest> CollapsedCategoryAdd =
-                Modern<AddCollapsedCategoryRequest>(MessageKeys.Navigator.Personalization.CollapsedCategoryAdd);
+                Flash<AddCollapsedCategoryRequest>(MessageKeys.Navigator.Personalization.CollapsedCategoryAdd);
 
             public static readonly MessageContract<RemoveCollapsedCategoryRequest> CollapsedCategoryRemove =
-                Modern<RemoveCollapsedCategoryRequest>(MessageKeys.Navigator.Personalization.CollapsedCategoryRemove);
+                Flash<RemoveCollapsedCategoryRequest>(MessageKeys.Navigator.Personalization.CollapsedCategoryRemove);
         }
 
         public static readonly MessageContract<SetHomeRoomRequest> HomeRoomUpdate =
-            Modern<SetHomeRoomRequest>(MessageKeys.Navigator.HomeRoomUpdate);
+            Flash<SetHomeRoomRequest>(MessageKeys.Navigator.HomeRoomUpdate);
 
         public static readonly MessageContract<CreateRoomRequest> RoomCreate =
-            Modern<CreateRoomRequest>(MessageKeys.Navigator.RoomCreate);
+            Flash<CreateRoomRequest>(MessageKeys.Navigator.RoomCreate);
 
         public static readonly MessageContract<DeleteRoomRequest> RoomDelete =
-            Modern<DeleteRoomRequest>(MessageKeys.Navigator.RoomDelete);
+            Flash<DeleteRoomRequest>(MessageKeys.Navigator.RoomDelete);
     }
 
     public static class Inventory
@@ -1059,62 +1056,62 @@ public static class MessageContracts
         public static class AvatarEffects
         {
             public static readonly MessageContract<AvatarEffectActivationRequest> ActivationRequest =
-                Modern<AvatarEffectActivationRequest>(MessageKeys.Inventory.AvatarEffects.ActivationRequest);
+                Flash<AvatarEffectActivationRequest>(MessageKeys.Inventory.AvatarEffects.ActivationRequest);
         }
 
         public static class Furni
         {
             public static readonly MessageContract<FurniInventoryRequest> Request =
-                Modern<FurniInventoryRequest>(MessageKeys.Inventory.Furni.Request);
+                Flash<FurniInventoryRequest>(MessageKeys.Inventory.Furni.Request);
 
             public static readonly MessageContract<FurniList> Snapshot =
-                InventoryFurni<FurniList>(MessageKeys.Inventory.Furni.Snapshot);
+                Flash<FurniList>(MessageKeys.Inventory.Furni.Snapshot);
 
             public static readonly MessageContract<FurniListAddOrUpdate> AddedOrUpdated =
-                InventoryFurni<FurniListAddOrUpdate>(MessageKeys.Inventory.Furni.AddedOrUpdated);
+                Flash<FurniListAddOrUpdate>(MessageKeys.Inventory.Furni.AddedOrUpdated);
 
             public static readonly MessageContract<FurniListRemove> Removed =
-                Modern<FurniListRemove>(MessageKeys.Inventory.Furni.Removed);
+                Flash<FurniListRemove>(MessageKeys.Inventory.Furni.Removed);
 
             public static readonly MessageContract<FurniListRemoveMultiple> RemovedMultiple =
                 Flash<FurniListRemoveMultiple>(MessageKeys.Inventory.Furni.RemovedMultiple);
 
             public static readonly MessageContract<FurniListInvalidate> Invalidated =
-                Modern<FurniListInvalidate>(MessageKeys.Inventory.Furni.Invalidated);
+                Flash<FurniListInvalidate>(MessageKeys.Inventory.Furni.Invalidated);
 
             public static readonly MessageContract<PostItPlaced> PostItPlaced =
-                Modern<PostItPlaced>(MessageKeys.Inventory.Furni.PostItPlaced);
+                Flash<PostItPlaced>(MessageKeys.Inventory.Furni.PostItPlaced);
         }
 
         public static class Pets
         {
             public static readonly MessageContract<PetInventoryRequest> Request =
-                Modern<PetInventoryRequest>(MessageKeys.Inventory.Pets.Request);
+                Flash<PetInventoryRequest>(MessageKeys.Inventory.Pets.Request);
 
             public static readonly MessageContract<PetInventory> Snapshot =
-                Modern<PetInventory>(MessageKeys.Inventory.Pets.Snapshot);
+                Flash<PetInventory>(MessageKeys.Inventory.Pets.Snapshot);
 
             public static readonly MessageContract<PetAddedToInventory> Added =
-                Modern<PetAddedToInventory>(MessageKeys.Inventory.Pets.Added);
+                Flash<PetAddedToInventory>(MessageKeys.Inventory.Pets.Added);
 
             public static readonly MessageContract<PetRemovedFromInventory> Removed =
-                Modern<PetRemovedFromInventory>(MessageKeys.Inventory.Pets.Removed);
+                Flash<PetRemovedFromInventory>(MessageKeys.Inventory.Pets.Removed);
         }
     }
 
     public static class Wardrobe
     {
         public static readonly MessageContract<WardrobeRequest> Request =
-            Modern<WardrobeRequest>(MessageKeys.Wardrobe.Request);
+            Flash<WardrobeRequest>(MessageKeys.Wardrobe.Request);
 
         public static readonly MessageContract<Qx.Model.Messages.Incoming.Wardrobe> Snapshot =
-            Modern<Qx.Model.Messages.Incoming.Wardrobe>(MessageKeys.Wardrobe.Snapshot);
+            Flash<Qx.Model.Messages.Incoming.Wardrobe>(MessageKeys.Wardrobe.Snapshot);
 
         public static readonly MessageContract<FigureUpdateRequest> FigureUpdate =
-            Modern<FigureUpdateRequest>(MessageKeys.Wardrobe.FigureUpdate);
+            Flash<FigureUpdateRequest>(MessageKeys.Wardrobe.FigureUpdate);
 
         public static readonly MessageContract<SaveWardrobeOutfitRequest> OutfitSave =
-            Modern<SaveWardrobeOutfitRequest>(MessageKeys.Wardrobe.OutfitSave);
+            Flash<SaveWardrobeOutfitRequest>(MessageKeys.Wardrobe.OutfitSave);
     }
 
     public static class Marketplace
@@ -1122,31 +1119,31 @@ public static class MessageContracts
         public static class Configuration
         {
             public static readonly MessageContract<GetMarketplaceConfiguration> Request =
-                ModernMarketplace<GetMarketplaceConfiguration>(MessageKeys.Marketplace.Configuration.Request);
+                ModernFlashMarketplace<GetMarketplaceConfiguration>(MessageKeys.Marketplace.Configuration.Request);
 
             public static readonly MessageContract<MarketplaceConfiguration> Snapshot =
-                Modern<MarketplaceConfiguration>(MessageKeys.Marketplace.Configuration.Snapshot);
+                Flash<MarketplaceConfiguration>(MessageKeys.Marketplace.Configuration.Snapshot);
         }
 
         public static class Eligibility
         {
             public static readonly MessageContract<GetMarketplaceCanMakeOffer> Request =
-                ModernMarketplace<GetMarketplaceCanMakeOffer>(MessageKeys.Marketplace.Eligibility.Request);
+                ModernFlashMarketplace<GetMarketplaceCanMakeOffer>(MessageKeys.Marketplace.Eligibility.Request);
 
             public static readonly MessageContract<MarketplaceCanMakeOfferResult> Result =
-                Modern<MarketplaceCanMakeOfferResult>(MessageKeys.Marketplace.Eligibility.Result);
+                Flash<MarketplaceCanMakeOfferResult>(MessageKeys.Marketplace.Eligibility.Result);
         }
 
         public static class Credits
         {
             public static readonly MessageContract<RedeemMarketplaceOfferCredits> Redeem =
-                Modern<RedeemMarketplaceOfferCredits>(MessageKeys.Marketplace.Credits.Redeem);
+                Flash<RedeemMarketplaceOfferCredits>(MessageKeys.Marketplace.Credits.Redeem);
         }
 
         public static class Tokens
         {
             public static readonly MessageContract<BuyMarketplaceTokens> Buy =
-                ModernMarketplace<BuyMarketplaceTokens>(MessageKeys.Marketplace.Tokens.Buy);
+                ModernFlashMarketplace<BuyMarketplaceTokens>(MessageKeys.Marketplace.Tokens.Buy);
         }
 
         public static class Offers
@@ -1155,42 +1152,39 @@ public static class MessageContracts
                 MarketplaceLayout<SearchMarketplaceOffers>(MessageKeys.Marketplace.Offers.SearchRequest);
 
             public static readonly MessageContract<MarketplaceOffers> SearchResult =
-                Modern<MarketplaceOffers>(MessageKeys.Marketplace.Offers.SearchResult);
+                Flash<MarketplaceOffers>(MessageKeys.Marketplace.Offers.SearchResult);
 
             public static readonly MessageContract<GetMarketplaceOwnOffers> OwnRequest =
                 MarketplaceLayout<GetMarketplaceOwnOffers>(MessageKeys.Marketplace.Offers.OwnRequest);
 
             public static readonly MessageContract<MarketplaceOwnOffers> OwnSnapshot =
-                Modern<MarketplaceOwnOffers>(MessageKeys.Marketplace.Offers.OwnSnapshot);
+                Flash<MarketplaceOwnOffers>(MessageKeys.Marketplace.Offers.OwnSnapshot);
 
             public static readonly MessageContract<MakeMarketplaceOffer> Make =
                 MarketplaceLayout<MakeMarketplaceOffer>(MessageKeys.Marketplace.Offers.Make);
 
             public static readonly MessageContract<MarketplaceMakeOfferResult> MakeResult =
-                Modern<MarketplaceMakeOfferResult>(MessageKeys.Marketplace.Offers.MakeResult);
+                Flash<MarketplaceMakeOfferResult>(MessageKeys.Marketplace.Offers.MakeResult);
 
             public static readonly MessageContract<MarketplaceBuyOfferRequest> Buy =
                 new(
                     MessageKeys.Marketplace.Offers.Buy,
-                    MessageDialectProjection<MarketplaceBuyOfferRequest>.FromModel(ClientType.Flash),
-                    MessageDialectProjection<MarketplaceBuyOfferRequest>.FromModel(
-                        ClientType.Unity,
-                        UnityMarketplaceBuyCapability));
+                    MessageCodec<MarketplaceBuyOfferRequest>.FromModel());
 
             public static readonly MessageContract<MarketplaceBuyResult> BuyResult =
-                Modern<MarketplaceBuyResult>(MessageKeys.Marketplace.Offers.BuyResult);
+                Flash<MarketplaceBuyResult>(MessageKeys.Marketplace.Offers.BuyResult);
 
             public static readonly MessageContract<CancelMarketplaceOffer> Cancel =
-                Modern<CancelMarketplaceOffer>(MessageKeys.Marketplace.Offers.Cancel);
+                Flash<CancelMarketplaceOffer>(MessageKeys.Marketplace.Offers.Cancel);
 
             public static readonly MessageContract<MarketplaceCancelOfferResult> CancelResult =
                 Flash<MarketplaceCancelOfferResult>(MessageKeys.Marketplace.Offers.CancelResult);
 
             public static readonly MessageContract<CancelAllMarketplaceOffers> CancelAll =
-                ModernMarketplace<CancelAllMarketplaceOffers>(MessageKeys.Marketplace.Offers.CancelAll);
+                ModernFlashMarketplace<CancelAllMarketplaceOffers>(MessageKeys.Marketplace.Offers.CancelAll);
 
             public static readonly MessageContract<MarketplaceCancelAllOffersResult> CancelAllResult =
-                Modern<MarketplaceCancelAllOffersResult>(MessageKeys.Marketplace.Offers.CancelAllResult);
+                Flash<MarketplaceCancelAllOffersResult>(MessageKeys.Marketplace.Offers.CancelAllResult);
 
             public static readonly MessageContract<ClearMarketplaceOwnHistory> ClearOwnHistory =
                 ModernFlashMarketplace<ClearMarketplaceOwnHistory>(MessageKeys.Marketplace.Offers.ClearOwnHistory);
@@ -1205,35 +1199,35 @@ public static class MessageContracts
                 MarketplaceLayout<GetMarketplaceItemStats>(MessageKeys.Marketplace.ItemStats.Request);
 
             public static readonly MessageContract<MarketplaceItemStats> Snapshot =
-                Modern<MarketplaceItemStats>(MessageKeys.Marketplace.ItemStats.Snapshot);
+                Flash<MarketplaceItemStats>(MessageKeys.Marketplace.ItemStats.Snapshot);
         }
     }
 
     public static class Subscriptions
     {
         public static readonly MessageContract<ScrSendUserInfo> UserInfo =
-            Modern<ScrSendUserInfo>(MessageKeys.Subscriptions.UserInfo);
+            Flash<ScrSendUserInfo>(MessageKeys.Subscriptions.UserInfo);
 
         public static readonly MessageContract<SubscriptionGetUserInfo> UserInfoRequest =
-            Modern<SubscriptionGetUserInfo>(MessageKeys.Subscriptions.UserInfoRequest);
+            Flash<SubscriptionGetUserInfo>(MessageKeys.Subscriptions.UserInfoRequest);
 
         public static readonly MessageContract<ScrSendKickbackInfo> KickbackInfo =
-            Modern<ScrSendKickbackInfo>(MessageKeys.Subscriptions.KickbackInfo);
+            Flash<ScrSendKickbackInfo>(MessageKeys.Subscriptions.KickbackInfo);
 
         public static readonly MessageContract<SubscriptionGetKickbackInfo> KickbackInfoRequest =
-            Modern<SubscriptionGetKickbackInfo>(MessageKeys.Subscriptions.KickbackInfoRequest);
+            Flash<SubscriptionGetKickbackInfo>(MessageKeys.Subscriptions.KickbackInfoRequest);
 
         public static readonly MessageContract<HabboClubOffers> ClubOffersSnapshot =
-            Modern<HabboClubOffers>(MessageKeys.Subscriptions.ClubOffersSnapshot);
+            Flash<HabboClubOffers>(MessageKeys.Subscriptions.ClubOffersSnapshot);
 
         public static readonly MessageContract<GetClubOffers> ClubOffersRequest =
-            Modern<GetClubOffers>(MessageKeys.Subscriptions.ClubOffersRequest);
+            Flash<GetClubOffers>(MessageKeys.Subscriptions.ClubOffersRequest);
 
         public static readonly MessageContract<BuildersClubFurniCount> BuildersClubFurniCount =
-            Modern<BuildersClubFurniCount>(MessageKeys.Subscriptions.BuildersClubFurniCount);
+            Flash<BuildersClubFurniCount>(MessageKeys.Subscriptions.BuildersClubFurniCount);
 
         public static readonly MessageContract<BuildersClubQueryFurniCount> BuildersClubFurniCountRequest =
-            Modern<BuildersClubQueryFurniCount>(MessageKeys.Subscriptions.BuildersClubFurniCountRequest);
+            Flash<BuildersClubQueryFurniCount>(MessageKeys.Subscriptions.BuildersClubFurniCountRequest);
 
         public static readonly MessageContract<BuildersClubMembershipStatus> BuildersClubMembershipStatus =
             Flash<BuildersClubMembershipStatus>(MessageKeys.Subscriptions.BuildersClubMembershipStatus);
@@ -1242,43 +1236,41 @@ public static class MessageContracts
             Flash<BuildersClubPlacementWarning>(MessageKeys.Subscriptions.BuildersClubPlacementWarning);
 
         public static readonly MessageContract<BuildersClubPlaceRoomItem> BuildersClubFloorOfferPlace =
-            Modern<BuildersClubPlaceRoomItem>(MessageKeys.Subscriptions.BuildersClubFloorOfferPlace);
+            Flash<BuildersClubPlaceRoomItem>(MessageKeys.Subscriptions.BuildersClubFloorOfferPlace);
 
         public static readonly MessageContract<BuildersClubPlaceWallItem> BuildersClubWallOfferPlace =
-            Modern<BuildersClubPlaceWallItem>(
-                MessageKeys.Subscriptions.BuildersClubWallOfferPlace,
-                UnityBuildersClubWallOfferPlaceCapability,
-                allows_schema_selected_header: true);
+            Flash<BuildersClubPlaceWallItem>(
+                MessageKeys.Subscriptions.BuildersClubWallOfferPlace);
     }
 
     public static class Crafting
     {
         public static readonly MessageContract<GetCraftableProducts> ProductsRequest =
-            Modern<GetCraftableProducts>(MessageKeys.Crafting.ProductsRequest);
+            Flash<GetCraftableProducts>(MessageKeys.Crafting.ProductsRequest);
 
         public static readonly MessageContract<CraftableProducts> ProductsSnapshot =
-            Modern<CraftableProducts>(MessageKeys.Crafting.ProductsSnapshot);
+            Flash<CraftableProducts>(MessageKeys.Crafting.ProductsSnapshot);
 
         public static readonly MessageContract<GetCraftingRecipe> RecipeRequest =
-            Modern<GetCraftingRecipe>(MessageKeys.Crafting.RecipeRequest);
+            Flash<GetCraftingRecipe>(MessageKeys.Crafting.RecipeRequest);
 
         public static readonly MessageContract<CraftingRecipe> RecipeSnapshot =
-            Modern<CraftingRecipe>(MessageKeys.Crafting.RecipeSnapshot);
+            Flash<CraftingRecipe>(MessageKeys.Crafting.RecipeSnapshot);
 
         public static readonly MessageContract<Qx.Model.Messages.Incoming.Craft> Craft =
-            Modern<Qx.Model.Messages.Incoming.Craft>(MessageKeys.Crafting.Craft);
+            Flash<Qx.Model.Messages.Incoming.Craft>(MessageKeys.Crafting.Craft);
 
         public static readonly MessageContract<CraftSecret> SecretCraft =
-            Modern<CraftSecret>(MessageKeys.Crafting.SecretCraft);
+            Flash<CraftSecret>(MessageKeys.Crafting.SecretCraft);
 
         public static readonly MessageContract<GetCraftingRecipesAvailable> AvailabilityRequest =
-            Modern<GetCraftingRecipesAvailable>(MessageKeys.Crafting.AvailabilityRequest);
+            Flash<GetCraftingRecipesAvailable>(MessageKeys.Crafting.AvailabilityRequest);
 
         public static readonly MessageContract<CraftingRecipesAvailable> AvailabilitySnapshot =
-            Modern<CraftingRecipesAvailable>(MessageKeys.Crafting.AvailabilitySnapshot);
+            Flash<CraftingRecipesAvailable>(MessageKeys.Crafting.AvailabilitySnapshot);
 
         public static readonly MessageContract<CraftingResult> Result =
-            Modern<CraftingResult>(MessageKeys.Crafting.Result);
+            Flash<CraftingResult>(MessageKeys.Crafting.Result);
     }
 
     public static class Recycler
@@ -1298,70 +1290,70 @@ public static class MessageContracts
                 Flash<WiredPermissions>(MessageKeys.Wired.State.Permissions);
 
             public static readonly MessageContract<WiredEnvironment> Environment =
-                Modern<WiredEnvironment>(MessageKeys.Wired.State.Environment);
+                Flash<WiredEnvironment>(MessageKeys.Wired.State.Environment);
 
             public static readonly MessageContract<WiredClickSettings> ClickSettings =
-                Modern<WiredClickSettings>(MessageKeys.Wired.State.ClickSettings);
+                Flash<WiredClickSettings>(MessageKeys.Wired.State.ClickSettings);
 
             public static readonly MessageContract<WiredMenuError> MenuError =
                 Flash<WiredMenuError>(MessageKeys.Wired.State.MenuError);
 
             public static readonly MessageContract<WiredRewardResult> RewardResult =
-                Modern<WiredRewardResult>(MessageKeys.Wired.State.RewardResult);
+                Flash<WiredRewardResult>(MessageKeys.Wired.State.RewardResult);
         }
 
         public static class Configuration
         {
             public static readonly MessageContract<WiredOpen> Opened =
-                Modern<WiredOpen>(MessageKeys.Wired.Configuration.Opened);
+                Flash<WiredOpen>(MessageKeys.Wired.Configuration.Opened);
 
             public static readonly MessageContract<WiredOpen> OpenRequest =
-                Modern<WiredOpen>(MessageKeys.Wired.Configuration.OpenRequest);
+                Flash<WiredOpen>(MessageKeys.Wired.Configuration.OpenRequest);
 
             public static readonly MessageContract<WiredApplySnapshot> ApplySnapshot =
-                Modern<WiredApplySnapshot>(MessageKeys.Wired.Configuration.ApplySnapshot);
+                Flash<WiredApplySnapshot>(MessageKeys.Wired.Configuration.ApplySnapshot);
 
             public static readonly MessageContract<WiredFurniTrigger> Trigger =
-                WiredConfiguration<WiredFurniTrigger>(MessageKeys.Wired.Configuration.Trigger);
+                Flash<WiredFurniTrigger>(MessageKeys.Wired.Configuration.Trigger);
 
             public static readonly MessageContract<WiredFurniAction> Action =
-                WiredConfiguration<WiredFurniAction>(MessageKeys.Wired.Configuration.Action);
+                Flash<WiredFurniAction>(MessageKeys.Wired.Configuration.Action);
 
             public static readonly MessageContract<WiredFurniCondition> Condition =
-                WiredConfiguration<WiredFurniCondition>(MessageKeys.Wired.Configuration.Condition);
+                Flash<WiredFurniCondition>(MessageKeys.Wired.Configuration.Condition);
 
             public static readonly MessageContract<WiredFurniSelector> Selector =
-                WiredConfiguration<WiredFurniSelector>(MessageKeys.Wired.Configuration.Selector);
+                Flash<WiredFurniSelector>(MessageKeys.Wired.Configuration.Selector);
 
             public static readonly MessageContract<WiredFurniAddon> Addon =
-                WiredConfiguration<WiredFurniAddon>(MessageKeys.Wired.Configuration.Addon);
+                Flash<WiredFurniAddon>(MessageKeys.Wired.Configuration.Addon);
 
             public static readonly MessageContract<WiredFurniVariable> Variable =
                 Flash<WiredFurniVariable>(MessageKeys.Wired.Configuration.Variable);
 
             public static readonly MessageContract<UpdateTrigger> TriggerUpdate =
-                Modern<UpdateTrigger>(MessageKeys.Wired.Configuration.TriggerUpdate);
+                Flash<UpdateTrigger>(MessageKeys.Wired.Configuration.TriggerUpdate);
 
             public static readonly MessageContract<UpdateAction> ActionUpdate =
-                Modern<UpdateAction>(MessageKeys.Wired.Configuration.ActionUpdate);
+                Flash<UpdateAction>(MessageKeys.Wired.Configuration.ActionUpdate);
 
             public static readonly MessageContract<UpdateCondition> ConditionUpdate =
-                Modern<UpdateCondition>(MessageKeys.Wired.Configuration.ConditionUpdate);
+                Flash<UpdateCondition>(MessageKeys.Wired.Configuration.ConditionUpdate);
 
             public static readonly MessageContract<UpdateSelector> SelectorUpdate =
-                Modern<UpdateSelector>(MessageKeys.Wired.Configuration.SelectorUpdate);
+                Flash<UpdateSelector>(MessageKeys.Wired.Configuration.SelectorUpdate);
 
             public static readonly MessageContract<UpdateAddon> AddonUpdate =
-                Modern<UpdateAddon>(MessageKeys.Wired.Configuration.AddonUpdate);
+                Flash<UpdateAddon>(MessageKeys.Wired.Configuration.AddonUpdate);
 
             public static readonly MessageContract<UpdateVariable> VariableUpdate =
                 Flash<UpdateVariable>(MessageKeys.Wired.Configuration.VariableUpdate);
 
             public static readonly MessageContract<WiredSaveSuccess> SaveSucceeded =
-                Modern<WiredSaveSuccess>(MessageKeys.Wired.Configuration.SaveSucceeded);
+                Flash<WiredSaveSuccess>(MessageKeys.Wired.Configuration.SaveSucceeded);
 
             public static readonly MessageContract<WiredValidationError> ValidationFailed =
-                Modern<WiredValidationError>(MessageKeys.Wired.Configuration.ValidationFailed);
+                Flash<WiredValidationError>(MessageKeys.Wired.Configuration.ValidationFailed);
         }
 
         public static class Room
@@ -1409,10 +1401,10 @@ public static class MessageContracts
         public static class UserClick
         {
             public static readonly MessageContract<WiredClickUser> Request =
-                Modern<WiredClickUser>(MessageKeys.Wired.UserClick.Request);
+                Flash<WiredClickUser>(MessageKeys.Wired.UserClick.Request);
 
             public static readonly MessageContract<WiredClickUserResponse> Result =
-                Modern<WiredClickUserResponse>(MessageKeys.Wired.UserClick.Result);
+                Flash<WiredClickUserResponse>(MessageKeys.Wired.UserClick.Result);
         }
 
         public static class Variables
@@ -1472,10 +1464,10 @@ public static class MessageContracts
                 Flash<CoinsChestContents>(MessageKeys.Wired.Chests.Coins);
 
             public static readonly MessageContract<ItemsChestContentsChunk> ItemsChunk =
-                Modern<ItemsChestContentsChunk>(MessageKeys.Wired.Chests.ItemsChunk);
+                Flash<ItemsChestContentsChunk>(MessageKeys.Wired.Chests.ItemsChunk);
 
             public static readonly MessageContract<ItemsChestContentsUpdated> ItemsUpdated =
-                Modern<ItemsChestContentsUpdated>(MessageKeys.Wired.Chests.ItemsUpdated);
+                Flash<ItemsChestContentsUpdated>(MessageKeys.Wired.Chests.ItemsUpdated);
 
             public static readonly MessageContract<UpgradeChestResult> UpgradeResult =
                 Flash<UpgradeChestResult>(MessageKeys.Wired.Chests.UpgradeResult);
@@ -1484,10 +1476,10 @@ public static class MessageContracts
                 Flash<ChestPreferencesUpdateSuccess>(MessageKeys.Wired.Chests.PreferencesUpdated);
 
             public static readonly MessageContract<OpenChestAndGetContents> OpenRequest =
-                Modern<OpenChestAndGetContents>(MessageKeys.Wired.Chests.OpenRequest);
+                Flash<OpenChestAndGetContents>(MessageKeys.Wired.Chests.OpenRequest);
 
             public static readonly MessageContract<CloseChest> Close =
-                Modern<CloseChest>(MessageKeys.Wired.Chests.Close);
+                Flash<CloseChest>(MessageKeys.Wired.Chests.Close);
 
             public static readonly MessageContract<LockAllChests> LockAll =
                 Flash<LockAllChests>(MessageKeys.Wired.Chests.LockAll);
@@ -1496,22 +1488,22 @@ public static class MessageContracts
                 Flash<UpgradeChest>(MessageKeys.Wired.Chests.Upgrade);
 
             public static readonly MessageContract<WithdrawAllFromChest> WithdrawAll =
-                Modern<WithdrawAllFromChest>(MessageKeys.Wired.Chests.WithdrawAll);
+                Flash<WithdrawAllFromChest>(MessageKeys.Wired.Chests.WithdrawAll);
 
             public static readonly MessageContract<WithdrawCoinsFromChest> WithdrawCoins =
-                Modern<WithdrawCoinsFromChest>(MessageKeys.Wired.Chests.WithdrawCoins);
+                Flash<WithdrawCoinsFromChest>(MessageKeys.Wired.Chests.WithdrawCoins);
 
             public static readonly MessageContract<WithdrawItemsFromChest> WithdrawItems =
-                Modern<WithdrawItemsFromChest>(MessageKeys.Wired.Chests.WithdrawItems);
+                Flash<WithdrawItemsFromChest>(MessageKeys.Wired.Chests.WithdrawItems);
 
             public static readonly MessageContract<StartAddingToChest> StartAdding =
-                Modern<StartAddingToChest>(MessageKeys.Wired.Chests.StartAdding);
+                Flash<StartAddingToChest>(MessageKeys.Wired.Chests.StartAdding);
 
             public static readonly MessageContract<SetChestOptions> OptionsUpdate =
-                Modern<SetChestOptions>(MessageKeys.Wired.Chests.OptionsUpdate);
+                Flash<SetChestOptions>(MessageKeys.Wired.Chests.OptionsUpdate);
 
             public static readonly MessageContract<SetChestPreferences> PreferencesUpdate =
-                Modern<SetChestPreferences>(MessageKeys.Wired.Chests.PreferencesUpdate);
+                Flash<SetChestPreferences>(MessageKeys.Wired.Chests.PreferencesUpdate);
 
             public static readonly MessageContract<SetChestNotificationPreferences> NotificationPreferencesUpdate =
                 Flash<SetChestNotificationPreferences>(MessageKeys.Wired.Chests.NotificationPreferencesUpdate);
@@ -1520,10 +1512,10 @@ public static class MessageContracts
         public static class Transaction
         {
             public static readonly MessageContract<WiredTransactionSuccess> Succeeded =
-                Modern<WiredTransactionSuccess>(MessageKeys.Wired.Transaction.Succeeded);
+                Flash<WiredTransactionSuccess>(MessageKeys.Wired.Transaction.Succeeded);
 
             public static readonly MessageContract<WiredTransactionFail> Failed =
-                Modern<WiredTransactionFail>(MessageKeys.Wired.Transaction.Failed);
+                Flash<WiredTransactionFail>(MessageKeys.Wired.Transaction.Failed);
 
             public static readonly MessageContract<WiredTransactionGetChestLogs> ChestLogsRequest =
                 Flash<WiredTransactionGetChestLogs>(MessageKeys.Wired.Transaction.ChestLogsRequest);
@@ -1562,28 +1554,28 @@ public static class MessageContracts
         public static class Trade
         {
             public static readonly MessageContract<WiredTradeInitiate> Initiated =
-                Modern<WiredTradeInitiate>(MessageKeys.Wired.Trade.Initiated);
+                Flash<WiredTradeInitiate>(MessageKeys.Wired.Trade.Initiated);
 
             public static readonly MessageContract<WiredTradeItemsUpdate> ItemsUpdated =
-                Modern<WiredTradeItemsUpdate>(MessageKeys.Wired.Trade.ItemsUpdated);
+                Flash<WiredTradeItemsUpdate>(MessageKeys.Wired.Trade.ItemsUpdated);
 
             public static readonly MessageContract<WiredTradeCancelled> Cancelled =
-                Modern<WiredTradeCancelled>(MessageKeys.Wired.Trade.Cancelled);
+                Flash<WiredTradeCancelled>(MessageKeys.Wired.Trade.Cancelled);
 
             public static readonly MessageContract<WiredTradeCompleted> Completed =
-                Modern<WiredTradeCompleted>(MessageKeys.Wired.Trade.Completed);
+                Flash<WiredTradeCompleted>(MessageKeys.Wired.Trade.Completed);
 
             public static readonly MessageContract<WiredTradeAddDeleteItems> ItemsUpdate =
-                Modern<WiredTradeAddDeleteItems>(MessageKeys.Wired.Trade.ItemsUpdate);
+                Flash<WiredTradeAddDeleteItems>(MessageKeys.Wired.Trade.ItemsUpdate);
 
             public static readonly MessageContract<WiredTradeConfirm> Confirm =
-                Modern<WiredTradeConfirm>(MessageKeys.Wired.Trade.Confirm);
+                Flash<WiredTradeConfirm>(MessageKeys.Wired.Trade.Confirm);
 
             public static readonly MessageContract<WiredTradeCancel> Cancel =
-                Modern<WiredTradeCancel>(MessageKeys.Wired.Trade.Cancel);
+                Flash<WiredTradeCancel>(MessageKeys.Wired.Trade.Cancel);
 
             public static readonly MessageContract<WiredTradeTransactionNotification> Notification =
-                Modern<WiredTradeTransactionNotification>(MessageKeys.Wired.Trade.Notification);
+                Flash<WiredTradeTransactionNotification>(MessageKeys.Wired.Trade.Notification);
         }
     }
 
@@ -1596,88 +1588,79 @@ public static class MessageContracts
     public static class Polls
     {
         public static readonly MessageContract<PollContents> Contents =
-            Modern<PollContents>(MessageKeys.Polls.Contents);
+            Flash<PollContents>(MessageKeys.Polls.Contents);
 
         public static readonly MessageContract<PollError> Error =
-            Modern<PollError>(MessageKeys.Polls.Error);
+            Flash<PollError>(MessageKeys.Polls.Error);
 
         public static readonly MessageContract<PollOffer> Offer =
-            Modern<PollOffer>(MessageKeys.Polls.Offer);
+            Flash<PollOffer>(MessageKeys.Polls.Offer);
 
         public static readonly MessageContract<PollAnswer> Answer =
-            Modern<PollAnswer>(MessageKeys.Polls.Answer);
+            Flash<PollAnswer>(MessageKeys.Polls.Answer);
 
         public static readonly MessageContract<RejectPoll> Reject =
-            Modern<RejectPoll>(MessageKeys.Polls.Reject);
+            Flash<RejectPoll>(MessageKeys.Polls.Reject);
 
         public static readonly MessageContract<StartPoll> Start =
-            Modern<StartPoll>(MessageKeys.Polls.Start);
+            Flash<StartPoll>(MessageKeys.Polls.Start);
     }
 
     public static class Room
     {
         public static readonly MessageContract<GetGuestRoomRequest> SnapshotRequest =
-            Modern<GetGuestRoomRequest>(MessageKeys.Room.SnapshotRequest);
+            Flash<GetGuestRoomRequest>(MessageKeys.Room.SnapshotRequest);
 
         public static readonly MessageContract<GuestRoomResult> Snapshot =
-            Modern<GuestRoomResult>(MessageKeys.Room.Snapshot);
+            Flash<GuestRoomResult>(MessageKeys.Room.Snapshot);
 
         public static readonly MessageContract<ToggleRoomStaffPickRequest> StaffPickUpdateRequest =
-            Modern<ToggleRoomStaffPickRequest>(MessageKeys.Room.StaffPickUpdateRequest);
+            Flash<ToggleRoomStaffPickRequest>(MessageKeys.Room.StaffPickUpdateRequest);
 
         public static readonly MessageContract<RateRoomRequest> RatingRequest =
-            Modern<RateRoomRequest>(MessageKeys.Room.RatingRequest);
+            Flash<RateRoomRequest>(MessageKeys.Room.RatingRequest);
 
         public static class Settings
         {
             public static readonly MessageContract<GetRoomSettingsRequest> Request =
-                Modern<GetRoomSettingsRequest>(MessageKeys.Room.Settings.Request);
+                Flash<GetRoomSettingsRequest>(MessageKeys.Room.Settings.Request);
 
             public static readonly MessageContract<RoomSettings> Snapshot =
                 new(
                     MessageKeys.Room.Settings.Snapshot,
-                    MessageDialectProjection<RoomSettings>.FromModel(ClientType.Flash),
-                    MessageDialectProjection<RoomSettings>.FromModel(
-                        ClientType.Unity,
-                        UnityRoomSettingsSnapshotCapability));
+                    MessageCodec<RoomSettings>.FromModel());
 
             public static readonly MessageContract<RoomSettingsError> RequestFailed =
-                Modern<RoomSettingsError>(MessageKeys.Room.Settings.RequestFailed);
+                Flash<RoomSettingsError>(MessageKeys.Room.Settings.RequestFailed);
 
             public static readonly MessageContract<SaveRoomSettingsRequest> Save =
                 new(
                     MessageKeys.Room.Settings.Save,
-                    MessageDialectProjection<SaveRoomSettingsRequest>.FromModel(ClientType.Flash),
-                    new MessageDialectProjection<SaveRoomSettingsRequest>(
-                        ClientType.Unity,
-                        ParseUnityRoomSettingsSave,
-                        ComposeUnityRoomSettingsSave,
-                        UnityRoomSettingsSaveCapability,
-                        true));
+                    MessageCodec<SaveRoomSettingsRequest>.FromModel());
 
             public static readonly MessageContract<RoomSettingsSaved> SaveSucceeded =
-                Modern<RoomSettingsSaved>(MessageKeys.Room.Settings.SaveSucceeded);
+                Flash<RoomSettingsSaved>(MessageKeys.Room.Settings.SaveSucceeded);
 
             public static readonly MessageContract<RoomSettingsSaveError> SaveFailed =
-                Modern<RoomSettingsSaveError>(MessageKeys.Room.Settings.SaveFailed);
+                Flash<RoomSettingsSaveError>(MessageKeys.Room.Settings.SaveFailed);
         }
 
         public static class Access
         {
             public static readonly MessageContract<OpenFlatConnection> OpenRequest =
-                Modern<OpenFlatConnection>(MessageKeys.Room.Access.OpenRequest);
+                Flash<OpenFlatConnection>(MessageKeys.Room.Access.OpenRequest);
 
             public static readonly MessageContract<OpenConnectionConfirmation> OpenConfirmed =
-                Modern<OpenConnectionConfirmation>(MessageKeys.Room.Access.OpenConfirmed);
+                Flash<OpenConnectionConfirmation>(MessageKeys.Room.Access.OpenConfirmed);
 
             public static readonly MessageContract<Doorbell> Doorbell =
-                Modern<Doorbell>(MessageKeys.Room.Access.Doorbell);
+                Flash<Doorbell>(MessageKeys.Room.Access.Doorbell);
 
             public static readonly MessageContract<AnswerDoorbellRequest> DoorbellAnswer =
-                Modern<AnswerDoorbellRequest>(MessageKeys.Room.Access.DoorbellAnswer);
+                Flash<AnswerDoorbellRequest>(MessageKeys.Room.Access.DoorbellAnswer);
 
             public static readonly MessageContract<RoomQueueStatus> QueueStatus =
-                Modern<RoomQueueStatus>(MessageKeys.Room.Access.QueueStatus);
+                Flash<RoomQueueStatus>(MessageKeys.Room.Access.QueueStatus);
 
             public static readonly MessageContract<FlatAccessible> Granted =
                 Flash<FlatAccessible>(MessageKeys.Room.Access.Granted);
@@ -1686,252 +1669,235 @@ public static class MessageContracts
                 Flash<FlatAccessDenied>(MessageKeys.Room.Access.Denied);
 
             public static readonly MessageContract<NoSuchFlat> NotFound =
-                Modern<NoSuchFlat>(MessageKeys.Room.Access.NotFound);
+                Flash<NoSuchFlat>(MessageKeys.Room.Access.NotFound);
 
             public static readonly MessageContract<CanNotConnect> ConnectionFailed =
-                Modern<CanNotConnect>(MessageKeys.Room.Access.ConnectionFailed);
+                Flash<CanNotConnect>(MessageKeys.Room.Access.ConnectionFailed);
         }
 
         public static class Lifecycle
         {
             public static readonly MessageContract<RoomReady> Ready =
-                Modern<RoomReady>(MessageKeys.Room.Lifecycle.Ready);
+                Flash<RoomReady>(MessageKeys.Room.Lifecycle.Ready);
 
             public static readonly MessageContract<RoomEntryInfo> Entry =
-                Modern<RoomEntryInfo>(MessageKeys.Room.Lifecycle.Entry);
+                Flash<RoomEntryInfo>(MessageKeys.Room.Lifecycle.Entry);
 
             public static readonly MessageContract<RoomForward> Forward =
-                Modern<RoomForward>(MessageKeys.Room.Lifecycle.Forward);
+                Flash<RoomForward>(MessageKeys.Room.Lifecycle.Forward);
 
             public static readonly MessageContract<CloseConnection> ConnectionClosed =
-                Modern<CloseConnection>(MessageKeys.Room.Lifecycle.ConnectionClosed);
-
-            public static readonly MessageContract<RoomExitReason> NativeExit =
-                Unity<RoomExitReason>(MessageKeys.Room.Lifecycle.NativeExit);
+                Flash<CloseConnection>(MessageKeys.Room.Lifecycle.ConnectionClosed);
 
             public static readonly MessageContract<QuitRoomRequest> Quit =
-                Modern<QuitRoomRequest>(MessageKeys.Room.Lifecycle.Quit);
+                Flash<QuitRoomRequest>(MessageKeys.Room.Lifecycle.Quit);
         }
 
         public static class Environment
         {
             public static readonly MessageContract<RoomEntryTile> EntryTile =
-                Modern<RoomEntryTile>(MessageKeys.Room.Environment.EntryTile);
+                Flash<RoomEntryTile>(MessageKeys.Room.Environment.EntryTile);
 
             public static readonly MessageContract<FlatProperty> Property =
-                Modern<FlatProperty>(MessageKeys.Room.Environment.Property);
+                Flash<FlatProperty>(MessageKeys.Room.Environment.Property);
 
             public static readonly MessageContract<RoomVisualizationSettings> Visualization =
-                Modern<RoomVisualizationSettings>(MessageKeys.Room.Environment.Visualization);
+                Flash<RoomVisualizationSettings>(MessageKeys.Room.Environment.Visualization);
 
             public static readonly MessageContract<RoomChatSettings> ChatSettings =
-                Modern<RoomChatSettings>(MessageKeys.Room.Environment.ChatSettings);
+                Flash<RoomChatSettings>(MessageKeys.Room.Environment.ChatSettings);
 
             public static readonly MessageContract<FloorPlan> FloorPlan =
-                Modern<FloorPlan>(MessageKeys.Room.Environment.FloorPlan);
+                Flash<FloorPlan>(MessageKeys.Room.Environment.FloorPlan);
         }
 
         public static class Chat
         {
             public static readonly MessageContract<AvatarChat> Talk =
-                Modern<AvatarChat>(MessageKeys.Room.Chat.Talk);
+                Flash<AvatarChat>(MessageKeys.Room.Chat.Talk);
 
             public static readonly MessageContract<AvatarChat> Shout =
-                Modern<AvatarChat>(MessageKeys.Room.Chat.Shout);
+                Flash<AvatarChat>(MessageKeys.Room.Chat.Shout);
 
             public static readonly MessageContract<AvatarChat> Whisper =
-                Modern<AvatarChat>(MessageKeys.Room.Chat.Whisper);
+                Flash<AvatarChat>(MessageKeys.Room.Chat.Whisper);
 
             public static readonly MessageContract<WhisperRequest> WhisperSend =
-                Modern<WhisperRequest>(MessageKeys.Room.Chat.WhisperSend);
+                Flash<WhisperRequest>(MessageKeys.Room.Chat.WhisperSend);
 
             public static readonly MessageContract<SpecialSystemChat> SpecialSystem =
                 Flash<SpecialSystemChat>(MessageKeys.Room.Chat.SpecialSystem);
 
             public static readonly MessageContract<TalkRequest> TalkSend =
-                Modern<TalkRequest>(MessageKeys.Room.Chat.TalkSend);
+                Flash<TalkRequest>(MessageKeys.Room.Chat.TalkSend);
 
             public static readonly MessageContract<ShoutRequest> ShoutSend =
-                Modern<ShoutRequest>(MessageKeys.Room.Chat.ShoutSend);
+                Flash<ShoutRequest>(MessageKeys.Room.Chat.ShoutSend);
         }
 
         public static class Authority
         {
             public static readonly MessageContract<GetFlatControllersRequest> ControllersRequest =
-                Modern<GetFlatControllersRequest>(MessageKeys.Room.Authority.ControllersRequest);
+                Flash<GetFlatControllersRequest>(MessageKeys.Room.Authority.ControllersRequest);
 
             public static readonly MessageContract<RightsList> ControllersSnapshot =
-                Modern<RightsList>(MessageKeys.Room.Authority.ControllersSnapshot);
+                Flash<RightsList>(MessageKeys.Room.Authority.ControllersSnapshot);
 
             public static readonly MessageContract<GiveRoomRightsRequest> ControllerGrantRequest =
-                Modern<GiveRoomRightsRequest>(MessageKeys.Room.Authority.ControllerGrantRequest);
+                Flash<GiveRoomRightsRequest>(MessageKeys.Room.Authority.ControllerGrantRequest);
 
             public static readonly MessageContract<YouAreController> ControllerGranted =
-                Modern<YouAreController>(MessageKeys.Room.Authority.ControllerGranted);
+                Flash<YouAreController>(MessageKeys.Room.Authority.ControllerGranted);
 
             public static readonly MessageContract<YouAreNotController> ControllerRevoked =
-                Modern<YouAreNotController>(MessageKeys.Room.Authority.ControllerRevoked);
+                Flash<YouAreNotController>(MessageKeys.Room.Authority.ControllerRevoked);
 
             public static readonly MessageContract<YouAreOwner> Owner =
-                Modern<YouAreOwner>(MessageKeys.Room.Authority.Owner);
+                Flash<YouAreOwner>(MessageKeys.Room.Authority.Owner);
 
             public static readonly MessageContract<YouAreSpectator> SpectatorGranted =
-                Modern<YouAreSpectator>(MessageKeys.Room.Authority.SpectatorGranted);
+                Flash<YouAreSpectator>(MessageKeys.Room.Authority.SpectatorGranted);
 
             public static readonly MessageContract<YouAreNotSpectator> SpectatorRevoked =
                 Flash<YouAreNotSpectator>(MessageKeys.Room.Authority.SpectatorRevoked);
-
-            public static readonly MessageContract<SpectatingEnded> SpectatingEnded =
-                Unity<SpectatingEnded>(MessageKeys.Room.Authority.SpectatingEnded);
         }
 
         public static class Occupants
         {
             public static readonly MessageContract<RoomUsers> Snapshot =
-                Modern<RoomUsers>(MessageKeys.Room.Occupants.Snapshot);
+                Flash<RoomUsers>(MessageKeys.Room.Occupants.Snapshot);
 
             public static readonly MessageContract<AvatarRemove> Removed =
-                Modern<AvatarRemove>(MessageKeys.Room.Occupants.Removed);
+                Flash<AvatarRemove>(MessageKeys.Room.Occupants.Removed);
 
             public static readonly MessageContract<UserUpdate> Status =
-                Modern<UserUpdate>(MessageKeys.Room.Occupants.Status);
+                Flash<UserUpdate>(MessageKeys.Room.Occupants.Status);
 
             public static readonly MessageContract<RespectNotification> Respect =
-                Modern<RespectNotification>(MessageKeys.Room.Occupants.Respect);
+                Flash<RespectNotification>(MessageKeys.Room.Occupants.Respect);
 
             public static readonly MessageContract<RespectUserRequest> RespectRequest =
-                Modern<RespectUserRequest>(MessageKeys.Room.Occupants.RespectRequest);
+                Flash<RespectUserRequest>(MessageKeys.Room.Occupants.RespectRequest);
 
             public static class Action
             {
                 public static readonly MessageContract<AvatarDanceUpdate> Dance =
-                    Modern<AvatarDanceUpdate>(MessageKeys.Room.Occupants.Action.Dance);
+                    Flash<AvatarDanceUpdate>(MessageKeys.Room.Occupants.Action.Dance);
 
                 public static readonly MessageContract<AvatarDanceRequest> DanceRequest =
-                    Modern<AvatarDanceRequest>(MessageKeys.Room.Occupants.Action.DanceRequest);
+                    Flash<AvatarDanceRequest>(MessageKeys.Room.Occupants.Action.DanceRequest);
 
                 public static readonly MessageContract<AvatarSignRequest> SignRequest =
-                    Modern<AvatarSignRequest>(MessageKeys.Room.Occupants.Action.SignRequest);
+                    Flash<AvatarSignRequest>(MessageKeys.Room.Occupants.Action.SignRequest);
 
                 public static readonly MessageContract<AvatarEffectUpdate> Effect =
-                    Modern<AvatarEffectUpdate>(MessageKeys.Room.Occupants.Action.Effect);
+                    Flash<AvatarEffectUpdate>(MessageKeys.Room.Occupants.Action.Effect);
 
                 public static readonly MessageContract<AvatarEffectSelectionRequest> EffectSelectionRequest =
-                    Modern<AvatarEffectSelectionRequest>(MessageKeys.Room.Occupants.Action.EffectSelectionRequest);
+                    Flash<AvatarEffectSelectionRequest>(MessageKeys.Room.Occupants.Action.EffectSelectionRequest);
 
                 public static readonly MessageContract<AvatarPostureRequest> PostureRequest =
-                    Modern<AvatarPostureRequest>(MessageKeys.Room.Occupants.Action.PostureRequest);
+                    Flash<AvatarPostureRequest>(MessageKeys.Room.Occupants.Action.PostureRequest);
 
                 public static readonly MessageContract<AvatarCarryUpdate> Carry =
-                    Modern<AvatarCarryUpdate>(MessageKeys.Room.Occupants.Action.Carry);
+                    Flash<AvatarCarryUpdate>(MessageKeys.Room.Occupants.Action.Carry);
 
                 public static readonly MessageContract<AvatarSleepUpdate> Sleep =
-                    Modern<AvatarSleepUpdate>(MessageKeys.Room.Occupants.Action.Sleep);
+                    Flash<AvatarSleepUpdate>(MessageKeys.Room.Occupants.Action.Sleep);
 
                 public static readonly MessageContract<AvatarTypingUpdate> Typing =
-                    Modern<AvatarTypingUpdate>(MessageKeys.Room.Occupants.Action.Typing);
+                    Flash<AvatarTypingUpdate>(MessageKeys.Room.Occupants.Action.Typing);
 
                 public static readonly MessageContract<AvatarAction> Expression =
-                    Modern<AvatarAction>(MessageKeys.Room.Occupants.Action.Expression);
+                    Flash<AvatarAction>(MessageKeys.Room.Occupants.Action.Expression);
 
                 public static readonly MessageContract<AvatarExpressionRequest> ExpressionRequest =
-                    Modern<AvatarExpressionRequest>(MessageKeys.Room.Occupants.Action.ExpressionRequest);
+                    Flash<AvatarExpressionRequest>(MessageKeys.Room.Occupants.Action.ExpressionRequest);
             }
 
             public static class Identity
             {
                 public static readonly MessageContract<UserChanged> Appearance =
-                    Modern<UserChanged>(MessageKeys.Room.Occupants.Identity.Appearance);
+                    Flash<UserChanged>(MessageKeys.Room.Occupants.Identity.Appearance);
 
                 public static readonly MessageContract<UserNameChanged> Name =
-                    Modern<UserNameChanged>(MessageKeys.Room.Occupants.Identity.Name);
+                    Flash<UserNameChanged>(MessageKeys.Room.Occupants.Identity.Name);
 
                 public static readonly MessageContract<FavoriteMembershipUpdate> FavoriteGroup =
-                    Modern<FavoriteMembershipUpdate>(MessageKeys.Room.Occupants.Identity.FavoriteGroup);
+                    Flash<FavoriteMembershipUpdate>(MessageKeys.Room.Occupants.Identity.FavoriteGroup);
             }
 
             public static class Pet
             {
                 public static readonly MessageContract<GetPetInfoRequest> InfoRequest =
-                    Modern<GetPetInfoRequest>(MessageKeys.Room.Occupants.Pet.InfoRequest);
+                    Flash<GetPetInfoRequest>(MessageKeys.Room.Occupants.Pet.InfoRequest);
 
                 public static readonly MessageContract<PetInfo> Info =
-                    Modern<PetInfo>(MessageKeys.Room.Occupants.Pet.Info);
+                    Flash<PetInfo>(MessageKeys.Room.Occupants.Pet.Info);
 
                 public static readonly MessageContract<PetFigureUpdate> Figure =
-                    Modern<PetFigureUpdate>(MessageKeys.Room.Occupants.Pet.Figure);
+                    Flash<PetFigureUpdate>(MessageKeys.Room.Occupants.Pet.Figure);
 
                 public static readonly MessageContract<PetStatusUpdate> Status =
-                    Modern<PetStatusUpdate>(MessageKeys.Room.Occupants.Pet.Status);
+                    Flash<PetStatusUpdate>(MessageKeys.Room.Occupants.Pet.Status);
 
                 public static readonly MessageContract<PetLevelUpdate> Level =
-                    Modern<PetLevelUpdate>(MessageKeys.Room.Occupants.Pet.Level);
+                    Flash<PetLevelUpdate>(MessageKeys.Room.Occupants.Pet.Level);
 
                 public static readonly MessageContract<RespectPetRequest> RespectRequest =
-                    Modern<RespectPetRequest>(MessageKeys.Room.Occupants.Pet.RespectRequest);
+                    Flash<RespectPetRequest>(MessageKeys.Room.Occupants.Pet.RespectRequest);
 
                 public static readonly MessageContract<MountPetRequest> MountRequest =
-                    Modern<MountPetRequest>(MessageKeys.Room.Occupants.Pet.MountRequest);
+                    Flash<MountPetRequest>(MessageKeys.Room.Occupants.Pet.MountRequest);
 
                 public static readonly MessageContract<RemovePetFromRoomRequest> RemoveRequest =
-                    Modern<RemovePetFromRoomRequest>(MessageKeys.Room.Occupants.Pet.RemoveRequest);
+                    Flash<RemovePetFromRoomRequest>(MessageKeys.Room.Occupants.Pet.RemoveRequest);
             }
 
             public static class Bot
             {
                 public static readonly MessageContract<RemoveBotFromFlat> RemoveRequest =
-                    Modern<RemoveBotFromFlat>(MessageKeys.Room.Occupants.Bot.RemoveRequest);
+                    Flash<RemoveBotFromFlat>(MessageKeys.Room.Occupants.Bot.RemoveRequest);
             }
         }
 
         public static class HandItem
         {
             public static readonly MessageContract<HandItemReceived> Received =
-                Modern<HandItemReceived>(MessageKeys.Room.HandItem.Received);
+                Flash<HandItemReceived>(MessageKeys.Room.HandItem.Received);
 
             public static readonly MessageContract<DropHandItemRequest> Drop =
-                Modern<DropHandItemRequest>(MessageKeys.Room.HandItem.Drop);
+                Flash<DropHandItemRequest>(MessageKeys.Room.HandItem.Drop);
 
             public static readonly MessageContract<PassHandItemRequest> Pass =
-                Modern<PassHandItemRequest>(MessageKeys.Room.HandItem.Pass);
+                Flash<PassHandItemRequest>(MessageKeys.Room.HandItem.Pass);
         }
 
         public static readonly MessageContract<UseFloorItemRequest> FloorItemUse =
-            Modern<UseFloorItemRequest>(MessageKeys.Room.FloorItem.Use);
+            Flash<UseFloorItemRequest>(MessageKeys.Room.FloorItem.Use);
 
         public static readonly MessageContract<UseWallItemRequest> WallItemUse =
-            Modern<UseWallItemRequest>(MessageKeys.Room.WallItem.Use);
+            Flash<UseWallItemRequest>(MessageKeys.Room.WallItem.Use);
 
         public static readonly MessageContract<RemoveWallItemRequest> WallItemRemove =
-            Modern<RemoveWallItemRequest>(MessageKeys.Room.WallItem.Remove);
+            Flash<RemoveWallItemRequest>(MessageKeys.Room.WallItem.Remove);
 
         public static readonly MessageContract<PlaceRoomItemRequest> ItemPlace =
             new(
                 MessageKeys.Room.Item.Place,
-                new MessageDialectProjection<PlaceRoomItemRequest>(
-                    ClientType.Flash,
-                    PlaceRoomItemRequest.ParseFlash,
-                    PlaceRoomItemRequest.ComposeFlash),
-                new MessageDialectProjection<PlaceRoomItemRequest>(
-                    ClientType.Unity,
-                    PlaceRoomItemRequest.ParseUnity,
-                    PlaceRoomItemRequest.ComposeUnity,
-                    UnityRoomItemPlaceCapability,
-                    allows_schema_selected_header: true));
+                new MessageCodec<PlaceRoomItemRequest>(PlaceRoomItemRequest.ParseFlash,
+                    PlaceRoomItemRequest.ComposeFlash));
 
         public static readonly MessageContract<MoveFloorItemRequest> FloorItemMove =
-            Modern<MoveFloorItemRequest>(MessageKeys.Room.FloorItem.Move);
+            Flash<MoveFloorItemRequest>(MessageKeys.Room.FloorItem.Move);
 
         public static readonly MessageContract<MoveWallItemRequest> WallItemMove =
             new(
                 MessageKeys.Room.WallItem.Move,
-                MessageDialectProjection<MoveWallItemRequest>.FromModel(ClientType.Flash),
-                MessageDialectProjection<MoveWallItemRequest>.FromModel(
-                    ClientType.Unity,
-                    UnityWallItemMoveCapability));
+                MessageCodec<MoveWallItemRequest>.FromModel());
 
         public static readonly MessageContract<PickupRoomItemRequest> ItemPickup =
-            Modern<PickupRoomItemRequest>(MessageKeys.Room.Item.Pickup);
+            Flash<PickupRoomItemRequest>(MessageKeys.Room.Item.Pickup);
 
         public static readonly MessageContract<PickupConfirmation> ItemPickupConfirmation =
             Flash<PickupConfirmation>(MessageKeys.Room.Item.PickupConfirmation);
@@ -1939,67 +1905,67 @@ public static class MessageContracts
         public static class FloorItem
         {
             public static readonly MessageContract<FloorItemAdd> Added =
-                Modern<FloorItemAdd>(MessageKeys.Room.FloorItem.Added);
+                Flash<FloorItemAdd>(MessageKeys.Room.FloorItem.Added);
 
             public static readonly MessageContract<FloorItemRemove> Removed =
-                Modern<FloorItemRemove>(MessageKeys.Room.FloorItem.Removed);
+                Flash<FloorItemRemove>(MessageKeys.Room.FloorItem.Removed);
 
             public static readonly MessageContract<FloorItemUpdate> Updated =
-                Modern<FloorItemUpdate>(MessageKeys.Room.FloorItem.Updated);
+                Flash<FloorItemUpdate>(MessageKeys.Room.FloorItem.Updated);
 
             public static readonly MessageContract<ThrowDiceRequest> ThrowDice =
-                Modern<ThrowDiceRequest>(MessageKeys.Room.FloorItem.ThrowDice);
+                Flash<ThrowDiceRequest>(MessageKeys.Room.FloorItem.ThrowDice);
 
             public static readonly MessageContract<DiceOffRequest> DiceOff =
-                Modern<DiceOffRequest>(MessageKeys.Room.FloorItem.DiceOff);
+                Flash<DiceOffRequest>(MessageKeys.Room.FloorItem.DiceOff);
 
             public static readonly MessageContract<DiceValue> DiceValue =
-                Modern<DiceValue>(MessageKeys.Room.FloorItem.DiceValue);
+                Flash<DiceValue>(MessageKeys.Room.FloorItem.DiceValue);
 
             public static readonly MessageContract<OneWayDoorStatus> OneWayDoorStatus =
-                Modern<OneWayDoorStatus>(MessageKeys.Room.FloorItem.OneWayDoorStatus);
+                Flash<OneWayDoorStatus>(MessageKeys.Room.FloorItem.OneWayDoorStatus);
 
             public static readonly MessageContract<EnterOneWayDoorRequest> OneWayDoorEnter =
-                Modern<EnterOneWayDoorRequest>(MessageKeys.Room.FloorItem.OneWayDoorEnter);
+                Flash<EnterOneWayDoorRequest>(MessageKeys.Room.FloorItem.OneWayDoorEnter);
         }
 
         public static class WallItem
         {
             public static readonly MessageContract<WallItemAdd> Added =
-                Modern<WallItemAdd>(MessageKeys.Room.WallItem.Added);
+                Flash<WallItemAdd>(MessageKeys.Room.WallItem.Added);
 
             public static readonly MessageContract<WallItemRemove> Removed =
-                Modern<WallItemRemove>(MessageKeys.Room.WallItem.Removed);
+                Flash<WallItemRemove>(MessageKeys.Room.WallItem.Removed);
 
             public static readonly MessageContract<WallItemUpdate> Updated =
-                Modern<WallItemUpdate>(MessageKeys.Room.WallItem.Updated);
+                Flash<WallItemUpdate>(MessageKeys.Room.WallItem.Updated);
 
             public static readonly MessageContract<SetStickyDataRequest> StickyDataSet =
-                Modern<SetStickyDataRequest>(MessageKeys.Room.WallItem.StickyDataSet);
+                Flash<SetStickyDataRequest>(MessageKeys.Room.WallItem.StickyDataSet);
 
             public static readonly MessageContract<GetStickyDataRequest> StickyDataRequest =
-                Modern<GetStickyDataRequest>(MessageKeys.Room.WallItem.StickyDataRequest);
+                Flash<GetStickyDataRequest>(MessageKeys.Room.WallItem.StickyDataRequest);
 
             public static readonly MessageContract<Sticky> StickyData =
-                Modern<Sticky>(MessageKeys.Room.WallItem.StickyData);
+                Flash<Sticky>(MessageKeys.Room.WallItem.StickyData);
 
             public static readonly MessageContract<PlacePostItRequest> PostItPlace =
-                Modern<PlacePostItRequest>(MessageKeys.Room.WallItem.PostItPlace);
+                Flash<PlacePostItRequest>(MessageKeys.Room.WallItem.PostItPlace);
 
             public static readonly MessageContract<AddSpamWallPostItRequest> SpamPostItAdd =
-                Modern<AddSpamWallPostItRequest>(MessageKeys.Room.WallItem.SpamPostItAdd);
+                Flash<AddSpamWallPostItRequest>(MessageKeys.Room.WallItem.SpamPostItAdd);
         }
 
         public static class Movement
         {
             public static readonly MessageContract<WalkRequest> Walk =
-                Modern<WalkRequest>(MessageKeys.Room.Movement.Walk);
+                Flash<WalkRequest>(MessageKeys.Room.Movement.Walk);
 
             public static readonly MessageContract<LookToRequest> LookTo =
-                Modern<LookToRequest>(MessageKeys.Room.Movement.LookTo);
+                Flash<LookToRequest>(MessageKeys.Room.Movement.LookTo);
 
             public static readonly MessageContract<SlideObjectBundle> Slide =
-                Modern<SlideObjectBundle>(MessageKeys.Room.Movement.Slide);
+                Flash<SlideObjectBundle>(MessageKeys.Room.Movement.Slide);
 
             public static readonly MessageContract<WiredMovements> Wired =
                 Flash<WiredMovements>(MessageKeys.Room.Movement.Wired);
@@ -2008,129 +1974,123 @@ public static class MessageContracts
         public static class Typing
         {
             public static readonly MessageContract<StartTypingRequest> Start =
-                Modern<StartTypingRequest>(MessageKeys.Room.Typing.Start);
+                Flash<StartTypingRequest>(MessageKeys.Room.Typing.Start);
 
             public static readonly MessageContract<CancelTypingRequest> Cancel =
-                Modern<CancelTypingRequest>(MessageKeys.Room.Typing.Cancel);
+                Flash<CancelTypingRequest>(MessageKeys.Room.Typing.Cancel);
         }
 
         public static class Moderation
         {
             public static readonly MessageContract<GetRoomBansRequest> BansRequest =
-                Modern<GetRoomBansRequest>(MessageKeys.Room.Moderation.BansRequest);
+                Flash<GetRoomBansRequest>(MessageKeys.Room.Moderation.BansRequest);
 
             public static readonly MessageContract<BannedUsersFromRoom> BansSnapshot =
-                Modern<BannedUsersFromRoom>(MessageKeys.Room.Moderation.BansSnapshot);
+                Flash<BannedUsersFromRoom>(MessageKeys.Room.Moderation.BansSnapshot);
 
             public static readonly MessageContract<UserUnbannedFromRoom> UserUnbanned =
-                Modern<UserUnbannedFromRoom>(MessageKeys.Room.Moderation.UserUnbanned);
+                Flash<UserUnbannedFromRoom>(MessageKeys.Room.Moderation.UserUnbanned);
 
             public static readonly MessageContract<MuteRoomUserRequest> UserMute =
-                Modern<MuteRoomUserRequest>(MessageKeys.Room.Moderation.Mute);
+                Flash<MuteRoomUserRequest>(MessageKeys.Room.Moderation.Mute);
 
             public static readonly MessageContract<KickRoomUserRequest> UserKick =
-                Modern<KickRoomUserRequest>(MessageKeys.Room.Moderation.Kick);
+                Flash<KickRoomUserRequest>(MessageKeys.Room.Moderation.Kick);
 
             public static readonly MessageContract<BanRoomUserRequest> UserBan =
-                Modern<BanRoomUserRequest>(MessageKeys.Room.Moderation.Ban);
+                Flash<BanRoomUserRequest>(MessageKeys.Room.Moderation.Ban);
 
             public static readonly MessageContract<UnbanRoomUserRequest> UserUnban =
-                Modern<UnbanRoomUserRequest>(MessageKeys.Room.Moderation.Unban);
+                Flash<UnbanRoomUserRequest>(MessageKeys.Room.Moderation.Unban);
         }
     }
 
     public static class Friends
     {
         public static readonly MessageContract<FriendInitializationRequest> InitializeRequest =
-            Modern<FriendInitializationRequest>(MessageKeys.Friends.InitializeRequest);
+            Flash<FriendInitializationRequest>(MessageKeys.Friends.InitializeRequest);
 
         public static readonly MessageContract<MessengerInit> Initialized =
-            Modern<MessengerInit>(MessageKeys.Friends.Initialized);
+            Flash<MessengerInit>(MessageKeys.Friends.Initialized);
 
         public static readonly MessageContract<FriendListFragment> ListFragment =
-            Modern<FriendListFragment>(MessageKeys.Friends.ListFragment);
+            Flash<FriendListFragment>(MessageKeys.Friends.ListFragment);
 
         public static readonly MessageContract<FriendListUpdate> ListUpdated =
-            Modern<FriendListUpdate>(MessageKeys.Friends.ListUpdated);
+            Flash<FriendListUpdate>(MessageKeys.Friends.ListUpdated);
 
         public static readonly MessageContract<SendPrivateMessage> PrivateMessageSend =
             new(
                 MessageKeys.Friends.PrivateMessageSend,
-                MessageDialectProjection<SendPrivateMessage>.FromModel(ClientType.Flash),
-                MessageDialectProjection<SendPrivateMessage>.FromModel(
-                    ClientType.Unity,
-                    FriendPrivateMessageSchema.OutgoingCapability));
+                MessageCodec<SendPrivateMessage>.FromModel());
 
         public static readonly MessageContract<NewConsoleMessage> PrivateMessageReceived =
             new(
                 MessageKeys.Friends.PrivateMessageReceived,
-                MessageDialectProjection<NewConsoleMessage>.FromModel(ClientType.Flash),
-                MessageDialectProjection<NewConsoleMessage>.FromModel(
-                    ClientType.Unity,
-                    FriendPrivateMessageSchema.IncomingCapability));
+                MessageCodec<NewConsoleMessage>.FromModel());
 
         public static readonly MessageContract<MessengerError> OperationFailed =
-            Modern<MessengerError>(MessageKeys.Friends.OperationFailed);
+            Flash<MessengerError>(MessageKeys.Friends.OperationFailed);
 
         public static readonly MessageContract<InstantMessageError> PrivateMessageFailed =
-            Modern<InstantMessageError>(MessageKeys.Friends.PrivateMessageFailed);
+            Flash<InstantMessageError>(MessageKeys.Friends.PrivateMessageFailed);
 
         public static readonly MessageContract<FriendRequest> FriendRequestSend =
-            Modern<FriendRequest>(MessageKeys.Friends.FriendRequestSend);
+            Flash<FriendRequest>(MessageKeys.Friends.FriendRequestSend);
 
         public static readonly MessageContract<NewFriendRequest> FriendRequestReceived =
-            Modern<NewFriendRequest>(MessageKeys.Friends.FriendRequestReceived);
+            Flash<NewFriendRequest>(MessageKeys.Friends.FriendRequestReceived);
 
         public static readonly MessageContract<PendingFriendRequestsRequest> FriendRequestsRequest =
-            Modern<PendingFriendRequestsRequest>(MessageKeys.Friends.FriendRequestsRequest);
+            Flash<PendingFriendRequestsRequest>(MessageKeys.Friends.FriendRequestsRequest);
 
         public static readonly MessageContract<PendingFriendRequests> FriendRequestsSnapshot =
-            Modern<PendingFriendRequests>(MessageKeys.Friends.FriendRequestsSnapshot);
+            Flash<PendingFriendRequests>(MessageKeys.Friends.FriendRequestsSnapshot);
 
         public static readonly MessageContract<AcceptFriends> FriendRequestAccept =
-            Modern<AcceptFriends>(MessageKeys.Friends.FriendRequestAccept);
+            Flash<AcceptFriends>(MessageKeys.Friends.FriendRequestAccept);
 
         public static readonly MessageContract<DeclineFriends> FriendRequestDecline =
-            Modern<DeclineFriends>(MessageKeys.Friends.FriendRequestDecline);
+            Flash<DeclineFriends>(MessageKeys.Friends.FriendRequestDecline);
 
         public static readonly MessageContract<RemoveFriends> Remove =
-            Modern<RemoveFriends>(MessageKeys.Friends.Remove);
+            Flash<RemoveFriends>(MessageKeys.Friends.Remove);
 
         public static readonly MessageContract<FollowFriendRequest> Follow =
-            Modern<FollowFriendRequest>(MessageKeys.Friends.Follow);
+            Flash<FollowFriendRequest>(MessageKeys.Friends.Follow);
 
         public static readonly MessageContract<FriendSearchRequest> SearchRequest =
-            Modern<FriendSearchRequest>(MessageKeys.Friends.SearchRequest);
+            Flash<FriendSearchRequest>(MessageKeys.Friends.SearchRequest);
 
         public static readonly MessageContract<UserSearchResults> SearchResult =
-            Modern<UserSearchResults>(MessageKeys.Friends.SearchResult);
+            Flash<UserSearchResults>(MessageKeys.Friends.SearchResult);
 
         public static readonly MessageContract<SetFriendRelationshipRequest> RelationshipSet =
-            Modern<SetFriendRelationshipRequest>(MessageKeys.Friends.RelationshipSet);
+            Flash<SetFriendRelationshipRequest>(MessageKeys.Friends.RelationshipSet);
     }
 
     public static class Trade
     {
         public static readonly MessageContract<TradeOpened> Opened =
-            Modern<TradeOpened>(MessageKeys.Trade.Opened);
+            Flash<TradeOpened>(MessageKeys.Trade.Opened);
 
         public static readonly MessageContract<TradeOffers> Offers =
-            Modern<TradeOffers>(MessageKeys.Trade.Offers);
+            Flash<TradeOffers>(MessageKeys.Trade.Offers);
 
         public static readonly MessageContract<TradeAccepted> AcceptanceUpdated =
-            Modern<TradeAccepted>(MessageKeys.Trade.AcceptanceUpdated);
+            Flash<TradeAccepted>(MessageKeys.Trade.AcceptanceUpdated);
 
         public static readonly MessageContract<TradeConfirmation> Confirmation =
-            Modern<TradeConfirmation>(MessageKeys.Trade.Confirmation);
+            Flash<TradeConfirmation>(MessageKeys.Trade.Confirmation);
 
         public static readonly MessageContract<TradeCompleted> Completed =
-            Modern<TradeCompleted>(MessageKeys.Trade.Completed);
+            Flash<TradeCompleted>(MessageKeys.Trade.Completed);
 
         public static readonly MessageContract<TradeClosed> Closed =
-            Modern<TradeClosed>(MessageKeys.Trade.Closed);
+            Flash<TradeClosed>(MessageKeys.Trade.Closed);
 
         public static readonly MessageContract<TradeOpenFailed> OpenFailed =
-            Modern<TradeOpenFailed>(MessageKeys.Trade.OpenFailed);
+            Flash<TradeOpenFailed>(MessageKeys.Trade.OpenFailed);
 
         public static readonly MessageContract<TradeNftAssets> NftOffers =
             Flash<TradeNftAssets>(MessageKeys.Trade.NftOffers);
@@ -2145,25 +2105,25 @@ public static class MessageContracts
             Flash<TradeSilverFee>(MessageKeys.Trade.SilverFee);
 
         public static readonly MessageContract<OpenTradeRequest> OpenRequest =
-            Modern<OpenTradeRequest>(MessageKeys.Trade.OpenRequest);
+            Flash<OpenTradeRequest>(MessageKeys.Trade.OpenRequest);
 
         public static readonly MessageContract<AddTradeItemsRequest> ItemsAdd =
-            Modern<AddTradeItemsRequest>(MessageKeys.Trade.ItemsAdd);
+            Flash<AddTradeItemsRequest>(MessageKeys.Trade.ItemsAdd);
 
         public static readonly MessageContract<RemoveTradeItemRequest> ItemRemove =
-            Modern<RemoveTradeItemRequest>(MessageKeys.Trade.ItemRemove);
+            Flash<RemoveTradeItemRequest>(MessageKeys.Trade.ItemRemove);
 
         public static readonly MessageContract<AcceptTradeRequest> Accept =
-            Modern<AcceptTradeRequest>(MessageKeys.Trade.Accept);
+            Flash<AcceptTradeRequest>(MessageKeys.Trade.Accept);
 
         public static readonly MessageContract<UnacceptTradeRequest> Unaccept =
-            Modern<UnacceptTradeRequest>(MessageKeys.Trade.Unaccept);
+            Flash<UnacceptTradeRequest>(MessageKeys.Trade.Unaccept);
 
         public static readonly MessageContract<ConfirmTradeRequest> Confirm =
-            Modern<ConfirmTradeRequest>(MessageKeys.Trade.Confirm);
+            Flash<ConfirmTradeRequest>(MessageKeys.Trade.Confirm);
 
         public static readonly MessageContract<CloseTradeRequest> Close =
-            Modern<CloseTradeRequest>(MessageKeys.Trade.Close);
+            Flash<CloseTradeRequest>(MessageKeys.Trade.Close);
 
         public static readonly MessageContract<GetNftTradeInventoryRequest> NftInventoryRequest =
             Flash<GetNftTradeInventoryRequest>(MessageKeys.Trade.NftInventoryRequest);
@@ -2174,59 +2134,48 @@ public static class MessageContracts
         public static class Relationship
         {
             public static readonly MessageContract<RelationshipStatusRequest> Request =
-                Modern<RelationshipStatusRequest>(MessageKeys.Users.Relationship.Request);
+                Flash<RelationshipStatusRequest>(MessageKeys.Users.Relationship.Request);
 
             public static readonly MessageContract<RelationshipStatus> Snapshot =
-                Modern<RelationshipStatus>(MessageKeys.Users.Relationship.Snapshot);
+                Flash<RelationshipStatus>(MessageKeys.Users.Relationship.Snapshot);
         }
 
         public static class Block
         {
             public static readonly MessageContract<BlockListRequest> ListRequest =
-                Modern<BlockListRequest>(MessageKeys.Users.Block.ListRequest);
+                Flash<BlockListRequest>(MessageKeys.Users.Block.ListRequest);
 
             public static readonly MessageContract<BlockList> ListSnapshot =
-                Modern<BlockList>(MessageKeys.Users.Block.ListSnapshot);
+                Flash<BlockList>(MessageKeys.Users.Block.ListSnapshot);
 
             public static readonly MessageContract<BlockUserUpdate> Updated =
-                Modern<BlockUserUpdate>(MessageKeys.Users.Block.Updated);
+                Flash<BlockUserUpdate>(MessageKeys.Users.Block.Updated);
 
             public static readonly MessageContract<BlockUserRequest> Add =
-                Modern<BlockUserRequest>(MessageKeys.Users.Block.Add);
+                Flash<BlockUserRequest>(MessageKeys.Users.Block.Add);
 
             public static readonly MessageContract<UnblockUserRequest> Remove =
-                Modern<UnblockUserRequest>(MessageKeys.Users.Block.Remove);
+                Flash<UnblockUserRequest>(MessageKeys.Users.Block.Remove);
         }
 
         public static class Ignore
         {
             public static readonly MessageContract<IgnoreListRequest> ListRequest =
-                Modern<IgnoreListRequest>(MessageKeys.Users.Ignore.ListRequest);
+                Flash<IgnoreListRequest>(MessageKeys.Users.Ignore.ListRequest);
 
             public static readonly MessageContract<RequestIgnoreList> ListSnapshot =
-                Modern<RequestIgnoreList>(MessageKeys.Users.Ignore.ListSnapshot);
+                Flash<RequestIgnoreList>(MessageKeys.Users.Ignore.ListSnapshot);
 
             public static readonly MessageContract<IgnoreUserResult> Updated =
-                Modern<IgnoreUserResult>(MessageKeys.Users.Ignore.Updated);
+                Flash<IgnoreUserResult>(MessageKeys.Users.Ignore.Updated);
 
             public static readonly MessageContract<IgnoreUserByIdRequest> AddByIdRequest =
-                Modern<IgnoreUserByIdRequest>(MessageKeys.Users.Ignore.AddByIdRequest);
-
-            public static readonly MessageContract<IgnoreUserByNameRequest> AddByNameRequest =
-                Unity<IgnoreUserByNameRequest>(MessageKeys.Users.Ignore.AddByNameRequest);
+                Flash<IgnoreUserByIdRequest>(MessageKeys.Users.Ignore.AddByIdRequest);
 
             public static readonly MessageContract<UnignoreUserRequest> Remove =
                 new(
                     MessageKeys.Users.Ignore.Remove,
-                    MessageDialectProjection<UnignoreUserRequest>.FromModel(
-                        ClientType.Flash,
-                        static (_, _) => MessageDialectCapability.Ready("flashUnignoreIdSchema")),
-                    new MessageDialectProjection<UnignoreUserRequest>(
-                        ClientType.Unity,
-                        ParseUnityUnignore,
-                        ComposeUnityUnignore,
-                        UnityUnignoreCapability,
-                        true));
+                    MessageCodec<UnignoreUserRequest>.FromModel(static (_, _) => MessageCapability.Ready("flashUnignoreIdSchema")));
         }
 
         public static class FigureSets
@@ -2238,214 +2187,56 @@ public static class MessageContracts
                 Flash<FigureSetIdRemoved>(MessageKeys.Users.FigureSets.Removed);
 
             public static readonly MessageContract<FigureSetIds> Snapshot =
-                Modern<FigureSetIds>(MessageKeys.Users.FigureSets.Snapshot);
+                Flash<FigureSetIds>(MessageKeys.Users.FigureSets.Snapshot);
         }
 
         public static class Sanctions
         {
             public static readonly MessageContract<SanctionStatusRequest> Request =
-                Modern<SanctionStatusRequest>(MessageKeys.Users.Sanctions.Request);
+                Flash<SanctionStatusRequest>(MessageKeys.Users.Sanctions.Request);
 
             public static readonly MessageContract<AccountSanctionStatus> Snapshot =
-                Modern<AccountSanctionStatus>(MessageKeys.Users.Sanctions.Snapshot);
+                Flash<AccountSanctionStatus>(MessageKeys.Users.Sanctions.Snapshot);
         }
 
         public static class FavoriteGroup
         {
             public static readonly MessageContract<SelectFavoriteGroupRequest> Select =
-                Modern<SelectFavoriteGroupRequest>(MessageKeys.Users.FavoriteGroup.Select);
+                Flash<SelectFavoriteGroupRequest>(MessageKeys.Users.FavoriteGroup.Select);
 
             public static readonly MessageContract<DeselectFavoriteGroupRequest> Deselect =
-                Modern<DeselectFavoriteGroupRequest>(MessageKeys.Users.FavoriteGroup.Deselect);
+                Flash<DeselectFavoriteGroupRequest>(MessageKeys.Users.FavoriteGroup.Deselect);
         }
 
         public static readonly MessageContract<MottoUpdateRequest> MottoUpdate =
-            Modern<MottoUpdateRequest>(MessageKeys.Users.MottoUpdate);
+            Flash<MottoUpdateRequest>(MessageKeys.Users.MottoUpdate);
 
         public static readonly MessageContract<ProfileRequest> ProfileRequest =
-            Modern<ProfileRequest>(MessageKeys.Users.ProfileRequest);
+            Flash<ProfileRequest>(MessageKeys.Users.ProfileRequest);
 
         public static readonly MessageContract<UserData> ProfileSnapshot =
-            Modern<UserData>(MessageKeys.Users.ProfileSnapshot);
+            Flash<UserData>(MessageKeys.Users.ProfileSnapshot);
 
         public static readonly MessageContract<FigureUpdate> FigureUpdated =
-            Modern<FigureUpdate>(MessageKeys.Users.FigureUpdated);
+            Flash<FigureUpdate>(MessageKeys.Users.FigureUpdated);
 
         public static readonly MessageContract<ChangeUserNameResult> NameChangeResult =
-            Modern<ChangeUserNameResult>(MessageKeys.Users.NameChangeResult);
+            Flash<ChangeUserNameResult>(MessageKeys.Users.NameChangeResult);
 
         public static readonly MessageContract<AccountSafetyLockStatusChange> SafetyLockChanged =
             Flash<AccountSafetyLockStatusChange>(MessageKeys.Users.SafetyLockChanged);
 
         public static readonly MessageContract<ExtendedProfileRequest> ExtendedProfileRequest =
-            Modern<ExtendedProfileRequest>(MessageKeys.Users.ExtendedProfileRequest);
+            Flash<ExtendedProfileRequest>(MessageKeys.Users.ExtendedProfileRequest);
 
         public static readonly MessageContract<UserProfile> ExtendedProfileSnapshot =
-            Modern<UserProfile>(MessageKeys.Users.ExtendedProfileSnapshot);
-    }
-
-    private static MessageDialectCapability UnityRoomItemPlaceCapability(
-        MessageManager messages,
-        Header header)
-    {
-        const string capability_name = "unityRoomItemPlaceSchema";
-        if (!messages.TryGetOutgoingSchemas(
-                ClientType.Unity,
-                header,
-                out IReadOnlyList<OutgoingMessageSchema> schemas) ||
-            schemas.Count == 0)
-        {
-            return MessageDialectCapability.Missing(
-                capability_name,
-                "The active Unity room-item placement header has no verified wire schema.");
-        }
-
-        if (schemas.All(IsUnityFloorItemPlacementSchema))
-            return MessageDialectCapability.Ready("unityFloorItemPlacementSchema");
-        if (schemas.All(IsUnityWallItemPlacementSchema))
-            return MessageDialectCapability.Ready("unityWallItemPlacementSchema");
-        return MessageDialectCapability.Missing(
-            capability_name,
-            "The active Unity room-item placement header has mixed or unsupported wire schemas.");
-    }
-
-    private static MessageDialectCapability UnityWallItemMoveCapability(
-        MessageManager messages,
-        Header header)
-    {
-        const string capability_name = "unityWallItemMoveSchema";
-        if (!messages.TryGetOutgoingSchemas(
-                ClientType.Unity,
-                header,
-                out IReadOnlyList<OutgoingMessageSchema> schemas) ||
-            schemas.Count == 0)
-        {
-            return MessageDialectCapability.Missing(
-                capability_name,
-                "The active Unity wall-item move header has no verified wire schema.");
-        }
-        return schemas.All(IsUnityWallItemPlacementSchema)
-            ? MessageDialectCapability.Ready(capability_name)
-            : MessageDialectCapability.Missing(
-                capability_name,
-                "The active Unity wall-item move header has mixed or unsupported wire schemas.");
-    }
-
-    private static MessageDialectCapability UnityBuildersClubWallOfferPlaceCapability(
-        ClientType client,
-        MessageManager messages,
-        Header header)
-    {
-        const string capability_name = "unityBuildersClubWallLocationSchema";
-        if (!messages.TryGetOutgoingSchemas(
-                client,
-                header,
-                out IReadOnlyList<OutgoingMessageSchema> schemas) ||
-            schemas.Count == 0)
-        {
-            return MessageDialectCapability.Missing(
-                capability_name,
-                "The active Unity Builders Club wall-placement header has no verified wire schema.");
-        }
-        if (!messages.TryGetHeader(
-                client,
-                MessageKeys.Room.WallItem.Move,
-                out Header wall_move_header) ||
-            !messages.TryGetOutgoingSchemas(
-                client,
-                wall_move_header,
-                out IReadOnlyList<OutgoingMessageSchema> wall_move_schemas) ||
-            wall_move_schemas.Count == 0 ||
-            !wall_move_schemas.All(IsUnityWallItemPlacementSchema))
-        {
-            return MessageDialectCapability.Missing(
-                capability_name,
-                "The active Unity build has no exact wall-location reference schema.");
-        }
-        if (wall_move_schemas.Any(schema =>
-                string.IsNullOrWhiteSpace(schema.Parameters[1].SourceType)))
-        {
-            return MessageDialectCapability.Missing(
-                capability_name,
-                "The active Unity wall-location reference schema has no exact source type.");
-        }
-
-        string[] source_types =
-        [
-            .. wall_move_schemas
-                .Select(schema => schema.Parameters[1].SourceType)
-                .Distinct(StringComparer.Ordinal)
-        ];
-        if (source_types.Length != 1)
-        {
-            return MessageDialectCapability.Missing(
-                capability_name,
-                "The active Unity wall-location reference schema has an ambiguous source type.");
-        }
-
-        return schemas.All(schema =>
-                IsUnityBuildersClubWallOfferPlaceSchema(schema, source_types[0]))
-            ? MessageDialectCapability.Ready(capability_name)
-            : MessageDialectCapability.Missing(
-                capability_name,
-                "The active Unity Builders Club wall-placement header has a mixed or unsupported wire schema.");
-    }
-
-    private static bool IsUnityFloorItemPlacementSchema(OutgoingMessageSchema schema) =>
-        schema.Parameters.Count == 4 &&
-        IsScalar(schema.Parameters[0], 0, OutgoingWireType.Int64) &&
-        IsScalar(schema.Parameters[1], 1, OutgoingWireType.Int32) &&
-        IsScalar(schema.Parameters[2], 2, OutgoingWireType.Int32) &&
-        IsScalar(schema.Parameters[3], 3, OutgoingWireType.Int32);
-
-    private static bool IsUnityWallItemPlacementSchema(OutgoingMessageSchema schema) =>
-        schema.Parameters.Count == 2 &&
-        IsScalar(schema.Parameters[0], 0, OutgoingWireType.Int64) &&
-        IsScalar(schema.Parameters[1], 1, OutgoingWireType.Unknown);
-
-    private static bool IsUnityBuildersClubWallOfferPlaceSchema(
-        OutgoingMessageSchema schema,
-        string wall_location_source_type) =>
-        schema.Parameters.Count == 5 &&
-        IsScalar(schema.Parameters[0], 0, OutgoingWireType.Int32) &&
-        IsScalar(schema.Parameters[1], 1, OutgoingWireType.Int32) &&
-        IsScalar(schema.Parameters[2], 2, OutgoingWireType.String) &&
-        IsScalar(schema.Parameters[3], 3, OutgoingWireType.Unknown) &&
-        string.Equals(
-            schema.Parameters[3].SourceType,
-            wall_location_source_type,
-            StringComparison.Ordinal) &&
-        IsScalar(schema.Parameters[4], 4, OutgoingWireType.Boolean);
-
-    private static MessageContract<T> Modern<T>(
-        MessageKey key,
-        Func<ClientType, MessageManager, Header, MessageDialectCapability>? unity_capability = null,
-        bool allows_schema_selected_header = false)
-        where T : IParserComposer<T>
-    {
-        ClientType unity = ClientType.Unity;
-        MessageDialectCapabilityProbe? capability = unity_capability is null
-            ? null
-            : (messages, header) => unity_capability(unity, messages, header);
-        return new(
-            key,
-            MessageDialectProjection<T>.FromModel(ClientType.Flash),
-            MessageDialectProjection<T>.FromModel(
-                unity,
-                capability,
-                allows_schema_selected_header));
+            Flash<UserProfile>(MessageKeys.Users.ExtendedProfileSnapshot);
     }
 
     private static MessageContract<NavigatorSearchResult> LegacyNavigatorSearchResult() =>
         new(
             MessageKeys.Navigator.Search.LegacyResult,
-            new MessageDialectProjection<NavigatorSearchResult>(
-                ClientType.Flash,
-                ParseLegacyNavigatorSearchResult,
-                ComposeLegacyNavigatorSearchResult),
-            new MessageDialectProjection<NavigatorSearchResult>(
-                ClientType.Unity,
-                ParseLegacyNavigatorSearchResult,
+            new MessageCodec<NavigatorSearchResult>(ParseLegacyNavigatorSearchResult,
                 ComposeLegacyNavigatorSearchResult));
 
     private static NavigatorSearchResult ParseLegacyNavigatorSearchResult(
@@ -2454,7 +2245,7 @@ public static class MessageContracts
         int search_type = reader.ReadInt();
         string filter = reader.ReadString();
         int count = reader.ReadLength();
-        if (count > reader.Available / (ClientTypes.IsUnity(reader.Client) ? 48 : 40))
+        if (count > reader.Available / (40))
             throw new InvalidDataException("The legacy navigator room count exceeds the packet capacity.");
 
         var rooms = new RoomData[count];
@@ -2477,8 +2268,7 @@ public static class MessageContracts
                     0,
                     false,
                     0,
-                    rooms,
-                    [])
+                    rooms)
             ]);
     }
 
@@ -2486,10 +2276,7 @@ public static class MessageContracts
     {
         if (reader.Available == 0)
             return;
-        if (!ClientTypes.IsUnity(reader.Client) || reader.Available != 2)
-            throw new InvalidDataException("The legacy navigator result contains an unexpected trailing payload.");
-        reader.ReadBool();
-        reader.ReadBool();
+        throw new InvalidDataException("The legacy navigator result contains an unexpected trailing payload.");
     }
 
     private static void ParseLegacyNavigatorPromotion(in PacketReader reader)
@@ -2504,7 +2291,7 @@ public static class MessageContracts
         reader.ReadInt();
         reader.ReadInt();
         int count = reader.ReadLength();
-        if (count > reader.Available / (ClientTypes.IsUnity(reader.Client) ? 48 : 40))
+        if (count > reader.Available / (40))
             throw new InvalidDataException("The promoted navigator room count exceeds the packet capacity.");
         for (int i = 0; i < count; i++)
             reader.Parse<RoomData>();
@@ -2532,473 +2319,65 @@ public static class MessageContracts
             writer.Compose(room);
         }
         writer.WriteBool(false);
-        if (ClientTypes.IsUnity(writer.Client))
-        {
-            writer.WriteBool(false);
-            writer.WriteBool(false);
-        }
     }
 
     private static MessageContract<CallForHelpFromForumThread> ForumThreadReport() =>
         new(
             MessageKeys.Forums.ThreadReport,
-            MessageDialectProjection<CallForHelpFromForumThread>.FromModel(ClientType.Flash),
-            new MessageDialectProjection<CallForHelpFromForumThread>(
-                ClientType.Unity,
-                ParseUnityForumThreadReport,
-                ComposeUnityForumThreadReport));
-
-    private static CallForHelpFromForumThread ParseUnityForumThreadReport(
-        in PacketReader reader)
-    {
-        ReportForumThread report = ReportForumThread.Parse(in reader);
-        return new CallForHelpFromForumThread(
-            report.GroupId,
-            report.ThreadId,
-            report.CategoryId,
-            report.Report,
-            "",
-            "");
-    }
-
-    private static void ComposeUnityForumThreadReport(
-        CallForHelpFromForumThread report,
-        in PacketWriter writer)
-    {
-        if (report.FirstContext.Length != 0 || report.SecondContext.Length != 0)
-        {
-            throw new NotSupportedException(
-                "Unity forum reports cannot represent Flash context strings.");
-        }
-        new ReportForumThread(
-            report.GroupId,
-            report.ThreadId,
-            report.CategoryId,
-            report.Report).Compose(in writer);
-    }
+            MessageCodec<CallForHelpFromForumThread>.FromModel());
 
     private static MessageContract<CallForHelpFromForumMessage> ForumMessageReport() =>
         new(
             MessageKeys.Forums.MessageReport,
-            MessageDialectProjection<CallForHelpFromForumMessage>.FromModel(ClientType.Flash),
-            new MessageDialectProjection<CallForHelpFromForumMessage>(
-                ClientType.Unity,
-                ParseUnityForumMessageReport,
-                ComposeUnityForumMessageReport));
-
-    private static CallForHelpFromForumMessage ParseUnityForumMessageReport(
-        in PacketReader reader)
-    {
-        ReportForumMessage report = ReportForumMessage.Parse(in reader);
-        return new CallForHelpFromForumMessage(
-            report.GroupId,
-            report.ThreadId,
-            report.MessageId,
-            report.CategoryId,
-            report.Report,
-            "",
-            "");
-    }
-
-    private static void ComposeUnityForumMessageReport(
-        CallForHelpFromForumMessage report,
-        in PacketWriter writer)
-    {
-        if (report.FirstContext.Length != 0 || report.SecondContext.Length != 0)
-        {
-            throw new NotSupportedException(
-                "Unity forum reports cannot represent Flash context strings.");
-        }
-        new ReportForumMessage(
-            report.GroupId,
-            report.ThreadId,
-            report.MessageId,
-            report.CategoryId,
-            report.Report).Compose(in writer);
-    }
-
-    private static MessageContract<T> InventoryFurni<T>(MessageKey key)
-        where T : IParserComposer<T> =>
-        new(
-            key,
-            MessageDialectProjection<T>.FromModel(ClientType.Flash),
-            MessageDialectProjection<T>.FromModel(
-                ClientType.Unity,
-                UnityInventoryFurniCapability));
-
-    private static MessageDialectCapability UnityInventoryFurniCapability(
-        MessageManager messages,
-        Header header)
-    {
-        MessageWireProfile profile = messages.GetWireProfile(ClientType.Unity);
-        if (!profile.IsAnalyzed)
-        {
-            return MessageDialectCapability.Missing(
-                "unityInventoryItemLayout",
-                "The Unity client catalog is still loading its inventory-item layout.");
-        }
-        return profile.UnityInventoryItemHasExtendedMetadata switch
-        {
-            true => MessageDialectCapability.Ready("unityInventoryExtendedMetadata"),
-            false => MessageDialectCapability.Ready("unityInventoryLegacyMetadata"),
-            null => MessageDialectCapability.Missing(
-                "unityInventoryItemLayout",
-                "The active Unity session has no compatible inventory-item wire layout.")
-        };
-    }
-
-    private static MessageDialectCapability UnityRoomSettingsSnapshotCapability(
-        MessageManager messages,
-        Header header)
-    {
-        MessageWireProfile profile = messages.GetWireProfile(ClientType.Unity);
-        if (!profile.IsAnalyzed)
-        {
-            return MessageDialectCapability.Missing(
-                "unityRoomSettingsLayout",
-                "The Unity client catalog is still loading its room settings layout.");
-        }
-        return profile.UnityRoomSettingsLayout switch
-        {
-            UnityRoomSettingsWireLayout.Legacy =>
-                MessageDialectCapability.Ready("unityRoomSettingsLegacy"),
-            UnityRoomSettingsWireLayout.Modern =>
-                MessageDialectCapability.Ready("unityRoomSettingsModern"),
-            _ => MessageDialectCapability.Missing(
-                "unityRoomSettingsLayout",
-                "The active Unity session has no compatible room settings wire layout.")
-        };
-    }
-
-    private static SaveRoomSettingsRequest ParseUnityRoomSettingsSave(in PacketReader p) =>
-        SaveRoomSettingsRequest.ParseUnity(
-            in p,
-            RequireUnityRoomSettingsSaveLayout(p.Context, p.Header));
-
-    private static void ComposeUnityRoomSettingsSave(
-        SaveRoomSettingsRequest value,
-        in PacketWriter p) =>
-        value.ComposeUnity(in p, RequireUnityRoomSettingsSaveLayout(p.Context, p.Header));
-
-    private static UnityRoomSettingsSaveWireLayout RequireUnityRoomSettingsSaveLayout(
-        IParserContext? context,
-        Header header)
-    {
-        if (context?.Messages is not MessageManager messages)
-            throw new NotSupportedException("Unity room settings saves require message-catalog context.");
-        MessageDialectCapability capability = ClassifyUnityRoomSettingsSave(
-            messages,
-            header,
-            out UnityRoomSettingsSaveWireLayout layout);
-        if (!capability.Available)
-            throw new NotSupportedException(capability.Reason);
-        return layout;
-    }
-
-    private static MessageDialectCapability UnityRoomSettingsSaveCapability(
-        MessageManager messages,
-        Header header) => ClassifyUnityRoomSettingsSave(messages, header, out _);
-
-    private static MessageDialectCapability ClassifyUnityRoomSettingsSave(
-        MessageManager messages,
-        Header header,
-        out UnityRoomSettingsSaveWireLayout layout)
-    {
-        const string capability_name = "unityRoomSettingsSchema";
-        layout = default;
-        if (!messages.TryGetOutgoingSchemas(
-                ClientType.Unity,
-                header,
-                out IReadOnlyList<OutgoingMessageSchema> schemas))
-        {
-            return MessageDialectCapability.Missing(
-                capability_name,
-                "The active Unity room settings save header has no verified wire schema.");
-        }
-
-        UnityRoomSettingsSaveWireLayout? resolved_layout = null;
-        foreach (OutgoingMessageSchema schema in schemas)
-        {
-            UnityRoomSettingsSaveWireLayout schema_layout;
-            if (IsUnityRoomSettingsSaveSchema(schema, false))
-                schema_layout = UnityRoomSettingsSaveWireLayout.Legacy;
-            else if (IsUnityRoomSettingsSaveSchema(schema, true))
-                schema_layout = UnityRoomSettingsSaveWireLayout.Modern;
-            else
-            {
-                return MessageDialectCapability.Missing(
-                    capability_name,
-                    "The active Unity room settings save header has an unsupported wire schema.");
-            }
-
-            if (resolved_layout is UnityRoomSettingsSaveWireLayout previous && previous != schema_layout)
-            {
-                return MessageDialectCapability.Missing(
-                    capability_name,
-                    "The active Unity room settings save header has ambiguous wire schemas.");
-            }
-            resolved_layout = schema_layout;
-        }
-
-        if (resolved_layout is not UnityRoomSettingsSaveWireLayout resolved)
-        {
-            return MessageDialectCapability.Missing(
-                capability_name,
-                "The active Unity room settings save header has no usable wire schema.");
-        }
-
-        layout = resolved;
-        return MessageDialectCapability.Ready(
-            resolved is UnityRoomSettingsSaveWireLayout.Legacy
-                ? "unityRoomSettings12"
-                : "unityRoomSettings15");
-    }
-
-    private static bool IsUnityRoomSettingsSaveSchema(
-        OutgoingMessageSchema schema,
-        bool modern)
-    {
-        IReadOnlyList<OutgoingParameterSchema> parameters = schema.Parameters;
-        if (parameters.Count != (modern ? 15 : 12) ||
-            !IsScalar(parameters[0], 0, OutgoingWireType.Int64) ||
-            !IsScalar(parameters[1], 1, OutgoingWireType.String) ||
-            !IsScalar(parameters[2], 2, OutgoingWireType.String) ||
-            !IsScalar(parameters[3], 3, OutgoingWireType.Int32) ||
-            !IsScalar(parameters[4], 4, OutgoingWireType.String) ||
-            !IsScalar(parameters[5], 5, OutgoingWireType.Int32) ||
-            !IsScalar(parameters[6], 6, OutgoingWireType.Boolean) ||
-            !IsScalar(parameters[7], 7, OutgoingWireType.Int32) ||
-            !IsScalar(parameters[8], 8, OutgoingWireType.Int32) ||
-            !IsScalar(parameters[9], 9, OutgoingWireType.Int32) ||
-            !IsScalar(parameters[10], 10, OutgoingWireType.Int32))
-        {
-            return false;
-        }
-
-        if (!modern)
-            return IsIdArray(parameters[11], 11);
-        return IsScalar(parameters[11], 11, OutgoingWireType.Int32) &&
-            IsScalar(parameters[12], 12, OutgoingWireType.Int32) &&
-            IsScalar(parameters[13], 13, OutgoingWireType.Int32) &&
-            IsIdArray(parameters[14], 14);
-    }
-
-    private static bool IsScalar(
-        OutgoingParameterSchema parameter,
-        int position,
-        OutgoingWireType wire_type) =>
-        parameter.Position == position &&
-        parameter.WireType == wire_type &&
-        parameter.Collection is OutgoingCollectionKind.None &&
-        parameter.ElementWireTypes is null;
-
-    private static bool IsIdArray(OutgoingParameterSchema parameter, int position) =>
-        parameter.Position == position &&
-        parameter.SourceType.Equals("long[]", StringComparison.Ordinal) &&
-        parameter.WireType is OutgoingWireType.Int64 &&
-        parameter.Collection is OutgoingCollectionKind.Array &&
-        parameter.ElementWireTypes is null;
-
-    private static UnignoreUserRequest ParseUnityUnignore(in PacketReader p) =>
-        UnignoreUserRequest.ParseUnity(in p, RequireUnityUnignoreKind(p.Context, p.Header));
-
-    private static void ComposeUnityUnignore(UnignoreUserRequest value, in PacketWriter p) =>
-        value.ComposeUnity(in p, RequireUnityUnignoreKind(p.Context, p.Header));
-
-    private static UserIdentityKind RequireUnityUnignoreKind(
-        IParserContext? context,
-        Header header)
-    {
-        if (context?.Messages is not MessageManager messages)
-            throw new NotSupportedException("Unity unignore requests require message-catalog context.");
-        MessageDialectCapability capability = ClassifyUnityUnignore(messages, header, out UserIdentityKind kind);
-        if (!capability.Available)
-            throw new NotSupportedException(capability.Reason);
-        return kind;
-    }
-
-    private static MessageDialectCapability UnityUnignoreCapability(
-        MessageManager messages,
-        Header header) => ClassifyUnityUnignore(messages, header, out _);
-
-    private static MessageDialectCapability ClassifyUnityUnignore(
-        MessageManager messages,
-        Header header,
-        out UserIdentityKind kind)
-    {
-        const string capability_name = "unityUnignoreSchema";
-        kind = default;
-        if (!messages.TryGetOutgoingSchemas(
-                ClientType.Unity,
-                header,
-                out IReadOnlyList<OutgoingMessageSchema> schemas))
-        {
-            return MessageDialectCapability.Missing(
-                capability_name,
-                "The active Unity unignore header has no verified wire schema.");
-        }
-
-        UserIdentityKind? resolved_kind = null;
-        foreach (OutgoingMessageSchema schema in schemas)
-        {
-            UserIdentityKind schema_kind;
-            if (IsUnignoreSchema(schema, OutgoingWireType.Int64))
-                schema_kind = UserIdentityKind.Id;
-            else if (IsUnignoreSchema(schema, OutgoingWireType.String))
-                schema_kind = UserIdentityKind.Name;
-            else
-                return MessageDialectCapability.Missing(
-                    capability_name,
-                    "The active Unity unignore header has an unsupported wire schema.");
-
-            if (resolved_kind is UserIdentityKind previous && previous != schema_kind)
-            {
-                return MessageDialectCapability.Missing(
-                    capability_name,
-                    "The active Unity unignore header has an ambiguous wire schema.");
-            }
-            resolved_kind = schema_kind;
-        }
-
-        if (resolved_kind is not UserIdentityKind resolved)
-            return MessageDialectCapability.Missing(
-                capability_name,
-                "The active Unity unignore header has no usable wire schema.");
-
-        kind = resolved;
-        return MessageDialectCapability.Ready(
-            resolved is UserIdentityKind.Id
-                ? "unityUnignoreIdSchema"
-                : "unityUnignoreNameSchema");
-    }
-
-    private static bool IsUnignoreSchema(
-        OutgoingMessageSchema schema,
-        OutgoingWireType wire_type) =>
-        schema.Parameters.Count == 1 &&
-        schema.Parameters[0].Position == 0 &&
-        schema.Parameters[0].WireType == wire_type &&
-        schema.Parameters[0].Collection is OutgoingCollectionKind.None;
+            MessageCodec<CallForHelpFromForumMessage>.FromModel());
 
     private static MessageContract<T> Flash<T>(MessageKey key)
         where T : IParserComposer<T> =>
-        new(key, MessageDialectProjection<T>.FromModel(ClientType.Flash));
-
-    private static MessageContract<T> Unity<T>(MessageKey key)
-        where T : IParserComposer<T> =>
-        new(key, MessageDialectProjection<T>.FromModel(ClientType.Unity));
-
-    private static MessageContract<T> WiredConfiguration<T>(MessageKey key)
-        where T : IParserComposer<T> =>
-        new(
-            key,
-            MessageDialectProjection<T>.FromModel(ClientType.Flash),
-            MessageDialectProjection<T>.FromModel(
-                ClientType.Unity,
-                UnityWiredConfigurationCapability));
+        new(key, MessageCodec<T>.FromModel());
 
     private static MessageContract<T> MarketplaceLayout<T>(MessageKey key)
         where T : IParserComposer<T> =>
         new(
             key,
-            MessageDialectProjection<T>.FromModel(
-                ClientType.Flash,
-                FlashMarketplaceLayoutCapability),
-            MessageDialectProjection<T>.FromModel(ClientType.Unity));
-
-    private static MessageContract<T> ModernMarketplace<T>(MessageKey key)
-        where T : IParserComposer<T> =>
-        new(
-            key,
-            MessageDialectProjection<T>.FromModel(
-                ClientType.Flash,
-                ModernFlashMarketplaceCapability),
-            MessageDialectProjection<T>.FromModel(ClientType.Unity));
+            MessageCodec<T>.FromModel(FlashMarketplaceLayoutCapability));
 
     private static MessageContract<T> ModernFlashMarketplace<T>(MessageKey key)
         where T : IParserComposer<T> =>
         new(
             key,
-            MessageDialectProjection<T>.FromModel(
-                ClientType.Flash,
-                ModernFlashMarketplaceCapability));
+            MessageCodec<T>.FromModel(ModernFlashMarketplaceCapability));
 
-    private static MessageDialectCapability FlashMarketplaceLayoutCapability(
+    private static MessageCapability FlashMarketplaceLayoutCapability(
         MessageManager messages,
         Header header)
     {
         MessageWireProfile profile = messages.GetWireProfile(ClientType.Flash);
         if (!profile.IsAnalyzed)
         {
-            return MessageDialectCapability.Missing(
+            return MessageCapability.Missing(
                 "flashMarketplaceLayout",
                 "The Flash client catalog is still loading its marketplace layout.");
         }
         return profile.FlashMarketplaceLayout is FlashMarketplaceWireLayout.Unknown
-            ? MessageDialectCapability.Missing(
+            ? MessageCapability.Missing(
                 "flashMarketplaceLayout",
                 "The active Flash build has no exact marketplace wire profile.")
-            : MessageDialectCapability.Ready("flashMarketplaceLayout");
+            : MessageCapability.Ready("flashMarketplaceLayout");
     }
 
-    private static MessageDialectCapability UnityWiredConfigurationCapability(
+    private static MessageCapability ModernFlashMarketplaceCapability(
         MessageManager messages,
         Header header)
     {
-        MessageWireProfile profile = messages.GetWireProfile(ClientType.Unity);
-        if (!profile.IsAnalyzed)
-        {
-            return MessageDialectCapability.Missing(
-                "unityWiredConfigurationLayout",
-                "The Unity client catalog is still loading its wired configuration layout.");
-        }
-        return profile.IsExact
-            ? MessageDialectCapability.Ready("unityWiredConfigurationLayout")
-            : MessageDialectCapability.Missing(
-                "unityWiredConfigurationLayout",
-                "The active Unity session has no compatible wired configuration layout.");
-    }
-
-    private static MessageDialectCapability ModernFlashMarketplaceCapability(
-        MessageManager messages,
-        Header header)
-    {
-        MessageDialectCapability layout =
+        MessageCapability layout =
             FlashMarketplaceLayoutCapability(messages, header);
         if (!layout.Available)
             return layout;
         return messages.GetWireProfile(ClientType.Flash).FlashMarketplaceLayout is
             FlashMarketplaceWireLayout.Modern
-                ? MessageDialectCapability.Ready("flashMarketplaceModernLayout")
-                : MessageDialectCapability.Missing(
+                ? MessageCapability.Ready("flashMarketplaceModernLayout")
+                : MessageCapability.Missing(
                     "flashMarketplaceModernLayout",
                     "The active Flash build uses the legacy marketplace layout.");
-    }
-
-    private static MessageDialectCapability UnityMarketplaceBuyCapability(
-        MessageManager messages,
-        Header header)
-    {
-        MessageWireProfile profile = messages.GetWireProfile(ClientType.Unity);
-        if (!profile.IsAnalyzed)
-        {
-            return MessageDialectCapability.Missing(
-                "unityMarketplaceBuyLayout",
-                "The Unity client catalog is still loading its marketplace purchase layout.");
-        }
-        if (profile.UnityMarketplaceBuyLayout is MarketplaceBuyWireLayout.Unknown ||
-            profile.UnityMarketplaceBuyHeaderId is null)
-        {
-            return MessageDialectCapability.Missing(
-                "unityMarketplaceBuyLayout",
-                "The active Unity session has no compatible marketplace purchase wire layout.");
-        }
-        if (profile.UnityMarketplaceBuyHeaderId != header.Value)
-        {
-            return MessageDialectCapability.Missing(
-                "unityMarketplaceBuyLayout",
-                "The resolved Unity purchase header does not match the analyzed marketplace layout.");
-        }
-        return MessageDialectCapability.Ready("unityMarketplaceBuyLayout");
     }
 }

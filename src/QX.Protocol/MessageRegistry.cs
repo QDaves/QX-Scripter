@@ -6,7 +6,7 @@ namespace Qx.Protocol;
 public sealed class MessageRegistry
 {
     private readonly IReadOnlyDictionary<MessageKey, MessageDescriptor> _by_key;
-    private readonly IReadOnlyDictionary<(ClientType Client, Direction Direction, string Name), MessageDescriptor> _by_alias;
+    private readonly IReadOnlyDictionary<(Direction Direction, string Name), MessageDescriptor> _by_alias;
 
     public MessageRegistry(IEnumerable<MessageDescriptor> descriptors)
     {
@@ -14,7 +14,7 @@ public sealed class MessageRegistry
 
         var ordered = descriptors.ToArray();
         var by_key = new Dictionary<MessageKey, MessageDescriptor>();
-        var by_alias = new Dictionary<(ClientType, Direction, string), MessageDescriptor>();
+        var by_alias = new Dictionary<(Direction, string), MessageDescriptor>();
 
         foreach (MessageDescriptor descriptor in ordered)
         {
@@ -24,7 +24,7 @@ public sealed class MessageRegistry
 
             foreach (MessageAlias alias in descriptor.Aliases)
             {
-                var lookup = (alias.Client, descriptor.Direction, Normalize(alias.Name));
+                var lookup = (descriptor.Direction, Normalize(alias.Name));
                 if (by_alias.TryGetValue(lookup, out MessageDescriptor? existing))
                 {
                     throw new InvalidDataException(
@@ -36,7 +36,7 @@ public sealed class MessageRegistry
 
         Descriptors = Array.AsReadOnly(ordered);
         _by_key = new ReadOnlyDictionary<MessageKey, MessageDescriptor>(by_key);
-        _by_alias = new ReadOnlyDictionary<(ClientType, Direction, string), MessageDescriptor>(by_alias);
+        _by_alias = new ReadOnlyDictionary<(Direction, string), MessageDescriptor>(by_alias);
     }
 
     public IReadOnlyList<MessageDescriptor> Descriptors { get; }
@@ -54,13 +54,13 @@ public sealed class MessageRegistry
         string name,
         out MessageDescriptor descriptor)
     {
-        if (string.IsNullOrWhiteSpace(name))
+        if (client is not ClientType.Flash || string.IsNullOrWhiteSpace(name))
         {
             descriptor = null!;
             return false;
         }
 
-        return _by_alias.TryGetValue((client, direction, Normalize(name)), out descriptor!);
+        return _by_alias.TryGetValue((direction, Normalize(name)), out descriptor!);
     }
 
     private static string Normalize(string name) => name.ToUpperInvariant();

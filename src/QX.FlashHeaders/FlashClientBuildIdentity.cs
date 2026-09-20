@@ -2,7 +2,7 @@ namespace Qx.Headers.Flash;
 
 public static class FlashClientBuildIdentity
 {
-    const string Prefix = "WIN63-";
+    const int PrefixLength = 6;
     const int TimestampLength = 12;
 
     public static IReadOnlyList<string> FromAbcConstants(SwfInfo swf)
@@ -25,12 +25,13 @@ public static class FlashClientBuildIdentity
     static bool IsBuildId(string? value)
     {
         if (value is null ||
-            value.Length <= Prefix.Length + TimestampLength + 1 ||
-            !value.StartsWith(Prefix, StringComparison.Ordinal))
+            value.Length <= PrefixLength + TimestampLength + 1 ||
+            !(value.StartsWith("WIN63-", StringComparison.Ordinal) ||
+              value.StartsWith("MAC63-", StringComparison.Ordinal)))
         {
             return false;
         }
-        ReadOnlySpan<char> body = value.AsSpan(Prefix.Length);
+        ReadOnlySpan<char> body = value.AsSpan(PrefixLength);
         return body.Length > TimestampLength + 1 &&
             body[TimestampLength] == '-' &&
             Digits(body[..TimestampLength]) &&

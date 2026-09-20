@@ -37,7 +37,7 @@ public sealed class FloorPlan : IParserComposer<FloorPlan>
     public bool IsOpen(int x, int y) => HeightAt(x, y) >= 0;
 
     public static FloorPlan Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static FloorPlan ParseFlash(in PacketReader p)
     {
@@ -61,41 +61,8 @@ public sealed class FloorPlan : IParserComposer<FloorPlan>
         };
     }
 
-    private static FloorPlan ParseUnity(in PacketReader p)
-    {
-        bool legacy = p.ReadBool();
-        int wall_height = p.ReadInt();
-        string map = p.ReadString();
-        int count = unchecked((ushort)p.ReadShort());
-        var hidden = new AreaHideData[count];
-        for (int i = 0; i < count; i++)
-            hidden[i] = p.Parse<AreaHideData>();
-
-        bool has_camera_data = p.Available > 0;
-        int camera_x = 0;
-        int camera_y = 0;
-        float camera_z = 0;
-        if (has_camera_data)
-        {
-            camera_x = p.ReadInt();
-            camera_y = p.ReadInt();
-            camera_z = p.ReadFloatBinary();
-        }
-
-        return new FloorPlan(map)
-        {
-            UseLegacyScale = legacy,
-            WallHeight = wall_height,
-            HiddenAreas = hidden,
-            CameraX = camera_x,
-            CameraY = camera_y,
-            CameraZ = camera_z,
-            HasCameraData = has_camera_data
-        };
-    }
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(FloorPlan value, in PacketWriter p)
     {
@@ -109,23 +76,6 @@ public sealed class FloorPlan : IParserComposer<FloorPlan>
         p.WriteInt(value.CameraX);
         p.WriteInt(value.CameraY);
         p.WriteFloatBinary(value.CameraZ);
-    }
-
-    private static void ComposeUnity(FloorPlan value, in PacketWriter p)
-    {
-        ushort count = checked((ushort)value.HiddenAreas.Count);
-        p.WriteBool(value.UseLegacyScale);
-        p.WriteInt(value.WallHeight);
-        p.WriteString(value.Map);
-        p.WriteShort(unchecked((short)count));
-        foreach (AreaHideData area in value.HiddenAreas)
-            p.Compose(area);
-        if (value.HasCameraData)
-        {
-            p.WriteInt(value.CameraX);
-            p.WriteInt(value.CameraY);
-            p.WriteFloatBinary(value.CameraZ);
-        }
     }
 
     private static int[] build_tiles(string map, out int width, out int length)

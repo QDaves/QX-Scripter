@@ -13,19 +13,13 @@ public sealed record ClientCatalogLoadResult(
 
 public static class ClientCatalogBootstrapper
 {
-    public static void LoadEmbeddedReferences(MessageManager messages)
-    {
-        ArgumentNullException.ThrowIfNull(messages);
-        messages.LoadFallbackCatalog(ClientCatalogClients.Unity, ClientCatalogFactory.CreateUnityReference());
-    }
-
     public static async Task<IReadOnlyList<ClientCatalogLoadResult>> LoadInstalledAsync(
         MessageManager messages,
         ClientCatalogResolver resolver,
         Action<ClientCatalogResolution>? loaded = null,
         CancellationToken cancellation_token = default)
     {
-        LoadEmbeddedReferences(messages);
+        ArgumentNullException.ThrowIfNull(messages);
         Task<ClientCatalogLoadResult>[] tasks = ClientCatalogClients.Supported
             .Select(client => LoadAsync(messages, resolver, client, loaded, cancellation_token))
             .ToArray();

@@ -129,7 +129,6 @@ public sealed record ConsoleMessage(
 
         int id_size = p.Client switch
         {
-            ClientType.Unity => sizeof(long),
             ClientType.Flash => sizeof(int),
             _ => 0
         };

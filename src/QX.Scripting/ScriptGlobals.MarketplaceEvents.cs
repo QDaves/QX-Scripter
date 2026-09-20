@@ -119,19 +119,11 @@ public partial class ScriptGlobals
             ApplicationMemberIds.MarketplaceOfferBuyResult,
             Guarded<MarketplaceBuyResultReceived>(result => handler(result.Result))));
 
-    /// <summary>Raised when the server resolves an attempt to cancel a single offer.</summary>
-    /// <param name="handler">Receives the cancelled offer id and whether it succeeded.</param>
-    /// <returns>A handle that removes the handler when disposed.</returns>
-    /// <exception cref="ObjectDisposedException">The script globals have already been disposed.</exception>
-    /// <remarks>
-    /// Flash only. The Unity cancel-offer payload has no verified layout, so the handler is
-    /// registered for the Flash message alone and never fires on a Unity session.
-    /// </remarks>
     public IDisposable OnMarketplaceOfferCancelResult(
-        Action<MarketplaceCancelOfferResult> handler) =>
-        Track(Application.Subscribe<MarketplaceCancelResultReceived>(
-            ApplicationMemberIds.MarketplaceOfferCancelResult,
-            Guarded<MarketplaceCancelResultReceived>(result => handler(result.Result))));
+    Action<MarketplaceCancelOfferResult> handler) =>
+    Track(Application.Subscribe<MarketplaceCancelResultReceived>(
+        ApplicationMemberIds.MarketplaceOfferCancelResult,
+        Guarded<MarketplaceCancelResultReceived>(result => handler(result.Result))));
 
     /// <summary>
     /// Raised when the server resolves an attempt to cancel every open offer at once, carrying
@@ -150,22 +142,11 @@ public partial class ScriptGlobals
             ApplicationMemberIds.MarketplaceOffersCancelAllResult,
             Guarded<MarketplaceCancelAllResultReceived>(result => handler(result.Result))));
 
-    /// <summary>
-    /// Raised when the server resolves an attempt to clear the local user's own marketplace
-    /// history.
-    /// </summary>
-    /// <param name="handler">Receives whether the clear succeeded.</param>
-    /// <returns>A handle that removes the handler when disposed.</returns>
-    /// <exception cref="ObjectDisposedException">The script globals have already been disposed.</exception>
-    /// <remarks>
-    /// Flash only, and only in the modern Flash marketplace layout. The handler is registered for
-    /// the Flash message alone and never fires on a Unity session.
-    /// </remarks>
     public IDisposable OnMarketplaceHistoryClearResult(
-        Action<MarketplaceClearOwnHistoryResult> handler) =>
-        Track(Application.Subscribe<MarketplaceHistoryClearResultReceived>(
-            ApplicationMemberIds.MarketplaceHistoryClearResult,
-            Guarded<MarketplaceHistoryClearResultReceived>(result => handler(result.Result))));
+    Action<MarketplaceClearOwnHistoryResult> handler) =>
+    Track(Application.Subscribe<MarketplaceHistoryClearResultReceived>(
+        ApplicationMemberIds.MarketplaceHistoryClearResult,
+        Guarded<MarketplaceHistoryClearResultReceived>(result => handler(result.Result))));
 
     /// <summary>
     /// Raised after the cached marketplace state was emptied for a new session, which happens on

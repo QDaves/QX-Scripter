@@ -1,4 +1,4 @@
-﻿using System.Collections.ObjectModel;
+using System.Collections.ObjectModel;
 using System.Runtime.ExceptionServices;
 using Qx.Game.Application;
 using Qx.Game.Protocol;
@@ -725,14 +725,11 @@ public sealed class GiftManager : GameStateManager
         value.ClubLevel,
         value.BundlePurchaseAllowed,
         value.IsPet,
-        value.PreviewImage,
-        value.UnityProductReferences?.Select(reference => reference with { }).ToArray(),
-        value.UnityProducts?.Select(product => product with { }).ToArray());
+        value.PreviewImage);
 
     private static ClubGiftSelected FreezeClubSelected(ClubGiftSelected value) => new(
         value.ProductCode,
-        value.Products.Select(product => product with { }).ToArray(),
-        value.UnityProducts?.Select(product => product with { }).ToArray());
+        value.Products.Select(product => product with { }).ToArray());
 
     private static NuxGiftOffer FreezeNewUserOffer(NuxGiftOffer value) => new(
         value.Steps.Select(step => new NuxGiftStep(

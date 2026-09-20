@@ -6,19 +6,14 @@ namespace Qx.Model.Messages.Outgoing;
 public sealed record EarningStatusRequest : IParserComposer<EarningStatusRequest>
 {
     public static EarningStatusRequest Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static EarningStatusRequest ParseFlash(in PacketReader p) => ParseEmpty(in p);
 
-    private static EarningStatusRequest ParseUnity(in PacketReader p) => ParseEmpty(in p);
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(EarningStatusRequest value, in PacketWriter p) =>
-        ArgumentNullException.ThrowIfNull(value);
-
-    private static void ComposeUnity(EarningStatusRequest value, in PacketWriter p) =>
         ArgumentNullException.ThrowIfNull(value);
 
     private static EarningStatusRequest ParseEmpty(in PacketReader p)
@@ -32,19 +27,14 @@ public sealed record EarningClaimRequest(EarningCategory Category)
     : IParserComposer<EarningClaimRequest>
 {
     public static EarningClaimRequest Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static EarningClaimRequest ParseFlash(in PacketReader p) => ParseMessage(in p);
 
-    private static EarningClaimRequest ParseUnity(in PacketReader p) => ParseMessage(in p);
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(EarningClaimRequest value, in PacketWriter p) =>
-        ComposeMessage(value, in p);
-
-    private static void ComposeUnity(EarningClaimRequest value, in PacketWriter p) =>
         ComposeMessage(value, in p);
 
     private static EarningClaimRequest ParseMessage(in PacketReader p)

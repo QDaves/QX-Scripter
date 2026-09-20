@@ -17,13 +17,11 @@ public sealed record ScrSendUserInfo(
     int? MinutesSinceLastModified) : IParserComposer<ScrSendUserInfo>
 {
     public static ScrSendUserInfo Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
-    private static ScrSendUserInfo ParseFlash(in PacketReader p) => ParseInfo(in p, false);
+    private static ScrSendUserInfo ParseFlash(in PacketReader p) => ParseInfo(in p);
 
-    private static ScrSendUserInfo ParseUnity(in PacketReader p) => ParseInfo(in p, true);
-
-    private static ScrSendUserInfo ParseInfo(in PacketReader p, bool require_minutes)
+    private static ScrSendUserInfo ParseInfo(in PacketReader p)
     {
         string product_name = p.ReadString();
         int days_to_period_end = p.ReadInt();
@@ -37,7 +35,7 @@ public sealed record ScrSendUserInfo(
         int minutes_until_expiration = p.ReadInt();
         int? minutes_since_last_modified = SubscriptionWire.ReadIntTail(
             in p,
-            require_minutes,
+            false,
             nameof(ScrSendUserInfo));
 
         return new ScrSendUserInfo(
@@ -55,20 +53,14 @@ public sealed record ScrSendUserInfo(
     }
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(ScrSendUserInfo value, in PacketWriter p) =>
-        value.ComposeInfo(in p, false);
+        value.ComposeInfo(in p);
 
-    private static void ComposeUnity(ScrSendUserInfo value, in PacketWriter p) =>
-        value.ComposeInfo(in p, true);
-
-    private void ComposeInfo(in PacketWriter p, bool require_minutes)
+    private void ComposeInfo(in PacketWriter p)
     {
         SubscriptionWire.RequireString(ProductName, nameof(ProductName), in p);
-        if (require_minutes && MinutesSinceLastModified is null)
-            throw new InvalidDataException(
-                "Unity ScrSendUserInfo requires minutes since last modification.");
 
         p.WriteString(ProductName);
         p.WriteInt(DaysToPeriodEnd);
@@ -97,11 +89,9 @@ public sealed record ScrSendKickbackInfo(
     int TimeUntilPayday) : IParserComposer<ScrSendKickbackInfo>
 {
     public static ScrSendKickbackInfo Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static ScrSendKickbackInfo ParseFlash(in PacketReader p) => ParseInfo(in p);
-
-    private static ScrSendKickbackInfo ParseUnity(in PacketReader p) => ParseInfo(in p);
 
     private static ScrSendKickbackInfo ParseInfo(in PacketReader p)
     {
@@ -120,12 +110,9 @@ public sealed record ScrSendKickbackInfo(
     }
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(ScrSendKickbackInfo value, in PacketWriter p) =>
-        value.ComposeInfo(in p);
-
-    private static void ComposeUnity(ScrSendKickbackInfo value, in PacketWriter p) =>
         value.ComposeInfo(in p);
 
     private void ComposeInfo(in PacketWriter p)
@@ -150,11 +137,9 @@ public sealed record BuildersClubFurniCount(int FurniCount)
     : IParserComposer<BuildersClubFurniCount>
 {
     public static BuildersClubFurniCount Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static BuildersClubFurniCount ParseFlash(in PacketReader p) => ParseCount(in p);
-
-    private static BuildersClubFurniCount ParseUnity(in PacketReader p) => ParseCount(in p);
 
     private static BuildersClubFurniCount ParseCount(in PacketReader p)
     {
@@ -164,14 +149,9 @@ public sealed record BuildersClubFurniCount(int FurniCount)
     }
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(BuildersClubFurniCount value, in PacketWriter p)
-    {
-        p.WriteInt(value.FurniCount);
-    }
-
-    private static void ComposeUnity(BuildersClubFurniCount value, in PacketWriter p)
     {
         p.WriteInt(value.FurniCount);
     }
@@ -186,7 +166,7 @@ public sealed record BuildersClubMembershipStatus(
     public int EffectiveSecondsLeftWithGrace => SecondsLeftWithGrace ?? SecondsLeft;
 
     public static BuildersClubMembershipStatus Parse(in PacketReader p) =>
-        ModernWireClients.ParseFlash(in p, ParseFlash);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static BuildersClubMembershipStatus ParseFlash(in PacketReader p)
     {
@@ -205,7 +185,7 @@ public sealed record BuildersClubMembershipStatus(
     }
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.ComposeFlash(this, in p, ComposeFlash);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(BuildersClubMembershipStatus value, in PacketWriter p)
     {
@@ -224,7 +204,7 @@ public sealed record BuildersClubPlacementWarning(
     BuildersClubPlacement Placement) : IParserComposer<BuildersClubPlacementWarning>
 {
     public static BuildersClubPlacementWarning Parse(in PacketReader p) =>
-        ModernWireClients.ParseFlash(in p, ParseFlash);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static BuildersClubPlacementWarning ParseFlash(in PacketReader p)
     {
@@ -252,7 +232,7 @@ public sealed record BuildersClubPlacementWarning(
     }
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.ComposeFlash(this, in p, ComposeFlash);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(BuildersClubPlacementWarning value, in PacketWriter p)
     {
@@ -307,11 +287,9 @@ public sealed record SubscriptionGetUserInfo(string ProductName)
     : IParserComposer<SubscriptionGetUserInfo>
 {
     public static SubscriptionGetUserInfo Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static SubscriptionGetUserInfo ParseFlash(in PacketReader p) => ParseRequest(in p);
-
-    private static SubscriptionGetUserInfo ParseUnity(in PacketReader p) => ParseRequest(in p);
 
     private static SubscriptionGetUserInfo ParseRequest(in PacketReader p)
     {
@@ -321,15 +299,9 @@ public sealed record SubscriptionGetUserInfo(string ProductName)
     }
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(SubscriptionGetUserInfo value, in PacketWriter p)
-    {
-        SubscriptionWire.RequireString(value.ProductName, nameof(ProductName), in p);
-        p.WriteString(value.ProductName);
-    }
-
-    private static void ComposeUnity(SubscriptionGetUserInfo value, in PacketWriter p)
     {
         SubscriptionWire.RequireString(value.ProductName, nameof(ProductName), in p);
         p.WriteString(value.ProductName);
@@ -340,11 +312,9 @@ public sealed record SubscriptionGetKickbackInfo
     : IParserComposer<SubscriptionGetKickbackInfo>
 {
     public static SubscriptionGetKickbackInfo Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static SubscriptionGetKickbackInfo ParseFlash(in PacketReader p) => ParseRequest(in p);
-
-    private static SubscriptionGetKickbackInfo ParseUnity(in PacketReader p) => ParseRequest(in p);
 
     private static SubscriptionGetKickbackInfo ParseRequest(in PacketReader p)
     {
@@ -353,22 +323,18 @@ public sealed record SubscriptionGetKickbackInfo
     }
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(SubscriptionGetKickbackInfo value, in PacketWriter p) { }
-
-    private static void ComposeUnity(SubscriptionGetKickbackInfo value, in PacketWriter p) { }
 }
 
 public sealed record BuildersClubQueryFurniCount
     : IParserComposer<BuildersClubQueryFurniCount>
 {
     public static BuildersClubQueryFurniCount Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static BuildersClubQueryFurniCount ParseFlash(in PacketReader p) => ParseRequest(in p);
-
-    private static BuildersClubQueryFurniCount ParseUnity(in PacketReader p) => ParseRequest(in p);
 
     private static BuildersClubQueryFurniCount ParseRequest(in PacketReader p)
     {
@@ -377,11 +343,9 @@ public sealed record BuildersClubQueryFurniCount
     }
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(BuildersClubQueryFurniCount value, in PacketWriter p) { }
-
-    private static void ComposeUnity(BuildersClubQueryFurniCount value, in PacketWriter p) { }
 }
 
 internal static class SubscriptionWire

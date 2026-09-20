@@ -96,7 +96,7 @@ internal static class MarketplaceApplicationDescriptors
         MessageKeys.Marketplace.Offers.OwnRequest,
         MessageKeys.Marketplace.Offers.OwnSnapshot,
         [
-            new("category", typeof(MarketplaceOwnOffersCategory), false, MarketplaceOwnOffersCategory.Open, "Own-offer category; legacy Flash and Unity expose only open offers."),
+            new("category", typeof(MarketplaceOwnOffersCategory), false, MarketplaceOwnOffersCategory.Open, "Own-offer category; legacy Flash expose only open offers."),
             .. PagingParameters(),
             TimeoutParameter()
         ],
@@ -123,10 +123,10 @@ internal static class MarketplaceApplicationDescriptors
         MarketplaceBuyResult>(
         ApplicationMemberIds.MarketplaceOfferBuy,
         "Buy marketplace offer",
-        "Purchases a cached offer and waits for the hotel result using the verified ID or furniture-details layout.",
+        "Purchases an offer by ID and waits for the hotel result.",
         MessageKeys.Marketplace.Offers.Buy,
         MessageKeys.Marketplace.Offers.BuyResult,
-        [OfferIdParameter(), TextParameter("extra_data", "Optional furniture variant data for Unity details purchases."), TimeoutParameter()],
+        [OfferIdParameter(), TimeoutParameter()],
         new(false, true, false, true));
 
     public static ApplicationDescriptor OfferBuySend { get; } = Send<MarketplaceBuySendRequest>(
@@ -134,7 +134,7 @@ internal static class MarketplaceApplicationDescriptors
         "Send marketplace purchase",
         "Sends a purchase for a cached offer without waiting for the hotel result.",
         MessageKeys.Marketplace.Offers.Buy,
-        [OfferIdParameter(), TextParameter("extra_data", "Optional furniture variant data for Unity details purchases.")],
+        [OfferIdParameter()],
         new(false, true, false, true));
 
     public static ApplicationDescriptor OfferCancel { get; } = RequestResponse<

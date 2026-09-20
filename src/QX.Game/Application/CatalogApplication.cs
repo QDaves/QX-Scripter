@@ -16,7 +16,6 @@ internal sealed class CatalogApplication : IApplicationFeature, ICatalogBrowseOp
     private const int lease_limit = 16;
     private const int output_limit = 500;
     private const int purchase_product_limit = 256;
-    private const int purchase_item_limit = (output_limit - purchase_product_limit) / 2;
     private const int worker_timeout_milliseconds = 120000;
     private static readonly long maximum_age_milliseconds =
         TimeSpan.MaxValue.Ticks / TimeSpan.TicksPerMillisecond;
@@ -1511,8 +1510,7 @@ internal sealed class CatalogApplication : IApplicationFeature, ICatalogBrowseOp
         value.ProductCount,
         value.UniqueLimitedItem,
         value.UniqueLimitedItemSeriesSize,
-        value.UniqueLimitedItemsLeft,
-        value.UnityProductType);
+        value.UniqueLimitedItemsLeft);
 
     private CatalogPurchaseStateView CapturePurchaseStateView()
     {
@@ -1547,33 +1545,27 @@ internal sealed class CatalogApplication : IApplicationFeature, ICatalogBrowseOp
 
     private static CatalogPurchaseOutcomeView PurchaseOutcomeView(
         CatalogPurchaseOutcome outcome) => outcome.Status switch
-    {
-        CatalogPurchaseStatus.Completed when outcome.Offer is { } offer => new(
-            CatalogPurchaseOutcomeKind.Accepted,
-            PurchaseOfferView(offer),
-            0),
-        CatalogPurchaseStatus.Failed => new(
-            CatalogPurchaseOutcomeKind.Failed,
-            null,
-            outcome.ErrorCode),
-        CatalogPurchaseStatus.NotAllowed => new(
-            CatalogPurchaseOutcomeKind.Forbidden,
-            null,
-            outcome.ErrorCode),
-        _ => throw new InvalidDataException("The passive catalog purchase outcome is invalid.")
-    };
+        {
+            CatalogPurchaseStatus.Completed when outcome.Offer is { } offer => new(
+                CatalogPurchaseOutcomeKind.Accepted,
+                PurchaseOfferView(offer),
+                0),
+            CatalogPurchaseStatus.Failed => new(
+                CatalogPurchaseOutcomeKind.Failed,
+                null,
+                outcome.ErrorCode),
+            CatalogPurchaseStatus.NotAllowed => new(
+                CatalogPurchaseOutcomeKind.Forbidden,
+                null,
+                outcome.ErrorCode),
+            _ => throw new InvalidDataException("The passive catalog purchase outcome is invalid.")
+        };
 
     private static CatalogPurchaseOfferView PurchaseOfferView(PurchaseOffer offer)
     {
         CatalogProductView[] products = offer.Products
             .Take(purchase_product_limit)
             .Select(ProductView)
-            .ToArray();
-        Id[] room_items = (offer.RoomItems ?? [])
-            .Take(purchase_item_limit)
-            .ToArray();
-        Id[] wall_items = (offer.WallItems ?? [])
-            .Take(purchase_item_limit)
             .ToArray();
         return new CatalogPurchaseOfferView(
             offer.OfferId,
@@ -1587,14 +1579,7 @@ internal sealed class CatalogApplication : IApplicationFeature, ICatalogBrowseOp
             offer.BundlePurchaseAllowed,
             offer.Products.Count,
             products.Length != offer.Products.Count,
-            Array.AsReadOnly(products),
-            offer.GiftTo,
-            offer.RoomItems?.Count ?? 0,
-            room_items.Length != (offer.RoomItems?.Count ?? 0),
-            Array.AsReadOnly(room_items),
-            offer.WallItems?.Count ?? 0,
-            wall_items.Length != (offer.WallItems?.Count ?? 0),
-            Array.AsReadOnly(wall_items));
+            Array.AsReadOnly(products));
     }
 
     private static CatalogPurchaseOutcome DispatchedPurchase() => new(

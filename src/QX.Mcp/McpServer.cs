@@ -25,7 +25,7 @@ public sealed class McpServer
 
     private const string CoreInstructions =
         """
-        QX Scripter drives a live Habbo client. It attaches to a Flash or Unity session through a
+        QX Scripter drives a live Habbo client. It attaches to a Flash session through a
         G-Earth interceptor, mirrors the whole game state, and hosts a C# scripting runtime that runs
         inside the QX process.
 
@@ -164,7 +164,7 @@ public sealed class McpServer
 
     public bool Start()
     {
-        // Fixed port so the Claude MCP config URL (http://127.0.0.1:9390/mcp) is stable.
+        // Fixed port so the MCP client config URL (http://127.0.0.1:9390/mcp) is stable.
         // A dynamic/scanning port would drift and break the static client config.
         // 9390 is QX's own: 9090 is taken by Xabbo.Scripter's MCP and 9092+ by G-Earth extensions.
         var listener = new HttpListener();
@@ -194,6 +194,9 @@ public sealed class McpServer
 
     public static string PortHolder(int port)
     {
+        if (!OperatingSystem.IsWindows())
+            return "another process";
+
         try
         {
             int pid = owning_pid(port);
@@ -232,7 +235,7 @@ public sealed class McpServer
                 int localPort = System.Runtime.InteropServices.Marshal.ReadInt32(row, 8);
                 int resolved = ((localPort & 0xFF) << 8) | ((localPort >> 8) & 0xFF);
                 if (resolved == port)
-                    return System.Runtime.InteropServices.Marshal.ReadInt32(row, 12);
+                    return System.Runtime.InteropServices.Marshal.ReadInt32(row, 20);
                 row += 24;
             }
             return 0;
@@ -708,11 +711,11 @@ public sealed class McpServer
         new McpTool
         {
             Name = "get_protocol_messages",
-            Description = "Inspect the authoritative Flash/Unity message registry, active catalog provenance and exact alias-to-header evidence. Stable semantic MessageKeys are the only supported dependency for features. With explicit_only=false, generated legacy keys are returned as stable=false and key_kind=legacy; they remain migration evidence rather than contracts even when their active aliases resolve. Header IDs come from the immutable active-session catalog and are never embedded in feature code.",
+            Description = "Inspect the authoritative Flash message registry, active catalog provenance and exact alias-to-header evidence. Stable semantic MessageKeys are the only supported dependency for features. With explicit_only=false, generated legacy keys are returned as stable=false and key_kind=legacy; they remain migration evidence rather than contracts even when their active aliases resolve. Header IDs come from the immutable active-session catalog and are never embedded in feature code.",
             InputSchema = OptionalSchema(
                 ("query", "string", "optional semantic key or client header-name substring", "", null, null),
                 ("direction", "string", "in, out, or both", "both", null, null),
-                ("client", "string", "flash, unity, or all", "all", null, null),
+                ("client", "string", "flash or all", "all", null, null),
                 ("explicit_only", "boolean", "return only stable semantic keys; false also includes clearly marked legacy evidence", true, null, null),
                 ("resolved_only", "boolean", "return only messages resolved for the active hotel session", false, null, null),
                 ("limit", "integer", "maximum returned messages", 100, 1, 500),
@@ -840,7 +843,7 @@ public sealed class McpServer
         new McpTool
         {
             Name = "get_pet_inventory",
-            Description = "Get a bounded structured pet inventory with exact Flash and Unity fields, fragment generation and load state, fetching it when missing or stale by default. Continuation pages require the snapshot_revision returned by the first page.",
+            Description = "Get a bounded structured pet inventory with exact Flash fields, fragment generation and load state, fetching it when missing or stale by default. Continuation pages require the snapshot_revision returned by the first page.",
             InputSchema = OptionalSchema(
                 ("fetch", "boolean", "fetch a complete baseline when missing or stale before the first page; ignored when snapshot_revision is supplied", true, null, null),
                 ("limit", "integer", "maximum returned pets", 50, 1, 200),

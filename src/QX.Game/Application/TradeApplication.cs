@@ -914,7 +914,6 @@ internal sealed class TradeApplication : IApplicationFeature
         bool valid = client switch
         {
             ClientType.Flash => value != 0 && value is >= int.MinValue and <= int.MaxValue,
-            ClientType.Unity => value != 0,
             _ => false
         };
         if (!valid)

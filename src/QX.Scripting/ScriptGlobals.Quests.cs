@@ -4,19 +4,6 @@ using Qx.Model.Quests;
 
 namespace Qx.Scripting;
 
-/// <content>
-/// Quests and campaigns: cached quest state plus the fire-and-forget requests and actions that
-/// drive it. Available on both the Flash and the Unity client.
-/// <para>
-/// Nothing here blocks or returns a value. Each request sends one message and returns
-/// immediately; the answer surfaces later through the cached state and the quest events. To wait
-/// for a specific reply, subscribe first and then send the request.
-/// </para>
-/// <para>
-/// Every cached value is a copy taken under the tracker's lock, so a list read here never changes
-/// while it is being enumerated. All of it is cleared when the session resets.
-/// </para>
-/// </content>
 public partial class ScriptGlobals
 {
     /// <summary>

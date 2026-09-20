@@ -338,7 +338,7 @@ public partial class ScriptGlobals
         WiredTradeAddItems(inventory_ids.Select(value => (Id)(long)value).ToArray());
 
     /// <summary>
-    /// Adds inventory items to the open wired trade, taking 64-bit ids. Returns immediately.
+    /// Adds inventory items to the open wired trade, taking ids as long values. Returns immediately.
     /// </summary>
     /// <param name="inventory_ids">The inventory item ids to offer.</param>
     public void WiredTradeAddItems(IReadOnlyList<long> inventory_ids) =>
@@ -362,7 +362,7 @@ public partial class ScriptGlobals
         WiredTradeRemoveItems(inventory_ids.Select(value => (Id)(long)value).ToArray());
 
     /// <summary>
-    /// Takes inventory items back off the open wired trade, taking 64-bit ids. Returns immediately.
+    /// Takes inventory items back off the open wired trade, taking ids as long values. Returns immediately.
     /// </summary>
     /// <param name="inventory_ids">The inventory item ids to withdraw from the offer.</param>
     public void WiredTradeRemoveItems(IReadOnlyList<long> inventory_ids) =>
@@ -484,7 +484,8 @@ public partial class ScriptGlobals
                     ? "No items were named."
                     : "Every item named is untradeable, which a chest will not take.",
                 all.Length,
-                []) { Skipped = skipped };
+                [])
+            { Skipped = skipped };
         }
 
         ChestDeposit result = await DepositToChest(chest.Id, takeable.Select(item => item.ItemId), timeoutMs);

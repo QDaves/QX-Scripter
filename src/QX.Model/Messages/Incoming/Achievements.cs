@@ -179,19 +179,14 @@ public sealed class Achievement : IParserComposer<Achievement>
     public Achievement() { }
 
     public static Achievement Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static Achievement ParseFlash(in PacketReader p) => ParseRoot(in p);
 
-    private static Achievement ParseUnity(in PacketReader p) => ParseRoot(in p);
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(Achievement value, in PacketWriter p) =>
-        ComposeRoot(value, in p);
-
-    private static void ComposeUnity(Achievement value, in PacketWriter p) =>
         ComposeRoot(value, in p);
 
     internal static Achievement ParseWire(
@@ -326,19 +321,14 @@ internal readonly record struct AchievementWireSnapshot(
 public sealed record AchievementUpdate(Achievement Achievement) : IParserComposer<AchievementUpdate>
 {
     public static AchievementUpdate Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static AchievementUpdate ParseFlash(in PacketReader p) => ParseMessage(in p);
 
-    private static AchievementUpdate ParseUnity(in PacketReader p) => ParseMessage(in p);
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(AchievementUpdate value, in PacketWriter p) =>
-        ComposeMessage(value, in p);
-
-    private static void ComposeUnity(AchievementUpdate value, in PacketWriter p) =>
         ComposeMessage(value, in p);
 
     private static AchievementUpdate ParseMessage(in PacketReader p)
@@ -361,31 +351,6 @@ public sealed record AchievementUpdate(Achievement Achievement) : IParserCompose
     }
 }
 
-/// <summary>
-/// Announces that an achievement reached a new level, granting a badge and - from the second level
-/// onwards - retiring the badge of the level it replaced.
-/// </summary>
-/// <remarks>
-/// Flash reads all fourteen fields. Unity stops after the dialog flag: its parser performs twelve
-/// reads and never touches the owner count or the rarity, so both are left at zero there and are
-/// not written back.
-/// </remarks>
-/// <param name="Type">Achievement type identifier.</param>
-/// <param name="Level">Level that was just reached.</param>
-/// <param name="BadgeId">Numeric identifier of the granted badge.</param>
-/// <param name="BadgeCode">Badge code that is now owned.</param>
-/// <param name="Points">Achievement score awarded in total.</param>
-/// <param name="LevelRewardPoints">Currency amount awarded for this level.</param>
-/// <param name="LevelRewardPointType">Activity point type the level reward was paid in.</param>
-/// <param name="BonusPoints">Bonus achievement score awarded on top of <paramref name="Points"/>.</param>
-/// <param name="AchievementId">Identifier of the achievement within its category.</param>
-/// <param name="RemovedBadgeCode">
-/// Badge code the granted badge replaces. Empty when the achievement had no previous level.
-/// </param>
-/// <param name="Category">Achievement category name.</param>
-/// <param name="ShowDialogToUser">Whether the client is expected to present the level-up dialog.</param>
-/// <param name="OwnerCount">Number of accounts owning the granted badge.</param>
-/// <param name="BadgeRarityId">Rarity bucket of the granted badge.</param>
 public sealed record AchievementNotification(
     int Type,
     int Level,
@@ -403,17 +368,14 @@ public sealed record AchievementNotification(
     int BadgeRarityId) : IParserComposer<AchievementNotification>
 {
     public static AchievementNotification Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static AchievementNotification ParseFlash(in PacketReader p) =>
-        ParseMessage(in p, true);
+        ParseMessage(in p);
 
-    private static AchievementNotification ParseUnity(in PacketReader p) =>
-        ParseMessage(in p, false);
-
-    private static AchievementNotification ParseMessage(in PacketReader p, bool has_rarity_data)
+    private static AchievementNotification ParseMessage(in PacketReader p)
     {
-        int rarity_bytes = has_rarity_data ? sizeof(int) * 2 : 0;
+        const int rarity_bytes = sizeof(int) * 2;
         AchievementBadgeWire.RequireRemaining(
             in p,
             checked(39 + rarity_bytes),
@@ -441,8 +403,8 @@ public sealed record AchievementNotification(
             nameof(Category),
             checked(sizeof(byte) + rarity_bytes));
         bool show_dialog_to_user = p.ReadBool();
-        int owner_count = has_rarity_data ? p.ReadInt() : 0;
-        int badge_rarity_id = has_rarity_data ? p.ReadInt() : 0;
+        int owner_count = p.ReadInt();
+        int badge_rarity_id = p.ReadInt();
 
         var value = new AchievementNotification(
             type,
@@ -464,25 +426,16 @@ public sealed record AchievementNotification(
     }
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(AchievementNotification value, in PacketWriter p) =>
-        ComposeMessage(value, true, in p);
-
-    private static void ComposeUnity(AchievementNotification value, in PacketWriter p) =>
-        ComposeMessage(value, false, in p);
+        ComposeMessage(value, in p);
 
     private static void ComposeMessage(
         AchievementNotification value,
-        bool has_rarity_data,
         in PacketWriter p)
     {
         ArgumentNullException.ThrowIfNull(value);
-        if (!has_rarity_data && (value.OwnerCount != 0 || value.BadgeRarityId != 0))
-        {
-            throw new InvalidDataException(
-                "Unity achievement notifications cannot contain rarity data.");
-        }
         var strings = AchievementBadgeWire.NewStringBudget();
         strings.Require(value.BadgeCode, nameof(BadgeCode), in p);
         strings.Require(value.RemovedBadgeCode, nameof(RemovedBadgeCode), in p);
@@ -501,24 +454,15 @@ public sealed record AchievementNotification(
         p.WriteString(value.Category);
         p.WriteBool(value.ShowDialogToUser);
 
-        if (!has_rarity_data)
-            return;
-
         p.WriteInt(value.OwnerCount);
         p.WriteInt(value.BadgeRarityId);
     }
 }
 
-/// <summary>The account's total achievement score.</summary>
-/// <remarks>
-/// Flash layout. The Unity build declares <c>AchievementScore</c> but the extract carries no
-/// schema for it, so nothing parses this on Unity sessions.
-/// </remarks>
-/// <param name="Score">The score.</param>
 public sealed record AchievementScore(int Score) : IParserComposer<AchievementScore>
 {
     public static AchievementScore Parse(in PacketReader p) =>
-        ModernWireClients.ParseFlash(in p, ParseFlash);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static AchievementScore ParseFlash(in PacketReader p)
     {
@@ -533,7 +477,7 @@ public sealed record AchievementScore(int Score) : IParserComposer<AchievementSc
     }
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.ComposeFlash(this, in p, ComposeFlash);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(AchievementScore value, in PacketWriter p)
     {
@@ -560,13 +504,6 @@ public sealed record BadgePointLimit(string AchievementCode, int Level, int Limi
     public string BadgeCode => Achievement.BadgePrefix + AchievementCode + Level;
 }
 
-/// <summary>
-/// Every badge's point limit, grouped by achievement.
-/// </summary>
-/// <remarks>
-/// Flash and Unity both read a nested pair of loops: an outer one per achievement code and an inner
-/// one per level. Their counter widths differ.
-/// </remarks>
 public sealed record BadgePointLimits : IParserComposer<BadgePointLimits>
 {
     private IReadOnlyList<BadgePointLimit> _limits =
@@ -603,17 +540,10 @@ public sealed record BadgePointLimits : IParserComposer<BadgePointLimits>
         return null;
     }
 
-    /// <remarks>
-    /// One group per achievement, each with its code and then a level and a limit per line. Flash
-    /// counts both in four bytes; Unity sends each as an array, and its generic array reader takes
-    /// two unless the message was built for another width, which this one was not.
-    /// </remarks>
     public static BadgePointLimits Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+    FlashWire.Parse(in p, ParseFlash);
 
     private static BadgePointLimits ParseFlash(in PacketReader p) => ParseLimits(in p);
-
-    private static BadgePointLimits ParseUnity(in PacketReader p) => ParseLimits(in p);
 
     private static BadgePointLimits ParseLimits(in PacketReader p)
     {
@@ -653,12 +583,9 @@ public sealed record BadgePointLimits : IParserComposer<BadgePointLimits>
     }
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(BadgePointLimits value, in PacketWriter p) =>
-        ComposeLimits(value, in p);
-
-    private static void ComposeUnity(BadgePointLimits value, in PacketWriter p) =>
         ComposeLimits(value, in p);
 
     private static void ComposeLimits(BadgePointLimits value, in PacketWriter p)
@@ -749,11 +676,9 @@ public sealed record Achievements : IParserComposer<Achievements>
     }
 
     public static Achievements Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static Achievements ParseFlash(in PacketReader p) => ParseList(in p);
-
-    private static Achievements ParseUnity(in PacketReader p) => ParseList(in p);
 
     private static Achievements ParseList(in PacketReader p)
     {
@@ -780,12 +705,9 @@ public sealed record Achievements : IParserComposer<Achievements>
     }
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(Achievements value, in PacketWriter p) =>
-        ComposeList(value, in p);
-
-    private static void ComposeUnity(Achievements value, in PacketWriter p) =>
         ComposeList(value, in p);
 
     private static void ComposeList(Achievements value, in PacketWriter p)

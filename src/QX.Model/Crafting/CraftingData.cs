@@ -14,10 +14,11 @@ public sealed record CraftingProduct(
         bool has_product_code)
     {
         CraftingWire.RequireSupportedClient(p.Client);
+        if (!has_product_code)
+            throw new InvalidDataException("Flash crafting products require a product code.");
         var strings = CraftingWire.NewStringBudget();
         return CraftingWire.ParseProduct(
             in p,
-            has_product_code,
             0,
             ref strings);
     }
@@ -60,21 +61,19 @@ internal static class CraftingWire
 
     public static void RequireSupportedClient(ClientType client)
     {
-        if (client is not (ClientType.Flash or ClientType.Unity))
+        if (client is not (ClientType.Flash))
             throw new UnsupportedClientException(client);
     }
 
     public static int CountWidth(ClientType client) => client switch
     {
         ClientType.Flash => sizeof(int),
-        ClientType.Unity => sizeof(short),
         _ => throw new UnsupportedClientException(client)
     };
 
     public static int IdWidth(ClientType client) => client switch
     {
         ClientType.Flash => sizeof(int),
-        ClientType.Unity => sizeof(long),
         _ => throw new UnsupportedClientException(client)
     };
 
@@ -90,7 +89,6 @@ internal static class CraftingWire
         int count = p.Client switch
         {
             ClientType.Flash => p.ReadInt(),
-            ClientType.Unity => unchecked((ushort)p.ReadShort()),
             _ => throw new UnsupportedClientException(p.Client)
         };
         RequireCount(count, name);
@@ -180,7 +178,6 @@ internal static class CraftingWire
         return p.Client switch
         {
             ClientType.Flash => p.ReadInt(),
-            ClientType.Unity => p.ReadLong(),
             _ => throw new UnsupportedClientException(p.Client)
         };
     }
@@ -188,18 +185,12 @@ internal static class CraftingWire
     public static void RequireId(Id value, ClientType client)
     {
         RequireSupportedClient(client);
-        if (client is ClientType.Flash)
-            _ = checked((int)(long)value);
+        _ = checked((int)(long)value);
     }
 
     public static void WriteId(Id value, in PacketWriter p)
     {
-        if (p.Client is ClientType.Flash)
-            p.WriteInt(checked((int)(long)value));
-        else if (p.Client is ClientType.Unity)
-            p.WriteLong(value);
-        else
-            throw new UnsupportedClientException(p.Client);
+        p.WriteInt(checked((int)(long)value));
     }
 
     public static void WriteCount(int count, in PacketWriter p) =>
@@ -207,30 +198,18 @@ internal static class CraftingWire
 
     public static CraftingProduct ParseProduct(
         in PacketReader p,
-        bool has_product_code,
         int trailing_bytes,
         ref CraftingStringBudget strings)
     {
         RequireSupportedClient(p.Client);
-        if (p.Client is ClientType.Flash && !has_product_code)
-        {
-            throw new InvalidDataException(
-                "Flash crafting products require a product code.");
-        }
-
-        int remaining_prefixes = has_product_code ? 2 : 1;
         string recipe_code = strings.Read(
             in p,
             nameof(CraftingProduct.RecipeCode),
-            checked(trailing_bytes + remaining_prefixes * StringPrefixBytes));
-        string? product_code = null;
-        if (has_product_code)
-        {
-            product_code = strings.Read(
-                in p,
-                nameof(CraftingProduct.ProductCode),
-                checked(trailing_bytes + StringPrefixBytes));
-        }
+            checked(trailing_bytes + 2 * StringPrefixBytes));
+        string product_code = strings.Read(
+            in p,
+            nameof(CraftingProduct.ProductCode),
+            checked(trailing_bytes + StringPrefixBytes));
         string furniture_class_name = strings.Read(
             in p,
             nameof(CraftingProduct.FurnitureClassName),
@@ -248,7 +227,7 @@ internal static class CraftingWire
     {
         ArgumentNullException.ThrowIfNull(value);
         RequireSupportedClient(p.Client);
-        if (p.Client is ClientType.Flash && value.ProductCode is null)
+        if (value.ProductCode is null)
         {
             throw new InvalidDataException(
                 "Flash crafting products require a product code.");

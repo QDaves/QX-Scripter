@@ -16,11 +16,9 @@ public sealed record PurchaseFromCatalogRequest(
     int Quantity) : IParserComposer<PurchaseFromCatalogRequest>
 {
     public static PurchaseFromCatalogRequest Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static PurchaseFromCatalogRequest ParseFlash(in PacketReader p) => ParseRequest(in p);
-
-    private static PurchaseFromCatalogRequest ParseUnity(in PacketReader p) => ParseRequest(in p);
 
     private static PurchaseFromCatalogRequest ParseRequest(in PacketReader p)
     {
@@ -37,12 +35,9 @@ public sealed record PurchaseFromCatalogRequest(
     }
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(PurchaseFromCatalogRequest value, in PacketWriter p) =>
-        value.ComposeRequest(in p);
-
-    private static void ComposeUnity(PurchaseFromCatalogRequest value, in PacketWriter p) =>
         value.ComposeRequest(in p);
 
     private void ComposeRequest(in PacketWriter p)

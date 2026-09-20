@@ -82,7 +82,6 @@ internal sealed class CatalogCache
     internal const int MaximumProductsPerOffer = 256;
     internal const int MaximumProductsPerPage = 16384;
     internal const int MaximumLocalizationsPerPage = 256;
-    internal const int MaximumUnityProductsPerOffer = 256;
     internal const int MaximumFrontPageItems = 256;
 
     private readonly Dictionary<string, Entry> entries = new(StringComparer.Ordinal);
@@ -308,29 +307,8 @@ internal sealed class CatalogCache
         ArgumentNullException.ThrowIfNull(source);
         if (source.Products.Count > MaximumProductsPerOffer)
             throw new InvalidDataException($"Catalog offer product count exceeds the limit {MaximumProductsPerOffer}.");
-        if ((source.UnityProductReferences?.Count ?? 0) > MaximumUnityProductsPerOffer ||
-            (source.UnityProducts?.Count ?? 0) > MaximumUnityProductsPerOffer)
-        {
-            throw new InvalidDataException(
-                $"Catalog Unity product count exceeds the limit {MaximumUnityProductsPerOffer}.");
-        }
         product_total = checked(product_total + source.Products.Count);
         CatalogProduct[] products = source.Products.Select(FreezeProduct).ToArray();
-        CatalogPageProductReference[]? references = source.UnityProductReferences is null
-            ? null
-            : source.UnityProductReferences.Select(value => new CatalogPageProductReference(
-                value.ProductType,
-                Required(value.Identifier))).ToArray();
-        CatalogPageProduct[]? unity_products = source.UnityProducts is null
-            ? null
-            : source.UnityProducts.Select(value => new CatalogPageProduct(
-                value.ProductType,
-                value.FurniClassId,
-                Required(value.ExtraParam),
-                value.ProductCount,
-                value.UniqueLimitedItem,
-                value.UniqueLimitedItemSeriesSize,
-                value.UniqueLimitedItemsLeft)).ToArray();
         return new CatalogPageOffer(
             source.OfferId,
             Required(source.LocalizationId),
@@ -344,9 +322,7 @@ internal sealed class CatalogCache
             source.ClubLevel,
             source.BundlePurchaseAllowed,
             source.IsPet,
-            Required(source.PreviewImage),
-            references is null ? null : Array.AsReadOnly(references),
-            unity_products is null ? null : Array.AsReadOnly(unity_products));
+            Required(source.PreviewImage));
     }
 
     private static CatalogProduct FreezeProduct(CatalogProduct source)
@@ -359,8 +335,7 @@ internal sealed class CatalogCache
             source.ProductCount,
             source.UniqueLimitedItem,
             source.UniqueLimitedItemSeriesSize,
-            source.UniqueLimitedItemsLeft,
-            source.UnityProductType);
+            source.UniqueLimitedItemsLeft);
     }
 
     private static CatalogFrontPageItem FreezeFrontPageItem(CatalogFrontPageItem source)

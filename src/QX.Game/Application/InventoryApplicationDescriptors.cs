@@ -99,7 +99,7 @@ internal static class InventoryApplicationDescriptors
     public static ApplicationDescriptor AvatarEffectActivate { get; } = new(
         ApplicationMemberIds.InventoryAvatarEffectActivate,
         "Activate avatar effect",
-        "Activates an owned avatar effect through the active client dialect.",
+        "Activates an owned avatar effect through Flash.",
         ApplicationMemberKind.Operation,
         ApplicationExposure.All,
         typeof(InventoryAvatarEffectRequest),

@@ -14,7 +14,6 @@ public sealed record McpConfig
     public const int TokenByteLength = 24;
 
     private const int MinimumTokenLength = 32;
-    private const string ConfigDirectoryName = "QX Scripter";
     private const string ConfigFileName = "mcp.json";
 
     private static readonly JsonSerializerOptions FileOptions =
@@ -37,10 +36,8 @@ public sealed record McpConfig
 
     public IReadOnlyList<string>? ToolFilter { get; init; }
 
-    /// <summary>The default configuration file, <c>%APPDATA%/QX Scripter/mcp.json</c>.</summary>
     public static string DefaultPath { get; } = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-        ConfigDirectoryName,
+        StoragePaths.Configuration,
         ConfigFileName);
 
     /// <summary>Generates a fresh CSPRNG token as lowercase hex.</summary>

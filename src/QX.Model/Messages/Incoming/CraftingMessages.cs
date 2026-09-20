@@ -32,10 +32,10 @@ public sealed record CraftableProducts : IParserComposer<CraftableProducts>
     }
 
     public static CraftableProducts Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     public void Deconstruct(
         out IReadOnlyList<CraftingProduct> Products,
@@ -46,52 +46,16 @@ public sealed record CraftableProducts : IParserComposer<CraftableProducts>
     }
 
     private static CraftableProducts ParseFlash(in PacketReader p) =>
-        ParseLayout(in p, true);
+        ParseLayout(in p);
 
     private static void ComposeFlash(CraftableProducts value, in PacketWriter p) =>
-        ComposeLayout(value, true, in p);
+        ComposeLayout(value, in p);
 
-    private static void ComposeUnity(CraftableProducts value, in PacketWriter p) =>
-        ComposeLayout(value, false, in p);
-
-    private static CraftableProducts ParseUnity(in PacketReader p)
-    {
-        int start = p.Pos;
-        CraftableProducts? legacy = TryParseLayout(
-            in p,
-            false,
-            out bool legacy_valid);
-        p.Pos = start;
-        CraftableProducts? current = TryParseLayout(
-            in p,
-            true,
-            out bool current_valid);
-        p.Pos = start;
-
-        if (legacy_valid && current_valid)
-        {
-            if (legacy!.Products.Count == 0 && current!.Products.Count == 0)
-                return ParseLayout(in p, false);
-            throw new InvalidDataException(
-                "The Unity craftable-product layout is ambiguous.");
-        }
-        if (!legacy_valid && !current_valid)
-        {
-            throw new InvalidDataException(
-                "The Unity craftable-product layout is unsupported.");
-        }
-        return ParseLayout(in p, current_valid);
-    }
-
-    private static CraftableProducts ParseLayout(
-        in PacketReader p,
-        bool has_product_code)
+    private static CraftableProducts ParseLayout(in PacketReader p)
     {
         var strings = CraftingWire.NewStringBudget();
         int count_width = CraftingWire.CountWidth(p.Client);
-        int product_minimum_bytes = has_product_code
-            ? CraftingWire.StringPrefixBytes * 3
-            : CraftingWire.StringPrefixBytes * 2;
+        int product_minimum_bytes = CraftingWire.StringPrefixBytes * 3;
         int product_count = CraftingWire.ReadCount(
             in p,
             product_minimum_bytes,
@@ -104,7 +68,6 @@ public sealed record CraftableProducts : IParserComposer<CraftableProducts>
                 (products.Length - index - 1) * product_minimum_bytes);
             products[index] = CraftingWire.ParseProduct(
                 in p,
-                has_product_code,
                 checked(sibling_bytes + count_width),
                 ref strings);
         }
@@ -131,31 +94,8 @@ public sealed record CraftableProducts : IParserComposer<CraftableProducts>
             usable_inventory_furniture_classes);
     }
 
-    private static CraftableProducts? TryParseLayout(
-        in PacketReader p,
-        bool has_product_code,
-        out bool valid)
-    {
-        try
-        {
-            CraftableProducts products = ParseLayout(in p, has_product_code);
-            valid = true;
-            return products;
-        }
-        catch (Exception error) when (
-            error is InvalidDataException or
-                IndexOutOfRangeException or
-                ArgumentOutOfRangeException or
-                OverflowException)
-        {
-            valid = false;
-            return null;
-        }
-    }
-
     private static void ComposeLayout(
         CraftableProducts value,
-        bool flash,
         in PacketWriter p)
     {
         ArgumentNullException.ThrowIfNull(value);
@@ -166,22 +106,10 @@ public sealed record CraftableProducts : IParserComposer<CraftableProducts>
             value.UsableInventoryFurnitureClasses,
             nameof(value.UsableInventoryFurnitureClasses));
         var strings = CraftingWire.NewStringBudget();
-        bool? has_product_code = null;
         foreach (CraftingProduct product in value.Products)
         {
             ArgumentNullException.ThrowIfNull(product, nameof(value.Products));
-            if (has_product_code is bool expected && expected != product.HasProductCode)
-            {
-                throw new InvalidDataException(
-                    "Crafting products cannot mix two-string and three-string layouts.");
-            }
-            has_product_code = product.HasProductCode;
             CraftingWire.PrepareProduct(product, ref strings, in p);
-        }
-        if (flash && has_product_code is false)
-        {
-            throw new InvalidDataException(
-                "Flash craftable products require product codes.");
         }
         foreach (string furniture_class in value.UsableInventoryFurnitureClasses)
         {
@@ -217,10 +145,10 @@ public sealed record CraftingRecipe : IParserComposer<CraftingRecipe>
     }
 
     public static CraftingRecipe Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     public void Deconstruct(out IReadOnlyList<CraftingIngredient> Ingredients)
     {
@@ -230,13 +158,7 @@ public sealed record CraftingRecipe : IParserComposer<CraftingRecipe>
     private static CraftingRecipe ParseFlash(in PacketReader p) =>
         ParseLayout(in p);
 
-    private static CraftingRecipe ParseUnity(in PacketReader p) =>
-        ParseLayout(in p);
-
     private static void ComposeFlash(CraftingRecipe value, in PacketWriter p) =>
-        ComposeLayout(value, in p);
-
-    private static void ComposeUnity(CraftingRecipe value, in PacketWriter p) =>
         ComposeLayout(value, in p);
 
     private static CraftingRecipe ParseLayout(in PacketReader p)
@@ -284,86 +206,31 @@ public sealed record CraftingResult(
     : IParserComposer<CraftingResult>
 {
     public static CraftingResult Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static CraftingResult ParseFlash(in PacketReader p)
     {
         CraftingWire.RequireRemaining(in p, sizeof(byte), 0, nameof(CraftingResult));
         bool success = p.ReadBool();
         CraftingProduct? product = success
-            ? ParseProductRoot(in p, true)
+            ? ParseProductRoot(in p)
             : null;
         CraftingWire.RequireEmpty(in p, nameof(CraftingResult));
         return new CraftingResult(success, product);
     }
 
-    private static CraftingResult ParseUnity(in PacketReader p)
-    {
-        CraftingWire.RequireRemaining(in p, sizeof(byte), 0, nameof(CraftingResult));
-        bool success = p.ReadBool();
-        return new CraftingResult(success, ParseUnityProduct(in p));
-    }
-
-    private static CraftingProduct ParseUnityProduct(in PacketReader p)
-    {
-        int start = p.Pos;
-        CraftingProduct? legacy = TryParseProductRoot(
-            in p,
-            false,
-            out bool legacy_valid);
-        p.Pos = start;
-        CraftingProduct? current = TryParseProductRoot(
-            in p,
-            true,
-            out bool current_valid);
-        p.Pos = start;
-
-        if (legacy_valid == current_valid)
-        {
-            throw new InvalidDataException(legacy_valid
-                ? "The Unity crafting-result product layout is ambiguous."
-                : "The Unity crafting-result product layout is unsupported.");
-        }
-        return ParseProductRoot(in p, current_valid);
-    }
-
-    private static CraftingProduct ParseProductRoot(
-        in PacketReader p,
-        bool has_product_code)
+    private static CraftingProduct ParseProductRoot(in PacketReader p)
     {
         var strings = CraftingWire.NewStringBudget();
         CraftingProduct product = CraftingWire.ParseProduct(
             in p,
-            has_product_code,
             0,
             ref strings);
         CraftingWire.RequireEmpty(in p, nameof(CraftingResult));
         return product;
-    }
-
-    private static CraftingProduct? TryParseProductRoot(
-        in PacketReader p,
-        bool has_product_code,
-        out bool valid)
-    {
-        try
-        {
-            CraftingProduct product = ParseProductRoot(in p, has_product_code);
-            valid = true;
-            return product;
-        }
-        catch (Exception error) when (
-            error is InvalidDataException or
-                IndexOutOfRangeException or
-                ArgumentOutOfRangeException or
-                OverflowException)
-        {
-            valid = false;
-            return null;
-        }
     }
 
     private static void ComposeFlash(CraftingResult value, in PacketWriter p)
@@ -382,19 +249,6 @@ public sealed record CraftingResult(
         if (value.Product is CraftingProduct composed_product)
             CraftingWire.WriteProduct(composed_product, in p);
     }
-
-    private static void ComposeUnity(CraftingResult value, in PacketWriter p)
-    {
-        ArgumentNullException.ThrowIfNull(value);
-        CraftingProduct product = value.Product ??
-            throw new InvalidDataException(
-                "Unity crafting results always contain a product.");
-        var strings = CraftingWire.NewStringBudget();
-        CraftingWire.PrepareProduct(product, ref strings, in p);
-
-        p.WriteBool(value.Success);
-        CraftingWire.WriteProduct(product, in p);
-    }
 }
 
 public sealed record CraftingRecipesAvailable(
@@ -403,23 +257,15 @@ public sealed record CraftingRecipesAvailable(
     : IParserComposer<CraftingRecipesAvailable>
 {
     public static CraftingRecipesAvailable Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static CraftingRecipesAvailable ParseFlash(in PacketReader p) =>
         ParseLayout(in p);
 
-    private static CraftingRecipesAvailable ParseUnity(in PacketReader p) =>
-        ParseLayout(in p);
-
     private static void ComposeFlash(
-        CraftingRecipesAvailable value,
-        in PacketWriter p) =>
-        ComposeLayout(value, in p);
-
-    private static void ComposeUnity(
         CraftingRecipesAvailable value,
         in PacketWriter p) =>
         ComposeLayout(value, in p);
@@ -451,21 +297,15 @@ public sealed record GetCraftableProducts(
     : IParserComposer<GetCraftableProducts>
 {
     public static GetCraftableProducts Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static GetCraftableProducts ParseFlash(in PacketReader p) =>
         ParseLayout(in p);
 
-    private static GetCraftableProducts ParseUnity(in PacketReader p) =>
-        ParseLayout(in p);
-
     private static void ComposeFlash(GetCraftableProducts value, in PacketWriter p) =>
-        ComposeLayout(value, in p);
-
-    private static void ComposeUnity(GetCraftableProducts value, in PacketWriter p) =>
         ComposeLayout(value, in p);
 
     private static GetCraftableProducts ParseLayout(in PacketReader p)
@@ -489,21 +329,15 @@ public sealed record GetCraftingRecipe(
     : IParserComposer<GetCraftingRecipe>
 {
     public static GetCraftingRecipe Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static GetCraftingRecipe ParseFlash(in PacketReader p) =>
         ParseLayout(in p);
 
-    private static GetCraftingRecipe ParseUnity(in PacketReader p) =>
-        ParseLayout(in p);
-
     private static void ComposeFlash(GetCraftingRecipe value, in PacketWriter p) =>
-        ComposeLayout(value, in p);
-
-    private static void ComposeUnity(GetCraftingRecipe value, in PacketWriter p) =>
         ComposeLayout(value, in p);
 
     private static GetCraftingRecipe ParseLayout(in PacketReader p)
@@ -529,21 +363,15 @@ public sealed record Craft(
     : IParserComposer<Craft>
 {
     public static Craft Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static Craft ParseFlash(in PacketReader p) =>
         ParseLayout(in p);
 
-    private static Craft ParseUnity(in PacketReader p) =>
-        ParseLayout(in p);
-
     private static void ComposeFlash(Craft value, in PacketWriter p) =>
-        ComposeLayout(value, in p);
-
-    private static void ComposeUnity(Craft value, in PacketWriter p) =>
         ComposeLayout(value, in p);
 
     private static Craft ParseLayout(in PacketReader p)
@@ -593,10 +421,10 @@ public sealed record CraftSecret : IParserComposer<CraftSecret>
     }
 
     public static CraftSecret Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     public void Deconstruct(
         out Id CraftingFurnitureId,
@@ -609,13 +437,7 @@ public sealed record CraftSecret : IParserComposer<CraftSecret>
     private static CraftSecret ParseFlash(in PacketReader p) =>
         ParseLayout(in p);
 
-    private static CraftSecret ParseUnity(in PacketReader p) =>
-        ParseLayout(in p);
-
     private static void ComposeFlash(CraftSecret value, in PacketWriter p) =>
-        ComposeLayout(value.CraftingFurnitureId, value.IngredientItemIds, in p);
-
-    private static void ComposeUnity(CraftSecret value, in PacketWriter p) =>
         ComposeLayout(value.CraftingFurnitureId, value.IngredientItemIds, in p);
 
     private static CraftSecret ParseLayout(in PacketReader p)
@@ -695,10 +517,10 @@ public sealed record GetCraftingRecipesAvailable
     }
 
     public static GetCraftingRecipesAvailable Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     public void Deconstruct(
         out Id CraftingFurnitureId,
@@ -711,18 +533,7 @@ public sealed record GetCraftingRecipesAvailable
     private static GetCraftingRecipesAvailable ParseFlash(in PacketReader p) =>
         ParseLayout(in p);
 
-    private static GetCraftingRecipesAvailable ParseUnity(in PacketReader p) =>
-        ParseLayout(in p);
-
     private static void ComposeFlash(
-        GetCraftingRecipesAvailable value,
-        in PacketWriter p) =>
-        CraftSecret.ComposeLayout(
-            value.CraftingFurnitureId,
-            value.IngredientItemIds,
-            in p);
-
-    private static void ComposeUnity(
         GetCraftingRecipesAvailable value,
         in PacketWriter p) =>
         CraftSecret.ComposeLayout(

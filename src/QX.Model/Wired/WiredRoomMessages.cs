@@ -6,49 +6,31 @@ namespace Qx.Model.Wired;
 // Incoming parsers verified field-for-field against the July Flash decompile; outgoing
 
 
-/// <summary>
-/// The wired furni whose configuration is being opened.
-/// </summary>
-/// <remarks>
-/// This carries both directions of the open handshake, which use the same single-identifier body.
-/// The hotel pushes it (Flash <c>Open</c> 2635, Unity <c>UserDefinedRoomEventsOpen</c>) to say that
-/// a wired dialog should open, and the client answers with the outgoing form (Flash <c>Open</c>
-/// 1869) to request the configuration itself; only then does the hotel send the matching
-/// <c>WiredFurni…</c> definition. A script that wants a configuration therefore sends this rather
-/// than using the furni, which merely makes the game client perform the same round trip.
-/// The identifier is client-sized: the Flash parser reads an int, and the extracted Unity schema
-/// for <c>UserDefinedRoomEventsOpen</c> is a single <c>Int64</c>.
-/// </remarks>
 public sealed record WiredOpen(Id StuffId) : IParserComposer<WiredOpen>
 {
     public static WiredOpen Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static WiredOpen ParseFlash(in PacketReader p) => new(p.ReadInt());
 
-    private static WiredOpen ParseUnity(in PacketReader p) => new(p.ReadLong());
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(WiredOpen value, in PacketWriter p) =>
         p.WriteInt(WiredWire.FlashId(value.StuffId));
-
-    private static void ComposeUnity(WiredOpen value, in PacketWriter p) =>
-        p.WriteLong(value.StuffId);
 }
 
 // id 3483 — §_-d1K§. Rights gate for the wired menu.
 public sealed record WiredPermissions(bool CanModify, bool CanRead) : IParserComposer<WiredPermissions>
 {
     public static WiredPermissions Parse(in PacketReader p) =>
-        ModernWireClients.ParseFlash(in p, ParseFlash);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static WiredPermissions ParseFlash(in PacketReader p) =>
         new(p.ReadBool(), p.ReadBool());
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.ComposeFlash(this, in p, ComposeFlash);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(WiredPermissions value, in PacketWriter p)
     {
@@ -63,11 +45,9 @@ public sealed record WiredEnvironment(bool HasClickUserWired, IReadOnlyList<stri
     : IParserComposer<WiredEnvironment>
 {
     public static WiredEnvironment Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static WiredEnvironment ParseFlash(in PacketReader p) => Read(in p);
-
-    private static WiredEnvironment ParseUnity(in PacketReader p) => Read(in p);
 
     private static WiredEnvironment Read(in PacketReader p)
     {
@@ -85,19 +65,15 @@ public sealed record WiredEnvironment(bool HasClickUserWired, IReadOnlyList<stri
     }
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(WiredEnvironment value, in PacketWriter p) =>
-        Write(value, in p);
-
-    private static void ComposeUnity(WiredEnvironment value, in PacketWriter p) =>
         Write(value, in p);
 
     private static void Write(WiredEnvironment value, in PacketWriter p)
     {
         if (value.EnabledAchievements is not null)
         {
-            WiredWire.RequireUnityCount(value.EnabledAchievements.Count, nameof(EnabledAchievements));
             foreach (string achievement in value.EnabledAchievements)
                 WiredWire.RequireString(achievement, nameof(EnabledAchievements), in p);
         }
@@ -164,13 +140,13 @@ public sealed record WiredRoomStatsData(
 public sealed record WiredRoomStats(WiredRoomStatsData RoomStats) : IParserComposer<WiredRoomStats>
 {
     public static WiredRoomStats Parse(in PacketReader p) =>
-        ModernWireClients.ParseFlash(in p, ParseFlash);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static WiredRoomStats ParseFlash(in PacketReader p) =>
         new(p.Parse<WiredRoomStatsData>());
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.ComposeFlash(this, in p, ComposeFlash);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(WiredRoomStats value, in PacketWriter p)
     {
@@ -268,13 +244,13 @@ public sealed record WiredLogPage(
 public sealed record WiredRoomLogs(WiredLogPage Page) : IParserComposer<WiredRoomLogs>
 {
     public static WiredRoomLogs Parse(in PacketReader p) =>
-        ModernWireClients.ParseFlash(in p, ParseFlash);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static WiredRoomLogs ParseFlash(in PacketReader p) =>
         new(p.Parse<WiredLogPage>());
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.ComposeFlash(this, in p, ComposeFlash);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(WiredRoomLogs value, in PacketWriter p)
     {
@@ -332,7 +308,7 @@ public sealed record WiredError(
 public sealed record WiredErrorLogs(IReadOnlyList<WiredError> Errors) : IParserComposer<WiredErrorLogs>
 {
     public static WiredErrorLogs Parse(in PacketReader p) =>
-        ModernWireClients.ParseFlash(in p, ParseFlash);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static WiredErrorLogs ParseFlash(in PacketReader p)
     {
@@ -345,7 +321,7 @@ public sealed record WiredErrorLogs(IReadOnlyList<WiredError> Errors) : IParserC
     }
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.ComposeFlash(this, in p, ComposeFlash);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(WiredErrorLogs value, in PacketWriter p)
     {
@@ -379,7 +355,7 @@ public sealed record WiredValidationError(string LocalizationKey, IReadOnlyList<
     : IParserComposer<WiredValidationError>
 {
     public static WiredValidationError Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static WiredValidationError ParseFlash(in PacketReader p)
     {
@@ -392,35 +368,14 @@ public sealed record WiredValidationError(string LocalizationKey, IReadOnlyList<
         return new WiredValidationError(localizationKey, parameters);
     }
 
-    private static WiredValidationError ParseUnity(in PacketReader p)
-    {
-        string localization_key = p.ReadString();
-        int count = p.ReadLength();
-        WiredWire.RequireBoundedCount(count, p.Available, 4, nameof(Parameters));
-        var parameters = new WiredValidationParam[count];
-        for (int i = 0; i < count; i++)
-            parameters[i] = p.Parse<WiredValidationParam>();
-        return new WiredValidationError(localization_key, parameters);
-    }
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(WiredValidationError value, in PacketWriter p)
     {
         Validate(value, in p);
         p.WriteString(value.LocalizationKey);
         p.WriteInt(value.Parameters.Count);
-        foreach (WiredValidationParam param in value.Parameters)
-            param.Compose(p);
-    }
-
-    private static void ComposeUnity(WiredValidationError value, in PacketWriter p)
-    {
-        Validate(value, in p);
-        WiredWire.RequireUnityCount(value.Parameters.Count, nameof(Parameters));
-        p.WriteString(value.LocalizationKey);
-        p.WriteLength((Length)value.Parameters.Count);
         foreach (WiredValidationParam param in value.Parameters)
             param.Compose(p);
     }
@@ -442,11 +397,9 @@ public sealed record WiredValidationError(string LocalizationKey, IReadOnlyList<
 public sealed record WiredSaveSuccess : IParserComposer<WiredSaveSuccess>
 {
     public static WiredSaveSuccess Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static WiredSaveSuccess ParseFlash(in PacketReader p) => Read(in p);
-
-    private static WiredSaveSuccess ParseUnity(in PacketReader p) => Read(in p);
 
     private static WiredSaveSuccess Read(in PacketReader p)
     {
@@ -455,24 +408,22 @@ public sealed record WiredSaveSuccess : IParserComposer<WiredSaveSuccess>
     }
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(WiredSaveSuccess value, in PacketWriter p) { }
-
-    private static void ComposeUnity(WiredSaveSuccess value, in PacketWriter p) { }
 }
 
 // id 1230 — §_-lC§. errorCode is a 2-byte short on the wire.
 public sealed record WiredMenuError(int ErrorCode) : IParserComposer<WiredMenuError>
 {
     public static WiredMenuError Parse(in PacketReader p) =>
-        ModernWireClients.ParseFlash(in p, ParseFlash);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static WiredMenuError ParseFlash(in PacketReader p) =>
         new(p.ReadShort());
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.ComposeFlash(this, in p, ComposeFlash);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(WiredMenuError value, in PacketWriter p)
     {
@@ -485,24 +436,15 @@ public sealed record WiredMenuError(int ErrorCode) : IParserComposer<WiredMenuEr
 public sealed record WiredClickSettings(int UserOption, int FurniOption) : IParserComposer<WiredClickSettings>
 {
     public static WiredClickSettings Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static WiredClickSettings ParseFlash(in PacketReader p) =>
         new(p.ReadInt(), p.ReadInt());
 
-    private static WiredClickSettings ParseUnity(in PacketReader p) =>
-        new(p.ReadInt(), p.ReadInt());
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(WiredClickSettings value, in PacketWriter p)
-    {
-        p.WriteInt(value.UserOption);
-        p.WriteInt(value.FurniOption);
-    }
-
-    private static void ComposeUnity(WiredClickSettings value, in PacketWriter p)
     {
         p.WriteInt(value.UserOption);
         p.WriteInt(value.FurniOption);
@@ -513,13 +455,13 @@ public sealed record WiredRoomSettings(int ModifyPermissionMask, int ReadPermiss
     : IParserComposer<WiredRoomSettings>
 {
     public static WiredRoomSettings Parse(in PacketReader p) =>
-        ModernWireClients.ParseFlash(in p, ParseFlash);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static WiredRoomSettings ParseFlash(in PacketReader p) =>
         new(p.ReadInt(), p.ReadInt(), p.ReadString());
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.ComposeFlash(this, in p, ComposeFlash);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(WiredRoomSettings value, in PacketWriter p)
     {
@@ -534,24 +476,15 @@ public sealed record WiredClickUserResponse(int Index, bool OpenMenu)
     : IParserComposer<WiredClickUserResponse>
 {
     public static WiredClickUserResponse Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static WiredClickUserResponse ParseFlash(in PacketReader p) =>
         new(p.ReadInt(), p.ReadBool());
 
-    private static WiredClickUserResponse ParseUnity(in PacketReader p) =>
-        new(p.ReadInt(), p.ReadBool());
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(WiredClickUserResponse value, in PacketWriter p)
-    {
-        p.WriteInt(value.Index);
-        p.WriteBool(value.OpenMenu);
-    }
-
-    private static void ComposeUnity(WiredClickUserResponse value, in PacketWriter p)
     {
         p.WriteInt(value.Index);
         p.WriteBool(value.OpenMenu);
@@ -561,19 +494,14 @@ public sealed record WiredClickUserResponse(int Index, bool OpenMenu)
 public sealed record WiredRewardResult(int Reason) : IParserComposer<WiredRewardResult>
 {
     public static WiredRewardResult Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static WiredRewardResult ParseFlash(in PacketReader p) => new(p.ReadInt());
 
-    private static WiredRewardResult ParseUnity(in PacketReader p) => new(p.ReadInt());
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(WiredRewardResult value, in PacketWriter p) =>
-        p.WriteInt(value.Reason);
-
-    private static void ComposeUnity(WiredRewardResult value, in PacketWriter p) =>
         p.WriteInt(value.Reason);
 }
 
@@ -584,7 +512,7 @@ public sealed record WiredRewardResult(int Reason) : IParserComposer<WiredReward
 public sealed record WiredGetRoomSettings() : IParserComposer<WiredGetRoomSettings>
 {
     public static WiredGetRoomSettings Parse(in PacketReader p) =>
-        ModernWireClients.ParseFlash(in p, ParseFlash);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static WiredGetRoomSettings ParseFlash(in PacketReader p)
     {
@@ -593,7 +521,7 @@ public sealed record WiredGetRoomSettings() : IParserComposer<WiredGetRoomSettin
     }
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.ComposeFlash(this, in p, ComposeFlash);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(WiredGetRoomSettings value, in PacketWriter p) { }
 }
@@ -603,13 +531,13 @@ public sealed record WiredSetRoomSettings(int ModifyPermissionMask, int ReadPerm
     : IParserComposer<WiredSetRoomSettings>
 {
     public static WiredSetRoomSettings Parse(in PacketReader p) =>
-        ModernWireClients.ParseFlash(in p, ParseFlash);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static WiredSetRoomSettings ParseFlash(in PacketReader p) =>
         new(p.ReadInt(), p.ReadInt(), p.ReadString());
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.ComposeFlash(this, in p, ComposeFlash);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(WiredSetRoomSettings value, in PacketWriter p)
     {
@@ -633,12 +561,12 @@ public sealed record WiredUpdateRoom(bool Rollback) : IParserComposer<WiredUpdat
     public static WiredUpdateRoom RollBack => new(true);
 
     public static WiredUpdateRoom Parse(in PacketReader p) =>
-        ModernWireClients.ParseFlash(in p, ParseFlash);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static WiredUpdateRoom ParseFlash(in PacketReader p) => new(p.ReadBool());
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.ComposeFlash(this, in p, ComposeFlash);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(WiredUpdateRoom value, in PacketWriter p) =>
         p.WriteBool(value.Rollback);
@@ -657,7 +585,7 @@ public sealed record WiredSetPreferences(
     string UiStyle) : IParserComposer<WiredSetPreferences>
 {
     public static WiredSetPreferences Parse(in PacketReader p) =>
-        ModernWireClients.ParseFlash(in p, ParseFlash);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static WiredSetPreferences ParseFlash(in PacketReader p)
     {
@@ -673,7 +601,7 @@ public sealed record WiredSetPreferences(
     }
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.ComposeFlash(this, in p, ComposeFlash);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(WiredSetPreferences value, in PacketWriter p)
     {
@@ -692,7 +620,7 @@ public sealed record WiredSetPreferences(
 public sealed record WiredGetRoomStats() : IParserComposer<WiredGetRoomStats>
 {
     public static WiredGetRoomStats Parse(in PacketReader p) =>
-        ModernWireClients.ParseFlash(in p, ParseFlash);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static WiredGetRoomStats ParseFlash(in PacketReader p)
     {
@@ -701,7 +629,7 @@ public sealed record WiredGetRoomStats() : IParserComposer<WiredGetRoomStats>
     }
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.ComposeFlash(this, in p, ComposeFlash);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(WiredGetRoomStats value, in PacketWriter p) { }
 }
@@ -716,7 +644,7 @@ public sealed record WiredGetRoomLogs(
     string Query) : IParserComposer<WiredGetRoomLogs>
 {
     public static WiredGetRoomLogs Parse(in PacketReader p) =>
-        ModernWireClients.ParseFlash(in p, ParseFlash);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static WiredGetRoomLogs ParseFlash(in PacketReader p) => Read(in p);
 
@@ -724,7 +652,7 @@ public sealed record WiredGetRoomLogs(
         new(p.ReadInt(), p.ReadInt(), p.ReadInt(), p.ReadInt(), p.ReadString());
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.ComposeFlash(this, in p, ComposeFlash);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(WiredGetRoomLogs value, in PacketWriter p) =>
         Write(value, in p);
@@ -744,7 +672,7 @@ public sealed record WiredGetRoomLogs(
 public sealed record WiredGetErrorLogs() : IParserComposer<WiredGetErrorLogs>
 {
     public static WiredGetErrorLogs Parse(in PacketReader p) =>
-        ModernWireClients.ParseFlash(in p, ParseFlash);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static WiredGetErrorLogs ParseFlash(in PacketReader p)
     {
@@ -753,7 +681,7 @@ public sealed record WiredGetErrorLogs() : IParserComposer<WiredGetErrorLogs>
     }
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.ComposeFlash(this, in p, ComposeFlash);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(WiredGetErrorLogs value, in PacketWriter p) { }
 }
@@ -762,7 +690,7 @@ public sealed record WiredGetErrorLogs() : IParserComposer<WiredGetErrorLogs>
 public sealed record WiredClearErrorLogs() : IParserComposer<WiredClearErrorLogs>
 {
     public static WiredClearErrorLogs Parse(in PacketReader p) =>
-        ModernWireClients.ParseFlash(in p, ParseFlash);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static WiredClearErrorLogs ParseFlash(in PacketReader p)
     {
@@ -771,7 +699,7 @@ public sealed record WiredClearErrorLogs() : IParserComposer<WiredClearErrorLogs
     }
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.ComposeFlash(this, in p, ComposeFlash);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(WiredClearErrorLogs value, in PacketWriter p) { }
 
@@ -787,46 +715,27 @@ public sealed record WiredClearErrorLogs() : IParserComposer<WiredClearErrorLogs
 public sealed record WiredClickUser(int Index) : IParserComposer<WiredClickUser>
 {
     public static WiredClickUser Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static WiredClickUser ParseFlash(in PacketReader p) => new(p.ReadInt());
 
-    private static WiredClickUser ParseUnity(in PacketReader p) => new(p.ReadInt());
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(WiredClickUser value, in PacketWriter p) =>
         p.WriteInt(value.Index);
-
-    private static void ComposeUnity(WiredClickUser value, in PacketWriter p) =>
-        p.WriteInt(value.Index);
 }
 
-/// <summary>
-/// Commits the wired furni's current state as its restore snapshot.
-/// </summary>
-/// <remarks>
-/// Flash <c>ApplySnapshot</c> (2790) and Unity <c>UserDefinedRoomEventsApplySnapshot</c>. The Flash
-/// menu sends it as <c>applySnapshot()</c> with the identifier of the wired furni whose dialog is
-/// open. The two clients name it differently and <c>messages.ini</c> does not cross-map them, so
-/// this is addressed per client rather than through one shared name.
-/// </remarks>
 public sealed record WiredApplySnapshot(Id FurniId) : IParserComposer<WiredApplySnapshot>
 {
     public static WiredApplySnapshot Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static WiredApplySnapshot ParseFlash(in PacketReader p) => new(p.ReadInt());
 
-    private static WiredApplySnapshot ParseUnity(in PacketReader p) => new(p.ReadLong());
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(WiredApplySnapshot value, in PacketWriter p) =>
         p.WriteInt(WiredWire.FlashId(value.FurniId));
-
-    private static void ComposeUnity(WiredApplySnapshot value, in PacketWriter p) =>
-        p.WriteLong(value.FurniId);
 }

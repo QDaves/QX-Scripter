@@ -8,7 +8,7 @@ public readonly record struct Tile(int X, int Y, float Z) : IParserComposer<Tile
 
     public Point XY => new(X, Y);
 
-    public override string ToString() => $"({X}, {Y}, {Z:0.0#######})";
+    public override string ToString() => $"({X}, {Y}, {Z.ToString("0.0#######", System.Globalization.CultureInfo.InvariantCulture)})";
 
     public static Tile Parse(in PacketReader p) => new(p.ReadInt(), p.ReadInt(), p.ReadFloat());
 

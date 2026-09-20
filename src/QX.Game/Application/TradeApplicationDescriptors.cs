@@ -45,7 +45,7 @@ internal static class TradeApplicationDescriptors
         ApplicationMemberIds.TradeItemsAdd,
         "Add trade items",
         "Adds distinct inventory item identifiers to the active trade offer.",
-        [new("item_ids", typeof(IReadOnlyList<Id>), true, null, "Distinct nonzero inventory item identifiers valid for the active client dialect.", new(MinItems: 1, MaxItems: ushort.MaxValue)), .. GuardParameters()],
+        [new("item_ids", typeof(IReadOnlyList<Id>), true, null, "Distinct nonzero inventory item identifiers valid for Flash.", new(MinItems: 1, MaxItems: ushort.MaxValue)), .. GuardParameters()],
         MessageKeys.Trade.ItemsAdd,
         [ApplicationStateKey.TradeTrading]);
 
@@ -53,7 +53,7 @@ internal static class TradeApplicationDescriptors
         ApplicationMemberIds.TradeItemRemove,
         "Remove trade item",
         "Removes one inventory item identifier from the active trade offer.",
-        [new("item_id", typeof(Id), true, null, "Nonzero inventory item identifier valid for the active client dialect.", new(Pattern: "^-?[1-9][0-9]*$")), .. GuardParameters()],
+        [new("item_id", typeof(Id), true, null, "Nonzero inventory item identifier valid for Flash.", new(Pattern: "^-?[1-9][0-9]*$")), .. GuardParameters()],
         MessageKeys.Trade.ItemRemove,
         [ApplicationStateKey.TradeTrading]);
 

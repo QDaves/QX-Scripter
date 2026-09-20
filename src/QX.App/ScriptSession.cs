@@ -205,7 +205,7 @@ internal sealed class ScriptSession(RuntimeHost runtime, TextReader input, TextW
         if (File.Exists(path) || Path.IsPathRooted(file))
             return path;
         return Path.GetFullPath(Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "QX Scripter", "scripts", file));
+            StoragePaths.Scripts, file));
     }
 
     internal static async Task<ScriptExecutionRequest> ReadScriptAsync(string file, CancellationToken cancellation_token)

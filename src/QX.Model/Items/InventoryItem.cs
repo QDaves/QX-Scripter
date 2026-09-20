@@ -17,11 +17,6 @@ public sealed class InventoryItem : IParserComposer<InventoryItem>
     public int SecondsToExpiration { get; set; } = -1;
     public bool HasRentPeriodStarted { get; set; }
     public Id RoomId { get; set; }
-    public bool IsUnseen { get; set; }
-    public long Timestamp { get; set; }
-    public bool IsNft { get; set; }
-    public string NftName { get; set; } = "";
-    public bool IsExternalImage { get; set; }
     public string SlotId { get; set; } = "";
     public long Extra { get; set; }
 
@@ -31,7 +26,7 @@ public sealed class InventoryItem : IParserComposer<InventoryItem>
     public InventoryItem() { }
 
     public static InventoryItem Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static InventoryItem ParseFlash(in PacketReader p)
     {
@@ -64,55 +59,8 @@ public sealed class InventoryItem : IParserComposer<InventoryItem>
         return item;
     }
 
-    private static InventoryItem ParseUnity(in PacketReader p)
-    {
-        Id item_id = p.ReadLong();
-        ItemType type = p.ReadShort() switch
-        {
-            0 => ItemType.Wall,
-            1 => ItemType.Floor,
-            short value => throw new InvalidDataException(
-                $"Unsupported Unity inventory item type {value}.")
-        };
-        var item = new InventoryItem
-        {
-            ItemId = item_id,
-            Type = type,
-            Id = p.ReadLong(),
-            Kind = p.ReadInt(),
-            Category = p.ReadInt(),
-            Data = p.Parse<ItemData>(),
-            IsRecyclable = p.ReadBool(),
-            IsTradeable = p.ReadBool(),
-            IsGroupable = p.ReadBool(),
-            IsSellable = p.ReadBool(),
-            SecondsToExpiration = p.ReadInt(),
-            HasRentPeriodStarted = p.ReadBool(),
-            RoomId = p.ReadLong(),
-            IsUnseen = p.ReadBool(),
-            Timestamp = p.ReadLong()
-        };
-        if (p.Context is null || p.Context.WireProfile.RequireUnityInventoryExtendedMetadata())
-        {
-            item.IsNft = p.ReadBool();
-            if (item.IsNft)
-            {
-                item.NftName = p.ReadString();
-                item.IsExternalImage = p.ReadBool();
-            }
-        }
-
-        if (item.Type is ItemType.Floor)
-        {
-            item.SlotId = p.ReadString();
-            item.Extra = p.ReadLong();
-        }
-
-        return item;
-    }
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(InventoryItem value, in PacketWriter p)
     {
@@ -138,87 +86,22 @@ public sealed class InventoryItem : IParserComposer<InventoryItem>
         }
     }
 
-    private static void ComposeUnity(InventoryItem value, in PacketWriter p)
-    {
-        value.ValidateUnity(in p);
-        p.WriteLong(value.ItemId);
-        p.WriteShort(value.Type switch
-        {
-            ItemType.Wall => 0,
-            ItemType.Floor => 1,
-            _ => throw new InvalidDataException(
-                $"Unsupported inventory item type {value.Type}.")
-        });
-        p.WriteLong(value.Id);
-        p.WriteInt(value.Kind);
-        p.WriteInt(value.Category);
-        p.Compose(value.Data);
-        p.WriteBool(value.IsRecyclable);
-        p.WriteBool(value.IsTradeable);
-        p.WriteBool(value.IsGroupable);
-        p.WriteBool(value.IsSellable);
-        p.WriteInt(value.SecondsToExpiration);
-        p.WriteBool(value.HasRentPeriodStarted);
-        p.WriteLong(value.RoomId);
-        p.WriteBool(value.IsUnseen);
-        p.WriteLong(value.Timestamp);
-        if (p.Context is null || p.Context.WireProfile.RequireUnityInventoryExtendedMetadata())
-        {
-            p.WriteBool(value.IsNft);
-            if (value.IsNft)
-            {
-                p.WriteString(value.NftName);
-                p.WriteBool(value.IsExternalImage);
-            }
-        }
-
-        if (value.Type is ItemType.Floor)
-        {
-            p.WriteString(value.SlotId);
-            p.WriteLong(value.Extra);
-        }
-    }
-
     internal void ValidateFlash(in PacketWriter p)
     {
         InventoryWire.RequireItemType(Type);
         _ = InventoryWire.Int32Id(ItemId);
         _ = InventoryWire.Int32Id(Id);
         _ = InventoryWire.Int32Id(RoomId);
-        InventoryWire.ValidateItemData(Data, false, in p);
-        InventoryWire.RequireString(NftName, nameof(NftName), in p);
-        if (IsUnseen || Timestamp != 0 || IsNft || NftName.Length != 0 || IsExternalImage)
-        {
-            throw new InvalidDataException(
-                "Flash inventory items cannot carry Unity metadata.");
-        }
-        ValidatePlacement(in p, true);
+        InventoryWire.ValidateItemData(Data, in p);
+        ValidatePlacement(in p);
     }
 
-    internal void ValidateUnity(in PacketWriter p)
-    {
-        InventoryWire.RequireItemType(Type);
-        InventoryWire.ValidateItemData(Data, true, in p);
-        InventoryWire.RequireString(NftName, nameof(NftName), in p);
-        bool extended_metadata =
-            p.Context is null || p.Context.WireProfile.RequireUnityInventoryExtendedMetadata();
-        if (!extended_metadata && (IsNft || NftName.Length != 0 || IsExternalImage))
-        {
-            throw new InvalidDataException(
-                "The active Unity build cannot carry extended inventory metadata.");
-        }
-        if (!IsNft && (NftName.Length != 0 || IsExternalImage))
-            throw new InvalidDataException("Extended inventory metadata requires the NFT flag.");
-        ValidatePlacement(in p, false);
-    }
-
-    private void ValidatePlacement(in PacketWriter p, bool flash)
+    private void ValidatePlacement(in PacketWriter p)
     {
         InventoryWire.RequireString(SlotId, nameof(SlotId), in p);
         if (Type is ItemType.Floor)
         {
-            if (flash)
-                _ = checked((int)Extra);
+            _ = checked((int)Extra);
             return;
         }
         if (SlotId.Length != 0 || Extra != 0)
@@ -248,12 +131,6 @@ internal static class InventoryWire
                 $"{name} count {count} exceeds the remaining payload capacity.");
         }
         return count;
-    }
-
-    public static void RequireUnityCount(int count, string name)
-    {
-        if ((uint)count > ushort.MaxValue)
-            throw new InvalidDataException($"{name} count {count} exceeds the Unity wire limit.");
     }
 
     public static void RequireFragment(int total, int index, string name)
@@ -296,7 +173,7 @@ internal static class InventoryWire
         return Array.AsReadOnly(copy);
     }
 
-    public static void ValidateItemData(ItemData data, bool unity, in PacketWriter p)
+    public static void ValidateItemData(ItemData data, in PacketWriter p)
     {
         ArgumentNullException.ThrowIfNull(data);
         switch (data)
@@ -344,9 +221,6 @@ internal static class InventoryWire
                 throw new NotSupportedException(
                     $"Unsupported inventory item-data type {data.GetType().FullName}.");
         }
-
-        if (unity && data.IsLimitedRare)
-            RequireString(data.UniqueLimitedData, nameof(data.UniqueLimitedData), in p);
     }
 
     private static void RequireNestedCount(int count, string name)

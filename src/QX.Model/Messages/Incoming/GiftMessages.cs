@@ -1,4 +1,4 @@
-﻿using Qx.Messages;
+using Qx.Messages;
 
 namespace Qx.Model.Messages.Incoming;
 
@@ -54,21 +54,15 @@ public sealed record GiftWrappingConfiguration : IParserComposer<GiftWrappingCon
     }
 
     public static GiftWrappingConfiguration Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static GiftWrappingConfiguration ParseFlash(in PacketReader p) =>
         GiftWire.ParseWrappingConfiguration(in p);
 
-    private static GiftWrappingConfiguration ParseUnity(in PacketReader p) =>
-        GiftWire.ParseWrappingConfiguration(in p);
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(GiftWrappingConfiguration value, in PacketWriter p) =>
-        GiftWire.ComposeWrappingConfiguration(value, in p);
-
-    private static void ComposeUnity(GiftWrappingConfiguration value, in PacketWriter p) =>
         GiftWire.ComposeWrappingConfiguration(value, in p);
 
     public void Deconstruct(
@@ -98,22 +92,16 @@ public sealed record PresentOpened(
     string PetFigureString) : IParserComposer<PresentOpened>
 {
     public static PresentOpened Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static PresentOpened ParseFlash(in PacketReader p) =>
-        GiftWire.ParsePresentOpened(in p, true);
-
-    private static PresentOpened ParseUnity(in PacketReader p) =>
-        GiftWire.ParsePresentOpened(in p, false);
+        GiftWire.ParsePresentOpened(in p);
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(PresentOpened value, in PacketWriter p) =>
-        GiftWire.ComposePresentOpened(value, true, in p);
-
-    private static void ComposeUnity(PresentOpened value, in PacketWriter p) =>
-        GiftWire.ComposePresentOpened(value, false, in p);
+        GiftWire.ComposePresentOpened(value, in p);
 }
 
 public sealed record ClubGiftEligibility(
@@ -123,22 +111,16 @@ public sealed record ClubGiftEligibility(
     bool IsSelectable) : IParserComposer<ClubGiftEligibility>
 {
     public static ClubGiftEligibility Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static ClubGiftEligibility ParseFlash(in PacketReader p) =>
-        GiftWire.ParseEligibility(in p, true);
-
-    private static ClubGiftEligibility ParseUnity(in PacketReader p) =>
-        GiftWire.ParseEligibility(in p, false);
+        GiftWire.ParseEligibility(in p);
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(ClubGiftEligibility value, in PacketWriter p) =>
-        GiftWire.ComposeEligibility(value, true, in p);
-
-    private static void ComposeUnity(ClubGiftEligibility value, in PacketWriter p) =>
-        GiftWire.ComposeEligibility(value, false, in p);
+        GiftWire.ComposeEligibility(value, in p);
 }
 
 public sealed record ClubGiftInfo : IParserComposer<ClubGiftInfo>
@@ -182,22 +164,16 @@ public sealed record ClubGiftInfo : IParserComposer<ClubGiftInfo>
     }
 
     public static ClubGiftInfo Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static ClubGiftInfo ParseFlash(in PacketReader p) =>
-        GiftWire.ParseClubGiftInfo(in p, true);
-
-    private static ClubGiftInfo ParseUnity(in PacketReader p) =>
-        GiftWire.ParseClubGiftInfo(in p, false);
+        GiftWire.ParseClubGiftInfo(in p);
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(ClubGiftInfo value, in PacketWriter p) =>
-        GiftWire.ComposeClubGiftInfo(value, true, in p);
-
-    private static void ComposeUnity(ClubGiftInfo value, in PacketWriter p) =>
-        GiftWire.ComposeClubGiftInfo(value, false, in p);
+        GiftWire.ComposeClubGiftInfo(value, in p);
 
     public void Deconstruct(
         out int DaysUntilNextGift,
@@ -216,16 +192,13 @@ public sealed record ClubGiftSelected : IParserComposer<ClubGiftSelected>
 {
     private string _product_code = "";
     private IReadOnlyList<CatalogProduct> _products = Array.AsReadOnly(Array.Empty<CatalogProduct>());
-    private IReadOnlyList<CatalogPageProduct>? _unity_products;
 
     public ClubGiftSelected(
         string ProductCode,
-        IReadOnlyList<CatalogProduct> Products,
-        IReadOnlyList<CatalogPageProduct>? UnityProducts = null)
+        IReadOnlyList<CatalogProduct> Products)
     {
         this.ProductCode = ProductCode;
         this.Products = Products;
-        this.UnityProducts = UnityProducts;
     }
 
     public string ProductCode
@@ -243,48 +216,31 @@ public sealed record ClubGiftSelected : IParserComposer<ClubGiftSelected>
             nameof(Products));
     }
 
-    public IReadOnlyList<CatalogPageProduct>? UnityProducts
-    {
-        get => _unity_products;
-        init => _unity_products = CatalogWire.FreezeOptionalReferences(
-            value,
-            CatalogPageWire.MaximumProducts,
-            nameof(UnityProducts));
-    }
-
     public static ClubGiftSelected Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static ClubGiftSelected ParseFlash(in PacketReader p) =>
-        GiftWire.ParseClubGiftSelected(in p, true);
-
-    private static ClubGiftSelected ParseUnity(in PacketReader p) =>
-        GiftWire.ParseClubGiftSelected(in p, false);
+        GiftWire.ParseClubGiftSelected(in p);
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(ClubGiftSelected value, in PacketWriter p) =>
-        GiftWire.ComposeClubGiftSelected(value, true, in p);
-
-    private static void ComposeUnity(ClubGiftSelected value, in PacketWriter p) =>
-        GiftWire.ComposeClubGiftSelected(value, false, in p);
+        GiftWire.ComposeClubGiftSelected(value, in p);
 
     public void Deconstruct(
         out string ProductCode,
-        out IReadOnlyList<CatalogProduct> Products,
-        out IReadOnlyList<CatalogPageProduct>? UnityProducts)
+        out IReadOnlyList<CatalogProduct> Products)
     {
         ProductCode = this.ProductCode;
         Products = this.Products;
-        UnityProducts = this.UnityProducts;
     }
 }
 
 public sealed record GiftReceiverNotFound : IParserComposer<GiftReceiverNotFound>
 {
     public static GiftReceiverNotFound Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static GiftReceiverNotFound ParseFlash(in PacketReader p)
     {
@@ -292,22 +248,16 @@ public sealed record GiftReceiverNotFound : IParserComposer<GiftReceiverNotFound
         return new GiftReceiverNotFound();
     }
 
-    private static GiftReceiverNotFound ParseUnity(in PacketReader p) =>
-        GiftWire.UnsupportedUnity<GiftReceiverNotFound>(p.Client);
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(GiftReceiverNotFound value, in PacketWriter p) { }
-
-    private static void ComposeUnity(GiftReceiverNotFound value, in PacketWriter p) =>
-        GiftWire.UnsupportedUnity(p.Client);
 }
 
 public sealed record ClubGiftNotification(int NumGifts) : IParserComposer<ClubGiftNotification>
 {
     public static ClubGiftNotification Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static ClubGiftNotification ParseFlash(in PacketReader p)
     {
@@ -316,17 +266,11 @@ public sealed record ClubGiftNotification(int NumGifts) : IParserComposer<ClubGi
         return value;
     }
 
-    private static ClubGiftNotification ParseUnity(in PacketReader p) =>
-        GiftWire.UnsupportedUnity<ClubGiftNotification>(p.Client);
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(ClubGiftNotification value, in PacketWriter p) =>
         p.WriteInt(value.NumGifts);
-
-    private static void ComposeUnity(ClubGiftNotification value, in PacketWriter p) =>
-        GiftWire.UnsupportedUnity(p.Client);
 }
 
 public sealed record IsOfferGiftable(
@@ -334,7 +278,7 @@ public sealed record IsOfferGiftable(
     bool IsGiftable) : IParserComposer<IsOfferGiftable>
 {
     public static IsOfferGiftable Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static IsOfferGiftable ParseFlash(in PacketReader p)
     {
@@ -343,20 +287,14 @@ public sealed record IsOfferGiftable(
         return value;
     }
 
-    private static IsOfferGiftable ParseUnity(in PacketReader p) =>
-        GiftWire.UnsupportedUnity<IsOfferGiftable>(p.Client);
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(IsOfferGiftable value, in PacketWriter p)
     {
         p.WriteInt(value.OfferId);
         p.WriteBool(value.IsGiftable);
     }
-
-    private static void ComposeUnity(IsOfferGiftable value, in PacketWriter p) =>
-        GiftWire.UnsupportedUnity(p.Client);
 }
 
 public sealed record NuxGiftProduct(
@@ -364,22 +302,16 @@ public sealed record NuxGiftProduct(
     string? LocalizationKey) : IParserComposer<NuxGiftProduct>
 {
     public static NuxGiftProduct Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static NuxGiftProduct ParseFlash(in PacketReader p) =>
         GiftWire.ParseNuxProduct(in p);
 
-    private static NuxGiftProduct ParseUnity(in PacketReader p) =>
-        GiftWire.UnsupportedUnity<NuxGiftProduct>(p.Client);
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(NuxGiftProduct value, in PacketWriter p) =>
         GiftWire.ComposeNuxProduct(value, in p);
-
-    private static void ComposeUnity(NuxGiftProduct value, in PacketWriter p) =>
-        GiftWire.UnsupportedUnity(p.Client);
 }
 
 public sealed record NuxGiftOption : IParserComposer<NuxGiftOption>
@@ -404,22 +336,16 @@ public sealed record NuxGiftOption : IParserComposer<NuxGiftOption>
     }
 
     public static NuxGiftOption Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static NuxGiftOption ParseFlash(in PacketReader p) =>
         GiftWire.ParseNuxOption(in p);
 
-    private static NuxGiftOption ParseUnity(in PacketReader p) =>
-        GiftWire.UnsupportedUnity<NuxGiftOption>(p.Client);
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(NuxGiftOption value, in PacketWriter p) =>
         GiftWire.ComposeNuxOption(value, in p);
-
-    private static void ComposeUnity(NuxGiftOption value, in PacketWriter p) =>
-        GiftWire.UnsupportedUnity(p.Client);
 
     public void Deconstruct(out string? ThumbnailUrl, out IReadOnlyList<NuxGiftProduct> Products)
     {
@@ -453,22 +379,16 @@ public sealed record NuxGiftStep : IParserComposer<NuxGiftStep>
     }
 
     public static NuxGiftStep Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static NuxGiftStep ParseFlash(in PacketReader p) =>
         GiftWire.ParseNuxStep(in p);
 
-    private static NuxGiftStep ParseUnity(in PacketReader p) =>
-        GiftWire.UnsupportedUnity<NuxGiftStep>(p.Client);
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(NuxGiftStep value, in PacketWriter p) =>
         GiftWire.ComposeNuxStep(value, in p);
-
-    private static void ComposeUnity(NuxGiftStep value, in PacketWriter p) =>
-        GiftWire.UnsupportedUnity(p.Client);
 
     public void Deconstruct(
         out int DayIndex,
@@ -497,22 +417,16 @@ public sealed record NuxGiftOffer : IParserComposer<NuxGiftOffer>
     }
 
     public static NuxGiftOffer Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static NuxGiftOffer ParseFlash(in PacketReader p) =>
         GiftWire.ParseNuxOffer(in p);
 
-    private static NuxGiftOffer ParseUnity(in PacketReader p) =>
-        GiftWire.UnsupportedUnity<NuxGiftOffer>(p.Client);
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(NuxGiftOffer value, in PacketWriter p) =>
         GiftWire.ComposeNuxOffer(value, in p);
-
-    private static void ComposeUnity(NuxGiftOffer value, in PacketWriter p) =>
-        GiftWire.UnsupportedUnity(p.Client);
 
     public void Deconstruct(out IReadOnlyList<NuxGiftStep> Steps) => Steps = this.Steps;
 }
@@ -523,41 +437,30 @@ public readonly record struct NuxGiftSelection(
     int GiftIndex) : IParserComposer<NuxGiftSelection>
 {
     public static NuxGiftSelection Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static NuxGiftSelection ParseFlash(in PacketReader p) =>
         new(p.ReadInt(), p.ReadInt(), p.ReadInt());
 
-    private static NuxGiftSelection ParseUnity(in PacketReader p) =>
-        new(p.ReadInt(), p.ReadInt(), p.ReadInt());
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(NuxGiftSelection value, in PacketWriter p) =>
-        GiftWire.WriteSelection(value, in p);
-
-    private static void ComposeUnity(NuxGiftSelection value, in PacketWriter p) =>
         GiftWire.WriteSelection(value, in p);
 }
 
 public sealed record NuxNotComplete : IParserComposer<NuxNotComplete>
 {
     public static NuxNotComplete Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static NuxNotComplete ParseFlash(in PacketReader p) =>
         GiftWire.ParseEmpty<NuxNotComplete>(in p, static () => new NuxNotComplete());
 
-    private static NuxNotComplete ParseUnity(in PacketReader p) =>
-        GiftWire.ParseEmpty<NuxNotComplete>(in p, static () => new NuxNotComplete());
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(NuxNotComplete value, in PacketWriter p) { }
-
-    private static void ComposeUnity(NuxNotComplete value, in PacketWriter p) { }
 }
 
 public sealed record NuxGetGifts : IParserComposer<NuxGetGifts>
@@ -577,19 +480,14 @@ public sealed record NuxGetGifts : IParserComposer<NuxGetGifts>
     }
 
     public static NuxGetGifts Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static NuxGetGifts ParseFlash(in PacketReader p) => GiftWire.ParseNuxGetGifts(in p);
 
-    private static NuxGetGifts ParseUnity(in PacketReader p) => GiftWire.ParseNuxGetGifts(in p);
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(NuxGetGifts value, in PacketWriter p) =>
-        GiftWire.ComposeNuxGetGifts(value, in p);
-
-    private static void ComposeUnity(NuxGetGifts value, in PacketWriter p) =>
         GiftWire.ComposeNuxGetGifts(value, in p);
 
     public void Deconstruct(out IReadOnlyList<NuxGiftSelection> Selections) =>
@@ -599,22 +497,16 @@ public sealed record NuxGetGifts : IParserComposer<NuxGetGifts>
 public sealed record PresentOpen(Id FurniId) : IParserComposer<PresentOpen>
 {
     public static PresentOpen Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static PresentOpen ParseFlash(in PacketReader p) =>
-        GiftWire.ParsePresentOpen(in p, true);
-
-    private static PresentOpen ParseUnity(in PacketReader p) =>
-        GiftWire.ParsePresentOpen(in p, false);
+        GiftWire.ParsePresentOpen(in p);
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(PresentOpen value, in PacketWriter p) =>
-        GiftWire.ComposePresentOpen(value, true, in p);
-
-    private static void ComposeUnity(PresentOpen value, in PacketWriter p) =>
-        GiftWire.ComposePresentOpen(value, false, in p);
+        GiftWire.ComposePresentOpen(value, in p);
 }
 
 public sealed record PurchaseFromCatalogAsGift(
@@ -626,131 +518,94 @@ public sealed record PurchaseFromCatalogAsGift(
     int BoxType,
     int RibbonType,
     int Color,
-    bool IsIncognito,
-    int? Quantity = null) : IParserComposer<PurchaseFromCatalogAsGift>
+    bool IsIncognito) : IParserComposer<PurchaseFromCatalogAsGift>
 {
     public static PurchaseFromCatalogAsGift Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static PurchaseFromCatalogAsGift ParseFlash(in PacketReader p) =>
-        GiftWire.ParsePurchase(in p, true);
-
-    private static PurchaseFromCatalogAsGift ParseUnity(in PacketReader p) =>
-        GiftWire.ParsePurchase(in p, false);
+        GiftWire.ParsePurchase(in p);
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(PurchaseFromCatalogAsGift value, in PacketWriter p) =>
-        GiftWire.ComposePurchase(value, true, in p);
-
-    private static void ComposeUnity(PurchaseFromCatalogAsGift value, in PacketWriter p) =>
-        GiftWire.ComposePurchase(value, false, in p);
+        GiftWire.ComposePurchase(value, in p);
 }
 
 public sealed record GetGiftWrappingConfiguration : IParserComposer<GetGiftWrappingConfiguration>
 {
     public static GetGiftWrappingConfiguration Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static GetGiftWrappingConfiguration ParseFlash(in PacketReader p) =>
         GiftWire.ParseEmpty<GetGiftWrappingConfiguration>(
             in p,
             static () => new GetGiftWrappingConfiguration());
 
-    private static GetGiftWrappingConfiguration ParseUnity(in PacketReader p) =>
-        GiftWire.ParseEmpty<GetGiftWrappingConfiguration>(
-            in p,
-            static () => new GetGiftWrappingConfiguration());
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(GetGiftWrappingConfiguration value, in PacketWriter p) { }
-
-    private static void ComposeUnity(GetGiftWrappingConfiguration value, in PacketWriter p) { }
 }
 
 public sealed record GetClubGift : IParserComposer<GetClubGift>
 {
     public static GetClubGift Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static GetClubGift ParseFlash(in PacketReader p) =>
         GiftWire.ParseEmpty<GetClubGift>(in p, static () => new GetClubGift());
 
-    private static GetClubGift ParseUnity(in PacketReader p) =>
-        GiftWire.ParseEmpty<GetClubGift>(in p, static () => new GetClubGift());
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(GetClubGift value, in PacketWriter p) { }
-
-    private static void ComposeUnity(GetClubGift value, in PacketWriter p) { }
 }
 
 public sealed record SelectClubGift(string ProductCode) : IParserComposer<SelectClubGift>
 {
     public static SelectClubGift Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static SelectClubGift ParseFlash(in PacketReader p) => GiftWire.ParseSelectClubGift(in p);
 
-    private static SelectClubGift ParseUnity(in PacketReader p) => GiftWire.ParseSelectClubGift(in p);
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(SelectClubGift value, in PacketWriter p) =>
-        GiftWire.ComposeSelectClubGift(value, in p);
-
-    private static void ComposeUnity(SelectClubGift value, in PacketWriter p) =>
         GiftWire.ComposeSelectClubGift(value, in p);
 }
 
 public sealed record GetIsOfferGiftable(int OfferId) : IParserComposer<GetIsOfferGiftable>
 {
     public static GetIsOfferGiftable Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static GetIsOfferGiftable ParseFlash(in PacketReader p) =>
         GiftWire.ParseOfferGiftabilityRequest(in p);
 
-    private static GetIsOfferGiftable ParseUnity(in PacketReader p) =>
-        GiftWire.ParseOfferGiftabilityRequest(in p);
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(GetIsOfferGiftable value, in PacketWriter p) =>
-        p.WriteInt(value.OfferId);
-
-    private static void ComposeUnity(GetIsOfferGiftable value, in PacketWriter p) =>
         p.WriteInt(value.OfferId);
 }
 
 public sealed record AdvanceNewUserFlowRequest : IParserComposer<AdvanceNewUserFlowRequest>
 {
     public static AdvanceNewUserFlowRequest Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static AdvanceNewUserFlowRequest ParseFlash(in PacketReader p) =>
         GiftWire.ParseEmpty<AdvanceNewUserFlowRequest>(
             in p,
             static () => new AdvanceNewUserFlowRequest());
 
-    private static AdvanceNewUserFlowRequest ParseUnity(in PacketReader p) =>
-        GiftWire.ParseEmpty<AdvanceNewUserFlowRequest>(
-            in p,
-            static () => new AdvanceNewUserFlowRequest());
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(AdvanceNewUserFlowRequest value, in PacketWriter p) { }
-
-    private static void ComposeUnity(AdvanceNewUserFlowRequest value, in PacketWriter p) { }
 }
 
 internal static class GiftWire
@@ -762,7 +617,6 @@ internal static class GiftWire
     internal const int MaximumNuxSelections = ushort.MaxValue / 3;
 
     private const int FlashEligibilityBytes = sizeof(int) + sizeof(byte) + sizeof(int) + sizeof(byte);
-    private const int UnityEligibilityBytes = sizeof(int) + sizeof(int) + sizeof(byte);
     private const int NuxProductMinimumBytes = CatalogWire.StringMinimumBytes * 2;
     private const int NuxOptionMinimumBytes = CatalogWire.StringMinimumBytes + sizeof(int);
     private const int NuxStepMinimumBytes = sizeof(int) * 3;
@@ -821,10 +675,10 @@ internal static class GiftWire
         WriteIntValues(default_stuff_types, in p);
     }
 
-    public static PresentOpened ParsePresentOpened(in PacketReader p, bool flash)
+    public static PresentOpened ParsePresentOpened(in PacketReader p)
     {
         var strings = NewStringBudget();
-        int id_width = flash ? sizeof(int) : sizeof(long);
+        int id_width = sizeof(int);
         string item_type = strings.Read(
             in p,
             nameof(PresentOpened.ItemType),
@@ -836,7 +690,7 @@ internal static class GiftWire
             nameof(PresentOpened.ProductCode),
             checked(id_width + CatalogWire.StringMinimumBytes + sizeof(byte) +
                 CatalogWire.StringMinimumBytes));
-        Id placed_item_id = flash ? ReadFlashId(in p) : ReadUnityId(in p);
+        Id placed_item_id = ReadFlashId(in p);
         string placed_item_type = strings.Read(
             in p,
             nameof(PresentOpened.PlacedItemType),
@@ -854,7 +708,7 @@ internal static class GiftWire
             pet_figure);
     }
 
-    public static void ComposePresentOpened(PresentOpened value, bool flash, in PacketWriter p)
+    public static void ComposePresentOpened(PresentOpened value, in PacketWriter p)
     {
         ArgumentNullException.ThrowIfNull(value);
         var strings = NewStringBudget();
@@ -862,37 +716,31 @@ internal static class GiftWire
         strings.Require(value.ProductCode, nameof(value.ProductCode), in p);
         strings.Require(value.PlacedItemType, nameof(value.PlacedItemType), in p);
         strings.Require(value.PetFigureString, nameof(value.PetFigureString), in p);
-        if (flash)
-            RequireFlashId(value.PlacedItemId);
+        RequireFlashId(value.PlacedItemId);
 
         p.WriteString(value.ItemType);
         p.WriteInt(value.ClassId);
         p.WriteString(value.ProductCode);
-        if (flash)
-            WriteFlashId(in p, value.PlacedItemId);
-        else
-            WriteUnityId(in p, value.PlacedItemId);
+        WriteFlashId(in p, value.PlacedItemId);
         p.WriteString(value.PlacedItemType);
         p.WriteBool(value.PlacedInRoom);
         p.WriteString(value.PetFigureString);
     }
 
-    public static ClubGiftEligibility ParseEligibility(in PacketReader p, bool flash) => flash
-        ? new ClubGiftEligibility(p.ReadInt(), p.ReadBool(), p.ReadInt(), p.ReadBool())
-        : new ClubGiftEligibility(p.ReadInt(), null, p.ReadInt(), p.ReadBool());
+    public static ClubGiftEligibility ParseEligibility(in PacketReader p) => new ClubGiftEligibility(p.ReadInt(), p.ReadBool(), p.ReadInt(), p.ReadBool());
 
-    public static void ComposeEligibility(ClubGiftEligibility value, bool flash, in PacketWriter p)
+    public static void ComposeEligibility(ClubGiftEligibility value, in PacketWriter p)
     {
-        PrepareEligibility(value, flash);
-        WriteEligibility(value, flash, in p);
+        PrepareEligibility(value);
+        WriteEligibility(value, in p);
     }
 
-    public static ClubGiftInfo ParseClubGiftInfo(in PacketReader p, bool flash)
+    public static ClubGiftInfo ParseClubGiftInfo(in PacketReader p)
     {
         int days_until_next_gift = p.ReadInt();
         int gifts_available = p.ReadInt();
         int count_width = CatalogWire.CountWidth(p.Client);
-        int minimum_offer_bytes = CatalogPageWire.MinimumOfferBytes(flash);
+        int minimum_offer_bytes = CatalogPageWire.MinimumOfferBytes();
         var catalog_budget = new CatalogPageBudget();
         var strings = NewStringBudget();
         int offer_count = CatalogWire.ReadCount(
@@ -908,13 +756,12 @@ internal static class GiftWire
             int sibling_bytes = checked((offers.Length - index - 1) * minimum_offer_bytes);
             offers[index] = CatalogPageWire.ParseOffer(
                 in p,
-                flash,
                 checked(count_width + sibling_bytes),
                 ref catalog_budget,
                 ref strings);
         }
 
-        int eligibility_bytes = flash ? FlashEligibilityBytes : UnityEligibilityBytes;
+        int eligibility_bytes = FlashEligibilityBytes;
         int eligibility_count = CatalogWire.ReadCount(
             in p,
             eligibility_bytes,
@@ -923,12 +770,12 @@ internal static class GiftWire
             nameof(ClubGiftInfo.GiftEligibility));
         var eligibility = new ClubGiftEligibility[eligibility_count];
         for (int index = 0; index < eligibility.Length; index++)
-            eligibility[index] = ParseEligibility(in p, flash);
+            eligibility[index] = ParseEligibility(in p);
         CatalogWire.RequireEmpty(in p, nameof(ClubGiftInfo));
         return new ClubGiftInfo(days_until_next_gift, gifts_available, offers, eligibility);
     }
 
-    public static void ComposeClubGiftInfo(ClubGiftInfo value, bool flash, in PacketWriter p)
+    public static void ComposeClubGiftInfo(ClubGiftInfo value, in PacketWriter p)
     {
         ArgumentNullException.ThrowIfNull(value);
         CatalogPageOffer[] offers = CatalogWire.SnapshotReferences(
@@ -946,26 +793,25 @@ internal static class GiftWire
         {
             offers[index] = CatalogPageWire.PrepareOffer(
                 offers[index],
-                flash,
                 true,
                 ref catalog_budget,
                 ref strings,
                 in p);
         }
         foreach (ClubGiftEligibility item in eligibility)
-            PrepareEligibility(item, flash);
+            PrepareEligibility(item);
 
         p.WriteInt(value.DaysUntilNextGift);
         p.WriteInt(value.GiftsAvailable);
         CatalogWire.WriteCount(offers.Length, in p);
         foreach (CatalogPageOffer offer in offers)
-            CatalogPageWire.WriteOffer(offer, flash, in p);
+            CatalogPageWire.WriteOffer(offer, in p);
         CatalogWire.WriteCount(eligibility.Length, in p);
         foreach (ClubGiftEligibility item in eligibility)
-            WriteEligibility(item, flash, in p);
+            WriteEligibility(item, in p);
     }
 
-    public static ClubGiftSelected ParseClubGiftSelected(in PacketReader p, bool flash)
+    public static ClubGiftSelected ParseClubGiftSelected(in PacketReader p)
     {
         var strings = NewStringBudget();
         int count_width = CatalogWire.CountWidth(p.Client);
@@ -973,9 +819,7 @@ internal static class GiftWire
             in p,
             nameof(ClubGiftSelected.ProductCode),
             count_width);
-        int minimum_product_bytes = flash
-            ? CatalogPageWire.FlashProductMinimumBytes
-            : CatalogPageWire.UnityProductMinimumBytes;
+        int minimum_product_bytes = CatalogPageWire.FlashProductMinimumBytes;
         int product_count = CatalogWire.ReadCount(
             in p,
             minimum_product_bytes,
@@ -985,34 +829,22 @@ internal static class GiftWire
         var catalog_budget = new CatalogPageBudget();
         catalog_budget.TakeProducts(product_count);
         var products = new CatalogProduct[product_count];
-        CatalogPageProduct[]? unity_products = flash ? null : new CatalogPageProduct[product_count];
         for (int index = 0; index < products.Length; index++)
         {
             int sibling_bytes = checked((products.Length - index - 1) * minimum_product_bytes);
-            if (flash)
             {
                 products[index] = CatalogPageWire.ParseFlashProduct(
                     in p,
                     sibling_bytes,
                     ref strings);
             }
-            else
-            {
-                CatalogPageProduct product = CatalogPageWire.ParseNativeProduct(
-                    in p,
-                    sibling_bytes,
-                    ref strings);
-                unity_products![index] = product;
-                products[index] = CatalogPageWire.ProjectProduct(product);
-            }
         }
         CatalogWire.RequireEmpty(in p, nameof(ClubGiftSelected));
-        return new ClubGiftSelected(product_code, products, unity_products);
+        return new ClubGiftSelected(product_code, products);
     }
 
     public static void ComposeClubGiftSelected(
         ClubGiftSelected value,
-        bool flash,
         in PacketWriter p)
     {
         ArgumentNullException.ThrowIfNull(value);
@@ -1024,49 +856,16 @@ internal static class GiftWire
             nameof(value.Products));
         var catalog_budget = new CatalogPageBudget();
         catalog_budget.TakeProducts(products.Length);
-        CatalogPageProduct[]? unity_products = null;
-        if (flash)
         {
-            if (value.UnityProducts is not null)
-                throw new InvalidDataException("Flash club gift selections cannot carry Unity products.");
             foreach (CatalogProduct product in products)
                 CatalogPageWire.PrepareFlashProduct(product, true, ref strings, in p);
-        }
-        else if (value.UnityProducts is null)
-        {
-            unity_products = new CatalogPageProduct[products.Length];
-            for (int index = 0; index < products.Length; index++)
-                unity_products[index] = CatalogPageWire.ConvertProduct(products[index], ref strings, in p);
-        }
-        else
-        {
-            unity_products = CatalogWire.SnapshotReferences(
-                value.UnityProducts,
-                CatalogPageWire.MaximumProducts,
-                nameof(value.UnityProducts));
-            if (unity_products.Length != products.Length)
-                throw new InvalidDataException("Unity club gift product collections must have matching counts.");
-            for (int index = 0; index < unity_products.Length; index++)
-            {
-                unity_products[index] = CatalogPageWire.PrepareNativeProduct(
-                    unity_products[index],
-                    ref strings,
-                    in p);
-                CatalogPageWire.RequireProjection(products[index], unity_products[index], in p);
-            }
         }
 
         p.WriteString(value.ProductCode);
         CatalogWire.WriteCount(products.Length, in p);
-        if (flash)
         {
             foreach (CatalogProduct product in products)
                 CatalogPageWire.WriteFlashProduct(product, in p);
-        }
-        else
-        {
-            foreach (CatalogPageProduct product in unity_products!)
-                CatalogPageWire.WriteNativeProduct(product, in p);
         }
     }
 
@@ -1188,44 +987,37 @@ internal static class GiftWire
             WriteSelection(selection, in p);
     }
 
-    public static PresentOpen ParsePresentOpen(in PacketReader p, bool flash)
+    public static PresentOpen ParsePresentOpen(in PacketReader p)
     {
-        var value = new PresentOpen(flash ? ReadFlashId(in p) : ReadUnityId(in p));
+        var value = new PresentOpen(ReadFlashId(in p));
         CatalogWire.RequireEmpty(in p, nameof(PresentOpen));
         return value;
     }
 
-    public static void ComposePresentOpen(PresentOpen value, bool flash, in PacketWriter p)
+    public static void ComposePresentOpen(PresentOpen value, in PacketWriter p)
     {
         ArgumentNullException.ThrowIfNull(value);
-        if (flash)
-            RequireFlashId(value.FurniId);
-        if (flash)
-            WriteFlashId(in p, value.FurniId);
-        else
-            WriteUnityId(in p, value.FurniId);
+        RequireFlashId(value.FurniId);
+        WriteFlashId(in p, value.FurniId);
     }
 
-    public static PurchaseFromCatalogAsGift ParsePurchase(in PacketReader p, bool flash)
+    public static PurchaseFromCatalogAsGift ParsePurchase(in PacketReader p)
     {
         var strings = NewStringBudget();
-        int quantity_bytes = flash ? 0 : sizeof(int);
         int page_id = p.ReadInt();
         int offer_id = p.ReadInt();
         string extra_data = strings.Read(
             in p,
             nameof(PurchaseFromCatalogAsGift.ExtraData),
-            checked(CatalogWire.StringMinimumBytes * 2 + sizeof(int) * 3 + sizeof(byte) +
-                quantity_bytes));
+            checked(CatalogWire.StringMinimumBytes * 2 + sizeof(int) * 3 + sizeof(byte)));
         string receiver_name = strings.Read(
             in p,
             nameof(PurchaseFromCatalogAsGift.ReceiverName),
-            checked(CatalogWire.StringMinimumBytes + sizeof(int) * 3 + sizeof(byte) +
-                quantity_bytes));
+            checked(CatalogWire.StringMinimumBytes + sizeof(int) * 3 + sizeof(byte)));
         string gift_message = strings.Read(
             in p,
             nameof(PurchaseFromCatalogAsGift.GiftMessage),
-            checked(sizeof(int) * 3 + sizeof(byte) + quantity_bytes));
+            checked(sizeof(int) * 3 + sizeof(byte)));
         var value = new PurchaseFromCatalogAsGift(
             page_id,
             offer_id,
@@ -1235,22 +1027,16 @@ internal static class GiftWire
             p.ReadInt(),
             p.ReadInt(),
             p.ReadInt(),
-            p.ReadBool(),
-            flash ? null : p.ReadInt());
+            p.ReadBool());
         CatalogWire.RequireEmpty(in p, nameof(PurchaseFromCatalogAsGift));
         return value;
     }
 
     public static void ComposePurchase(
         PurchaseFromCatalogAsGift value,
-        bool flash,
         in PacketWriter p)
     {
         ArgumentNullException.ThrowIfNull(value);
-        if (flash && value.Quantity is not null)
-            throw new InvalidDataException("Flash gift purchases cannot represent a quantity.");
-        if (!flash && value.Quantity is null)
-            throw new InvalidDataException("Unity gift purchases require a quantity.");
         var strings = NewStringBudget();
         strings.Require(value.ExtraData, nameof(value.ExtraData), in p);
         strings.Require(value.ReceiverName, nameof(value.ReceiverName), in p);
@@ -1265,8 +1051,6 @@ internal static class GiftWire
         p.WriteInt(value.RibbonType);
         p.WriteInt(value.Color);
         p.WriteBool(value.IsIncognito);
-        if (!flash)
-            p.WriteInt(value.Quantity!.Value);
     }
 
     public static SelectClubGift ParseSelectClubGift(in PacketReader p)
@@ -1305,12 +1089,6 @@ internal static class GiftWire
         p.WriteInt(value.GiftIndex);
     }
 
-    public static T UnsupportedUnity<T>(ClientType client) =>
-        throw new UnsupportedClientException(client);
-
-    public static void UnsupportedUnity(ClientType client) =>
-        throw new UnsupportedClientException(client);
-
     private static int[] ReadIntValues(in PacketReader p, int trailing_bytes, string name)
     {
         int count = CatalogWire.ReadCount(
@@ -1335,23 +1113,19 @@ internal static class GiftWire
             p.WriteInt(value);
     }
 
-    private static void PrepareEligibility(ClubGiftEligibility value, bool flash)
+    private static void PrepareEligibility(ClubGiftEligibility value)
     {
         ArgumentNullException.ThrowIfNull(value);
-        if (flash && value.IsVip is null)
+        if (value.IsVip is null)
             throw new InvalidDataException("Flash club gift eligibility requires the VIP flag.");
-        if (!flash && value.IsVip is not null)
-            throw new InvalidDataException("Unity club gift eligibility cannot represent the Flash VIP flag.");
     }
 
     private static void WriteEligibility(
         ClubGiftEligibility value,
-        bool flash,
         in PacketWriter p)
     {
         p.WriteInt(value.OfferId);
-        if (flash)
-            p.WriteBool(value.IsVip!.Value);
+        p.WriteBool(value.IsVip!.Value);
         p.WriteInt(value.DaysRequired);
         p.WriteBool(value.IsSelectable);
     }
@@ -1503,8 +1277,6 @@ internal static class GiftWire
 
     private static Id ReadFlashId(in PacketReader p) => p.ReadInt();
 
-    private static Id ReadUnityId(in PacketReader p) => p.ReadLong();
-
     private static void RequireFlashId(Id value)
     {
         long id = value;
@@ -1514,8 +1286,6 @@ internal static class GiftWire
     }
 
     private static void WriteFlashId(in PacketWriter p, Id value) => p.WriteInt((int)(long)value);
-
-    private static void WriteUnityId(in PacketWriter p, Id value) => p.WriteLong(value);
 }
 
 internal struct GiftBudget

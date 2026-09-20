@@ -107,7 +107,6 @@ internal sealed partial class GiftApplication
         GiftState state = lease.State;
         ClubGiftSelected? snapshot = state.ClubSelected;
         IReadOnlyList<CatalogProduct> products = Array.Empty<CatalogProduct>();
-        IReadOnlyList<CatalogPageProduct> unity_products = Array.Empty<CatalogPageProduct>();
         int total = 0;
         int returned = 0;
         if (snapshot is not null)
@@ -118,13 +117,6 @@ internal sealed partial class GiftApplication
                     products = Slice(snapshot.Products, request.Offset, request.Limit);
                     total = snapshot.Products.Count;
                     returned = products.Count;
-                    break;
-                case GiftClubSelectedCollection.UnityProducts:
-                    IReadOnlyList<CatalogPageProduct> source =
-                        snapshot.UnityProducts ?? Array.Empty<CatalogPageProduct>();
-                    unity_products = Slice(source, request.Offset, request.Limit);
-                    total = source.Count;
-                    returned = unity_products.Count;
                     break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(request.Collection));
@@ -140,13 +132,11 @@ internal sealed partial class GiftApplication
             snapshot is not null,
             snapshot?.ProductCode,
             snapshot?.Products.Count ?? 0,
-            snapshot?.UnityProducts?.Count ?? 0,
             request.Collection,
             total,
             request.Offset,
             NextOffset(request.Offset, returned, total),
-            products,
-            unity_products);
+            products);
         RequireLeaseActive(lease);
         return result;
     }
@@ -227,18 +217,10 @@ internal sealed partial class GiftApplication
         int total_offers = snapshot?.Offers.Count ?? 0;
         int total_eligibility = snapshot?.GiftEligibility.Count ?? 0;
         int total_products = snapshot is null ? 0 : CountClubProducts(snapshot);
-        int total_unity_references = snapshot is null
-            ? 0
-            : CountClubUnityProductReferences(snapshot);
-        int total_unity_products = snapshot is null ? 0 : CountClubUnityProducts(snapshot);
         IReadOnlyList<GiftClubOfferView> offers = Array.Empty<GiftClubOfferView>();
         IReadOnlyList<GiftClubEligibilityView> eligibility =
             Array.Empty<GiftClubEligibilityView>();
         IReadOnlyList<GiftClubProductView> products = Array.Empty<GiftClubProductView>();
-        IReadOnlyList<GiftClubUnityProductReferenceView> unity_references =
-            Array.Empty<GiftClubUnityProductReferenceView>();
-        IReadOnlyList<GiftClubUnityProductView> unity_products =
-            Array.Empty<GiftClubUnityProductView>();
         int total;
         int returned;
         switch (collection)
@@ -264,20 +246,6 @@ internal sealed partial class GiftApplication
                 total = total_products;
                 returned = products.Count;
                 break;
-            case GiftClubInfoCollection.UnityProductReferences:
-                unity_references = snapshot is null
-                    ? Array.Empty<GiftClubUnityProductReferenceView>()
-                    : ClubUnityProductReferences(snapshot, offset, limit);
-                total = total_unity_references;
-                returned = unity_references.Count;
-                break;
-            case GiftClubInfoCollection.UnityProducts:
-                unity_products = snapshot is null
-                    ? Array.Empty<GiftClubUnityProductView>()
-                    : ClubUnityProducts(snapshot, offset, limit);
-                total = total_unity_products;
-                returned = unity_products.Count;
-                break;
             default:
                 throw new ArgumentOutOfRangeException(nameof(collection));
         }
@@ -294,17 +262,13 @@ internal sealed partial class GiftApplication
             total_offers,
             total_eligibility,
             total_products,
-            total_unity_references,
-            total_unity_products,
             collection,
             total,
             offset,
             NextOffset(offset, returned, total),
             offers,
             eligibility,
-            products,
-            unity_references,
-            unity_products);
+            products);
         RequireLeaseActive(lease);
         return result;
     }
@@ -323,15 +287,12 @@ internal sealed partial class GiftApplication
         value.GiftsAvailable,
         value.Offers.Count,
         value.GiftEligibility.Count,
-        CountClubProducts(value),
-        CountClubUnityProductReferences(value),
-        CountClubUnityProducts(value));
+        CountClubProducts(value));
 
     private static GiftClubSelectedSummaryView ClubSelectedSummary(
         ClubGiftSelected value) => new(
         value.ProductCode,
-        value.Products.Count,
-        value.UnityProducts?.Count ?? 0);
+        value.Products.Count);
 
     private static GiftNewUserOfferSummaryView NewUserOfferSummary(
         NuxGiftOffer value) => new(
@@ -366,13 +327,13 @@ internal sealed partial class GiftApplication
     private static IReadOnlyList<int> WrappingValues(
         GiftWrappingConfiguration value,
         GiftWrappingCollection collection) => collection switch
-    {
-        GiftWrappingCollection.StuffTypes => value.StuffTypes,
-        GiftWrappingCollection.BoxTypes => value.BoxTypes,
-        GiftWrappingCollection.RibbonTypes => value.RibbonTypes,
-        GiftWrappingCollection.DefaultStuffTypes => value.DefaultStuffTypes,
-        _ => throw new ArgumentOutOfRangeException(nameof(collection))
-    };
+        {
+            GiftWrappingCollection.StuffTypes => value.StuffTypes,
+            GiftWrappingCollection.BoxTypes => value.BoxTypes,
+            GiftWrappingCollection.RibbonTypes => value.RibbonTypes,
+            GiftWrappingCollection.DefaultStuffTypes => value.DefaultStuffTypes,
+            _ => throw new ArgumentOutOfRangeException(nameof(collection))
+        };
 
     private static IReadOnlyList<GiftClubOfferView> ClubOffers(
         ClubGiftInfo value,
@@ -399,9 +360,7 @@ internal sealed partial class GiftApplication
                 offer.BundlePurchaseAllowed,
                 offer.IsPet,
                 offer.PreviewImage,
-                offer.Products.Count,
-                offer.UnityProductReferences?.Count ?? 0,
-                offer.UnityProducts?.Count ?? 0);
+                offer.Products.Count);
         }
         return Array.AsReadOnly(page);
     }
@@ -446,65 +405,6 @@ internal sealed partial class GiftApplication
                 if (ordinal++ < offset)
                     continue;
                 page.Add(new GiftClubProductView(
-                    offer_ordinal,
-                    product_ordinal,
-                    products[product_ordinal]));
-            }
-        }
-        return Array.AsReadOnly(page.ToArray());
-    }
-
-    private static IReadOnlyList<GiftClubUnityProductReferenceView>
-        ClubUnityProductReferences(
-            ClubGiftInfo value,
-            int offset,
-            int limit)
-    {
-        var page = new List<GiftClubUnityProductReferenceView>(limit);
-        int ordinal = 0;
-        for (int offer_ordinal = 0;
-            offer_ordinal < value.Offers.Count && page.Count < limit;
-            offer_ordinal++)
-        {
-            IReadOnlyList<CatalogPageProductReference> references =
-                value.Offers[offer_ordinal].UnityProductReferences ??
-                Array.Empty<CatalogPageProductReference>();
-            for (int reference_ordinal = 0;
-                reference_ordinal < references.Count && page.Count < limit;
-                reference_ordinal++)
-            {
-                if (ordinal++ < offset)
-                    continue;
-                page.Add(new GiftClubUnityProductReferenceView(
-                    offer_ordinal,
-                    reference_ordinal,
-                    references[reference_ordinal]));
-            }
-        }
-        return Array.AsReadOnly(page.ToArray());
-    }
-
-    private static IReadOnlyList<GiftClubUnityProductView> ClubUnityProducts(
-        ClubGiftInfo value,
-        int offset,
-        int limit)
-    {
-        var page = new List<GiftClubUnityProductView>(limit);
-        int ordinal = 0;
-        for (int offer_ordinal = 0;
-            offer_ordinal < value.Offers.Count && page.Count < limit;
-            offer_ordinal++)
-        {
-            IReadOnlyList<CatalogPageProduct> products =
-                value.Offers[offer_ordinal].UnityProducts ??
-                Array.Empty<CatalogPageProduct>();
-            for (int product_ordinal = 0;
-                product_ordinal < products.Count && page.Count < limit;
-                product_ordinal++)
-            {
-                if (ordinal++ < offset)
-                    continue;
-                page.Add(new GiftClubUnityProductView(
                     offer_ordinal,
                     product_ordinal,
                     products[product_ordinal]));
@@ -600,12 +500,6 @@ internal sealed partial class GiftApplication
 
     private static int CountClubProducts(ClubGiftInfo value) =>
         SumCounts(value.Offers, offer => offer.Products.Count);
-
-    private static int CountClubUnityProductReferences(ClubGiftInfo value) =>
-        SumCounts(value.Offers, offer => offer.UnityProductReferences?.Count ?? 0);
-
-    private static int CountClubUnityProducts(ClubGiftInfo value) =>
-        SumCounts(value.Offers, offer => offer.UnityProducts?.Count ?? 0);
 
     private static int CountNewUserOptions(NuxGiftOffer value) =>
         SumCounts(value.Steps, step => step.Options.Count);

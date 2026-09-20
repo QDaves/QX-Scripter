@@ -87,16 +87,8 @@ public partial class ScriptGlobals
             })));
     }
 
-    /// <summary>
-    /// Raised when the Builders Club membership status changes: seconds of membership left, the
-    /// current and maximum furniture limits, and the grace period when the server sends one.
-    /// </summary>
-    /// <param name="handler">Receives the status.</param>
-    /// <returns>A handle that removes the handler when disposed.</returns>
-    /// <exception cref="ObjectDisposedException">The script globals have already been disposed.</exception>
-    /// <remarks>Flash only; never fires on a Unity session.</remarks>
     public IDisposable OnBuildersClubStatusChanged(
-        Action<BuildersClubMembershipStatus> handler)
+    Action<BuildersClubMembershipStatus> handler)
     {
         ArgumentNullException.ThrowIfNull(handler);
         return Track(Application.Subscribe<SubscriptionChanged>(
@@ -111,17 +103,8 @@ public partial class ScriptGlobals
             })));
     }
 
-    /// <summary>
-    /// Raised when the server warns that a Builders Club placement would push the user over the
-    /// furniture limit, carrying the catalog page and offer plus the floor or wall position that
-    /// was attempted.
-    /// </summary>
-    /// <param name="handler">Receives the warning.</param>
-    /// <returns>A handle that removes the handler when disposed.</returns>
-    /// <exception cref="ObjectDisposedException">The script globals have already been disposed.</exception>
-    /// <remarks>Flash only; never fires on a Unity session.</remarks>
     public IDisposable OnBuildersClubPlacementWarning(
-        Action<BuildersClubPlacementWarning> handler)
+    Action<BuildersClubPlacementWarning> handler)
     {
         ArgumentNullException.ThrowIfNull(handler);
         return Track(Application.Subscribe<SubscriptionChanged>(

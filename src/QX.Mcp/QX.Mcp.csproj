@@ -5,4 +5,8 @@
     <AssemblyName>QX.Mcp</AssemblyName>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\QX.Core\QX.Core.csproj" />
+  </ItemGroup>
+
 </Project>

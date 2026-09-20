@@ -21,7 +21,7 @@ public sealed class TradeOffer : IParserComposer<TradeOffer>
     public TradeOffer() { }
 
     public static TradeOffer Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static TradeOffer ParseFlash(in PacketReader p)
     {
@@ -49,50 +49,13 @@ public sealed class TradeOffer : IParserComposer<TradeOffer>
         };
     }
 
-    private static TradeOffer ParseUnity(in PacketReader p)
-    {
-        Id user_id = p.ReadLong();
-        TradeWire.RequirePositiveId(user_id, nameof(UserId));
-        int item_count = TradeWire.RequireCount(
-            p.ReadInt(),
-            p.Available - sizeof(int) * 2,
-            TradeWire.UnityTradeItemMinimumBytes,
-            nameof(Items));
-        var items = new TradeItem[item_count];
-        for (int index = 0; index < items.Length; index++)
-            items[index] = p.Parse<TradeItem>();
-        int furni_count = p.ReadInt();
-        int credit_count = p.ReadInt();
-        TradeWire.RequireNonNegative(furni_count, nameof(FurniCount));
-        TradeWire.RequireNonNegative(credit_count, nameof(CreditCount));
-        RequireDistinctItemIds(items, nameof(Items));
-        return new TradeOffer
-        {
-            UserId = user_id,
-            Items = items,
-            FurniCount = furni_count,
-            CreditCount = credit_count
-        };
-    }
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(TradeOffer value, in PacketWriter p)
     {
         value.ValidateFlash(in p);
         p.WriteInt(TradeWire.FlashId(value.UserId, nameof(UserId)));
-        p.WriteInt(value.Items.Count);
-        foreach (TradeItem item in value.Items)
-            p.Compose(item);
-        p.WriteInt(value.FurniCount);
-        p.WriteInt(value.CreditCount);
-    }
-
-    private static void ComposeUnity(TradeOffer value, in PacketWriter p)
-    {
-        value.ValidateUnity(in p);
-        p.WriteLong(value.UserId);
         p.WriteInt(value.Items.Count);
         foreach (TradeItem item in value.Items)
             p.Compose(item);
@@ -109,17 +72,6 @@ public sealed class TradeOffer : IParserComposer<TradeOffer>
         RequireDistinctItemIds(Items, nameof(Items));
         foreach (TradeItem item in Items)
             item.ValidateFlash(in p);
-    }
-
-    internal void ValidateUnity(in PacketWriter p)
-    {
-        TradeWire.RequirePositiveId(UserId, nameof(UserId));
-        TradeWire.RequireNonNegative(FurniCount, nameof(FurniCount));
-        TradeWire.RequireNonNegative(CreditCount, nameof(CreditCount));
-        ArgumentNullException.ThrowIfNull(Items);
-        RequireDistinctItemIds(Items, nameof(Items));
-        foreach (TradeItem item in Items)
-            item.ValidateUnity(in p);
     }
 
     private static void RequireDistinctItemIds(IReadOnlyList<TradeItem> items, string name)

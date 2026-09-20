@@ -561,11 +561,6 @@ internal sealed class InventoryManager : GameStateManager
                 first.SecondsToExpiration != second.SecondsToExpiration ||
                 first.HasRentPeriodStarted != second.HasRentPeriodStarted ||
                 first.RoomId != second.RoomId ||
-                first.IsUnseen != second.IsUnseen ||
-                first.Timestamp != second.Timestamp ||
-                first.IsNft != second.IsNft ||
-                first.NftName != second.NftName ||
-                first.IsExternalImage != second.IsExternalImage ||
                 first.SlotId != second.SlotId ||
                 first.Extra != second.Extra ||
                 !Equivalent(first.Data, second.Data))
@@ -595,9 +590,6 @@ internal sealed class InventoryManager : GameStateManager
                 first.BreedId != second.BreedId ||
                 first.Level != second.Level ||
                 first.RarityLevel != second.RarityLevel ||
-                first.RoomId != second.RoomId ||
-                first.RoomName != second.RoomName ||
-                first.RoomContext != second.RoomContext ||
                 first.CustomParts.Count != second.CustomParts.Count)
             {
                 return false;

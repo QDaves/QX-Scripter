@@ -17,13 +17,13 @@ public abstract class WiredMovement(WiredMovementType type) : IParserComposer<Wi
     public int AnimationTime { get; set; }
 
     public virtual void Compose(in PacketWriter p) =>
-        ModernWireClients.ComposeFlash(this, in p, ComposeFlash);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(WiredMovement value, in PacketWriter p) =>
         p.WriteInt((int)value.Type);
 
     public static WiredMovement Parse(in PacketReader p) =>
-        ModernWireClients.ParseFlash(in p, ParseFlash);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static WiredMovement ParseFlash(in PacketReader p)
     {
@@ -202,7 +202,7 @@ public sealed class AvatarDirectionWiredMovement : WiredMovement
 public sealed record WiredMovements(IReadOnlyList<WiredMovement> Movements) : IParserComposer<WiredMovements>
 {
     public static WiredMovements Parse(in PacketReader p) =>
-        ModernWireClients.ParseFlash(in p, ParseFlash);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static WiredMovements ParseFlash(in PacketReader p)
     {
@@ -214,7 +214,7 @@ public sealed record WiredMovements(IReadOnlyList<WiredMovement> Movements) : IP
     }
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.ComposeFlash(this, in p, ComposeFlash);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(WiredMovements value, in PacketWriter p)
     {

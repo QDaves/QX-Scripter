@@ -1,4 +1,4 @@
-﻿using Qx.Messages;
+using Qx.Messages;
 using Qx.Game.Protocol;
 using Qx.Model.Messages.Incoming;
 using Qx.Model;
@@ -102,7 +102,6 @@ public sealed class RoomManager : GameStateManager
     public bool IsInQueue => AccessState is RoomAccessState.Queued;
     public RoomConnectionFailure? ConnectionFailure { get; private set; }
     public RoomExitState? LastExit { get; private set; }
-    public RoomExitReason? LastNativeExitReason { get; private set; }
     /// <summary>
     /// The most recent kick observed in the current or a previous room session.
     /// Cleared when a new room session begins.
@@ -832,8 +831,7 @@ public sealed class RoomManager : GameStateManager
     private void LeaveRoom(
         bool preserve_access = false,
         RoomExitSource source = RoomExitSource.ConnectionClosed,
-        short? reason = null,
-        RoomExitReason? native_reason = null)
+        short? reason = null)
     {
         bool had_state = IsInRoom || RoomId != 0 || State is not RoomSessionState.Outside;
         RoomExitState? exit = null;
@@ -844,10 +842,8 @@ public sealed class RoomManager : GameStateManager
                 IsInRoom,
                 source,
                 reason,
-                native_reason is not null,
                 _pending_kick);
             LastExit = exit;
-            LastNativeExitReason = native_reason;
             _pending_kick = null;
             State = RoomSessionState.Leaving;
             Publish(Leaving);
@@ -1065,17 +1061,6 @@ public sealed class RoomManager : GameStateManager
                 reason: message.Reason);
         });
 
-        OnRoomIncoming(MessageContracts.Room.Lifecycle.NativeExit, message =>
-        {
-            if (RoomId != 0 && message.RoomId == RoomId)
-            {
-                LeaveRoom(
-                    source: RoomExitSource.NativeReason,
-                    reason: message.Reason,
-                    native_reason: message);
-            }
-        });
-
         OnRoomOutgoing(MessageContracts.Room.Lifecycle.Quit, _ =>
             LeaveRoom(
                 preserve_access: State is RoomSessionState.Outside && HasTerminalAccessState(),
@@ -1168,13 +1153,6 @@ public sealed class RoomManager : GameStateManager
             {
                 return;
             }
-            SetSpectating(false);
-        });
-
-        OnRoomIncoming(MessageContracts.Room.Authority.SpectatingEnded, _ =>
-        {
-            if (State is not (RoomSessionState.Entering or RoomSessionState.Ready))
-                return;
             SetSpectating(false);
         });
 

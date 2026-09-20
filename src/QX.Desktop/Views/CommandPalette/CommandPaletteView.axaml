@@ -1,0 +1,24 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:c="using:Qx.Desktop.Controls"
+             xmlns:vm="using:Qx.Presentation.ViewModels.CommandPalette"
+             x:Class="Qx.Desktop.Views.CommandPalette.CommandPaletteView"
+             x:DataType="vm:CommandPaletteViewModel"
+             Focusable="False"
+             KeyboardNavigation.TabNavigation="Cycle">
+
+  <c:CommandPalette Name="Card"
+                    Query="{Binding Query, Mode=TwoWay}"
+                    Placeholder="{Binding Placeholder}"
+                    ItemsSource="{Binding Results}"
+                    SelectedItem="{Binding Selected, Mode=TwoWay}"
+                    IsEmpty="{Binding IsEmpty}"
+                    EmptyText="{Binding EmptyText}">
+    <c:CommandPalette.ItemTemplate>
+      <DataTemplate x:DataType="vm:PaletteEntry">
+        <c:CommandRow Group="{Binding Group}" Title="{Binding Title}" Gesture="{Binding Gesture}" />
+      </DataTemplate>
+    </c:CommandPalette.ItemTemplate>
+  </c:CommandPalette>
+
+</UserControl>

@@ -58,22 +58,6 @@ internal readonly record struct EarningClaimCorrelation(
     long RequestEpoch,
     int OutstandingRequests);
 
-/// <summary>
-/// Mirrors the earnings vault: what each source has paid out and is waiting to be claimed.
-/// </summary>
-/// <remarks>
-/// <para>
-/// The hotel sends the whole vault at once and never amends it in place. A claim is answered with a
-/// result rather than a fresh list, and the client zeroes what it just claimed on its own, which is
-/// what happens here: a successful claim for one category drops that category's lines, a successful
-/// claim-all drops everything, and a refused claim changes nothing.
-/// </para>
-/// <para>
-/// The status and claim result have separate Flash and Unity codecs. The reward notification is
-/// Flash only because the Unity catalogue has no corresponding message. Unity sends are still
-/// subject to the verified outgoing-schema gate.
-/// </para>
-/// </remarks>
 public sealed class EarningsManager : GameStateManager
 {
     private sealed class ClaimRequestTracker
@@ -172,14 +156,6 @@ public sealed class EarningsManager : GameStateManager
     /// <summary>Claims every category in one request.</summary>
     public void ClaimAll() => Claim(EarningCategory.All);
 
-    /// <summary>
-    /// Whether the connected client supports the earnings vault.
-    /// </summary>
-    /// <remarks>
-    /// Both do. Unity was held out while its layout was unproven; the native IR catalogue since gave
-    /// the reads for the vault and for the answer to a claim, and both are what QX already parses —
-    /// the vault once its count was read as an array's two bytes rather than as four.
-    /// </remarks>
     public bool IsSupported => true;
 
     /// <summary>
@@ -880,13 +856,13 @@ public sealed class EarningsManager : GameStateManager
                     update,
                     failure);
             case EarningStateChangeKind.Claimed:
-            {
-                var commit = (EarningClaimCommit)update.Value!;
-                failure = Notify(Claimed, commit.Result, update, failure);
-                return commit.StatusChanged
-                    ? Notify(StatusChanged, update.State.Status, update, failure)
-                    : failure;
-            }
+                {
+                    var commit = (EarningClaimCommit)update.Value!;
+                    failure = Notify(Claimed, commit.Result, update, failure);
+                    return commit.StatusChanged
+                        ? Notify(StatusChanged, update.State.Status, update, failure)
+                        : failure;
+                }
             case EarningStateChangeKind.Notification:
                 return Notify(
                     RewardAvailable,

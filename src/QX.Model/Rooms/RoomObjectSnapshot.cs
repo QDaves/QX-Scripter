@@ -1,4 +1,4 @@
-﻿namespace Qx.Model;
+namespace Qx.Model;
 
 internal static class RoomObjectSnapshot
 {
@@ -171,9 +171,7 @@ internal static class RoomObjectSnapshot
             CanMute = details.CanMute,
             Chat = Copy(details.Chat),
             ParsedLayout = details.ParsedLayout,
-            OpeningConnection = details.OpeningConnection,
-            UnityContextId = details.UnityContextId,
-            UnityThumbnail = details.UnityThumbnail
+            OpeningConnection = details.OpeningConnection
         };
     }
 

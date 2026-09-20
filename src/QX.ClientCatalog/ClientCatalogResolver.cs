@@ -1,7 +1,6 @@
 using Qx;
 using Qx.Protocol;
 using Qx.Headers.Flash;
-using Qx.Unity;
 
 namespace Qx.ClientCatalog;
 
@@ -34,34 +33,10 @@ public sealed class ClientCatalogResolver
         ClientType client,
         bool installed_only = false,
         CancellationToken cancellation_token = default) => client switch
-    {
-        ClientCatalogClients.Unity => await ResolveUnityAsync(installed_only, cancellation_token).ConfigureAwait(false),
-        ClientCatalogClients.Flash => await ResolveFlashAsync(installed_only, cancellation_token).ConfigureAwait(false),
-        _ => null
-    };
-
-    async Task<ClientCatalogResolution?> ResolveUnityAsync(
-        bool installed_only,
-        CancellationToken cancellation_token)
-    {
-        var resolver = new HabboUnityClientResolver(_http, _launcher_data, UnityCache());
-        HabboUnityRelease? release = installed_only
-            ? resolver.FindInstalled()
-            : await resolver.ResolveLatestAsync(cancellation_token: cancellation_token).ConfigureAwait(false);
-        if (release is null)
-            return null;
-
-        UnityMessageMap messages = await Task.Run(
-            () => new UnityHeaderExtractor().ExtractMetadata(release.Client.MetadataPath),
-            cancellation_token).ConfigureAwait(false);
-        MessageCatalog catalog = ClientCatalogFactory.Create(messages, release.Version);
-        return new ClientCatalogResolution(
-            ClientCatalogClients.Unity,
-            release.Version,
-            catalog,
-            release.Source.ToString(),
-            release.IsCurrent);
-    }
+        {
+            ClientCatalogClients.Flash => await ResolveFlashAsync(installed_only, cancellation_token).ConfigureAwait(false),
+            _ => null
+        };
 
     async Task<ClientCatalogResolution?> ResolveFlashAsync(
         bool installed_only,
@@ -88,7 +63,5 @@ public sealed class ClientCatalogResolver
             release.Source.ToString(),
             release.IsCurrent);
     }
-
-    string? UnityCache() => _cache_root is null ? null : Path.Combine(_cache_root, "unity");
     string? FlashCache() => _cache_root is null ? null : Path.Combine(_cache_root, "swf");
 }

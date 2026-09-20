@@ -7,7 +7,6 @@ namespace Qx.Model.Messages.Incoming;
 /// </summary>
 /// <remarks>
 /// <para>
-/// Read the same way on both clients: the room, a count, then a user id and name for each entry.
 /// The Flash client's parser reads the room and the count as integers and hands each pair to a
 /// small record of its own, which is the shape below.
 /// </para>
@@ -41,7 +40,7 @@ public sealed record BannedUsersFromRoom : IParserComposer<BannedUsersFromRoom>
     }
 
     public static BannedUsersFromRoom Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static BannedUsersFromRoom ParseFlash(in PacketReader p)
     {
@@ -62,49 +61,18 @@ public sealed record BannedUsersFromRoom : IParserComposer<BannedUsersFromRoom>
         return value;
     }
 
-    private static BannedUsersFromRoom ParseUnity(in PacketReader p)
-    {
-        Id room_id = p.ReadLong();
-        int count = RoomBanWire.RequireCount(
-            p.ReadShort(),
-            p.Available,
-            RoomBanWire.UnityBanMinimumBytes,
-            nameof(Users));
-        var users = new IdName[count];
-        for (int index = 0; index < users.Length; index++)
-        {
-            Id user_id = p.ReadLong();
-            users[index] = new IdName(user_id, p.ReadString());
-        }
-        var value = new BannedUsersFromRoom(room_id, users);
-        RoomBanWire.RequireEmpty(in p, nameof(BannedUsersFromRoom));
-        return value;
-    }
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(BannedUsersFromRoom value, in PacketWriter p)
     {
         int room_id = RoomBanWire.RequireFlashId(value.RoomId, nameof(RoomId));
-        IdName[] users = RoomBanWire.PrepareUsers(value.Users, true, in p);
+        IdName[] users = RoomBanWire.PrepareUsers(value.Users, in p);
         p.WriteInt(room_id);
         p.WriteInt(users.Length);
         foreach (IdName user in users)
         {
             p.WriteInt(unchecked((int)(long)user.Id));
-            p.WriteString(user.Name);
-        }
-    }
-
-    private static void ComposeUnity(BannedUsersFromRoom value, in PacketWriter p)
-    {
-        IdName[] users = RoomBanWire.PrepareUsers(value.Users, false, in p);
-        p.WriteLong(value.RoomId);
-        p.WriteShort((short)users.Length);
-        foreach (IdName user in users)
-        {
-            p.WriteLong(user.Id);
             p.WriteString(user.Name);
         }
     }
@@ -115,7 +83,7 @@ public sealed record UserUnbannedFromRoom(Id RoomId, Id UserId)
     : IParserComposer<UserUnbannedFromRoom>
 {
     public static UserUnbannedFromRoom Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static UserUnbannedFromRoom ParseFlash(in PacketReader p)
     {
@@ -124,15 +92,8 @@ public sealed record UserUnbannedFromRoom(Id RoomId, Id UserId)
         return value;
     }
 
-    private static UserUnbannedFromRoom ParseUnity(in PacketReader p)
-    {
-        var value = new UserUnbannedFromRoom(p.ReadLong(), p.ReadLong());
-        RoomBanWire.RequireEmpty(in p, nameof(UserUnbannedFromRoom));
-        return value;
-    }
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(UserUnbannedFromRoom value, in PacketWriter p)
     {
@@ -141,18 +102,11 @@ public sealed record UserUnbannedFromRoom(Id RoomId, Id UserId)
         p.WriteInt(room_id);
         p.WriteInt(user_id);
     }
-
-    private static void ComposeUnity(UserUnbannedFromRoom value, in PacketWriter p)
-    {
-        p.WriteLong(value.RoomId);
-        p.WriteLong(value.UserId);
-    }
 }
 
 internal static class RoomBanWire
 {
     internal const int FlashBanMinimumBytes = sizeof(int) + sizeof(short);
-    internal const int UnityBanMinimumBytes = sizeof(long) + sizeof(short);
 
     internal static int RequireCount(int count, int available, int minimum_bytes, string name)
     {
@@ -192,19 +146,12 @@ internal static class RoomBanWire
 
     internal static IdName[] PrepareUsers(
         IReadOnlyList<IdName> values,
-        bool flash,
         in PacketWriter p)
     {
         IdName[] users = SnapshotUsers(values, nameof(BannedUsersFromRoom.Users));
-        if (!flash && users.Length > short.MaxValue)
-        {
-            throw new InvalidDataException(
-                $"{nameof(BannedUsersFromRoom.Users)} count {users.Length} exceeds the Unity wire limit.");
-        }
         foreach (IdName user in users)
         {
-            if (flash)
-                _ = RequireFlashId(user.Id, nameof(IdName.Id));
+            _ = RequireFlashId(user.Id, nameof(IdName.Id));
             RequireString(user.Name, nameof(IdName.Name), in p);
         }
         return users;

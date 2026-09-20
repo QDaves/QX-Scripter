@@ -5,22 +5,6 @@ using Qx.Model.Subscriptions;
 
 namespace Qx.Scripting;
 
-/// <content>
-/// Subscriptions: Habbo Club, VIP and Builders Club state for the local user, plus the
-/// fire-and-forget requests that fill it.
-/// <para>
-/// Subscription info, the kickback summary and the Builders Club furniture count work on both the
-/// Flash and the Unity client. The Builders Club membership status and the placement warning are
-/// Flash only — their payloads are Flash-shaped and the tracker registers them for the Flash
-/// client alone.
-/// </para>
-/// <para>
-/// Nothing here blocks or returns a value. Each request sends one message and returns
-/// immediately; the answer surfaces later through the cached state and the subscription events.
-/// To wait for a specific reply, subscribe first and then send the request.
-/// </para>
-/// <para>The cached state is cleared when the session resets.</para>
-/// </content>
 public partial class ScriptGlobals
 {
     /// <summary>
@@ -69,12 +53,6 @@ public partial class ScriptGlobals
         }
     }
 
-    /// <summary>
-    /// The Builders Club membership status: seconds of membership left, the current and maximum
-    /// furniture limits, and the grace-period length when the server sends one.
-    /// <see langword="null"/> until the server pushes it.
-    /// </summary>
-    /// <remarks>Flash only; this never becomes non-null on a Unity session.</remarks>
     public BuildersClubMembershipStatus? BuildersClubMembership
     {
         get
@@ -85,12 +63,6 @@ public partial class ScriptGlobals
         }
     }
 
-    /// <summary>
-    /// The most recent warning that placing this catalog offer would exceed the Builders Club
-    /// furniture limit, carrying the catalog page and offer plus the floor or wall position that
-    /// was attempted. <see langword="null"/> when no warning has arrived.
-    /// </summary>
-    /// <remarks>Flash only; this never becomes non-null on a Unity session.</remarks>
     public BuildersClubPlacementWarning? LastBuildersClubPlacementWarning
     {
         get

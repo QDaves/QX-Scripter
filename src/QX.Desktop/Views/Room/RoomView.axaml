@@ -1,0 +1,50 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:c="using:Qx.Desktop.Controls"
+             xmlns:v="using:Qx.Desktop.Views.Room"
+             xmlns:vm="using:Qx.Presentation.ViewModels.Room"
+             x:Class="Qx.Desktop.Views.Room.RoomView"
+             x:DataType="vm:RoomViewModel">
+  <c:PageLayout Page="{Binding}"
+                CountText="{Binding CountText}"
+                Notices="{Binding Notices}"
+                Progress="{Binding Progress}">
+    <c:PageLayout.Meta>
+      <c:Chip Classes="mono" Text="{Binding RoomIdText}" IsVisible="{Binding HasRoomId}" />
+    </c:PageLayout.Meta>
+    <c:PageLayout.Toolbar>
+      <TabStrip Theme="{StaticResource Room.SectionTabs}"
+                ItemsSource="{Binding Tabs}"
+                SelectedItem="{Binding SelectedTab}"
+                IsEnabled="{Binding IsInRoom}"
+                AutomationProperties.Name="Room sections">
+        <TabStrip.ItemTemplate>
+          <DataTemplate x:DataType="vm:RoomTabViewModel">
+            <StackPanel Orientation="Horizontal" Spacing="6" HorizontalAlignment="Center">
+              <c:Icon Kind="{Binding Icon}" Size="14" VerticalAlignment="Center" />
+              <TextBlock Text="{Binding Title}" VerticalAlignment="Center" />
+              <c:CountBadge Text="{Binding CountBadge}" IsVisible="{Binding HasCount}" VerticalAlignment="Center" />
+            </StackPanel>
+          </DataTemplate>
+        </TabStrip.ItemTemplate>
+      </TabStrip>
+    </c:PageLayout.Toolbar>
+    <Panel IsVisible="{Binding IsInRoom}">
+      <Panel IsVisible="{Binding IsInfo}">
+        <v:RoomInfoView DataContext="{Binding Info}" />
+      </Panel>
+      <Panel IsVisible="{Binding IsUsers}">
+        <v:RoomUsersView DataContext="{Binding Users}" />
+      </Panel>
+      <Panel IsVisible="{Binding IsVisitors}">
+        <v:RoomVisitorsView DataContext="{Binding Visitors}" />
+      </Panel>
+      <Panel IsVisible="{Binding IsBans}">
+        <v:RoomBansView DataContext="{Binding Bans}" />
+      </Panel>
+      <Panel IsVisible="{Binding IsFurni}">
+        <v:RoomFurniView DataContext="{Binding Furni}" />
+      </Panel>
+    </Panel>
+  </c:PageLayout>
+</UserControl>

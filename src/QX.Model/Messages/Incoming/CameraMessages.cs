@@ -18,8 +18,6 @@ public sealed record CameraStorageUrl(string Url) : IParserComposer<CameraStorag
 
     private static void RequireFlash(ClientType client)
     {
-        if (client is not ClientType.Flash)
-            throw new UnsupportedClientException(client);
     }
 }
 
@@ -48,8 +46,6 @@ public sealed record CameraPublishStatus(bool IsOk, int SecondsToWait, string? E
 
     private static void RequireFlash(ClientType client)
     {
-        if (client is not ClientType.Flash)
-            throw new UnsupportedClientException(client);
     }
 }
 
@@ -65,8 +61,6 @@ public sealed record CameraPurchaseOk : IParserComposer<CameraPurchaseOk>
 
     private static void RequireFlash(ClientType client)
     {
-        if (client is not ClientType.Flash)
-            throw new UnsupportedClientException(client);
     }
 }
 
@@ -93,8 +87,6 @@ public sealed record InitCamera(int CreditPrice, int DucketPrice, int? PublishDu
 
     private static void RequireFlash(ClientType client)
     {
-        if (client is not ClientType.Flash)
-            throw new UnsupportedClientException(client);
     }
 }
 
@@ -110,7 +102,7 @@ public sealed record RequestCameraConfiguration : IParserComposer<RequestCameraC
 
     private static void RequireSupportedClient(ClientType client)
     {
-        if (client is not (ClientType.Flash or ClientType.Unity))
+        if (client is not (ClientType.Flash))
             throw new UnsupportedClientException(client);
     }
 }
@@ -127,7 +119,7 @@ public sealed record PurchasePhoto : IParserComposer<PurchasePhoto>
 
     private static void RequireSupportedClient(ClientType client)
     {
-        if (client is not (ClientType.Flash or ClientType.Unity))
+        if (client is not (ClientType.Flash))
             throw new UnsupportedClientException(client);
     }
 }
@@ -144,7 +136,7 @@ public sealed record PublishPhoto : IParserComposer<PublishPhoto>
 
     private static void RequireSupportedClient(ClientType client)
     {
-        if (client is not (ClientType.Flash or ClientType.Unity))
+        if (client is not (ClientType.Flash))
             throw new UnsupportedClientException(client);
     }
 }
@@ -161,7 +153,7 @@ public sealed record PhotoCompetition : IParserComposer<PhotoCompetition>
 
     private static void RequireSupportedClient(ClientType client)
     {
-        if (client is not (ClientType.Flash or ClientType.Unity))
+        if (client is not (ClientType.Flash))
             throw new UnsupportedClientException(client);
     }
 }

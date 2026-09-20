@@ -17,11 +17,6 @@ public sealed record InventoryPetSnapshot(
     IReadOnlyList<InventoryPetPartSnapshot> CustomParts,
     int Level,
     int RarityLevel,
-    Id RoomId,
-    string RoomName,
-    string RoomContext,
-    bool HasRoomContext,
-    bool IsInRoom,
     string FigureString);
 
 public sealed record PetInventorySnapshot(
@@ -91,11 +86,6 @@ public static partial class SnapshotFactory
                 .ToArray(),
             pet.Level,
             pet.RarityLevel,
-            pet.RoomId,
-            pet.RoomName,
-            pet.RoomContext,
-            pet.HasRoomContext,
-            pet.IsInRoom,
             pet.FigureString);
     }
 }

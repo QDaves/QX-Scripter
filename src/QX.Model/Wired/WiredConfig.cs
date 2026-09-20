@@ -2,13 +2,6 @@ using Qx.Messages;
 
 namespace Qx.Model.Wired;
 
-public enum UnityWiredContextLayout
-{
-    None,
-    Tags,
-    Full
-}
-
 // §4 — jagged allowed-source arrays + flat default-source arrays.
 public sealed record InputSourcesConf(
     IReadOnlyList<IReadOnlyList<int>> AllowedFurniSources,
@@ -45,19 +38,13 @@ public sealed record InputSourcesConf(
         ArgumentNullException.ThrowIfNull(AllowedUserSources);
         ArgumentNullException.ThrowIfNull(DefaultFurniSources);
         ArgumentNullException.ThrowIfNull(DefaultUserSources);
-        WiredWire.RequireUnityCount(AllowedFurniSources.Count, nameof(AllowedFurniSources));
-        WiredWire.RequireUnityCount(AllowedUserSources.Count, nameof(AllowedUserSources));
-        WiredWire.RequireUnityCount(DefaultFurniSources.Count, nameof(DefaultFurniSources));
-        WiredWire.RequireUnityCount(DefaultUserSources.Count, nameof(DefaultUserSources));
         foreach (IReadOnlyList<int> sources in AllowedFurniSources)
         {
             ArgumentNullException.ThrowIfNull(sources);
-            WiredWire.RequireUnityCount(sources.Count, nameof(AllowedFurniSources));
         }
         foreach (IReadOnlyList<int> sources in AllowedUserSources)
         {
             ArgumentNullException.ThrowIfNull(sources);
-            WiredWire.RequireUnityCount(sources.Count, nameof(AllowedUserSources));
         }
     }
 
@@ -97,14 +84,6 @@ public abstract class WiredConfig
     public bool AllowWallFurni { get; set; }
     public WiredContext Context { get; set; } = WiredContext.Empty;
     public IReadOnlyList<int> DefaultIntParams { get; set; } = [];
-    public IReadOnlyList<int> UnityContextTags { get; set; } = [];
-    public UnityWiredContextLayout UnityContextLayout { get; set; } = UnityWiredContextLayout.Full;
-    public bool? UnityConditionHasSeparateInvert { get; set; }
-    public bool HasUnityContext
-    {
-        get => UnityContextLayout is not UnityWiredContextLayout.None;
-        set => UnityContextLayout = value ? UnityWiredContextLayout.Full : UnityWiredContextLayout.None;
-    }
 
     public string GetString(int index)
     {
@@ -160,152 +139,9 @@ public abstract class WiredConfig
         WiredIo.WriteIntArray(p, DefaultIntParams);
     }
 
-    protected void ReadUnity(in PacketReader p)
-    {
-        MessageWireProfile wire_profile = WiredWire.RequireUnityConfigurationProfile(in p);
-        UnityWiredContextLayout expected_layout = ExpectedUnityContextLayout(wire_profile);
-        UnityConditionHasSeparateInvert = wire_profile.WiredConditionHasSeparateInvert;
-        UnityContextLayout = expected_layout;
-        FurniLimit = p.ReadInt();
-        StuffIds = p.ReadIdArray();
-        StuffIds2 = [];
-        StuffTypeId = p.ReadInt();
-        Id = p.ReadId();
-        StringParam = p.ReadString();
-        IntParams = p.ReadIntArray();
-        VariableIds = [];
-        FurniSourceTypes = p.ReadIntArray();
-        UserSourceTypes = p.ReadIntArray();
-        Code = p.ReadInt();
-        ReadUnityDefinitionSpecifics(p);
-        AdvancedMode = p.ReadBool();
-        InputSources = InputSourcesConf.Parse(p);
-        AllowWallFurni = p.ReadBool();
-        ReadUnityTypeSpecifics(p);
-        ReadUnityContext(p, expected_layout);
-    }
-
-    protected void WriteUnity(in PacketWriter p)
-    {
-        MessageWireProfile wire_profile = WiredWire.RequireUnityConfigurationProfile(in p);
-        UnityWiredContextLayout expected_layout = ExpectedUnityContextLayout(wire_profile);
-        if (UnityContextLayout != expected_layout)
-            throw new InvalidOperationException("The Unity wired context layout does not match the active client build.");
-        if (StuffIds2.Count != 0 || VariableIds.Count != 0)
-            throw new NotSupportedException("Unity wired configurations cannot represent StuffIds2 or VariableIds.");
-        ValidateCommon(in p, true);
-        ValidateUnityContext();
-        ValidateUnitySpecifics(wire_profile);
-
-        p.WriteInt(FurniLimit);
-        p.WriteIdArray(StuffIds);
-        p.WriteInt(StuffTypeId);
-        p.WriteId(Id);
-        p.WriteString(StringParam);
-        p.WriteIntArray(IntParams);
-        p.WriteIntArray(FurniSourceTypes);
-        p.WriteIntArray(UserSourceTypes);
-        p.WriteInt(Code);
-        WriteUnityDefinitionSpecifics(p);
-        p.WriteBool(AdvancedMode);
-        InputSources.Compose(p);
-        p.WriteBool(AllowWallFurni);
-        WriteUnityTypeSpecifics(p);
-        if (UnityContextLayout is UnityWiredContextLayout.Tags)
-        {
-            p.WriteIntArray(UnityContextTags);
-            p.WriteIntArray(DefaultIntParams);
-        }
-        else if (UnityContextLayout is UnityWiredContextLayout.Full)
-        {
-            Context.Compose(p);
-            p.WriteIntArray(DefaultIntParams);
-        }
-    }
-
-    private void ValidateUnityContext()
-    {
-        if (UnityContextLayout is UnityWiredContextLayout.None)
-        {
-            if (UnityContextTags.Count != 0 || Context.Entries.Count != 0 || DefaultIntParams.Count != 0)
-                throw new NotSupportedException("This Unity wired layout cannot represent context data.");
-            return;
-        }
-
-        if (UnityContextLayout is UnityWiredContextLayout.Tags)
-        {
-            if (Context.Entries.Count != 0)
-                throw new NotSupportedException("The Unity wired tag layout cannot represent full context entries.");
-            return;
-        }
-
-        if (UnityContextTags.Count != 0 &&
-            !UnityContextTags.SequenceEqual(Context.Entries.Select(entry => entry.Tag)))
-        {
-            throw new InvalidOperationException("The Unity wired context tags do not match the full context entries.");
-        }
-    }
-
-    private void ReadUnityContext(in PacketReader p, UnityWiredContextLayout expected_layout)
-    {
-        if (expected_layout is UnityWiredContextLayout.None)
-        {
-            if (p.Available != 0)
-                throw new InvalidOperationException("The active Unity build does not define a wired context tail.");
-            UnityContextLayout = UnityWiredContextLayout.None;
-            UnityContextTags = [];
-            Context = WiredContext.Empty;
-            DefaultIntParams = [];
-            return;
-        }
-
-        if (expected_layout is UnityWiredContextLayout.Tags)
-        {
-            ReadUnityTagContext(p);
-            return;
-        }
-
-        if (expected_layout is UnityWiredContextLayout.Full)
-        {
-            ReadUnityFullContext(p);
-            return;
-        }
-
-        throw new NotSupportedException("The active Unity build has an unsupported wired context layout.");
-    }
-
-    private void ReadUnityFullContext(in PacketReader p)
-    {
-        Context = WiredContext.Parse(p);
-        DefaultIntParams = p.ReadIntArray();
-        if (p.Available != 0)
-            throw new InvalidOperationException("The Unity wired context contains trailing data.");
-        UnityContextTags = [.. Context.Entries.Select(entry => entry.Tag)];
-        UnityContextLayout = UnityWiredContextLayout.Full;
-    }
-
-    private void ReadUnityTagContext(in PacketReader p)
-    {
-        UnityContextTags = p.ReadIntArray();
-        DefaultIntParams = p.ReadIntArray();
-        if (p.Available != 0)
-            throw new InvalidOperationException("The Unity wired tag context contains trailing data.");
-        Context = WiredContext.Empty;
-        UnityContextLayout = UnityWiredContextLayout.Tags;
-    }
-
-    private static UnityWiredContextLayout ExpectedUnityContextLayout(MessageWireProfile profile) =>
-        profile.WiredContextLayout switch
-    {
-        MessageWiredContextLayout.None => UnityWiredContextLayout.None,
-        MessageWiredContextLayout.Tags => UnityWiredContextLayout.Tags,
-        MessageWiredContextLayout.Full => UnityWiredContextLayout.Full,
-        _ => throw new NotSupportedException("The active Unity session has no compatible wired context layout.")
-    };
-
     private void ValidateFlash(in PacketWriter p)
     {
-        ValidateCommon(in p, false);
+        ValidateCommon(in p);
         ValidateFlashSpecifics();
         foreach (Id id in StuffIds)
             _ = WiredWire.FlashId(id);
@@ -317,7 +153,7 @@ public abstract class WiredConfig
             WiredWire.RequireString(variable_id, nameof(VariableIds), in p);
     }
 
-    private void ValidateCommon(in PacketWriter p, bool unity)
+    private void ValidateCommon(in PacketWriter p)
     {
         ArgumentNullException.ThrowIfNull(StuffIds);
         ArgumentNullException.ThrowIfNull(StuffIds2);
@@ -328,36 +164,22 @@ public abstract class WiredConfig
         ArgumentNullException.ThrowIfNull(InputSources);
         ArgumentNullException.ThrowIfNull(Context);
         ArgumentNullException.ThrowIfNull(DefaultIntParams);
-        ArgumentNullException.ThrowIfNull(UnityContextTags);
         WiredWire.RequireString(StringParam, nameof(StringParam), in p);
-        WiredWire.RequireUnityCount(StuffIds.Count, nameof(StuffIds));
-        WiredWire.RequireUnityCount(StuffIds2.Count, nameof(StuffIds2));
-        WiredWire.RequireUnityCount(IntParams.Count, nameof(IntParams));
-        WiredWire.RequireUnityCount(VariableIds.Count, nameof(VariableIds));
-        WiredWire.RequireUnityCount(FurniSourceTypes.Count, nameof(FurniSourceTypes));
-        WiredWire.RequireUnityCount(UserSourceTypes.Count, nameof(UserSourceTypes));
-        WiredWire.RequireUnityCount(DefaultIntParams.Count, nameof(DefaultIntParams));
-        WiredWire.RequireUnityCount(UnityContextTags.Count, nameof(UnityContextTags));
         InputSources.Validate();
-        Context.Validate(in p, unity);
+        Context.Validate(in p);
     }
 
     protected virtual void ReadDefinitionSpecifics(in PacketReader p) { }
     protected virtual void WriteDefinitionSpecifics(in PacketWriter p) { }
     protected virtual void ReadTypeSpecifics(in PacketReader p) { }
     protected virtual void WriteTypeSpecifics(in PacketWriter p) { }
-    protected virtual void ReadUnityDefinitionSpecifics(in PacketReader p) => ReadDefinitionSpecifics(in p);
-    protected virtual void WriteUnityDefinitionSpecifics(in PacketWriter p) => WriteDefinitionSpecifics(in p);
-    protected virtual void ReadUnityTypeSpecifics(in PacketReader p) => ReadTypeSpecifics(in p);
-    protected virtual void WriteUnityTypeSpecifics(in PacketWriter p) => WriteTypeSpecifics(in p);
     protected virtual void ValidateFlashSpecifics() { }
-    protected virtual void ValidateUnitySpecifics(MessageWireProfile? profile) { }
 }
 
 public sealed class WiredTriggerConfig : WiredConfig, IParserComposer<WiredTriggerConfig>
 {
     public static WiredTriggerConfig Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static WiredTriggerConfig ParseFlash(in PacketReader p)
     {
@@ -366,21 +188,11 @@ public sealed class WiredTriggerConfig : WiredConfig, IParserComposer<WiredTrigg
         return value;
     }
 
-    private static WiredTriggerConfig ParseUnity(in PacketReader p)
-    {
-        var value = new WiredTriggerConfig();
-        value.ReadUnity(in p);
-        return value;
-    }
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(WiredTriggerConfig value, in PacketWriter p) =>
         value.WriteFlash(in p);
-
-    private static void ComposeUnity(WiredTriggerConfig value, in PacketWriter p) =>
-        value.WriteUnity(in p);
 }
 
 public sealed class WiredActionConfig : WiredConfig, IParserComposer<WiredActionConfig>
@@ -389,7 +201,7 @@ public sealed class WiredActionConfig : WiredConfig, IParserComposer<WiredAction
     protected override void ReadDefinitionSpecifics(in PacketReader p) => DelayInPulses = p.ReadInt();
     protected override void WriteDefinitionSpecifics(in PacketWriter p) => p.WriteInt(DelayInPulses);
     public static WiredActionConfig Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static WiredActionConfig ParseFlash(in PacketReader p)
     {
@@ -398,21 +210,11 @@ public sealed class WiredActionConfig : WiredConfig, IParserComposer<WiredAction
         return value;
     }
 
-    private static WiredActionConfig ParseUnity(in PacketReader p)
-    {
-        var value = new WiredActionConfig();
-        value.ReadUnity(in p);
-        return value;
-    }
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(WiredActionConfig value, in PacketWriter p) =>
         value.WriteFlash(in p);
-
-    private static void ComposeUnity(WiredActionConfig value, in PacketWriter p) =>
-        value.WriteUnity(in p);
 }
 
 public sealed class WiredConditionConfig : WiredConfig, IParserComposer<WiredConditionConfig>
@@ -426,21 +228,9 @@ public sealed class WiredConditionConfig : WiredConfig, IParserComposer<WiredCon
         QuantifierCode = p.ReadInt();
     }
 
-    protected override void ReadUnityDefinitionSpecifics(in PacketReader p)
-    {
-        QuantifierCode = p.ReadInt();
-        DefinitionIsInvert = p.ReadBool();
-    }
-
     protected override void WriteDefinitionSpecifics(in PacketWriter p)
     {
         p.WriteInt(QuantifierCode);
-    }
-
-    protected override void WriteUnityDefinitionSpecifics(in PacketWriter p)
-    {
-        p.WriteInt(QuantifierCode);
-        p.WriteBool(DefinitionIsInvert);
     }
 
     protected override void ReadTypeSpecifics(in PacketReader p)
@@ -449,55 +239,15 @@ public sealed class WiredConditionConfig : WiredConfig, IParserComposer<WiredCon
         IsInvert = p.ReadBool();
     }
 
-    protected override void ReadUnityTypeSpecifics(in PacketReader p)
-    {
-        QuantifierType = p.ReadByte();
-        bool has_separate_invert = UnityConditionHasSeparateInvert ??
-            throw new InvalidOperationException("The Unity wired condition layout is unknown.");
-        IsInvert = has_separate_invert ? p.ReadBool() : DefinitionIsInvert;
-    }
-
     protected override void WriteTypeSpecifics(in PacketWriter p)
     {
         p.WriteByte(checked((byte)QuantifierType));
         p.WriteBool(IsInvert);
     }
-
-    protected override void WriteUnityTypeSpecifics(in PacketWriter p)
-    {
-        p.WriteByte(checked((byte)QuantifierType));
-        bool? has_separate_invert = p.Context?.WireProfile is { IsExact: true } profile
-            ? profile.WiredConditionHasSeparateInvert
-            : UnityConditionHasSeparateInvert;
-        if (has_separate_invert is null)
-            throw new InvalidOperationException("The Unity wired condition layout is unknown.");
-        if (has_separate_invert is true)
-            p.WriteBool(IsInvert);
-    }
     protected override void ValidateFlashSpecifics() =>
         _ = checked((byte)QuantifierType);
-
-    protected override void ValidateUnitySpecifics(MessageWireProfile? profile)
-    {
-        _ = checked((byte)QuantifierType);
-        bool? exact = profile is { IsExact: true }
-            ? profile.Value.WiredConditionHasSeparateInvert
-            : null;
-        if (exact is bool expected &&
-            UnityConditionHasSeparateInvert is bool configured &&
-            configured != expected)
-        {
-            throw new InvalidOperationException("The Unity wired condition layout does not match the active client build.");
-        }
-
-        bool? has_separate_invert = exact ?? UnityConditionHasSeparateInvert;
-        if (has_separate_invert is null)
-            throw new InvalidOperationException("The Unity wired condition layout is unknown.");
-        if (has_separate_invert is false && IsInvert != DefinitionIsInvert)
-            throw new NotSupportedException("This Unity wired condition layout cannot represent a separate invert value.");
-    }
     public static WiredConditionConfig Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static WiredConditionConfig ParseFlash(in PacketReader p)
     {
@@ -506,21 +256,11 @@ public sealed class WiredConditionConfig : WiredConfig, IParserComposer<WiredCon
         return value;
     }
 
-    private static WiredConditionConfig ParseUnity(in PacketReader p)
-    {
-        var value = new WiredConditionConfig();
-        value.ReadUnity(in p);
-        return value;
-    }
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(WiredConditionConfig value, in PacketWriter p) =>
         value.WriteFlash(in p);
-
-    private static void ComposeUnity(WiredConditionConfig value, in PacketWriter p) =>
-        value.WriteUnity(in p);
 }
 
 public sealed class WiredSelectorConfig : WiredConfig, IParserComposer<WiredSelectorConfig>
@@ -530,7 +270,7 @@ public sealed class WiredSelectorConfig : WiredConfig, IParserComposer<WiredSele
     protected override void ReadDefinitionSpecifics(in PacketReader p) { IsFilter = p.ReadBool(); IsInvert = p.ReadBool(); }
     protected override void WriteDefinitionSpecifics(in PacketWriter p) { p.WriteBool(IsFilter); p.WriteBool(IsInvert); }
     public static WiredSelectorConfig Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static WiredSelectorConfig ParseFlash(in PacketReader p)
     {
@@ -539,27 +279,17 @@ public sealed class WiredSelectorConfig : WiredConfig, IParserComposer<WiredSele
         return value;
     }
 
-    private static WiredSelectorConfig ParseUnity(in PacketReader p)
-    {
-        var value = new WiredSelectorConfig();
-        value.ReadUnity(in p);
-        return value;
-    }
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(WiredSelectorConfig value, in PacketWriter p) =>
         value.WriteFlash(in p);
-
-    private static void ComposeUnity(WiredSelectorConfig value, in PacketWriter p) =>
-        value.WriteUnity(in p);
 }
 
 public sealed class WiredAddonConfig : WiredConfig, IParserComposer<WiredAddonConfig>
 {
     public static WiredAddonConfig Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static WiredAddonConfig ParseFlash(in PacketReader p)
     {
@@ -568,27 +298,17 @@ public sealed class WiredAddonConfig : WiredConfig, IParserComposer<WiredAddonCo
         return value;
     }
 
-    private static WiredAddonConfig ParseUnity(in PacketReader p)
-    {
-        var value = new WiredAddonConfig();
-        value.ReadUnity(in p);
-        return value;
-    }
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(WiredAddonConfig value, in PacketWriter p) =>
         value.WriteFlash(in p);
-
-    private static void ComposeUnity(WiredAddonConfig value, in PacketWriter p) =>
-        value.WriteUnity(in p);
 }
 
 public sealed class WiredVariableConfig : WiredConfig, IParserComposer<WiredVariableConfig>
 {
     public static WiredVariableConfig Parse(in PacketReader p) =>
-        ModernWireClients.ParseFlash(in p, ParseFlash);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static WiredVariableConfig ParseFlash(in PacketReader p)
     {
@@ -598,7 +318,7 @@ public sealed class WiredVariableConfig : WiredConfig, IParserComposer<WiredVari
     }
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.ComposeFlash(this, in p, ComposeFlash);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(WiredVariableConfig value, in PacketWriter p) =>
         value.WriteFlash(in p);
@@ -608,118 +328,88 @@ public sealed class WiredVariableConfig : WiredConfig, IParserComposer<WiredVari
 public sealed record WiredFurniTrigger(WiredTriggerConfig Config) : IParserComposer<WiredFurniTrigger>
 {
     public static WiredFurniTrigger Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static WiredFurniTrigger ParseFlash(in PacketReader p) =>
         new(WiredTriggerConfig.Parse(in p));
 
-    private static WiredFurniTrigger ParseUnity(in PacketReader p) =>
-        new(WiredTriggerConfig.Parse(in p));
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(WiredFurniTrigger value, in PacketWriter p) =>
-        value.Config.Compose(in p);
-
-    private static void ComposeUnity(WiredFurniTrigger value, in PacketWriter p) =>
         value.Config.Compose(in p);
 }
 
 public sealed record WiredFurniAction(WiredActionConfig Config) : IParserComposer<WiredFurniAction>
 {
     public static WiredFurniAction Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static WiredFurniAction ParseFlash(in PacketReader p) =>
         new(WiredActionConfig.Parse(in p));
 
-    private static WiredFurniAction ParseUnity(in PacketReader p) =>
-        new(WiredActionConfig.Parse(in p));
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(WiredFurniAction value, in PacketWriter p) =>
-        value.Config.Compose(in p);
-
-    private static void ComposeUnity(WiredFurniAction value, in PacketWriter p) =>
         value.Config.Compose(in p);
 }
 
 public sealed record WiredFurniCondition(WiredConditionConfig Config) : IParserComposer<WiredFurniCondition>
 {
     public static WiredFurniCondition Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static WiredFurniCondition ParseFlash(in PacketReader p) =>
         new(WiredConditionConfig.Parse(in p));
 
-    private static WiredFurniCondition ParseUnity(in PacketReader p) =>
-        new(WiredConditionConfig.Parse(in p));
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(WiredFurniCondition value, in PacketWriter p) =>
-        value.Config.Compose(in p);
-
-    private static void ComposeUnity(WiredFurniCondition value, in PacketWriter p) =>
         value.Config.Compose(in p);
 }
 
 public sealed record WiredFurniSelector(WiredSelectorConfig Config) : IParserComposer<WiredFurniSelector>
 {
     public static WiredFurniSelector Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static WiredFurniSelector ParseFlash(in PacketReader p) =>
         new(WiredSelectorConfig.Parse(in p));
 
-    private static WiredFurniSelector ParseUnity(in PacketReader p) =>
-        new(WiredSelectorConfig.Parse(in p));
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(WiredFurniSelector value, in PacketWriter p) =>
-        value.Config.Compose(in p);
-
-    private static void ComposeUnity(WiredFurniSelector value, in PacketWriter p) =>
         value.Config.Compose(in p);
 }
 
 public sealed record WiredFurniAddon(WiredAddonConfig Config) : IParserComposer<WiredFurniAddon>
 {
     public static WiredFurniAddon Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static WiredFurniAddon ParseFlash(in PacketReader p) =>
         new(WiredAddonConfig.Parse(in p));
 
-    private static WiredFurniAddon ParseUnity(in PacketReader p) =>
-        new(WiredAddonConfig.Parse(in p));
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(WiredFurniAddon value, in PacketWriter p) =>
-        value.Config.Compose(in p);
-
-    private static void ComposeUnity(WiredFurniAddon value, in PacketWriter p) =>
         value.Config.Compose(in p);
 }
 
 public sealed record WiredFurniVariable(WiredVariableConfig Config) : IParserComposer<WiredFurniVariable>
 {
     public static WiredFurniVariable Parse(in PacketReader p) =>
-        ModernWireClients.ParseFlash(in p, ParseFlash);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static WiredFurniVariable ParseFlash(in PacketReader p) =>
         new(WiredVariableConfig.Parse(in p));
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.ComposeFlash(this, in p, ComposeFlash);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(WiredFurniVariable value, in PacketWriter p) =>
         value.Config.Compose(in p);

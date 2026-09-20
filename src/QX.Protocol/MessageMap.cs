@@ -4,7 +4,7 @@ namespace Qx.Protocol;
 
 public sealed class MessageMap
 {
-    private readonly Dictionary<(ClientType, Direction, string), MessageMapEntry> _byName = new();
+    private readonly Dictionary<(Direction, string), MessageMapEntry> _by_name = [];
 
     internal MessageMap(MessageRegistry registry)
     {
@@ -22,83 +22,33 @@ public sealed class MessageMap
 
     private void AddEntry(Direction direction, MessageMapEntry entry)
     {
-        var additions = new List<((ClientType Client, Direction Direction, string Name) Key, string Name)>();
-        foreach (ClientType client in ProtocolClients.Supported)
+        foreach (string name in entry.NamesFor(ClientType.Flash))
         {
-            foreach (string name in entry.NamesFor(client))
+            var key = (direction, name.ToUpperInvariant());
+            if (!_by_name.TryAdd(key, entry))
             {
-                var key = (client, direction, name.ToUpperInvariant());
-                if (_byName.TryGetValue(key, out MessageMapEntry? existing) && !ReferenceEquals(existing, entry))
-                {
-                    throw new InvalidDataException(
-                        $"Alias '{name}' for {client} {direction} is assigned to multiple message entries.");
-                }
-                additions.Add((key, name));
+                throw new InvalidDataException(
+                    $"Alias '{name}' for Flash {direction} is assigned to multiple message entries.");
             }
         }
-
-        foreach (var addition in additions)
-            _byName[addition.Key] = entry;
     }
 
-    public bool TryGetEntry(ClientType client, Direction direction, string name, out MessageMapEntry entry) =>
-        _byName.TryGetValue((client, direction, name.ToUpperInvariant()), out entry!);
-
-    public bool TryTranslate(ClientType from, ClientType to, Direction direction, string name, out string translated)
+    public bool TryGetEntry(ClientType client, Direction direction, string name, out MessageMapEntry entry)
     {
-        if (from == to)
-        {
-            translated = name;
-            return true;
-        }
-
-        if (TryGetEntry(from, direction, name, out MessageMapEntry entry))
-        {
-            string? target = entry.NameFor(to);
-            if (target is not null)
-            {
-                translated = target;
-                return true;
-            }
-        }
-
-        translated = name;
-        return false;
+        entry = null!;
+        return client is ClientType.Flash &&
+            _by_name.TryGetValue((direction, name.ToUpperInvariant()), out entry!);
     }
 
-    public IReadOnlyList<string> EquivalentNames(
-        ClientType from,
-        ClientType to,
-        Direction direction,
-        string name) =>
-        TryGetEntry(from, direction, name, out MessageMapEntry entry)
-            ? entry.NamesFor(to)
+    public IReadOnlyList<string> EquivalentNames(ClientType client, Direction direction, string name) =>
+        TryGetEntry(client, direction, name, out MessageMapEntry entry)
+            ? entry.NamesFor(client)
             : [];
-
-    public IReadOnlyList<string> EquivalentNames(ClientType to, Direction direction, string name)
-    {
-        if (TryGetEntry(to, direction, name, out MessageMapEntry target_entry))
-            return target_entry.NamesFor(to);
-        MessageMapEntry? source_entry = null;
-        foreach (ClientType from in ProtocolClients.Supported)
-        {
-            if (from == to)
-                continue;
-            if (!TryGetEntry(from, direction, name, out MessageMapEntry entry))
-                continue;
-            if (entry.NamesFor(to).Count == 0)
-                continue;
-            if (source_entry is not null && !ReferenceEquals(source_entry, entry))
-                return [];
-            source_entry = entry;
-        }
-        return source_entry?.NamesFor(to) ?? [];
-    }
 
     public bool AreEquivalent(ClientType client, Direction direction, string first, string second) =>
         TryGetEntry(client, direction, first, out MessageMapEntry first_entry) &&
         TryGetEntry(client, direction, second, out MessageMapEntry second_entry) &&
         ReferenceEquals(first_entry, second_entry);
 
-    public int Count => _byName.Count;
+    public int Count => _by_name.Count;
 }

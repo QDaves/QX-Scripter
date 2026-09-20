@@ -26,6 +26,8 @@ public sealed record ScriptExecutionRequest
     public Func<Task>? DrainAsync { get; init; }
 }
 
+public sealed record ActiveScriptRun(string SourceIdentity, string FileName, DateTimeOffset StartedAt);
+
 public sealed record ScriptExecutionResult(
     string SourceIdentity,
     string FileName,
@@ -43,24 +45,67 @@ public sealed class ScriptExecutionService(
     IApplicationRuntime application,
     CancellationToken lifetime = default)
 {
-    private readonly ConcurrentDictionary<string, object> active =
-        new(StringComparer.OrdinalIgnoreCase);
+    readonly ConcurrentDictionary<string, RunMarker> _active = new(StoragePaths.FileComparer);
+
+    public event Action? ActiveRunsChanged;
+
+    public IReadOnlyList<ActiveScriptRun> ActiveRuns => [.. _active.Values.Select(marker => marker.Run)];
 
     public bool IsRunning(string source_identity)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(source_identity);
-        return active.ContainsKey(source_identity);
+        return _active.ContainsKey(source_identity);
     }
+
+    public bool RequestStop(string source_identity)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(source_identity);
+        if (!_active.TryGetValue(source_identity, out RunMarker? marker))
+            return false;
+        marker.RequestStop();
+        return true;
+    }
+
+    public int RequestStopAll()
+    {
+        int requested = 0;
+        foreach (RunMarker marker in _active.Values)
+        {
+            marker.RequestStop();
+            requested++;
+        }
+        return requested;
+    }
+
+    public Task WhenAllStoppedAsync(CancellationToken cancellation_token) =>
+        Task.WhenAll(_active.Values.Select(marker => marker.Completion)).WaitAsync(cancellation_token);
 
     public async Task<ScriptExecutionResult> RunAsync(
         ScriptExecutionRequest request,
         CancellationToken cancellation_token = default)
     {
         Validate(request);
-        var marker = new object();
-        if (!active.TryAdd(request.SourceIdentity, marker))
+        var marker = new RunMarker(new ActiveScriptRun(request.SourceIdentity, request.FileName, DateTimeOffset.UtcNow));
+        if (!_active.TryAdd(request.SourceIdentity, marker))
             return AlreadyActive(request);
+        RaiseActiveRunsChanged();
+        try
+        {
+            return await RunTrackedAsync(request, marker, cancellation_token).ConfigureAwait(false);
+        }
+        finally
+        {
+            _active.TryRemove(new KeyValuePair<string, RunMarker>(request.SourceIdentity, marker));
+            marker.Complete();
+            RaiseActiveRunsChanged();
+        }
+    }
 
+    private async Task<ScriptExecutionResult> RunTrackedAsync(
+        ScriptExecutionRequest request,
+        RunMarker marker,
+        CancellationToken cancellation_token)
+    {
         var output = new StringBuilder();
         var errors = new List<ScriptExecutionError>();
         var cancellation_observers = new List<Task>();
@@ -214,6 +259,7 @@ public sealed class ScriptExecutionService(
             () => RequestCancellation(TerminationCause.External));
         using CancellationTokenRegistration timeout_registration = timeout_source.Token.Register(
             () => RequestCancellation(TerminationCause.Timeout));
+        marker.Attach(() => RequestCancellation(TerminationCause.External));
 
         try
         {
@@ -343,16 +389,27 @@ public sealed class ScriptExecutionService(
 
             if (request.DrainAsync is not null)
             {
+                Task drain;
                 try
                 {
-                    await request.DrainAsync()
-                        .WaitAsync(request.BackgroundDrainTimeout)
-                        .ConfigureAwait(false);
+                    drain = request.DrainAsync();
                 }
                 catch (Exception error)
                 {
-                    AddError(ScriptExecutionError.FromException(error, "cleanup", request.FileName));
-                    state = ScriptRunState.Faulted;
+                    drain = Task.FromException(error);
+                }
+                Task drain_window = Task.Delay(request.BackgroundDrainTimeout);
+                if (ReferenceEquals(await Task.WhenAny(drain, drain_window).ConfigureAwait(false), drain))
+                {
+                    try
+                    {
+                        await drain.ConfigureAwait(false);
+                    }
+                    catch (Exception error)
+                    {
+                        AddError(ScriptExecutionError.FromException(error, "cleanup", request.FileName));
+                        state = ScriptRunState.Faulted;
+                    }
                 }
             }
 
@@ -407,7 +464,6 @@ public sealed class ScriptExecutionService(
             {
                 lock (errors)
                     Interlocked.Exchange(ref callbacks_closed, 1);
-                active.TryRemove(new KeyValuePair<string, object>(request.SourceIdentity, marker));
                 timeout_source.Dispose();
             }
         }
@@ -428,6 +484,45 @@ public sealed class ScriptExecutionService(
             stopwatch.Elapsed.TotalMilliseconds,
             captured_output,
             [.. captured_errors]);
+    }
+
+    void RaiseActiveRunsChanged()
+    {
+        try
+        {
+            ActiveRunsChanged?.Invoke();
+        }
+        catch (Exception error) when (error is not OutOfMemoryException)
+        {
+            Qx.Diagnostics.Diag.Warn($"An active-run listener failed: {error.Message}", "scripts");
+        }
+    }
+
+    sealed class RunMarker(ActiveScriptRun run)
+    {
+        readonly TaskCompletionSource _completion = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        Action? _stop;
+        int _stop_requested;
+
+        public ActiveScriptRun Run { get; } = run;
+
+        public Task Completion => _completion.Task;
+
+        public void Attach(Action stop)
+        {
+            Volatile.Write(ref _stop, stop);
+            Interlocked.MemoryBarrier();
+            if (Volatile.Read(ref _stop_requested) != 0)
+                stop();
+        }
+
+        public void RequestStop()
+        {
+            Interlocked.Exchange(ref _stop_requested, 1);
+            Volatile.Read(ref _stop)?.Invoke();
+        }
+
+        public void Complete() => _completion.TrySetResult();
     }
 
     private enum TerminationCause

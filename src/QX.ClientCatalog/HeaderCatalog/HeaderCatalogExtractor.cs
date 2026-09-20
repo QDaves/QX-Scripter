@@ -1,7 +1,6 @@
 using Qx.ClientCatalog.InstalledClients;
 using Qx.Headers.Flash;
 using Qx.Messages;
-using Qx.Unity;
 
 namespace Qx.ClientCatalog;
 
@@ -28,18 +27,13 @@ internal interface IHeaderCatalogExtractor
 
 internal sealed class HeaderCatalogExtractor : IHeaderCatalogExtractor
 {
-    const string FlashExtractorRevision = "flash-fast-header-v6";
-    const string UnityExtractorRevision = "unity-fast-header-v1";
+    const string FlashExtractorRevision = "flash-fast-header-v7";
 
     readonly SignatureDatabase _flash_names;
-    readonly UnityHeaderNameDatabase _unity_names;
-    readonly UnityHeaderExtractor _unity_extractor;
 
     public HeaderCatalogExtractor()
     {
         _flash_names = SignatureDatabase.LoadDefault();
-        _unity_names = UnityHeaderNameDatabase.LoadDefault();
-        _unity_extractor = new UnityHeaderExtractor(_unity_names);
     }
 
     public HeaderCatalogExtractionTarget Resolve(InstalledClientCandidate candidate)
@@ -52,11 +46,6 @@ internal sealed class HeaderCatalogExtractor : IHeaderCatalogExtractor
                 FlashSource(candidate),
                 _flash_names.CatalogSha256,
                 FlashExtractorRevision),
-            InstalledClientFamily.Unity => new HeaderCatalogExtractionTarget(
-                ClientCatalogClients.FromFamily(candidate.Family),
-                UnitySource(candidate),
-                _unity_names.CatalogSha256,
-                UnityExtractorRevision),
             _ => throw new ArgumentOutOfRangeException(nameof(candidate))
         };
     }
@@ -74,7 +63,6 @@ internal sealed class HeaderCatalogExtractor : IHeaderCatalogExtractor
             () => candidate.Family switch
             {
                 InstalledClientFamily.Flash => ExtractFlash(target.SourcePath, provenance, cancellation_token),
-                InstalledClientFamily.Unity => ExtractUnity(target.SourcePath, provenance, cancellation_token),
                 _ => throw new ArgumentOutOfRangeException(nameof(candidate))
             },
             cancellation_token);
@@ -100,32 +88,6 @@ internal sealed class HeaderCatalogExtractor : IHeaderCatalogExtractor
             messages.SourceSha256);
     }
 
-    HeaderCatalogExtractionResult ExtractUnity(
-        string source_path,
-        HeaderCatalogProvenance provenance,
-        CancellationToken cancellation_token)
-    {
-        cancellation_token.ThrowIfCancellationRequested();
-        UnityMessageMap messages = _unity_extractor.ExtractMetadata(source_path);
-        cancellation_token.ThrowIfCancellationRequested();
-        HeaderCatalogSnapshot catalog = CreateUnitySnapshot(messages, provenance);
-        return new HeaderCatalogExtractionResult(catalog, messages.MetadataSha256);
-    }
-
-    internal static HeaderCatalogSnapshot CreateUnitySnapshot(
-        UnityMessageMap messages,
-        HeaderCatalogProvenance provenance)
-    {
-        ArgumentNullException.ThrowIfNull(messages);
-        ArgumentNullException.ThrowIfNull(provenance);
-        if (!messages.DirectionsVerified)
-            throw new InvalidDataException("Unity protocol header directions were not structurally verified.");
-        return new HeaderCatalogSnapshot(
-            provenance,
-            messages.Incoming.Select(message => UnityEntry(Direction.In, message))
-                .Concat(messages.Outgoing.Select(message => UnityEntry(Direction.Out, message))));
-    }
-
     static HeaderCatalogEntry FlashEntry(Direction direction, FlashHeaderDefinition message)
     {
         if ((uint)message.Id > ushort.MaxValue)
@@ -135,13 +97,6 @@ internal sealed class HeaderCatalogExtractor : IHeaderCatalogExtractor
             checked((ushort)message.Id),
             [message.Name, .. message.SemanticAliases, message.Class, message.Qualified]);
     }
-
-    static HeaderCatalogEntry UnityEntry(Direction direction, UnityHeaderDefinition message) => Entry(
-        direction,
-        unchecked((ushort)message.Id),
-        message.Name,
-        message.FlashName,
-        message.SourceName);
 
     static HeaderCatalogEntry Entry(
         Direction direction,
@@ -167,18 +122,6 @@ internal sealed class HeaderCatalogExtractor : IHeaderCatalogExtractor
             .ToArray();
         if (files.Length != 1)
             throw new InvalidDataException("The installed Flash candidate does not identify exactly one SWF source.");
-        return files[0];
-    }
-
-    static string UnitySource(InstalledClientCandidate candidate)
-    {
-        string[] files = candidate.Files
-            .Where(path => string.Equals(Path.GetFileName(path), "global-metadata.dat", StringComparison.OrdinalIgnoreCase))
-            .Select(Path.GetFullPath)
-            .Distinct(PathComparer())
-            .ToArray();
-        if (files.Length != 1)
-            throw new InvalidDataException("The installed Unity candidate does not identify exactly one metadata source.");
         return files[0];
     }
 

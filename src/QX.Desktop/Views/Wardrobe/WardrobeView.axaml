@@ -1,0 +1,162 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:b="using:Qx.Desktop.Behaviors"
+             xmlns:c="using:Qx.Desktop.Controls"
+             xmlns:vm="using:Qx.Presentation.ViewModels.Wardrobe"
+             x:Class="Qx.Desktop.Views.Wardrobe.WardrobeView"
+             x:DataType="vm:WardrobeViewModel">
+
+  <UserControl.Styles>
+    <Style Selector="ListBoxItem:pointerover :is(Panel).hover-actions,
+                     ListBoxItem:focus-within :is(Panel).hover-actions">
+      <Setter Property="Opacity" Value="1" />
+      <Setter Property="IsHitTestVisible" Value="True" />
+    </Style>
+  </UserControl.Styles>
+
+  <c:PageLayout Page="{Binding}"
+                CountText="{Binding CountText}"
+                Notices="{Binding Notices}"
+                Progress="{Binding Progress}">
+
+    <c:PageLayout.Toolbar>
+      <c:FilterBar BorderBrush="{DynamicResource QxBorderSubtleBrush}" BorderThickness="0,0,0,1">
+        <c:FilterBar.Search>
+          <c:SearchBox Text="{Binding SearchText, Mode=TwoWay}"
+                       PlaceholderText="Search your outfits"
+                       AutomationProperties.Name="Search your outfits" />
+        </c:FilterBar.Search>
+        <c:FilterBar.Trailing>
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <Button Command="{Binding AddCurrentCommand}"
+                    ToolTip.Tip="Keep what you are wearing right now"
+                    AutomationProperties.Name="Add current">
+              <StackPanel Orientation="Horizontal" Spacing="6">
+                <c:Icon Kind="Add" Size="14" />
+                <TextBlock Text="Add current" />
+              </StackPanel>
+            </Button>
+            <Button Command="{Binding ImportCommand}"
+                    ToolTip.Tip="{Binding ImportTip}"
+                    ToolTip.ShowOnDisabled="True"
+                    AutomationProperties.Name="Import in-game">
+              <StackPanel Orientation="Horizontal" Spacing="6">
+                <c:Icon Kind="Import" Size="14" />
+                <TextBlock Text="Import in-game" />
+              </StackPanel>
+            </Button>
+            <Rectangle Classes="divider-vertical" />
+            <Button Classes="danger-outline"
+                    Command="{Binding DeleteCommand}"
+                    ToolTip.Tip="Delete the selected outfits"
+                    ToolTip.ShowOnDisabled="True"
+                    AutomationProperties.Name="Delete">
+              <StackPanel Orientation="Horizontal" Spacing="6">
+                <c:Icon Kind="Delete" Size="14" />
+                <TextBlock Text="Delete" />
+              </StackPanel>
+            </Button>
+          </StackPanel>
+        </c:FilterBar.Trailing>
+      </c:FilterBar>
+    </c:PageLayout.Toolbar>
+
+    <ListBox Name="Outfits"
+             ItemsSource="{Binding Tiles}"
+             Padding="{StaticResource Wardrobe.GridPadding}"
+             SelectionMode="Multiple"
+             ItemContainerTheme="{StaticResource Wardrobe.Tile}"
+             ItemsPanel="{StaticResource Wardrobe.TilePanel}"
+             b:ListBehaviors.Selection="{Binding Selection}"
+             b:ListBehaviors.ClearOnDismiss="True"
+             b:ListBehaviors.CopyCommand="{Binding CopyFigureCommand}"
+             AutomationProperties.Name="Your saved outfits">
+      <ListBox.KeyBindings>
+        <KeyBinding Gesture="Delete" Command="{Binding DeleteCommand}" />
+      </ListBox.KeyBindings>
+      <ListBox.ContextMenu>
+        <ContextMenu>
+          <MenuItem Header="Wear"
+                    Command="{Binding WearCommand}"
+                    ToolTip.Tip="{Binding WearTip}"
+                    ToolTip.IsEnabled="{Binding WearTip, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                    ToolTip.ShowOnDisabled="True">
+            <MenuItem.Icon>
+              <c:Icon Kind="Outfit" Size="16" />
+            </MenuItem.Icon>
+          </MenuItem>
+          <MenuItem Header="Rename" Command="{Binding RenameCommand}">
+            <MenuItem.Icon>
+              <c:Icon Kind="Rename" Size="16" />
+            </MenuItem.Icon>
+          </MenuItem>
+          <MenuItem Header="Copy figure" Command="{Binding CopyFigureCommand}">
+            <MenuItem.Icon>
+              <c:Icon Kind="Copy" Size="16" />
+            </MenuItem.Icon>
+          </MenuItem>
+          <Separator />
+          <MenuItem Header="Delete" Classes="danger" Command="{Binding DeleteCommand}">
+            <MenuItem.Icon>
+              <c:Icon Kind="Delete" Size="16" />
+            </MenuItem.Icon>
+          </MenuItem>
+        </ContextMenu>
+      </ListBox.ContextMenu>
+      <ListBox.ItemTemplate>
+        <DataTemplate x:DataType="vm:OutfitTileViewModel">
+          <Panel Background="Transparent"
+                 ToolTip.Tip="{Binding Figure}"
+                 AutomationProperties.Name="{Binding Title}">
+            <c:RemoteImage Request="{Binding Image}"
+                           Stretch="None"
+                           Margin="{StaticResource Wardrobe.FigureMargin}"
+                           HorizontalAlignment="Center"
+                           VerticalAlignment="Top"
+                           FallbackSize="24" />
+            <TextBlock Text="{Binding Title}"
+                       Classes="small tertiary"
+                       Margin="{StaticResource Wardrobe.CaptionMargin}"
+                       MaxWidth="{StaticResource Wardrobe.CaptionWidth}"
+                       HorizontalAlignment="Center"
+                       VerticalAlignment="Bottom"
+                       TextTrimming="CharacterEllipsis" />
+            <StackPanel Classes="hover-actions"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Bottom"
+                        Margin="{StaticResource Wardrobe.ActionsMargin}">
+              <Border Background="{DynamicResource QxSurfaceOverlayBrush}"
+                      BorderBrush="{DynamicResource QxBorderOverlayBrush}"
+                      BorderThickness="1"
+                      CornerRadius="{DynamicResource QxRadiusFull}"
+                      Padding="{StaticResource Wardrobe.ActionPadding}"
+                      BoxShadow="{DynamicResource QxShadowControl}">
+                <StackPanel Orientation="Horizontal" Spacing="2">
+                  <Button Classes="icon small"
+                          Command="{Binding TurnLeftCommand}"
+                          ToolTip.Tip="Turn left"
+                          AutomationProperties.Name="Turn left">
+                    <c:Icon Kind="RotateLeft" Size="14" />
+                  </Button>
+                  <Button Classes="icon small"
+                          Command="{Binding $parent[UserControl].((vm:WardrobeViewModel)DataContext).WearCommand}"
+                          CommandParameter="{Binding}"
+                          ToolTip.Tip="Wear this"
+                          AutomationProperties.Name="Wear this outfit">
+                    <c:Icon Kind="Outfit" Size="14" />
+                  </Button>
+                  <Button Classes="icon small"
+                          Command="{Binding TurnRightCommand}"
+                          ToolTip.Tip="Turn right"
+                          AutomationProperties.Name="Turn right">
+                    <c:Icon Kind="RotateRight" Size="14" />
+                  </Button>
+                </StackPanel>
+              </Border>
+            </StackPanel>
+          </Panel>
+        </DataTemplate>
+      </ListBox.ItemTemplate>
+    </ListBox>
+  </c:PageLayout>
+</UserControl>

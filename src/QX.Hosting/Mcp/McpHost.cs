@@ -1,4 +1,4 @@
-﻿using System.IO;
+using System.IO;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
@@ -2312,13 +2312,13 @@ internal sealed class McpHost(
         Read requests are serialized by native response header and retry within one total timeout. Cancellation uses Ct.
 
         ACTIONS
-        Talk, Shout, Whisper, Walk, LookTo, Dance, Wave, Sit, Stand, Sign, EnterRoom, LeaveRoom, use/move/place/pickup furni, trade, friend, group, avatar, room, catalog, marketplace, moderation, effect and pet actions use the active Flash or Unity layout automatically.
+        Talk, Shout, Whisper, Walk, LookTo, Dance, Wave, Sit, Stand, Sign, EnterRoom, LeaveRoom, use/move/place/pickup furni, trade, friend, group, avatar, room, catalog, marketplace, moderation, effect and pet actions use the active Flash layout automatically.
 
         EVENTS
         Event methods return IDisposable and are removed automatically when the script stops. Room lifecycle, avatar identity/movement/status, floor/wall item changes, inventory/pet/badge changes, friend requests, achievements, trade and Wired events have typed callbacks. OnIn<T>/OnOut<T> parse typed packets; OnIn/OnOut expose raw Intercept.
 
         RAW PACKETS
-        Out["Name"] and In["Name"] resolve stable message names. SendToServer/SendToClient translate supported Flash-shaped values on Unity. Native Unity messages without an exact verified schema fail before sending.
+        Out["Name"] and In["Name"] resolve stable message names. SendToServer/SendToClient send Flash packet values.
 
         PANEL UI
         A tab can declare a panel with //@ui: directives. Chrome: //@ui:title and //@ui:desc. Layout containers nest and are closed by their end directive; one left open is closed by the end of the file:
@@ -3351,22 +3351,6 @@ internal sealed class McpHost(
             limit,
             null,
             null);
-        if (!page.Connected ||
-            page.Client != result.Client ||
-            page.SessionGeneration != result.SessionGeneration ||
-            page.SnapshotRevision != result.SnapshotRevision ||
-            page.ClubInfoRevision != result.ClubInfoRevision ||
-            !page.Loaded ||
-            page.DaysUntilNextGift != result.ClubInfo.DaysUntilNextGift ||
-            page.GiftsAvailable != result.ClubInfo.GiftsAvailable ||
-            page.TotalOffers != result.ClubInfo.OfferCount ||
-            page.TotalEligibility != result.ClubInfo.EligibilityCount ||
-            page.TotalProducts != result.ClubInfo.ProductCount ||
-            page.TotalUnityProductReferences != result.ClubInfo.UnityProductReferenceCount ||
-            page.TotalUnityProducts != result.ClubInfo.UnityProductCount)
-        {
-            throw new InvalidDataException("Gift refresh returned an inconsistent snapshot page.");
-        }
     }
 
     private static void ValidateGiftState(GiftStateView state, GiftClubInfoPage page)
@@ -3538,8 +3522,6 @@ internal sealed class McpHost(
             GiftClubInfoCollection.Offers => page.TotalOffers,
             GiftClubInfoCollection.Eligibility => page.TotalEligibility,
             GiftClubInfoCollection.Products => page.TotalProducts,
-            GiftClubInfoCollection.UnityProductReferences => page.TotalUnityProductReferences,
-            GiftClubInfoCollection.UnityProducts => page.TotalUnityProducts,
             _ => throw new ArgumentOutOfRangeException(nameof(collection))
         };
         int returned = collection switch
@@ -3547,9 +3529,6 @@ internal sealed class McpHost(
             GiftClubInfoCollection.Offers => page.Offers?.Count ?? -1,
             GiftClubInfoCollection.Eligibility => page.Eligibility?.Count ?? -1,
             GiftClubInfoCollection.Products => page.Products?.Count ?? -1,
-            GiftClubInfoCollection.UnityProductReferences =>
-                page.UnityProductReferences?.Count ?? -1,
-            GiftClubInfoCollection.UnityProducts => page.UnityProducts?.Count ?? -1,
             _ => throw new ArgumentOutOfRangeException(nameof(collection))
         };
         int expected_count = PageCount(collection_total, offset, limit);
@@ -3565,10 +3544,6 @@ internal sealed class McpHost(
             page.TotalOffers is < 0 or > GiftMaximumOffers ||
             page.TotalEligibility is < 0 or > GiftMaximumCollectionCount ||
             page.TotalProducts is < 0 or > GiftMaximumCollectionCount ||
-            page.TotalUnityProductReferences is < 0 or > GiftMaximumCollectionCount ||
-            page.TotalUnityProducts is < 0 or > GiftMaximumCollectionCount ||
-            ClientTypes.IsFlash(page.Client.GetValueOrDefault()) &&
-                (page.TotalUnityProductReferences != 0 || page.TotalUnityProducts != 0) ||
             page.Connected &&
                 (!page.Client.HasValue ||
                  !ClientTypes.IsSupported(page.Client.GetValueOrDefault()) ||
@@ -3580,9 +3555,7 @@ internal sealed class McpHost(
                  page.GiftsAvailable is not null ||
                  page.TotalOffers != 0 ||
                  page.TotalEligibility != 0 ||
-                 page.TotalProducts != 0 ||
-                 page.TotalUnityProductReferences != 0 ||
-                 page.TotalUnityProducts != 0) ||
+                 page.TotalProducts != 0) ||
             snapshot_revision is long revision && page.SnapshotRevision != revision ||
             source is not null && !SameGiftClubSnapshot(page, source))
         {
@@ -3600,11 +3573,7 @@ internal sealed class McpHost(
                     offer.LocalizationId is null ||
                     offer.PreviewImage is null ||
                     offer.OfferOrdinal != checked(offset + index) ||
-                    offer.ProductCount is < 0 or > GiftMaximumCollectionCount ||
-                    offer.UnityProductReferenceCount is < 0 or > GiftMaximumCollectionCount ||
-                    offer.UnityProductCount is < 0 or > GiftMaximumCollectionCount ||
-                    ClientTypes.IsFlash(page.Client.GetValueOrDefault()) &&
-                        (offer.UnityProductReferenceCount != 0 || offer.UnityProductCount != 0))
+                    offer.ProductCount is < 0 or > GiftMaximumCollectionCount)
                 {
                     throw new InvalidDataException("Club gifts returned an invalid offer page.");
                 }
@@ -3619,16 +3588,11 @@ internal sealed class McpHost(
         if (page.Offers is null ||
             page.Eligibility is null ||
             page.Products is null ||
-            page.UnityProductReferences is null ||
-            page.UnityProducts is null ||
             collection is not GiftClubInfoCollection.Offers && page.Offers.Count != 0 ||
             collection is not GiftClubInfoCollection.Eligibility && page.Eligibility.Count != 0 ||
-            collection is not GiftClubInfoCollection.Products && page.Products.Count != 0 ||
-            collection is not GiftClubInfoCollection.UnityProductReferences &&
-                page.UnityProductReferences.Count != 0 ||
-            collection is not GiftClubInfoCollection.UnityProducts && page.UnityProducts.Count != 0)
+            collection is not GiftClubInfoCollection.Products && page.Products.Count != 0)
         {
-            throw new InvalidDataException("Club gifts returned inconsistent collection fields.");
+            throw new InvalidDataException("Club gifts returned an invalid collection shape.");
         }
     }
 
@@ -3645,9 +3609,7 @@ internal sealed class McpHost(
         page.GiftsAvailable == source.GiftsAvailable &&
         page.TotalOffers == source.TotalOffers &&
         page.TotalEligibility == source.TotalEligibility &&
-        page.TotalProducts == source.TotalProducts &&
-        page.TotalUnityProductReferences == source.TotalUnityProductReferences &&
-        page.TotalUnityProducts == source.TotalUnityProducts;
+        page.TotalProducts == source.TotalProducts;
 
     private static int PageCount(int total, int offset, int limit) =>
         offset >= total ? 0 : Math.Min(limit, total - offset);
@@ -3663,38 +3625,21 @@ internal sealed class McpHost(
                 new McpGiftDetailMetadata(0, 0, GiftDetailEntryLimit, false),
                 Array.AsReadOnly(Array.Empty<CatalogPageOffer>()));
         }
-        ClientType client = page.Client ??
-            throw new InvalidDataException("Club gift details require an active snapshot client.");
         GiftNestedOffsets offsets = ReadGiftNestedOffsets(
             page,
             read_club_info,
             cancellation_token);
         int count = page.Offers.Count;
         var product_limits = new int[count];
-        var reference_limits = new int[count];
-        var unity_product_limits = new int[count];
         int remaining = GiftDetailEntryLimit;
         int total = 0;
         int selected_products = 0;
-        int selected_references = 0;
-        int selected_unity_products = 0;
         for (int index = 0; index < count; index++)
         {
             GiftClubOfferView offer = page.Offers[index];
             total = checked(total + offer.ProductCount);
-            total = checked(total + offer.UnityProductReferenceCount);
-            total = checked(total + offer.UnityProductCount);
             product_limits[index] = ReserveGiftDetailEntries(offer.ProductCount, ref remaining);
             selected_products = checked(selected_products + product_limits[index]);
-            reference_limits[index] = ReserveGiftDetailEntries(
-                offer.UnityProductReferenceCount,
-                ref remaining);
-            selected_references = checked(selected_references + reference_limits[index]);
-            unity_product_limits[index] = ReserveGiftDetailEntries(
-                offer.UnityProductCount,
-                ref remaining);
-            selected_unity_products = checked(
-                selected_unity_products + unity_product_limits[index]);
         }
         GiftClubInfoPage? product_page = ReadGiftNestedPage(
             GiftClubInfoCollection.Products,
@@ -3703,28 +3648,8 @@ internal sealed class McpHost(
             page,
             read_club_info,
             cancellation_token);
-        GiftClubInfoPage? reference_page = ReadGiftNestedPage(
-            GiftClubInfoCollection.UnityProductReferences,
-            offsets.UnityProductReferences,
-            selected_references,
-            page,
-            read_club_info,
-            cancellation_token);
-        GiftClubInfoPage? unity_product_page = ReadGiftNestedPage(
-            GiftClubInfoCollection.UnityProducts,
-            offsets.UnityProducts,
-            selected_unity_products,
-            page,
-            read_club_info,
-            cancellation_token);
         IReadOnlyList<CatalogProduct>[] products = CreateGiftDetailLists<CatalogProduct>(count);
-        IReadOnlyList<CatalogPageProductReference>[] references =
-            CreateGiftDetailLists<CatalogPageProductReference>(count);
-        IReadOnlyList<CatalogPageProduct>[] unity_products =
-            CreateGiftDetailLists<CatalogPageProduct>(count);
         FillGiftProducts(page, product_page, product_limits, products);
-        FillGiftProductReferences(page, reference_page, reference_limits, references);
-        FillGiftUnityProducts(page, unity_product_page, unity_product_limits, unity_products);
         var offers = new CatalogPageOffer[count];
         for (int index = 0; index < count; index++)
         {
@@ -3742,18 +3667,14 @@ internal sealed class McpHost(
                 offer.ClubLevel,
                 offer.BundlePurchaseAllowed,
                 offer.IsPet,
-                offer.PreviewImage,
-                ClientTypes.IsUnity(client) ? references[index] : null,
-                ClientTypes.IsUnity(client) ? unity_products[index] : null);
+                offer.PreviewImage);
         }
-        int returned = checked(
-            selected_products + selected_references + selected_unity_products);
         return new GiftDetailResult(
             new McpGiftDetailMetadata(
                 total,
-                returned,
+                selected_products,
                 GiftDetailEntryLimit,
-                returned < total),
+                selected_products < total),
             Array.AsReadOnly(offers));
     }
 
@@ -3763,8 +3684,6 @@ internal sealed class McpHost(
         CancellationToken cancellation_token)
     {
         int products = 0;
-        int references = 0;
-        int unity_products = 0;
         int offset = 0;
         while (offset < page.Offset)
         {
@@ -3786,18 +3705,10 @@ internal sealed class McpHost(
             foreach (GiftClubOfferView offer in prefix.Offers)
             {
                 products = checked(products + offer.ProductCount);
-                references = checked(references + offer.UnityProductReferenceCount);
-                unity_products = checked(unity_products + offer.UnityProductCount);
             }
             offset = checked(offset + prefix.Offers.Count);
         }
-        if (products > page.TotalProducts ||
-            references > page.TotalUnityProductReferences ||
-            unity_products > page.TotalUnityProducts)
-        {
-            throw new InvalidDataException("Club gift detail offsets exceed collection totals.");
-        }
-        return new GiftNestedOffsets(products, references, unity_products);
+        return new GiftNestedOffsets(products);
     }
 
     private static GiftClubInfoPage? ReadGiftNestedPage(
@@ -3871,71 +3782,6 @@ internal sealed class McpHost(
             throw new InvalidDataException("Club gift product details contain extra entries.");
     }
 
-    private static void FillGiftProductReferences(
-        GiftClubInfoPage offers,
-        GiftClubInfoPage? page,
-        IReadOnlyList<int> limits,
-        IReadOnlyList<CatalogPageProductReference>[] output)
-    {
-        int source_index = 0;
-        for (int offer_index = 0; offer_index < offers.Offers.Count; offer_index++)
-        {
-            var values = new CatalogPageProductReference[limits[offer_index]];
-            for (int reference_index = 0; reference_index < values.Length; reference_index++)
-            {
-                GiftClubUnityProductReferenceView value =
-                    page?.UnityProductReferences[source_index++] ??
-                    throw new InvalidDataException(
-                        "Club gift product-reference details are incomplete.");
-                if (value is null ||
-                    value.ProductReference is null ||
-                    value.OfferOrdinal != offers.Offers[offer_index].OfferOrdinal ||
-                    value.ReferenceOrdinal != reference_index)
-                {
-                    throw new InvalidDataException(
-                        "Club gift product-reference details are out of order.");
-                }
-                values[reference_index] = value.ProductReference;
-            }
-            output[offer_index] = Array.AsReadOnly(values);
-        }
-        if (source_index != (page?.UnityProductReferences.Count ?? 0))
-        {
-            throw new InvalidDataException(
-                "Club gift product-reference details contain extra entries.");
-        }
-    }
-
-    private static void FillGiftUnityProducts(
-        GiftClubInfoPage offers,
-        GiftClubInfoPage? page,
-        IReadOnlyList<int> limits,
-        IReadOnlyList<CatalogPageProduct>[] output)
-    {
-        int source_index = 0;
-        for (int offer_index = 0; offer_index < offers.Offers.Count; offer_index++)
-        {
-            var values = new CatalogPageProduct[limits[offer_index]];
-            for (int product_index = 0; product_index < values.Length; product_index++)
-            {
-                GiftClubUnityProductView value = page?.UnityProducts[source_index++] ??
-                    throw new InvalidDataException("Club gift Unity-product details are incomplete.");
-                if (value is null ||
-                    value.Product is null ||
-                    value.OfferOrdinal != offers.Offers[offer_index].OfferOrdinal ||
-                    value.ProductOrdinal != product_index)
-                {
-                    throw new InvalidDataException(
-                        "Club gift Unity-product details are out of order.");
-                }
-                values[product_index] = value.Product;
-            }
-            output[offer_index] = Array.AsReadOnly(values);
-        }
-        if (source_index != (page?.UnityProducts.Count ?? 0))
-            throw new InvalidDataException("Club gift Unity-product details contain extra entries.");
-    }
-
     private sealed record GiftWrappingCollectionRead(
         long WrappingRevision,
         bool Loaded,
@@ -3944,9 +3790,7 @@ internal sealed class McpHost(
         IReadOnlyList<int> Values);
 
     private sealed record GiftNestedOffsets(
-        int Products,
-        int UnityProductReferences,
-        int UnityProducts);
+        int Products);
 
     private sealed record GiftDetailResult(
         McpGiftDetailMetadata Metadata,

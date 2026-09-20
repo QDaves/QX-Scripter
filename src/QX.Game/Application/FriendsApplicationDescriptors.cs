@@ -77,7 +77,7 @@ internal static class FriendsApplicationDescriptors
     public static ApplicationDescriptor MessageSend { get; } = Operation<FriendMessageSendRequest>(
         ApplicationMemberIds.FriendMessageSend,
         "Send private message",
-        "Sends a private messenger message with the active Flash or Unity sequence layout.",
+        "Sends a private messenger message with the active Flash sequence layout.",
         [
             RequiredId("recipient_id", "Friend identifier."),
             RequiredText("message", "Private message text.")

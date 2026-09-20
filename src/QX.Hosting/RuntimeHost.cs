@@ -218,7 +218,6 @@ public sealed class RuntimeHost : IDisposable, IAsyncDisposable
     {
         if (_options.EnableFallbackCatalogs)
         {
-            ClientCatalogBootstrapper.LoadEmbeddedReferences(Messages);
             lock (_gate)
                 _fallback_started = true;
         }

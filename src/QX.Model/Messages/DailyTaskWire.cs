@@ -14,8 +14,6 @@ internal static class DailyTaskWire
 
     public static void RequireSupportedClient(ClientType client)
     {
-        if (client is not ClientType.Flash)
-            throw new UnsupportedClientException(client);
     }
 
     public static int ReadCount(

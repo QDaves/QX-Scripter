@@ -95,43 +95,17 @@ public partial class ScriptGlobals
             new GroupJoinRequest(groupId),
             Ct);
 
-    /// <summary>
-    /// Sends a console (offline) message to a friend. The recipient must be on the friend list;
-    /// the server drops the message otherwise.
-    /// </summary>
-    /// <param name="userId">The recipient's user id.</param>
-    /// <param name="message">The message text.</param>
-    /// <remarks>
-    /// Flash carries a trailing sequence number. Unity builds support either two or three fields;
-    /// the active verified schema selects the layout automatically. The number is the sender's own
-    /// per-conversation counter, which the hotel quotes back on a delivery failure.
-    /// </remarks>
     public void SendMessage(Id userId, string message) =>
-        Application.Invoke<FriendMessageSendRequest, FriendOperationResult>(
-            ApplicationMemberIds.FriendMessageSend,
-            new FriendMessageSendRequest(userId, message),
-            Ct);
+    Application.Invoke<FriendMessageSendRequest, FriendOperationResult>(
+        ApplicationMemberIds.FriendMessageSend,
+        new FriendMessageSendRequest(userId, message),
+        Ct);
 
-    /// <summary>
-    /// Changes the local user's look. The server validates the figure against what the account
-    /// actually owns and silently keeps the old look if it does not check out.
-    /// </summary>
-    /// <param name="gender">
-    /// <c>"M"</c> or <c>"F"</c>. The Unity codec requires exactly one character.
-    /// </param>
-    /// <param name="figure">The figure string, for example <c>"hd-180-1.ch-255-66"</c>.</param>
-    /// <exception cref="ArgumentNullException">
-    /// <paramref name="gender"/> or <paramref name="figure"/> is null.
-    /// </exception>
-    /// <exception cref="ArgumentException">
-    /// The session is Unity and <paramref name="gender"/> is not exactly one character, or either
-    /// value exceeds the protocol string limit.
-    /// </exception>
     public void UpdateFigure(string gender, string figure) =>
-        Application.Invoke<ProfileFigureSetRequest, ProfileDispatchResult>(
-            ApplicationMemberIds.ProfileFigureSet,
-            new ProfileFigureSetRequest(gender, figure),
-            Ct);
+    Application.Invoke<ProfileFigureSetRequest, ProfileDispatchResult>(
+        ApplicationMemberIds.ProfileFigureSet,
+        new ProfileFigureSetRequest(gender, figure),
+        Ct);
 
     /// <summary>
     /// Shows the typing indicator above the local avatar. It does not clear on its own; pair it
@@ -280,39 +254,8 @@ public partial class ScriptGlobals
             new RoomPetRespectRequest(petId),
             Ct);
 
-    /// <summary>
-    /// Adds a user to the ignore list, so their chat is hidden locally by the client.
-    /// </summary>
-    /// <param name="userId">The target user's account id.</param>
-    /// <exception cref="InvalidOperationException">
-    /// The session's Unity build identifies ignores by name only and the id could not be
-    /// resolved to a name from the room or the friend list. Use <see cref="Ignore(string)"/>
-    /// in that case.
-    /// </exception>
-    /// <remarks>
-    /// Some Unity builds carry a name-based ignore message and others an id-based one; the
-    /// available layout is detected from the message catalog.
-    /// </remarks>
     public void Ignore(Id userId)
     {
-        if (Application.Describe(ApplicationMemberIds.ProfileIgnoreAddById).Availability.Available)
-        {
-            Application.Invoke<ProfileUserRequest, ProfileDispatchResult>(
-                ApplicationMemberIds.ProfileIgnoreAddById,
-                new ProfileUserRequest(userId),
-                Ct);
-            return;
-        }
-
-        if (Application.Describe(ApplicationMemberIds.ProfileIgnoreAddByName).Availability.Available)
-        {
-            Application.Invoke<ProfileUserNameRequest, ProfileDispatchResult>(
-                ApplicationMemberIds.ProfileIgnoreAddByName,
-                new ProfileUserNameRequest(ResolveUserName(userId)),
-                Ct);
-            return;
-        }
-
         Application.Invoke<ProfileUserRequest, ProfileDispatchResult>(
             ApplicationMemberIds.ProfileIgnoreAddById,
             new ProfileUserRequest(userId),
@@ -331,47 +274,16 @@ public partial class ScriptGlobals
     public void Ignore(string name)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
-        if (Application.Describe(ApplicationMemberIds.ProfileIgnoreAddByName).Availability.Available)
-        {
-            Application.Invoke<ProfileUserNameRequest, ProfileDispatchResult>(
-                ApplicationMemberIds.ProfileIgnoreAddByName,
-                new ProfileUserNameRequest(name),
-                Ct);
-            return;
-        }
 
-        if (Application.Describe(ApplicationMemberIds.ProfileIgnoreAddById).Availability.Available)
-        {
-            Application.Invoke<ProfileUserRequest, ProfileDispatchResult>(
-                ApplicationMemberIds.ProfileIgnoreAddById,
-                new ProfileUserRequest(ResolveUserId(name)),
-                Ct);
-            return;
-        }
-
-        Application.Invoke<ProfileUserNameRequest, ProfileDispatchResult>(
-            ApplicationMemberIds.ProfileIgnoreAddByName,
-            new ProfileUserNameRequest(name),
-            Ct);
+        Ignore(ResolveUserId(name));
     }
 
-    /// <summary>
-    /// Removes a user from the ignore list.
-    /// </summary>
-    /// <param name="userId">The target user's account id.</param>
-    /// <exception cref="InvalidOperationException">
-    /// The session's Unity build identifies unignores by name only and the id could not be
-    /// resolved to a name.
-    /// </exception>
     public void Unignore(Id userId)
     {
-        ProfileIdentityKind kind = UnignoreIdentityKind(ProfileIdentityKind.Id);
-        string identity = kind is ProfileIdentityKind.Name
-            ? ResolveUserName(userId)
-            : ((long)userId).ToString(System.Globalization.CultureInfo.InvariantCulture);
+        string identity = ((long)userId).ToString(System.Globalization.CultureInfo.InvariantCulture);
         Application.Invoke<ProfileIgnoreRemoveRequest, ProfileDispatchResult>(
             ApplicationMemberIds.ProfileIgnoreRemove,
-            new ProfileIgnoreRemoveRequest(kind, identity),
+            new ProfileIgnoreRemoveRequest(ProfileIdentityKind.Id, identity),
             Ct);
     }
 
@@ -387,14 +299,7 @@ public partial class ScriptGlobals
     public void Unignore(string name)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
-        ProfileIdentityKind kind = UnignoreIdentityKind(ProfileIdentityKind.Name);
-        string identity = kind is ProfileIdentityKind.Id
-            ? ((long)ResolveUserId(name)).ToString(System.Globalization.CultureInfo.InvariantCulture)
-            : name;
-        Application.Invoke<ProfileIgnoreRemoveRequest, ProfileDispatchResult>(
-            ApplicationMemberIds.ProfileIgnoreRemove,
-            new ProfileIgnoreRemoveRequest(kind, identity),
-            Ct);
+        Unignore(ResolveUserId(name));
     }
 
     /// <summary>
@@ -555,16 +460,8 @@ public partial class ScriptGlobals
                 new RoomPlacementFloorPosition(item.X, item.Y, item.Direction)),
             Ct);
 
-    /// <summary>
-    /// Picks a floor item up into the inventory. Requires room rights or ownership of the item.
-    /// </summary>
-    /// <param name="item">The floor item to pick up.</param>
-    /// <param name="confirmed">
-    /// Acknowledges the hotel's remove-confirmation prompt. Flash only: the client sends the same
-    /// message a second time with this set once the prompt is accepted. Unity has no such field.
-    /// </param>
     public void PickupFurni(FloorItem item, bool confirmed = false) =>
-        SendPickup(2, item.Id, confirmed);
+    SendPickup(2, item.Id, confirmed);
 
     /// <summary>
     /// Picks a wall item up into the inventory. Requires room rights or ownership of the item.
@@ -763,29 +660,6 @@ public partial class ScriptGlobals
             new RoomBotRemoveRequest(botId),
             Ct);
 
-    /// <summary>
-    /// Writes a complete set of room settings back to the server. Every field is overwritten, so
-    /// read the current settings first - <see cref="ModifyRoomSettings"/> does that for you.
-    /// </summary>
-    /// <param name="settings">
-    /// The full settings block. The room id it carries selects the room; the local user must own
-    /// it.
-    /// </param>
-    /// <param name="password">
-    /// The door password, which is not part of <paramref name="settings"/>. It is only used when
-    /// the door mode is the password mode, and an empty string clears an existing password.
-    /// </param>
-    /// <exception cref="ArgumentNullException"><paramref name="settings"/> is <see langword="null"/>.</exception>
-    /// <exception cref="NotSupportedException">
-    /// The session is Unity and the settings use fields the Unity wire layout has no room for -
-    /// tags, wall/floor thickness, hidden walls, chat flood sensitivity, the idle timers, the
-    /// door-tile rule or pet muting - or the build uses the legacy Unity layout and trade,
-    /// food-consumption or walk-through settings are set.
-    /// </exception>
-    /// <remarks>
-    /// Flash accepts the full field set; the Unity layouts are strict subsets and are detected
-    /// from the message catalog.
-    /// </remarks>
     public void SaveRoomSettings(RoomSettings settings, string password = "")
     {
         ArgumentNullException.ThrowIfNull(settings);
@@ -795,23 +669,6 @@ public partial class ScriptGlobals
             Ct);
     }
 
-    private ProfileIdentityKind UnignoreIdentityKind(ProfileIdentityKind fallback)
-    {
-        ApplicationAvailability availability = Application
-            .Describe(ApplicationMemberIds.ProfileIgnoreRemove)
-            .Availability;
-        if (!availability.Available)
-            return fallback;
-        string? capability = availability.ActiveMessages
-            .Select(message => message.WireCapability)
-            .FirstOrDefault(value => value is not null);
-        return capability switch
-        {
-            "unityUnignoreNameSchema" => ProfileIdentityKind.Name,
-            "unityUnignoreIdSchema" or "flashUnignoreIdSchema" => ProfileIdentityKind.Id,
-            _ => ProfileIdentityKind.Id
-        };
-    }
 
     private Id ResolveUserId(string name)
     {
@@ -822,17 +679,6 @@ public partial class ScriptGlobals
         if (friend is not null)
             return friend.Id;
         throw new InvalidOperationException($"Cannot resolve user '{name}' to an identifier for this client layout.");
-    }
-
-    private string ResolveUserName(Id user_id)
-    {
-        User? user = Users.FirstOrDefault(candidate => candidate.Id == user_id);
-        if (user is not null)
-            return user.Name;
-        Friend? friend = Friends.FirstOrDefault(candidate => candidate.Id == user_id);
-        if (friend is not null)
-            return friend.Name;
-        throw new InvalidOperationException($"Cannot resolve user '{user_id}' to a name for this client layout. Use the string overload instead.");
     }
 
     /// <summary>
@@ -853,26 +699,9 @@ public partial class ScriptGlobals
             new CatalogPurchaseSendRequest(pageId, offerId, extraData, amount),
             Ct);
 
-    /// <summary>
-    /// Buys a catalog offer as a wrapped gift for another user.
-    /// </summary>
-    /// <param name="pageId">The catalog page id.</param>
-    /// <param name="offerId">The offer id on that page.</param>
-    /// <param name="extraData">The purchase parameter the offer expects; empty for none.</param>
-    /// <param name="receiverName">The recipient's user name.</param>
-    /// <param name="giftMessage">The message shown when the gift is opened.</param>
-    /// <param name="spriteId">The gift-box sprite id from the gift-wrapping catalog page.</param>
-    /// <param name="boxType">The box shape index offered by the gift wrapper.</param>
-    /// <param name="ribbonType">The ribbon index offered by the gift wrapper.</param>
-    /// <param name="showPurchaserName">Whether the sender's name is revealed to the recipient.</param>
-    /// <param name="amount">
-    /// How many to buy. Only Unity carries this field; on Flash the value is ignored and the
-    /// server buys one.
-    /// </param>
-    /// <exception cref="ArgumentOutOfRangeException"><paramref name="amount"/> is less than 1.</exception>
     public void PurchaseFromCatalogAsGift(
-        int pageId, int offerId, string extraData, string receiverName, string giftMessage,
-        int spriteId, int boxType, int ribbonType, bool showPurchaserName = false, int amount = 1)
+    int pageId, int offerId, string extraData, string receiverName, string giftMessage,
+    int spriteId, int boxType, int ribbonType, bool showPurchaserName = false, int amount = 1)
     {
         ArgumentOutOfRangeException.ThrowIfLessThan(amount, 1);
         Application.Invoke<GiftPurchaseRequest, GiftPurchaseDispatchReceipt>(
@@ -893,11 +722,6 @@ public partial class ScriptGlobals
 
     private void SendIds(string name, params Id[] ids)
     {
-        if (CurrentClient is ClientType.Unity)
-        {
-            SendToServer(name, (object)ids);
-            return;
-        }
 
         using Packet packet = NewPacket(Direction.Out, name);
         PacketWriter writer = packet.Writer();
@@ -927,8 +751,6 @@ public partial class ScriptGlobals
     public void ShowBubble(string message, int index, int bubble)
     {
         ArgumentNullException.ThrowIfNull(message);
-
-        bool unity = CurrentClient is ClientType.Unity;
         SendToClient(
             MessageContracts.Room.Chat.Whisper,
             new AvatarChat(
@@ -939,7 +761,7 @@ public partial class ScriptGlobals
                 [],
                 0,
                 ChatType.Whisper,
-                unity ? 0 : null,
-                unity ? 0 : null));
+                null,
+                null));
     }
 }

@@ -46,18 +46,7 @@ public readonly record struct WallLocation(Point Wall, Point Offset, WallOrienta
 
     public void Compose(in PacketWriter p)
     {
-        if (p.Client is ClientType.Unity)
-        {
-            p.WriteInt(Wall.X);
-            p.WriteInt(Wall.Y);
-            p.WriteInt(Offset.X);
-            p.WriteInt(Offset.Y);
-            p.WriteString(Orientation.ToString());
-        }
-        else
-        {
-            p.WriteString(ToString());
-        }
+        p.WriteString(ToString());
     }
 
     public static WallLocation Parse(in PacketReader p) => ParseString(p.ReadString());
@@ -143,18 +132,6 @@ internal static class RoomPlacementWire
         return category;
     }
 
-    public static WallLocation ReadUnityWallLocation(in PacketReader p)
-    {
-        int wx = p.ReadInt();
-        int wy = p.ReadInt();
-        int lx = p.ReadInt();
-        int ly = p.ReadInt();
-        string orientation = p.ReadString();
-        if (orientation.Length != 1 || orientation[0] is not ('l' or 'r'))
-            throw new InvalidDataException("Unity wall location contains an invalid orientation.");
-        return new WallLocation(wx, wy, lx, ly, orientation[0]);
-    }
-
     public static WallLocation RequireWallLocation(WallLocation location, string name)
     {
         if (location.Orientation.Value is not ('l' or 'r'))
@@ -207,8 +184,6 @@ internal static class RoomPlacementWire
                     throw new InvalidDataException($"{name} exceeds the Flash identifier range.", error);
                 }
                 break;
-            case ClientType.Unity:
-                break;
             default:
                 throw new UnsupportedClientException(p.Client);
         }
@@ -225,7 +200,6 @@ internal static class RoomPlacementWire
         RequireId(item.OwnerId, nameof(item.OwnerId), in p);
         InventoryWire.ValidateItemData(
             item.Data,
-            p.Client is ClientType.Unity,
             in p);
         if (item.Kind < 0)
             RequireString(item.Identifier ?? "", nameof(item.Identifier), in p);

@@ -1,17 +1,14 @@
 using System.Security.Cryptography;
 using System.Text.Json;
 using Qx.Headers.Flash;
-using Qx.Unity;
 
 namespace Qx.ClientCatalog.InstalledClients;
 
 internal sealed class InstalledClientDiscovery
 {
     const string AirClient = "air";
-    const string UnityClient = "unity";
 
     readonly HabboAirClientResolver _air;
-    readonly HabboUnityClientResolver _unity;
     readonly string _launcher_data;
     readonly string _cache_root;
     readonly Dictionary<string, bool> _verified = new(StringComparer.Ordinal);
@@ -20,11 +17,8 @@ internal sealed class InstalledClientDiscovery
     {
         ArgumentNullException.ThrowIfNull(http);
         _launcher_data = Path.GetFullPath(launcher_data ?? HabboAirClientResolver.DefaultLauncherDataPath());
-        _cache_root = Path.GetFullPath(cache_root ?? Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "QX"));
+        _cache_root = Path.GetFullPath(cache_root ?? StoragePaths.Cache);
         _air = new HabboAirClientResolver(http, _launcher_data, Path.Combine(_cache_root, "swf"));
-        _unity = new HabboUnityClientResolver(http, _launcher_data, Path.Combine(_cache_root, "unity"));
     }
 
     public IReadOnlyList<string> WatchRoots
@@ -32,14 +26,12 @@ internal sealed class InstalledClientDiscovery
         get
         {
             string air_cache = Path.Combine(_cache_root, "swf");
-            string unity_cache = Path.Combine(_cache_root, "unity");
             return new[]
             {
                 _launcher_data,
-                ExistingRoot(air_cache, _cache_root),
-                ExistingRoot(unity_cache, _cache_root)
+                ExistingRoot(air_cache, _cache_root)
             }
-            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Distinct(StoragePaths.FileComparer)
             .ToArray();
         }
     }
@@ -48,9 +40,8 @@ internal sealed class InstalledClientDiscovery
     {
         var candidates = new List<InstalledClientCandidate>();
         FindAir(candidates);
-        FindUnity(candidates);
         return candidates
-            .GroupBy(candidate => CandidateKey(candidate), StringComparer.OrdinalIgnoreCase)
+            .GroupBy(candidate => CandidateKey(candidate), StoragePaths.FileComparer)
             .Select(group => group
                 .OrderByDescending(candidate => candidate.LastModified)
                 .ThenByDescending(candidate => ParseVersion(candidate.Version))
@@ -85,38 +76,6 @@ internal sealed class InstalledClientDiscovery
                 release.Source.ToString(),
                 modified,
                 Array.AsReadOnly(new[] { path })));
-        }
-    }
-
-    void FindUnity(List<InstalledClientCandidate> candidates)
-    {
-        foreach (string? version in VersionHints(UnityClient, Path.Combine(_cache_root, "unity")))
-        {
-            HabboUnityRelease? release;
-            try
-            {
-                release = _unity.FindInstalled(version);
-            }
-            catch (Exception error) when (IsCandidateError(error))
-            {
-                continue;
-            }
-
-            if (release is null)
-                continue;
-
-            string assembly = Path.GetFullPath(release.Client.GameAssemblyPath);
-            string metadata = Path.GetFullPath(release.Client.MetadataPath);
-            string[] files = [assembly, metadata];
-            if (!TryModified(assembly, out DateTimeOffset modified))
-                continue;
-            candidates.Add(new InstalledClientCandidate(
-                InstalledClientFamily.Unity,
-                release.Version,
-                Path.GetFullPath(release.Client.RootPath),
-                release.Source.ToString(),
-                modified,
-                Array.AsReadOnly(files)));
         }
     }
 
@@ -191,7 +150,6 @@ internal sealed class InstalledClientDiscovery
             valid = candidate.Family switch
             {
                 InstalledClientFamily.Flash => VerifySwf(candidate),
-                InstalledClientFamily.Unity => VerifyUnity(candidate),
                 _ => false
             };
             _verified[content_revision] = valid;
@@ -216,20 +174,6 @@ internal sealed class InstalledClientDiscovery
         }
     }
 
-    static bool VerifyUnity(InstalledClientCandidate candidate)
-    {
-        try
-        {
-            UnityExecutableValidator.Validate(candidate.Files[0]);
-            _ = new UnityHeaderExtractor().ExtractMetadata(candidate.Files[1]);
-            return true;
-        }
-        catch (Exception error) when (IsCandidateError(error))
-        {
-            return false;
-        }
-    }
-
     static bool TryHash(
         InstalledClientCandidate candidate,
         out string revision,
@@ -241,7 +185,7 @@ internal sealed class InstalledClientDiscovery
         {
             var hashes = new List<string>(candidate.Files.Count);
             var observed = new List<FileState>(candidate.Files.Count);
-            foreach (string path in candidate.Files.Order(StringComparer.OrdinalIgnoreCase))
+            foreach (string path in candidate.Files.Order(StoragePaths.FileComparer))
             {
                 FileState state = State(path);
                 using var stream = new FileStream(

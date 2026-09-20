@@ -67,9 +67,6 @@ public readonly ref struct PacketWriter(IPacket packet, ref int pos, IParserCont
             case ClientType.Flash:
                 WriteString((FloatString)value);
                 break;
-            case ClientType.Unity:
-                BinaryPrimitives.WriteSingleBigEndian(Allocate(4), value);
-                break;
             default:
                 throw new UnsupportedClientException(Client);
         }
@@ -107,9 +104,6 @@ public readonly ref struct PacketWriter(IPacket packet, ref int pos, IParserCont
     {
         switch (Client)
         {
-            case ClientType.Unity:
-                WriteLong(value);
-                break;
             case ClientType.Flash:
                 WriteInt(AllowsLegacyIdProjection
                     ? unchecked((int)(long)value)
@@ -126,8 +120,6 @@ public readonly ref struct PacketWriter(IPacket packet, ref int pos, IParserCont
         Id[] array = (values as Id[]) ?? [.. values];
         switch (Client)
         {
-            case ClientType.Unity:
-                break;
             case ClientType.Flash:
                 if (!AllowsLegacyIdProjection)
                 {
@@ -149,9 +141,6 @@ public readonly ref struct PacketWriter(IPacket packet, ref int pos, IParserCont
 
         switch (Client)
         {
-            case ClientType.Unity:
-                WriteShort((short)(ushort)value);
-                break;
             case ClientType.Flash:
                 WriteInt(value);
                 break;
@@ -211,9 +200,6 @@ public readonly ref struct PacketWriter(IPacket packet, ref int pos, IParserCont
         {
             case ClientType.Flash:
                 ReplaceString((FloatString)value);
-                break;
-            case ClientType.Unity:
-                WriteFloat(value);
                 break;
             default:
                 throw new UnsupportedClientException(Client);

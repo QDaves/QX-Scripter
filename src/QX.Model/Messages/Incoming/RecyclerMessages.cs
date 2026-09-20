@@ -10,13 +10,13 @@ namespace Qx.Model.Messages.Incoming;
 public sealed record RecyclerStatus(int Status, int TimeoutSeconds) : IParserComposer<RecyclerStatus>
 {
     public static RecyclerStatus Parse(in PacketReader p) =>
-        ModernWireClients.ParseFlash(in p, ParseFlash);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static RecyclerStatus ParseFlash(in PacketReader p) =>
         new(p.ReadInt(), p.ReadInt());
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.ComposeFlash(this, in p, ComposeFlash);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(RecyclerStatus value, in PacketWriter p)
     {
@@ -33,13 +33,13 @@ public sealed record RecyclerStatus(int Status, int TimeoutSeconds) : IParserCom
 public sealed record RecyclerFinished(int Status, int PrizeId) : IParserComposer<RecyclerFinished>
 {
     public static RecyclerFinished Parse(in PacketReader p) =>
-        ModernWireClients.ParseFlash(in p, ParseFlash);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static RecyclerFinished ParseFlash(in PacketReader p) =>
         new(p.ReadInt(), p.ReadInt());
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.ComposeFlash(this, in p, ComposeFlash);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(RecyclerFinished value, in PacketWriter p)
     {

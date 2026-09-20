@@ -10,7 +10,6 @@ internal static class CatalogWire
     public static int CountWidth(ClientType client) => client switch
     {
         ClientType.Flash => sizeof(int),
-        ClientType.Unity => sizeof(short),
         _ => throw new UnsupportedClientException(client)
     };
 
@@ -26,7 +25,6 @@ internal static class CatalogWire
         int count = p.Client switch
         {
             ClientType.Flash => p.ReadInt(),
-            ClientType.Unity => unchecked((ushort)p.ReadShort()),
             _ => throw new UnsupportedClientException(p.Client)
         };
         RequireCount(count, maximum, name);

@@ -2,12 +2,6 @@ using Qx.Model.Messages.Incoming;
 
 namespace Qx.Scripting;
 
-/// <content>
-/// Crafting (alchemy): cached crafting state plus the fire-and-forget requests and actions that
-/// drive it. Available on both the Flash and the Unity client; the Unity payloads differ but are
-/// decoded transparently.
-/// <para>The cached state is cleared when the session resets.</para>
-/// </content>
 public partial class ScriptGlobals
 {
     public CraftableProducts? CraftableProducts => Crafting.Products;

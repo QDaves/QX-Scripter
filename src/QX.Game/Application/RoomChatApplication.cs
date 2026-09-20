@@ -222,7 +222,7 @@ internal sealed class RoomChatApplication : IApplicationFeature, IRoomChatOperat
     private static ApplicationDescriptor WhisperDescriptor() => new(
         ApplicationMemberIds.RoomChatWhisper,
         "Private room message",
-        "Sends a private room-chat message through the active client dialect.",
+        "Sends a private room-chat message through Flash.",
         ApplicationMemberKind.Operation,
         ApplicationExposure.All,
         typeof(RoomChatWhisperRequest),

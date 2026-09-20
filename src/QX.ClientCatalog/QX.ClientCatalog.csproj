@@ -6,7 +6,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\QX.ClientHeaders\QX.ClientHeaders.csproj" />
     <ProjectReference Include="..\QX.FlashHeaders\QX.FlashHeaders.csproj" />
     <ProjectReference Include="..\QX.Protocol\QX.Protocol.csproj" />
   </ItemGroup>

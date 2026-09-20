@@ -1,0 +1,129 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:c="using:Qx.Desktop.Controls"
+             xmlns:vm="using:Qx.Presentation.ViewModels.Chat"
+             x:Class="Qx.Desktop.Views.Chat.ChatView"
+             x:DataType="vm:ChatViewModel">
+
+  <c:PageLayout Page="{Binding}"
+                CountText="{Binding CountText}"
+                Notices="{Binding Notices}">
+
+    <c:PageLayout.Toolbar>
+      <c:FilterBar>
+        <c:FilterBar.Search>
+          <c:SearchBox Name="Search"
+                       PlaceholderText="Search the chat log"
+                       AutomationProperties.Name="Search the chat log"
+                       Text="{Binding SearchText, Mode=TwoWay}" />
+        </c:FilterBar.Search>
+        <c:FilterBar.Filters>
+          <Button Name="Filters" AutomationProperties.Name="Filter the chat log">
+            <StackPanel Orientation="Horizontal" Spacing="6">
+              <c:Icon Kind="Filter" Size="{DynamicResource QxIconSizeSm}" />
+              <TextBlock Text="Filters" />
+            </StackPanel>
+            <Button.Flyout>
+              <Flyout Placement="BottomEdgeAlignedLeft">
+                <StackPanel Width="260" Spacing="12">
+                  <TextBlock Text="Show in chat" Classes="field-label" />
+                  <Grid ColumnDefinitions="*,16,*">
+                    <StackPanel Spacing="8">
+                      <CheckBox Content="Users" IsChecked="{Binding ShowUsers, Mode=TwoWay}" />
+                      <CheckBox Content="Whispers" IsChecked="{Binding ShowWhispers, Mode=TwoWay}" />
+                      <CheckBox Content="Wired" IsChecked="{Binding ShowWired, Mode=TwoWay}" />
+                      <CheckBox Content="Trades" IsChecked="{Binding ShowTrades, Mode=TwoWay}" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="2" Spacing="8">
+                      <CheckBox Content="Pets" IsChecked="{Binding ShowPets, Mode=TwoWay}" />
+                      <CheckBox Content="Bots" IsChecked="{Binding ShowBots, Mode=TwoWay}" />
+                      <CheckBox Content="Joins" IsChecked="{Binding ShowJoins, Mode=TwoWay}" />
+                      <CheckBox Content="Leaves" IsChecked="{Binding ShowLeaves, Mode=TwoWay}" />
+                    </StackPanel>
+                  </Grid>
+                </StackPanel>
+              </Flyout>
+            </Button.Flyout>
+          </Button>
+        </c:FilterBar.Filters>
+        <c:FilterBar.Trailing>
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <Button Command="{Binding ExportCommand}" ToolTip.Tip="Export shown lines" AutomationProperties.Name="Export shown chat lines">
+              <StackPanel Orientation="Horizontal" Spacing="6">
+                <c:Icon Kind="Save" Size="{DynamicResource QxIconSizeSm}" />
+                <TextBlock Text="Export" />
+              </StackPanel>
+            </Button>
+            <Button Command="{Binding ClearCommand}"
+                    ToolTip.Tip="Clear the log"
+                    AutomationProperties.Name="Clear the chat log">
+              <StackPanel Orientation="Horizontal" Spacing="6">
+                <c:Icon Kind="ClearAll" Size="{DynamicResource QxIconSizeSm}" />
+                <TextBlock Text="Clear" />
+              </StackPanel>
+            </Button>
+          </StackPanel>
+        </c:FilterBar.Trailing>
+      </c:FilterBar>
+    </c:PageLayout.Toolbar>
+
+    <Panel>
+      <ListBox Name="Lines"
+               ItemsSource="{Binding Visible}"
+               ItemContainerTheme="{StaticResource Chat.LineItem}"
+               Padding="{DynamicResource Chat.ListPadding}"
+               Background="Transparent"
+               BorderThickness="0"
+               AutomationProperties.Name="Chat">
+        <ListBox.ItemTemplate>
+          <DataTemplate x:DataType="vm:ChatLineViewModel">
+            <Grid ColumnDefinitions="Auto,*,Auto">
+              <c:Avatar Grid.Column="0"
+                        Width="{DynamicResource Chat.HeadWidth}"
+                        Margin="{DynamicResource Chat.HeadMargin}"
+                        VerticalAlignment="Top"
+                        IsVisible="{Binding HasHead}"
+                        DisplayName="{Binding Name}"
+                        Image="{Binding Image}" />
+              <Panel Grid.Column="0" Width="{DynamicResource Chat.HeadWidth}" IsVisible="{Binding !HasHead}" />
+              <StackPanel Grid.Column="1" Margin="{DynamicResource Chat.BodyMargin}" Spacing="2">
+                <StackPanel Orientation="Horizontal" Spacing="7" IsVisible="{Binding IsMessage}">
+                  <TextBlock Classes="heading primary"
+                             Text="{Binding Name}"
+                             TextTrimming="CharacterEllipsis" />
+                  <c:Chip Text="{Binding Tag}" IsVisible="{Binding HasTag}" VerticalAlignment="Center" />
+                </StackPanel>
+                <TextBlock Classes="body tertiary"
+                           Text="{Binding Name}"
+                           TextWrapping="Wrap"
+                           IsVisible="{Binding IsActivity}" />
+                <TextBlock Classes="body secondary"
+                           Text="{Binding Message}"
+                           TextWrapping="Wrap"
+                           IsVisible="{Binding HasMessage}" />
+              </StackPanel>
+              <TextBlock Grid.Column="2"
+                         Classes="mono caption tertiary"
+                         Margin="{DynamicResource Chat.TimeMargin}"
+                         VerticalAlignment="Top"
+                         Text="{Binding Time}" />
+            </Grid>
+          </DataTemplate>
+        </ListBox.ItemTemplate>
+      </ListBox>
+      <Button Classes="primary small"
+              Margin="{DynamicResource Chat.JumpMargin}"
+              HorizontalAlignment="Center"
+              VerticalAlignment="Bottom"
+              IsVisible="{Binding HasPending}"
+              Command="{Binding JumpToLatestCommand}">
+        <StackPanel Orientation="Horizontal" Spacing="6">
+          <c:Icon Kind="ArrowDown" Size="{DynamicResource QxIconSizeXs}" />
+          <TextBlock Text="{Binding PendingText}" />
+        </StackPanel>
+      </Button>
+    </Panel>
+
+  </c:PageLayout>
+
+</UserControl>

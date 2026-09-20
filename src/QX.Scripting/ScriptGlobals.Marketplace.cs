@@ -6,21 +6,6 @@ using Qx.Model.Messages.Incoming;
 
 namespace Qx.Scripting;
 
-/// <content>
-/// Cached marketplace state. Nothing in this section talks to the server: every member reads the
-/// snapshot the marketplace tracker builds from marketplace traffic seen on the wire, so a member
-/// stays <see langword="null"/> or empty until the matching reply has arrived — either because
-/// the game client asked for it, or because a script issued the corresponding request such as
-/// <see cref="GetMarketplaceStats(int,int,int)"/> or <see cref="GetMyMarketplaceOffers(int)"/>.
-/// <para>
-/// The snapshot is emptied when the session resets, so nothing here survives a reconnect.
-/// </para>
-/// <para>
-/// The marketplace has separate verified Flash and Unity wire layouts. Reading cached state is
-/// always safe, but the requests that fill it can refuse to run when the active client's layout
-/// is not one the parser has verified.
-/// </para>
-/// </content>
 public partial class ScriptGlobals
 {
     public MarketplaceStateView MarketplaceState => Marketplace;

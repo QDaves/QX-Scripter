@@ -1,0 +1,157 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:b="using:Qx.Desktop.Behaviors"
+             xmlns:c="using:Qx.Desktop.Controls"
+             xmlns:vm="using:Qx.Presentation.ViewModels.Navigator"
+             x:Class="Qx.Desktop.Views.Navigator.NavigatorView"
+             x:DataType="vm:NavigatorViewModel">
+
+  <UserControl.Resources>
+    <ContextMenu x:Key="RoomMenu" x:DataType="vm:NavigatorViewModel">
+      <MenuItem Header="Enter room"
+                Command="{Binding EnterCommand}"
+                ToolTip.Tip="{Binding EnterTip}"
+                ToolTip.ShowOnDisabled="True">
+        <MenuItem.Icon>
+          <c:Icon Kind="Enter" Size="16" />
+        </MenuItem.Icon>
+      </MenuItem>
+      <Separator />
+      <MenuItem Header="Copy" IsEnabled="{Binding HasOneSelected}">
+        <MenuItem.Icon>
+          <c:Icon Kind="Copy" Size="16" />
+        </MenuItem.Icon>
+        <MenuItem Header="Room name" Command="{Binding CopyFieldCommand}" CommandParameter="{x:Static vm:RoomResultField.Name}" />
+        <MenuItem Header="Owner" Command="{Binding CopyFieldCommand}" CommandParameter="{x:Static vm:RoomResultField.Owner}" />
+        <MenuItem Header="Users" Command="{Binding CopyFieldCommand}" CommandParameter="{x:Static vm:RoomResultField.Users}" />
+        <MenuItem Header="Capacity" Command="{Binding CopyFieldCommand}" CommandParameter="{x:Static vm:RoomResultField.Capacity}" />
+        <MenuItem Header="Score" Command="{Binding CopyFieldCommand}" CommandParameter="{x:Static vm:RoomResultField.Score}" />
+        <MenuItem Header="Door" Command="{Binding CopyFieldCommand}" CommandParameter="{x:Static vm:RoomResultField.Door}" />
+        <MenuItem Header="Room id" Command="{Binding CopyFieldCommand}" CommandParameter="{x:Static vm:RoomResultField.Id}" />
+      </MenuItem>
+      <MenuItem Header="Copy rows" Command="{Binding CopySelectionCommand}" InputGesture="Ctrl+C">
+        <MenuItem.Icon>
+          <c:Icon Kind="Copy" Size="16" />
+        </MenuItem.Icon>
+      </MenuItem>
+    </ContextMenu>
+  </UserControl.Resources>
+
+  <c:PageLayout Page="{Binding}" CountText="{Binding CountText}" Notices="{Binding Notices}">
+    <c:PageLayout.Toolbar>
+      <c:FilterBar>
+        <c:FilterBar.Search>
+          <c:SearchBox Name="QueryBox"
+                       Width="260"
+                       Text="{Binding Query, Mode=TwoWay}"
+                       PlaceholderText="{Binding QueryPlaceholder}"
+                       IsEnabled="{Binding QueryEnabled}"
+                       b:FocusRequest.IsRequested="{Binding QueryFocusRequested, Mode=TwoWay}"
+                       AutomationProperties.Name="Navigator search text" />
+        </c:FilterBar.Search>
+        <c:FilterBar.Filters>
+          <StackPanel Orientation="Horizontal" Spacing="12">
+            <c:SegmentedControl ItemsSource="{Binding Lists}"
+                                SelectedItem="{Binding SelectedList, Mode=TwoWay}"
+                                AutomationProperties.Name="Navigator search kind">
+              <c:SegmentedControl.ItemTemplate>
+                <DataTemplate x:DataType="vm:NavigatorSearchList">
+                  <c:Segment Text="{Binding Label}" />
+                </DataTemplate>
+              </c:SegmentedControl.ItemTemplate>
+            </c:SegmentedControl>
+            <ComboBox Width="170"
+                      ItemsSource="{Binding Options}"
+                      SelectedItem="{Binding SelectedOption, Mode=TwoWay}"
+                      IsVisible="{Binding HasOptionChoice}"
+                      AutomationProperties.Name="Navigator search type">
+              <ComboBox.ItemTemplate>
+                <DataTemplate x:DataType="vm:NavigatorSearchOption">
+                  <TextBlock Text="{Binding Label}" VerticalAlignment="Center" />
+                </DataTemplate>
+              </ComboBox.ItemTemplate>
+            </ComboBox>
+          </StackPanel>
+        </c:FilterBar.Filters>
+        <c:FilterBar.Trailing>
+          <Button Classes="primary"
+                  Command="{Binding SearchCommand}"
+                  ToolTip.Tip="Ask the hotel for rooms"
+                  AutomationProperties.Name="Search rooms">
+            <StackPanel Orientation="Horizontal" Spacing="6">
+              <c:Icon Kind="Search" Size="14" VerticalAlignment="Center" />
+              <TextBlock Text="Search" VerticalAlignment="Center" />
+            </StackPanel>
+          </Button>
+        </c:FilterBar.Trailing>
+      </c:FilterBar>
+    </c:PageLayout.Toolbar>
+
+    <DataGrid Name="RoomGrid"
+              ItemsSource="{Binding Rooms.Visible}"
+              ContextMenu="{StaticResource RoomMenu}"
+              b:ListBehaviors.Selection="{Binding Selection}"
+              b:ListBehaviors.SortRefresh="{Binding SortRefresh}"
+              b:ListBehaviors.CopyCommand="{Binding CopySelectionCommand}"
+              SelectionMode="Extended"
+              ClipboardCopyMode="None"
+              RowHeight="{DynamicResource QxRowHeightLarge}"
+              CanUserReorderColumns="True"
+              AutomationProperties.Name="Navigator rooms">
+      <DataGrid.Columns>
+        <c:DataGridGutterColumn x:DataType="vm:RoomRow" />
+        <DataGridTemplateColumn x:DataType="vm:RoomRow" Header="Room" Width="2*" SortMemberPath="Name">
+          <DataGridTemplateColumn.CellTemplate>
+            <DataTemplate x:DataType="vm:RoomRow">
+              <TextBlock Theme="{StaticResource Navigator.Name}" Text="{Binding Name}" ToolTip.Tip="{Binding Detail}" />
+            </DataTemplate>
+          </DataGridTemplateColumn.CellTemplate>
+        </DataGridTemplateColumn>
+        <DataGridTemplateColumn x:DataType="vm:RoomRow" Header="Owner" Width="1.5*" SortMemberPath="Owner">
+          <DataGridTemplateColumn.CellTemplate>
+            <DataTemplate x:DataType="vm:RoomRow">
+              <TextBlock Theme="{StaticResource Navigator.Cell}" Text="{Binding Owner}" />
+            </DataTemplate>
+          </DataGridTemplateColumn.CellTemplate>
+        </DataGridTemplateColumn>
+        <DataGridTemplateColumn x:DataType="vm:RoomRow" Header="Users" Width="80" SortMemberPath="Users">
+          <DataGridTemplateColumn.CellTemplate>
+            <DataTemplate x:DataType="vm:RoomRow">
+              <TextBlock Theme="{StaticResource Navigator.Number}" Text="{Binding UsersText}" />
+            </DataTemplate>
+          </DataGridTemplateColumn.CellTemplate>
+        </DataGridTemplateColumn>
+        <DataGridTemplateColumn x:DataType="vm:RoomRow" Header="Capacity" Width="96" SortMemberPath="Capacity">
+          <DataGridTemplateColumn.CellTemplate>
+            <DataTemplate x:DataType="vm:RoomRow">
+              <TextBlock Theme="{StaticResource Navigator.Number}" Text="{Binding CapacityText}" />
+            </DataTemplate>
+          </DataGridTemplateColumn.CellTemplate>
+        </DataGridTemplateColumn>
+        <DataGridTemplateColumn x:DataType="vm:RoomRow" Header="Score" Width="80" SortMemberPath="Score">
+          <DataGridTemplateColumn.CellTemplate>
+            <DataTemplate x:DataType="vm:RoomRow">
+              <TextBlock Theme="{StaticResource Navigator.Number}" Text="{Binding ScoreText}" />
+            </DataTemplate>
+          </DataGridTemplateColumn.CellTemplate>
+        </DataGridTemplateColumn>
+        <DataGridTemplateColumn x:DataType="vm:RoomRow" Header="Door" Width="104" SortMemberPath="DoorMode">
+          <DataGridTemplateColumn.CellTemplate>
+            <DataTemplate x:DataType="vm:RoomRow">
+              <TextBlock Theme="{StaticResource Navigator.Cell}" Text="{Binding DoorText}" />
+            </DataTemplate>
+          </DataGridTemplateColumn.CellTemplate>
+        </DataGridTemplateColumn>
+        <DataGridTemplateColumn x:DataType="vm:RoomRow" Header="Id" Width="*" SortMemberPath="Id">
+          <DataGridTemplateColumn.CellTemplate>
+            <DataTemplate x:DataType="vm:RoomRow">
+              <TextBlock Theme="{StaticResource Navigator.Identifier}" Text="{Binding IdText}" />
+            </DataTemplate>
+          </DataGridTemplateColumn.CellTemplate>
+        </DataGridTemplateColumn>
+        <c:DataGridGutterColumn x:DataType="vm:RoomRow" />
+      </DataGrid.Columns>
+    </DataGrid>
+  </c:PageLayout>
+
+</UserControl>

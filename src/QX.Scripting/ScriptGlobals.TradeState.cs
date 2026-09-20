@@ -3,7 +3,7 @@ using Qx.Game;
 namespace Qx.Scripting;
 
 /// <content>
-/// The phase of the trading window, on top of the main trade API. Available on both clients.
+/// The phase of the trading window, on top of the main trade API.
 /// </content>
 public partial class ScriptGlobals
 {

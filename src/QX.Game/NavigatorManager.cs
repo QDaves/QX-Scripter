@@ -1,4 +1,4 @@
-﻿using Qx.Game.Protocol;
+using Qx.Game.Protocol;
 using Qx.Game.Snapshots;
 using Qx.Model;
 using Qx.Model.Messages.Incoming;
@@ -62,8 +62,7 @@ public sealed record NavigatorSearchBlockSnapshot(
     int ActionAllowed,
     bool ForceClosed,
     int ViewMode,
-    IReadOnlyList<RoomDataSnapshot> Rooms,
-    IReadOnlyList<NavigatorRoomMetadataSnapshot> UnityMetadata);
+    IReadOnlyList<RoomDataSnapshot> Rooms);
 
 public sealed record NavigatorSearchSnapshot(
     string SearchCode,
@@ -259,11 +258,7 @@ public sealed class NavigatorManager : GameStateManager
                 block.ActionAllowed,
                 block.ForceClosed,
                 block.ViewMode,
-                ReadOnly(block.Rooms.Select(SnapshotRoom)),
-                ReadOnly(block.UnityMetadata.Select(metadata => new NavigatorRoomMetadataSnapshot(
-                    metadata.RoomId,
-                    metadata.FirstValue,
-                    metadata.SecondValue)))))));
+                ReadOnly(block.Rooms.Select(SnapshotRoom))))));
     }
 
     protected override void Reset()

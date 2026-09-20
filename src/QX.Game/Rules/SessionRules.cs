@@ -28,24 +28,10 @@ public enum ClickAction
     Bounce
 }
 
-/// <summary>
-/// Standing rules applied to the traffic of the live session.
-/// </summary>
-/// <remarks>
-/// <para>
-/// Each one is a small, always-on interception: swallow a packet, rewrite one, or answer one. They
-/// live here rather than in a script because they are settings, not programs — nobody wants to keep
-/// a script running just to stop the client turning them round.
-/// </para>
-/// <para>
-/// Every rule binds by message <em>name</em>, never by header id, so the same rule works on Flash
-/// and on Unity. Where the two clients disagree about what a message is called, the name map
-/// translates; where a rule is genuinely impossible on one of them it is not offered at all rather
-/// than failing quietly.
-/// </para>
-/// </remarks>
 public sealed partial class SessionRules : IDisposable
 {
+    public const int DefaultAntiIdleSeconds = 260;
+
     private sealed record Document
     {
         public bool AntiIdle { get; init; }
@@ -68,7 +54,7 @@ public sealed partial class SessionRules : IDisposable
         public bool BlockRoomInvites { get; init; }
         public bool BlockFriendRequests { get; init; }
         public bool AutoAcceptFriendRequests { get; init; }
-        public int AntiIdleSeconds { get; init; } = 60;
+        public int AntiIdleSeconds { get; init; } = DefaultAntiIdleSeconds;
         public bool AntiIdleOut { get; init; }
         public bool TurnOnReselect { get; init; }
         public bool TurnTowardsClickedTile { get; init; }
@@ -111,7 +97,7 @@ public sealed partial class SessionRules : IDisposable
     private bool _let_friends_in;
     private bool _click_excludes_friends = true;
     private ClickAction _click_to;
-    private int _anti_idle_seconds = 60;
+    private int _anti_idle_seconds = DefaultAntiIdleSeconds;
     private bool _bound;
     private int _last_respecter_index = -1;
     private DateTimeOffset _last_respect;
@@ -289,10 +275,6 @@ public sealed partial class SessionRules : IDisposable
     /// <summary>
     /// How often the anti-idle gesture goes out.
     /// </summary>
-    /// <remarks>
-    /// A minute is well inside the hotel's own patience and cheap. Slower is quieter on the wire;
-    /// faster is pointless.
-    /// </remarks>
     public int AntiIdleSeconds
     {
         get => _anti_idle_seconds;
@@ -331,7 +313,6 @@ public sealed partial class SessionRules : IDisposable
             {
                 null or ClientType.None => "not connected",
                 ClientType.Flash => "Flash",
-                ClientType.Unity => "Unity",
                 _ => throw new UnsupportedClientException(client.Value)
             };
         }
@@ -667,12 +648,15 @@ public sealed partial class SessionRules : IDisposable
                     return;
                 }
 
-                if (!ReturnHandItems)
+                if (!ReturnHandItems || Game is not { } game)
                     return;
 
-                if (Game?.Room.AvatarById(received.GiverId) is { } avatar)
+                Avatar? giver = intercept.Packet.Client == ClientType.Flash
+                    ? game.Room.AvatarByIndex(checked((int)received.GiverId)) as User
+                    : game.Room.AvatarById(received.GiverId);
+                if (giver is { } avatar)
                 {
-                    Game.RoomControlOperations?.PassHandItem(
+                    game.RoomControlOperations?.PassHandItem(
                         new RoomHandItemPassRequest(avatar.Id));
                 }
             });
@@ -1011,8 +995,6 @@ public sealed partial class SessionRules : IDisposable
 
     internal static bool FriendAtDoor(Doorbell ring, IEnumerable<Friend> friends)
     {
-        if (ring.UnityUserId is { } user_id)
-            return friends.Any(friend => friend.Id == user_id);
         return friends.Any(friend =>
             string.Equals(friend.Name, ring.UserName, StringComparison.OrdinalIgnoreCase));
     }
@@ -1182,14 +1164,6 @@ public sealed partial class SessionRules : IDisposable
 
     public void Dispose() => Unbind();
 
-    /// <summary>
-    /// Binds one outgoing message by name.
-    /// </summary>
-    /// <remarks>
-    /// <see cref="ClientType.None"/> so the name is resolved against whichever client is connected;
-    /// the map translates a Flash spelling to the Unity header and back. Binding a header id here
-    /// would work on one client and silently do nothing on the other.
-    /// </remarks>
     private void Out(string name, Action<Intercept> handler) => Bind(Direction.Out, name, handler);
 
     private void In(string name, Action handler) =>
@@ -1299,7 +1273,7 @@ public sealed partial class SessionRules : IDisposable
             BlockRoomInvites = document.BlockRoomInvites;
             BlockFriendRequests = document.BlockFriendRequests;
             AutoAcceptFriendRequests = document.AutoAcceptFriendRequests;
-            AntiIdleSeconds = document.AntiIdleSeconds is >= 15 and <= 900 ? document.AntiIdleSeconds : 60;
+            AntiIdleSeconds = document.AntiIdleSeconds is >= 15 and <= 900 ? document.AntiIdleSeconds : DefaultAntiIdleSeconds;
             AntiIdleOut = document.AntiIdleOut;
             TurnOnReselect = document.TurnOnReselect;
             TurnTowardsClickedTile = document.TurnTowardsClickedTile;

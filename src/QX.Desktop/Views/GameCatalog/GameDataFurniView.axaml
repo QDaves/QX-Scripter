@@ -1,0 +1,238 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:b="using:Qx.Desktop.Behaviors"
+             xmlns:c="using:Qx.Desktop.Controls"
+             xmlns:vm="using:Qx.Presentation.ViewModels.GameCatalog"
+             x:Class="Qx.Desktop.Views.GameCatalog.GameDataFurniView"
+             x:DataType="vm:FurniTabViewModel">
+
+  <UserControl.Styles>
+    <Style Selector="DataGridRow /template/ Rectangle#SelectionMarker">
+      <Setter Property="IsVisible" Value="False" />
+    </Style>
+    <Style Selector="c|StateHost:action /template/ Button#PART_Action">
+      <Setter Property="IsVisible" Value="True" />
+      <Setter Property="HorizontalAlignment" Value="Center" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+      <Setter Property="Margin" Value="0,150,0,0" />
+    </Style>
+  </UserControl.Styles>
+
+  <Grid RowDefinitions="Auto,*">
+
+    <c:FilterBar BorderBrush="{DynamicResource QxBorderSubtleBrush}" BorderThickness="0,0,0,1">
+      <c:FilterBar.Search>
+        <c:SearchBox Text="{Binding SearchText, Mode=TwoWay}"
+                     PlaceholderText="Search furni"
+                     AutomationProperties.Name="Search the furni definitions" />
+      </c:FilterBar.Search>
+      <c:FilterBar.Filters>
+        <Button AutomationProperties.Name="Filter the furni definitions">
+          <StackPanel Orientation="Horizontal" Spacing="6">
+            <c:Icon Kind="Filter" Size="{DynamicResource QxIconSizeSm}" />
+            <TextBlock Text="Filters" VerticalAlignment="Center" />
+            <c:CountBadge Text="{Binding FilterCountText}" IsVisible="{Binding FilterCountText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+          </StackPanel>
+          <Button.Flyout>
+            <Flyout Placement="BottomEdgeAlignedLeft">
+              <StackPanel Width="{DynamicResource GameCatalog.FiltersWidth}">
+                <Grid ColumnDefinitions="*,Auto">
+                  <TextBlock Text="Filter furni" Classes="field-label" VerticalAlignment="Center" />
+                  <Button Grid.Column="1"
+                          Classes="subtle small"
+                          Content="Clear"
+                          Command="{Binding ClearFiltersCommand}" />
+                </Grid>
+                <Grid ColumnDefinitions="*,10,*" Margin="{DynamicResource GameCatalog.FilterGroupMargin}">
+                  <StackPanel Spacing="5">
+                    <TextBlock Text="Type" Classes="field-label" />
+                    <ComboBox HorizontalAlignment="Stretch"
+                              ItemsSource="{Binding PlacementChoices}"
+                              SelectedItem="{Binding Placement, Mode=TwoWay}"
+                              AutomationProperties.Name="Type">
+                      <ComboBox.ItemTemplate>
+                        <DataTemplate x:DataType="vm:PlacementChoice">
+                          <TextBlock Text="{Binding Text}" />
+                        </DataTemplate>
+                      </ComboBox.ItemTemplate>
+                    </ComboBox>
+                  </StackPanel>
+                  <StackPanel Grid.Column="2" Spacing="5">
+                    <TextBlock Text="Available from" Classes="field-label" />
+                    <ComboBox HorizontalAlignment="Stretch"
+                              ItemsSource="{Binding AvailabilityChoices}"
+                              SelectedItem="{Binding Availability, Mode=TwoWay}"
+                              AutomationProperties.Name="Available from">
+                      <ComboBox.ItemTemplate>
+                        <DataTemplate x:DataType="vm:AvailabilityChoice">
+                          <TextBlock Text="{Binding Text}" />
+                        </DataTemplate>
+                      </ComboBox.ItemTemplate>
+                    </ComboBox>
+                  </StackPanel>
+                </Grid>
+                <Grid ColumnDefinitions="*,10,*" Margin="{DynamicResource GameCatalog.FilterGroupMargin}">
+                  <StackPanel Spacing="5">
+                    <TextBlock Text="Line" Classes="field-label" />
+                    <TextBox Text="{Binding LineFilter, Mode=TwoWay}" PlaceholderText="Any line" AutomationProperties.Name="Line" />
+                  </StackPanel>
+                  <StackPanel Grid.Column="2" Spacing="5">
+                    <TextBlock Text="Category" Classes="field-label" />
+                    <TextBox Text="{Binding CategoryFilter, Mode=TwoWay}" PlaceholderText="Any category" AutomationProperties.Name="Category" />
+                  </StackPanel>
+                </Grid>
+                <StackPanel Spacing="5" Margin="{DynamicResource GameCatalog.FilterGroupMargin}">
+                  <TextBlock Text="Credit price" Classes="field-label" />
+                  <Grid ColumnDefinitions="*,10,*">
+                    <TextBox Text="{Binding MinPrice, Mode=TwoWay}" PlaceholderText="Minimum" AutomationProperties.Name="Minimum credit price" />
+                    <TextBox Grid.Column="2" Text="{Binding MaxPrice, Mode=TwoWay}" PlaceholderText="Maximum" AutomationProperties.Name="Maximum credit price" />
+                  </Grid>
+                </StackPanel>
+                <StackPanel Spacing="5" Margin="{DynamicResource GameCatalog.FilterGroupMargin}">
+                  <TextBlock Text="Columns" Classes="field-label" />
+                  <StackPanel Orientation="Horizontal" Spacing="16">
+                    <CheckBox Content="Kind" IsChecked="{Binding ShowKindColumn, Mode=TwoWay}" />
+                    <CheckBox Content="Place" IsChecked="{Binding ShowPlaceColumn, Mode=TwoWay}" />
+                  </StackPanel>
+                </StackPanel>
+              </StackPanel>
+            </Flyout>
+          </Button.Flyout>
+        </Button>
+      </c:FilterBar.Filters>
+      <c:FilterBar.Trailing>
+        <StackPanel Orientation="Horizontal" Spacing="8">
+          <c:CopyButton Classes="icon"
+                        Command="{Binding Copy.CopyCommand}"
+                        IsCopied="{Binding Copy.Copied}"
+                        ToolTip.Tip="Copy the selected rows"
+                        AutomationProperties.Name="Copy the selected rows">
+            <c:Icon Kind="Copy" Size="{DynamicResource QxIconSizeSm}" />
+          </c:CopyButton>
+          <ComboBox Width="{DynamicResource GameCatalog.SourceWidth}"
+                    ItemsSource="{Binding BuySourceChoices}"
+                    SelectedItem="{Binding Source, Mode=TwoWay}"
+                    ToolTip.Tip="Where to buy the selected furni"
+                    AutomationProperties.Name="Where to buy the selected furni">
+            <ComboBox.ItemTemplate>
+              <DataTemplate x:DataType="vm:BuySourceChoice">
+                <TextBlock Text="{Binding Text}" />
+              </DataTemplate>
+            </ComboBox.ItemTemplate>
+          </ComboBox>
+          <Button MinWidth="{DynamicResource GameCatalog.ScanWidth}"
+                  Command="{Binding ScanShopCommand}"
+                  ToolTip.Tip="{Binding ScanTip}"
+                  ToolTip.ShowOnDisabled="True"
+                  AutomationProperties.Name="Show shop prices">
+            <StackPanel Orientation="Horizontal" Spacing="6">
+              <c:Icon Kind="ShopPrices" Size="{DynamicResource QxIconSizeSm}" />
+              <TextBlock Text="{Binding ScanLabel}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+            </StackPanel>
+          </Button>
+          <Rectangle Classes="divider-vertical" />
+          <Button Classes="primary"
+                  Command="{Binding BuyCommand}"
+                  ToolTip.Tip="{Binding BuyTip}"
+                  ToolTip.ShowOnDisabled="True"
+                  AutomationProperties.Name="Buy the selected furni">
+            <StackPanel Orientation="Horizontal" Spacing="6">
+              <c:Icon Kind="Buy" Size="{DynamicResource QxIconSizeSm}" />
+              <TextBlock Text="Buy" VerticalAlignment="Center" />
+            </StackPanel>
+          </Button>
+        </StackPanel>
+      </c:FilterBar.Trailing>
+    </c:FilterBar>
+
+    <c:StateHost Grid.Row="1" State="{Binding State}">
+      <DataGrid Name="FurniGrid"
+                ItemsSource="{Binding Rows.Visible}"
+                b:ListBehaviors.Selection="{Binding Selection}"
+                b:ListBehaviors.SortRefresh="{Binding SortRefresh}"
+                b:ListBehaviors.Scroll="{Binding Scroll}"
+                b:ListBehaviors.VisibleSink="{Binding}"
+                b:ListBehaviors.CopyCommand="{Binding Copy.CopyCommand}"
+                RowHeight="{DynamicResource QxRowHeightLarge}"
+                HeadersVisibility="Column"
+                SelectionMode="Single"
+                AutomationProperties.Name="Furni definitions">
+        <DataGrid.Columns>
+          <c:DataGridGutterColumn x:DataType="vm:FurniRowViewModel" />
+          <DataGridTemplateColumn x:DataType="vm:FurniRowViewModel"
+                                  Header=""
+                                  Width="52"
+                                  MinWidth="52"
+                                  CanUserSort="False"
+                                  CanUserResize="False"
+                                  CanUserReorder="False">
+            <DataGridTemplateColumn.CellTemplate>
+              <DataTemplate x:DataType="vm:FurniRowViewModel">
+                <c:RemoteImage Width="{DynamicResource GameCatalog.IconSize}"
+                               Height="{DynamicResource GameCatalog.IconSize}"
+                               HorizontalAlignment="Center"
+                               VerticalAlignment="Center"
+                               Request="{Binding Image}"
+                               Stretch="Uniform"
+                               StretchDirection="DownOnly"
+                               FallbackSize="{DynamicResource QxIconSizeMd}" />
+              </DataTemplate>
+            </DataGridTemplateColumn.CellTemplate>
+          </DataGridTemplateColumn>
+          <DataGridTemplateColumn x:DataType="vm:FurniRowViewModel" Header="Name" Width="2*" SortMemberPath="Name">
+            <DataGridTemplateColumn.CellTemplate>
+              <DataTemplate x:DataType="vm:FurniRowViewModel">
+                <TextBlock Margin="12,0"
+                           VerticalAlignment="Center"
+                           FontWeight="Medium"
+                           TextTrimming="CharacterEllipsis"
+                           Text="{Binding Name}" />
+              </DataTemplate>
+            </DataGridTemplateColumn.CellTemplate>
+          </DataGridTemplateColumn>
+          <DataGridTemplateColumn x:DataType="vm:FurniRowViewModel" Header="Identifier" Width="2*" SortMemberPath="Identifier">
+            <DataGridTemplateColumn.CellTemplate>
+              <DataTemplate x:DataType="vm:FurniRowViewModel">
+                <TextBlock Classes="mono secondary"
+                           Margin="12,0"
+                           VerticalAlignment="Center"
+                           TextTrimming="CharacterEllipsis"
+                           Text="{Binding Identifier}"
+                           ToolTip.Tip="{Binding Identifier}" />
+              </DataTemplate>
+            </DataGridTemplateColumn.CellTemplate>
+          </DataGridTemplateColumn>
+          <DataGridTemplateColumn x:DataType="vm:FurniRowViewModel" Header="Shop" Width="110" SortMemberPath="ShopCredits">
+            <DataGridTemplateColumn.CellTemplate>
+              <DataTemplate x:DataType="vm:FurniRowViewModel">
+                <TextBlock Classes="mono secondary"
+                           Margin="12,0"
+                           VerticalAlignment="Center"
+                           TextTrimming="CharacterEllipsis"
+                           Text="{Binding ShopText}"
+                           ToolTip.Tip="{Binding ShopDetails}" />
+              </DataTemplate>
+            </DataGridTemplateColumn.CellTemplate>
+          </DataGridTemplateColumn>
+          <DataGridTemplateColumn x:DataType="vm:FurniRowViewModel" Header="Market" Width="100" SortMemberPath="MarketValue">
+            <DataGridTemplateColumn.CellTemplate>
+              <DataTemplate x:DataType="vm:FurniRowViewModel">
+                <TextBlock Classes="mono secondary"
+                           Margin="12,0"
+                           VerticalAlignment="Center"
+                           TextTrimming="CharacterEllipsis"
+                           Text="{Binding MarketText}" />
+              </DataTemplate>
+            </DataGridTemplateColumn.CellTemplate>
+          </DataGridTemplateColumn>
+          <DataGridTextColumn x:DataType="vm:FurniRowViewModel" Header="Line" Width="1.4*" Binding="{Binding Line}" />
+          <DataGridTextColumn x:DataType="vm:FurniRowViewModel" Header="Category" Width="1.4*" Binding="{Binding Category}" />
+          <DataGridTextColumn x:DataType="vm:FurniRowViewModel" Header="Kind" Width="70" SortMemberPath="Kind" Binding="{Binding Kind}" IsVisible="False" />
+          <DataGridTextColumn x:DataType="vm:FurniRowViewModel" Header="Place" Width="70" SortMemberPath="Placement" Binding="{Binding Placement}" IsVisible="False" />
+          <c:DataGridGutterColumn x:DataType="vm:FurniRowViewModel" />
+        </DataGrid.Columns>
+      </DataGrid>
+    </c:StateHost>
+
+  </Grid>
+</UserControl>

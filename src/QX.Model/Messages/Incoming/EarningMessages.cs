@@ -101,19 +101,14 @@ public sealed record EarningEntry : IParserComposer<EarningEntry>
     public bool IsProduct => ProductCode.Length > 0;
 
     public static EarningEntry Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static EarningEntry ParseFlash(in PacketReader p) => ParseRoot(in p);
 
-    private static EarningEntry ParseUnity(in PacketReader p) => ParseRoot(in p);
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(EarningEntry value, in PacketWriter p) =>
-        ComposeRoot(value, in p);
-
-    private static void ComposeUnity(EarningEntry value, in PacketWriter p) =>
         ComposeRoot(value, in p);
 
     internal static EarningEntry ParseWire(
@@ -181,14 +176,6 @@ internal readonly record struct EarningEntryWireSnapshot(
     int Amount,
     string ProductCode);
 
-/// <summary>
-/// Everything waiting to be claimed, sent in answer to a request and after every claim.
-/// </summary>
-/// <remarks>
-/// Flash counts the lines in four bytes. Unity sends them through its generic array reader, which
-/// takes its width from a field the reader is built with — two bytes unless the message says
-/// otherwise, and this one does not. The lines themselves are identical on both.
-/// </remarks>
 public sealed record EarningStatus : IParserComposer<EarningStatus>
 {
     private IReadOnlyList<EarningEntry> _entries =
@@ -280,11 +267,9 @@ public sealed record EarningStatus : IParserComposer<EarningStatus>
     }
 
     public static EarningStatus Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static EarningStatus ParseFlash(in PacketReader p) => ParseEntries(in p);
-
-    private static EarningStatus ParseUnity(in PacketReader p) => ParseEntries(in p);
 
     private static EarningStatus ParseEntries(in PacketReader p)
     {
@@ -309,12 +294,9 @@ public sealed record EarningStatus : IParserComposer<EarningStatus>
     }
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(EarningStatus value, in PacketWriter p) =>
-        ComposeEntries(value, in p);
-
-    private static void ComposeUnity(EarningStatus value, in PacketWriter p) =>
         ComposeEntries(value, in p);
 
     private static void ComposeEntries(EarningStatus value, in PacketWriter p)
@@ -353,11 +335,9 @@ public sealed record EarningClaimResult(EarningCategory Category, bool Success)
     public bool IsClaimAll => Category == EarningCategory.All;
 
     public static EarningClaimResult Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static EarningClaimResult ParseFlash(in PacketReader p) => ParseMessage(in p);
-
-    private static EarningClaimResult ParseUnity(in PacketReader p) => ParseMessage(in p);
 
     private static EarningClaimResult ParseMessage(in PacketReader p)
     {
@@ -370,12 +350,9 @@ public sealed record EarningClaimResult(EarningCategory Category, bool Success)
     }
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(EarningClaimResult value, in PacketWriter p) =>
-        ComposeMessage(value, in p);
-
-    private static void ComposeUnity(EarningClaimResult value, in PacketWriter p) =>
         ComposeMessage(value, in p);
 
     private static void ComposeMessage(EarningClaimResult value, in PacketWriter p)
@@ -386,19 +363,11 @@ public sealed record EarningClaimResult(EarningCategory Category, bool Success)
     }
 }
 
-/// <summary>
-/// An unprompted note that a category has something new waiting.
-/// </summary>
-/// <remarks>
-/// Flash only; the Unity build declares no counterpart. The client answers it by re-requesting the
-/// status, because the note carries the category and nothing else.
-/// </remarks>
-/// <param name="Category">The category that gained something.</param>
 public sealed record EarningNotification(EarningCategory Category)
     : IParserComposer<EarningNotification>
 {
     public static EarningNotification Parse(in PacketReader p) =>
-        ModernWireClients.ParseFlash(in p, ParseFlash);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static EarningNotification ParseFlash(in PacketReader p)
     {
@@ -409,7 +378,7 @@ public sealed record EarningNotification(EarningCategory Category)
     }
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.ComposeFlash(this, in p, ComposeFlash);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(EarningNotification value, in PacketWriter p)
     {

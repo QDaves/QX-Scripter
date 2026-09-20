@@ -228,7 +228,7 @@ internal static class CraftingApplicationDescriptors
         typeof(Id),
         true,
         null,
-        "Positive crafting-furniture identifier valid for the active client dialect.",
+        "Positive crafting-furniture identifier valid for Flash.",
         new(Pattern: "^[1-9][0-9]*$"));
 
     private static ApplicationParameterDescriptor RecipeCodeParameter() => new(

@@ -23,14 +23,14 @@ internal sealed class InstalledClientWatchSet : IDisposable
             string[] roots = _roots()
                 .Where(Directory.Exists)
                 .Select(Path.GetFullPath)
-                .Distinct(StringComparer.OrdinalIgnoreCase)
-                .Order(StringComparer.OrdinalIgnoreCase)
+                .Distinct(StoragePaths.FileComparer)
+                .Order(StoragePaths.FileComparer)
                 .ToArray();
             string[] watched = _watchers
                 .Select(watcher => Path.GetFullPath(watcher.Path))
-                .Order(StringComparer.OrdinalIgnoreCase)
+                .Order(StoragePaths.FileComparer)
                 .ToArray();
-            if (!_invalid && roots.SequenceEqual(watched, StringComparer.OrdinalIgnoreCase))
+            if (!_invalid && roots.SequenceEqual(watched, StoragePaths.FileComparer))
                 return;
 
             ClearCore();

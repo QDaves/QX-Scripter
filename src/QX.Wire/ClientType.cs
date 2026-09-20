@@ -4,16 +4,13 @@ namespace Qx;
 public enum ClientType
 {
     None = 0,
-    Unity = 1,
     Flash = 2,
-    All = 3
+    All = Flash
 }
 
 public static class ClientTypes
 {
     public static bool IsSupported(ClientType client) =>
-        IsUnity(client) || IsFlash(client);
-
-    public static bool IsUnity(ClientType client) => client is ClientType.Unity;
+        IsFlash(client);
     public static bool IsFlash(ClientType client) => client is ClientType.Flash;
 }

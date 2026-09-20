@@ -220,11 +220,6 @@ public partial class ScriptGlobals : IDisposable
             SecondsToExpiration = snapshot.SecondsToExpiration,
             HasRentPeriodStarted = snapshot.HasRentPeriodStarted,
             RoomId = snapshot.RoomId,
-            IsUnseen = snapshot.IsUnseen,
-            Timestamp = snapshot.Timestamp,
-            IsNft = snapshot.IsNft,
-            NftName = snapshot.NftName,
-            IsExternalImage = snapshot.IsExternalImage,
             SlotId = snapshot.SlotId,
             Extra = snapshot.Extra
         };
@@ -244,14 +239,9 @@ public partial class ScriptGlobals : IDisposable
                 .Select(part => new PetCustomPart(part.LayerId, part.PartId, part.PaletteId))
                 .ToArray(),
             Level = snapshot.Level,
-            RarityLevel = snapshot.RarityLevel,
-            RoomId = snapshot.RoomId,
-            RoomName = snapshot.RoomName,
-            RoomContext = snapshot.RoomContext
+            RarityLevel = snapshot.RarityLevel
         };
-        if (pet.HasRoomContext != snapshot.HasRoomContext ||
-            pet.IsInRoom != snapshot.IsInRoom ||
-            pet.FigureString != snapshot.FigureString)
+        if (pet.FigureString != snapshot.FigureString)
         {
             throw new InvalidDataException("The inventory pet snapshot is internally inconsistent.");
         }
@@ -564,12 +554,6 @@ public partial class ScriptGlobals : IDisposable
     /// </summary>
     public Session? Session => Ext.Session;
 
-    /// <summary>
-    /// The client flavour the session is running: <see cref="ClientType.Flash"/> or
-    /// <see cref="ClientType.Unity"/>. Falls back to <see cref="ClientType.Flash"/> when no
-    /// session has reported a flavour yet. Several subsystems behave differently per flavour,
-    /// so branch on this rather than guessing.
-    /// </summary>
     public ClientType Client => CurrentClient;
 
     /// <summary>
@@ -606,12 +590,6 @@ public partial class ScriptGlobals : IDisposable
     /// left yet this session.
     /// </summary>
     public RoomExitState? LastRoomExit => Room.LastExit;
-
-    /// <summary>
-    /// The reason the server itself gave for the last room exit, or <see langword="null"/> when
-    /// the exit carried no reason (for example a plain client-side leave).
-    /// </summary>
-    public RoomExitReason? LastNativeRoomExitReason => Room.LastNativeExitReason;
 
     /// <summary>Whether the last room exit was caused by the local user being kicked.</summary>
     public bool WasKickedFromRoom => Room.WasKicked;
@@ -731,87 +709,15 @@ public partial class ScriptGlobals : IDisposable
     /// <exception cref="OperationCanceledException">The script was stopped while waiting.</exception>
     public Task Delay(int milliseconds) => Task.Delay(milliseconds, Ct);
 
-    /// <summary>
-    /// Sends a packet in the direction recorded in its header, translating it to the active
-    /// client's wire format when necessary: a Flash packet sent through a Unity session is
-    /// re-composed as the equivalent Unity message, and a client-agnostic packet is treated as
-    /// Flash.
-    /// </summary>
-    /// <param name="packet">The packet to send. Its header carries the direction and message.</param>
-    /// <exception cref="NotSupportedException">
-    /// The packet is bound to a client flavour that cannot be sent through this session, or a
-    /// native Unity packet does not match its verified wire schema.
-    /// </exception>
-    /// <exception cref="InvalidOperationException">
-    /// The packet's header is not present in the active message catalog.
-    /// </exception>
     public void Send(IPacket packet)
     {
-        if (CurrentClient is ClientType.Unity && packet.Client is ClientType.None)
-        {
-            using Packet flash_packet = UnityCompatibilityPacket.CopyAs(packet, ClientType.Flash);
-            Send(flash_packet);
-            return;
-        }
-
-        if (CurrentClient is ClientType.Unity &&
-            packet.Header.Direction is Direction.In &&
-            packet.Client is ClientType.Flash)
-        {
-            SendIncomingFlashPacket(packet);
-            return;
-        }
-
-        if (CurrentClient is ClientType.Unity &&
-            packet.Header.Direction is Direction.Out &&
-            packet.Client is ClientType.Flash)
-        {
-            SendOutgoingFlashPacket(packet);
-            return;
-        }
 
         if (packet.Client is not ClientType.None && packet.Client != CurrentClient)
             throw new NotSupportedException($"A {packet.Client} packet cannot be sent through a {CurrentClient} session.");
 
-        if (CurrentClient is ClientType.Unity && packet.Client is ClientType.Unity)
-        {
-            switch (packet.Header.Direction)
-            {
-                case Direction.In:
-                    if (!Ext.Messages.TryGetIdentifier(packet.Header, out Identifier incoming_identifier))
-                        throw new InvalidOperationException($"Unknown incoming Unity header '{packet.Header.Value}'.");
-                    SendNativeUnityIncoming(incoming_identifier.Name, packet);
-                    return;
-                case Direction.Out:
-                    ValidateNativeUnityOutgoing(packet);
-                    Ext.Send(packet);
-                    return;
-                default:
-                    throw new NotSupportedException("A native Unity packet must have an incoming or outgoing direction.");
-            }
-        }
-
         Ext.Send(packet);
     }
 
-    /// <summary>
-    /// Composes and sends an outgoing message to the server by name.
-    /// </summary>
-    /// <param name="name">
-    /// The message name as it appears in the catalog - use the constants on
-    /// <see cref="Msg.Out"/> rather than free-form strings. Flash names are accepted on a Unity
-    /// session and translated.
-    /// </param>
-    /// <param name="values">
-    /// The field values in wire order. Numeric literals are written as 32-bit integers; wrap a
-    /// value in <see cref="Id"/> or <see cref="Length"/> when the field is client-width
-    /// dependent.
-    /// </param>
-    /// <exception cref="InvalidOperationException">
-    /// The name is not in the catalog for this session, or the values cannot be matched to a
-    /// Unity wire schema.
-    /// </exception>
-    /// <remarks>Fire-and-forget: it returns as soon as the packet is handed to the client.</remarks>
     public void SendToServer(string name, params object[] values) => SendNamed(Direction.Out, name, values);
 
     public void SendToServer(MessageKey key, params object[] values) => SendNamed(Direction.Out, key, values);
@@ -836,16 +742,6 @@ public partial class ScriptGlobals : IDisposable
         Send(packet);
     }
 
-    /// <summary>
-    /// Composes and sends an incoming message to the game client by name, as if the server had
-    /// sent it. The server never sees it, so this changes only what the local client displays.
-    /// </summary>
-    /// <param name="name">
-    /// The incoming message name - use the constants on <see cref="Msg.In"/>. Flash names are
-    /// accepted on a Unity session and translated to the native Unity layout.
-    /// </param>
-    /// <param name="values">The field values in wire order.</param>
-    /// <exception cref="InvalidOperationException">The name is not in the catalog for this session.</exception>
     public void SendToClient(string name, params object[] values) => SendNamed(Direction.In, name, values);
 
     private void SendToClient<T>(MessageContract<T> contract, T message)
@@ -890,7 +786,7 @@ public partial class ScriptGlobals : IDisposable
         ArgumentNullException.ThrowIfNull(handler);
         return Track(Ext.Intercept(
             header,
-            Guarded<Intercept>(intercept => InvokeHeaderIntercept(header, intercept, handler))));
+            Guarded(handler)));
     }
 
     /// <summary>
@@ -906,65 +802,17 @@ public partial class ScriptGlobals : IDisposable
             ? InterceptIncomingEvent(identifier.Name, identifier.Client, handler)
             : InterceptOutgoingEvent(identifier.Name, identifier.Client, handler));
 
-    /// <summary>
-    /// Intercepts an incoming (server to client) message by name, whichever client flavour the
-    /// session runs. On a Unity session the packet handed to the handler is presented in the
-    /// Flash field layout whenever a Flash equivalent exists, so one handler works for both.
-    /// </summary>
-    /// <param name="name">
-    /// The message name - prefer the constants on <see cref="Msg.In"/>. An unknown name binds
-    /// nothing and fails silently.
-    /// </param>
-    /// <param name="handler">Receives each matching incoming packet.</param>
-    /// <returns>A handle that unsubscribes when disposed; also disposed when the script stops.</returns>
     public IDisposable OnIn(string name, Action<Intercept> handler) =>
-        Track(InterceptIncomingEvent(name, ClientType.None, handler));
+    Track(InterceptIncomingEvent(name, ClientType.None, handler));
 
-    /// <summary>
-    /// Intercepts an incoming message by its Flash name and Flash field layout only. Binds
-    /// nothing on a Unity session.
-    /// </summary>
-    /// <returns>A handle that unsubscribes when disposed; also disposed when the script stops.</returns>
     public IDisposable OnFlashIn(string name, Action<Intercept> handler) =>
-        Track(InterceptIncomingEvent(name, ClientType.Flash, handler));
+    Track(InterceptIncomingEvent(name, ClientType.Flash, handler));
 
-    /// <summary>
-    /// Intercepts an incoming message by its Unity name, delivering the native Unity field
-    /// layout without Flash translation. Binds nothing on a Flash session.
-    /// </summary>
-    /// <returns>A handle that unsubscribes when disposed; also disposed when the script stops.</returns>
-    public IDisposable OnUnityIn(string name, Action<Intercept> handler) =>
-        Track(InterceptIncomingEvent(name, ClientType.Unity, handler));
-
-    /// <summary>
-    /// Intercepts an outgoing (client to server) message by name on either client flavour. On a
-    /// Unity session the packet is presented in the Flash field layout where an equivalent
-    /// exists, and related Unity-only message names are subscribed as well.
-    /// </summary>
-    /// <param name="name">
-    /// The message name - prefer the constants on <see cref="Msg.Out"/>. An unknown name binds
-    /// nothing and fails silently.
-    /// </param>
-    /// <param name="handler">Receives each matching outgoing packet.</param>
-    /// <returns>A handle that unsubscribes when disposed; also disposed when the script stops.</returns>
     public IDisposable OnOut(string name, Action<Intercept> handler) =>
-        Track(InterceptOutgoingEvent(name, ClientType.None, handler));
+    Track(InterceptOutgoingEvent(name, ClientType.None, handler));
 
-    /// <summary>
-    /// Intercepts an outgoing message by its Flash name and Flash field layout only. Binds
-    /// nothing on a Unity session.
-    /// </summary>
-    /// <returns>A handle that unsubscribes when disposed; also disposed when the script stops.</returns>
     public IDisposable OnFlashOut(string name, Action<Intercept> handler) =>
-        Track(InterceptOutgoingEvent(name, ClientType.Flash, handler));
-
-    /// <summary>
-    /// Intercepts an outgoing message by its Unity name, delivering the native Unity field
-    /// layout without Flash translation. Binds nothing on a Flash session.
-    /// </summary>
-    /// <returns>A handle that unsubscribes when disposed; also disposed when the script stops.</returns>
-    public IDisposable OnUnityOut(string name, Action<Intercept> handler) =>
-        Track(InterceptOutgoingEvent(name, ClientType.Unity, handler));
+    Track(InterceptOutgoingEvent(name, ClientType.Flash, handler));
 
     /// <summary>
     /// Intercepts an incoming message and parses each packet into <typeparamref name="T"/>
@@ -1140,22 +988,11 @@ public partial class ScriptGlobals : IDisposable
             new RoomChatShoutRequest(message, bubble),
             Ct);
 
-    /// <summary>
-    /// Whispers to a single user in the room. Fire-and-forget; nothing is reported when the
-    /// recipient is not present or has the sender ignored.
-    /// </summary>
-    /// <param name="recipient">The recipient's user name as shown in the room.</param>
-    /// <param name="message">The text to whisper.</param>
-    /// <param name="bubble">The chat-bubble style id; 0 is the account's default bubble.</param>
-    /// <remarks>
-    /// Flash puts the recipient and the text into one space-separated field, while Unity sends
-    /// them as two fields. The room action selects the native layout for the session.
-    /// </remarks>
     public void Whisper(string recipient, string message, int bubble = 0) =>
-        Application.Invoke<RoomChatWhisperRequest, RoomChatWhisperResult>(
-            ApplicationMemberIds.RoomChatWhisper,
-            new RoomChatWhisperRequest(recipient, message, bubble),
-            Ct);
+    Application.Invoke<RoomChatWhisperRequest, RoomChatWhisperResult>(
+        ApplicationMemberIds.RoomChatWhisper,
+        new RoomChatWhisperRequest(recipient, message, bubble),
+        Ct);
 
     /// <summary>
     /// Requests a walk to the given tile. The server computes the path and may refuse or stop
@@ -1408,27 +1245,6 @@ public partial class ScriptGlobals : IDisposable
 
     private void SendNamed(Direction direction, string name, object[] values, Header? preferred_header = null)
     {
-        if (direction is Direction.In && CurrentClient is ClientType.Unity)
-        {
-            if (PreferredIncomingView(name, ClientType.None) is ClientType.Flash)
-            {
-                SendIncomingFlashValues(name, IncomingHeader(name), values);
-                return;
-            }
-
-            using Packet unity_packet = NewPacket(direction, name);
-            unity_packet.Writer().WriteValues(values);
-            SendNativeUnityIncoming(name, unity_packet);
-            return;
-        }
-
-        if (direction is Direction.Out && CurrentClient is ClientType.Unity)
-        {
-            UnityOutgoingMessage message = UnityOutgoingCompatibility.Translate(name, values);
-            using Packet unity_packet = CreateUnityOutgoingPacket(message, preferred_header);
-            Ext.Send(unity_packet);
-            return;
-        }
 
         using Packet packet = NewPacket(direction, name);
         packet.Writer().WriteValues(values);
@@ -1447,108 +1263,6 @@ public partial class ScriptGlobals : IDisposable
         string name = descriptor.NameFor(CurrentClient) ??
             throw new NotSupportedException($"Message '{key.Value}' is unavailable for {CurrentClient}.");
         SendNamed(direction, name, values);
-    }
-
-    private Packet CreateUnityOutgoingPacket(UnityOutgoingMessage message, Header? preferred_header)
-    {
-        if (preferred_header is Header explicit_header)
-        {
-            if (explicit_header.Direction is not Direction.Out)
-                throw new ArgumentException("The preferred Unity header must be outgoing.", nameof(preferred_header));
-            try
-            {
-                return ComposeUnityOutgoing(explicit_header, message);
-            }
-            catch (Exception error) when (IsCompositionError(error))
-            {
-                IReadOnlyList<Header> resolved = ResolveUnityOutgoingHeaders(message);
-                if (!resolved.Contains(explicit_header))
-                    throw;
-                Header[] alternatives = resolved.Where(header => header != explicit_header).ToArray();
-                if (alternatives.Length == 0)
-                    throw;
-                return ComposeUnityOutgoingCandidates(alternatives, message, error);
-            }
-        }
-
-        IReadOnlyList<Header> headers = ResolveUnityOutgoingHeaders(message);
-        if (headers.Count == 1)
-            return ComposeUnityOutgoing(headers[0], message);
-        return ComposeUnityOutgoingCandidates(headers, message);
-    }
-
-    private IReadOnlyList<Header> ResolveUnityOutgoingHeaders(UnityOutgoingMessage message)
-    {
-        var headers = new List<Header>();
-        foreach (string name in new[] { message.HeaderName, message.SchemaName }.Distinct(StringComparer.OrdinalIgnoreCase))
-        {
-            var identifier = new Identifier(ClientType.None, Direction.Out, name);
-            if (!Ext.Messages.TryGetHeaders(identifier, out IReadOnlyList<Header> resolved))
-                continue;
-            foreach (Header header in resolved)
-                if (!headers.Contains(header))
-                    headers.Add(header);
-        }
-        if (headers.Count == 0)
-            throw new InvalidOperationException($"Unknown outgoing message '{message.HeaderName}'.");
-        return headers;
-    }
-
-    private Packet ComposeUnityOutgoingCandidates(
-        IReadOnlyList<Header> headers,
-        UnityOutgoingMessage message,
-        Exception? initial_error = null)
-    {
-        var candidates = new List<Packet>();
-        var errors = new List<Exception>();
-        if (initial_error is not null)
-            errors.Add(initial_error);
-        foreach (Header header in headers)
-        {
-            try
-            {
-                candidates.Add(ComposeUnityOutgoing(header, message));
-            }
-            catch (Exception error) when (IsCompositionError(error))
-            {
-                errors.Add(error);
-            }
-        }
-
-        if (candidates.Count == 1)
-            return candidates[0];
-        foreach (Packet candidate in candidates)
-            candidate.Dispose();
-        if (candidates.Count > 1)
-            throw new InvalidOperationException($"Unity message '{message.HeaderName}' matches multiple outgoing headers.");
-        throw new InvalidOperationException(
-            $"Unity message '{message.HeaderName}' does not match any outgoing header candidate.",
-            errors.Count == 1 ? errors[0] : new AggregateException(errors));
-    }
-
-    private static bool IsCompositionError(Exception error) => error is
-        ArgumentException or
-        InvalidOperationException or
-        NotSupportedException or
-        OverflowException;
-
-    private Packet ComposeUnityOutgoing(Header header, UnityOutgoingMessage message)
-    {
-        var packet = new Packet(header, ClientType.Unity);
-        try
-        {
-            Ext.Messages.TryGetOutgoingSchemas(
-                ClientType.Unity,
-                header,
-                out IReadOnlyList<OutgoingMessageSchema> schemas);
-            UnityOutgoingCompatibility.Write(packet.Writer(), message, schemas);
-            return packet;
-        }
-        catch
-        {
-            packet.Dispose();
-            throw;
-        }
     }
 
     private ClientType CurrentClient
@@ -1586,118 +1300,26 @@ public partial class ScriptGlobals : IDisposable
         return message;
     }
 
-    private ClientType PreferredIncomingView(string name, ClientType requested)
-    {
-        if (requested != ClientType.None)
-            return requested;
-
-        bool unity = HasMessage(ClientType.Unity, Direction.In, name);
-        bool flash = HasMessage(ClientType.Flash, Direction.In, name);
-        return unity && !flash ? ClientType.Unity : ClientType.Flash;
-    }
-
     private IDisposable InterceptIncoming(string name, ClientType requested, Action<Intercept> handler)
     {
         var identifier = new Identifier(requested, Direction.In, name);
-        return Ext.Intercept(identifier, IncomingCallback(name, requested, handler));
+        return Ext.Intercept(identifier, handler);
     }
 
     private IDisposable InterceptIncomingEvent(string name, ClientType requested, Action<Intercept> handler)
     {
         ArgumentNullException.ThrowIfNull(handler);
         var identifier = new Identifier(requested, Direction.In, name);
-        return Ext.Intercept(identifier, Guarded(IncomingCallback(name, requested, handler)));
-    }
-
-    private Action<Intercept> IncomingCallback(
-        string name,
-        ClientType requested,
-        Action<Intercept> handler) =>
-        intercept =>
-        {
-            if (PreferredIncomingView(name, requested) is ClientType.Flash)
-                UnityIncomingCompatibility.Invoke(name, intercept, handler);
-            else
-                handler(intercept);
-        };
-
-    private ClientType PreferredOutgoingView(string name, ClientType requested)
-    {
-        if (requested != ClientType.None)
-            return requested;
-
-        bool unity = HasMessage(ClientType.Unity, Direction.Out, name);
-        bool flash = HasMessage(ClientType.Flash, Direction.Out, name);
-        return unity && !flash ? ClientType.Unity : ClientType.Flash;
+        return Ext.Intercept(identifier, Guarded(handler));
     }
 
     private IDisposable InterceptOutgoing(string name, ClientType requested, Action<Intercept> handler)
-        => BindOutgoing(name, requested, OutgoingCallback(name, requested, handler));
+        => Ext.Intercept(new Identifier(requested, Direction.Out, name), handler);
 
     private IDisposable InterceptOutgoingEvent(string name, ClientType requested, Action<Intercept> handler)
     {
         ArgumentNullException.ThrowIfNull(handler);
-        return BindOutgoing(name, requested, Guarded(OutgoingCallback(name, requested, handler)));
-    }
-
-    private Action<Intercept> OutgoingCallback(
-        string name,
-        ClientType requested,
-        Action<Intercept> handler) =>
-        intercept =>
-        {
-            if (PreferredOutgoingView(name, requested) is ClientType.Flash)
-                UnityOutgoingInterception.Invoke(name, intercept, handler, Ext.Messages);
-            else
-                handler(intercept);
-        };
-
-    private IDisposable BindOutgoing(string name, ClientType requested, Action<Intercept> callback)
-    {
-        var identifier = new Identifier(requested, Direction.Out, name);
-        var subscriptions = new List<IDisposable>();
-        var identifiers = new HashSet<Identifier>();
-        if (identifiers.Add(identifier))
-            subscriptions.Add(Ext.Intercept(identifier, callback));
-
-        foreach (string unity_name in UnityOutgoingInterception.AdditionalUnityNames(name))
-        {
-            var unity_identifier = new Identifier(ClientType.Unity, Direction.Out, unity_name);
-            if (identifiers.Add(unity_identifier))
-                subscriptions.Add(Ext.Intercept(unity_identifier, callback));
-        }
-
-        return new Unsubscriber(() =>
-        {
-            foreach (IDisposable subscription in subscriptions)
-                subscription.Dispose();
-        });
-    }
-
-    private bool HasMessage(ClientType client, Direction direction, string name) =>
-        Ext.Messages.HasCatalog(client)
-            ? Ext.Messages.HasMessage(client, direction, name)
-            : Ext.Messages.Map.TryGetEntry(client, direction, name, out _);
-
-    private void InvokeHeaderIntercept(Header header, Intercept intercept, Action<Intercept> handler)
-    {
-        if (CurrentClient is not ClientType.Unity ||
-            !Ext.Messages.TryGetIdentifier(header, out Identifier identifier))
-        {
-            handler(intercept);
-            return;
-        }
-
-        string name = identifier.Name;
-        if (Ext.Messages.Map.TryTranslate(ClientType.Unity, ClientType.Flash, header.Direction, name, out string flash_name))
-            name = flash_name;
-
-        if (header.Direction is Direction.In && PreferredIncomingView(name, ClientType.None) is ClientType.Flash)
-            UnityIncomingCompatibility.Invoke(name, intercept, handler);
-        else if (header.Direction is Direction.Out && PreferredOutgoingView(name, ClientType.None) is ClientType.Flash)
-            UnityOutgoingInterception.Invoke(name, intercept, handler, Ext.Messages);
-        else
-            handler(intercept);
+        return Ext.Intercept(new Identifier(requested, Direction.Out, name), Guarded(handler));
     }
 
     private sealed class Unsubscriber(Action dispose) : IDisposable

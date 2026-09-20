@@ -95,8 +95,7 @@ public sealed record ProfileSanctionsPage(
     int Total,
     int Offset,
     int? NextOffset,
-    IReadOnlyList<Sanction> Sanctions,
-    CfhSanctionStatus? CallForHelp);
+    IReadOnlyList<Sanction> Sanctions);
 
 public sealed record ProfileWardrobeRequest(
     int Offset = 0,
@@ -236,9 +235,7 @@ public sealed record RemoteProfileView(
     int TotalBadges,
     int AchievementLevel,
     IReadOnlyList<BadgeRarity> BadgeRarities,
-    int TotalBadgesRank,
-    string NameColor,
-    IReadOnlyList<ProfileOldName> OldNames);
+    int TotalBadgesRank);
 
 public sealed record RemoteProfileResult(
     ClientType Client,

@@ -99,8 +99,7 @@ public sealed record CatalogProductView(
     int ProductCount,
     bool UniqueLimitedItem,
     int UniqueLimitedItemSeriesSize,
-    int UniqueLimitedItemsLeft,
-    short? UnityProductType);
+    int UniqueLimitedItemsLeft);
 
 public sealed record CatalogOfferView(
     int OfferId,
@@ -280,14 +279,7 @@ public sealed record CatalogPurchaseOfferView(
     bool BundlePurchaseAllowed,
     int TotalProducts,
     bool ProductsTruncated,
-    IReadOnlyList<CatalogProductView> Products,
-    Id? GiftTo,
-    int TotalRoomItems,
-    bool RoomItemsTruncated,
-    IReadOnlyList<Id> RoomItems,
-    int TotalWallItems,
-    bool WallItemsTruncated,
-    IReadOnlyList<Id> WallItems);
+    IReadOnlyList<CatalogProductView> Products);
 
 public sealed record CatalogPurchaseOutcomeView(
     CatalogPurchaseOutcomeKind Kind,

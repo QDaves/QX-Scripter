@@ -37,7 +37,6 @@ public enum RoomExitSource
 {
     RoomTransition = 0,
     ConnectionClosed = 1,
-    NativeReason = 2,
     ClientQuit = 3,
     Disconnected = 4,
     AccessFailure = 5,
@@ -63,14 +62,12 @@ public enum RoomExitSource
 /// <param name="WasEntered">Whether the room had been fully entered.</param>
 /// <param name="Source">The transport that ended the room session.</param>
 /// <param name="Reason">The reason code carried by the transport, when it carries one.</param>
-/// <param name="HasNativeReason">Whether a native room exit reason accompanied the exit.</param>
 /// <param name="Kick">The kick this exit consumed, or <see langword="null"/> when none was staged.</param>
 public sealed record RoomExitState(
     Id RoomId,
     bool WasEntered,
     RoomExitSource Source,
     short? Reason,
-    bool HasNativeReason,
     RoomKick? Kick = null)
 {
     /// <summary>Whether the local user was kicked out of the room.</summary>

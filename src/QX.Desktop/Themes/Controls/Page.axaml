@@ -1,0 +1,579 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:c="using:Qx.Desktop.Controls">
+
+  <ControlTheme x:Key="{x:Type c:PageHeader}" TargetType="c:PageHeader">
+    <Setter Property="Padding" Value="{DynamicResource QxPageHeaderPadding}" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border Padding="{TemplateBinding Padding}" Background="{TemplateBinding Background}">
+          <Grid ColumnDefinitions="*,Auto">
+            <StackPanel VerticalAlignment="Center" Spacing="2">
+              <StackPanel Orientation="Horizontal" Spacing="10">
+                <TextBlock Text="{TemplateBinding Title}"
+                           FontSize="{DynamicResource QxFontSizeDisplay}"
+                           LineHeight="{DynamicResource QxLineHeightDisplay}"
+                           FontWeight="SemiBold"
+                           LetterSpacing="-0.3"
+                           TextTrimming="CharacterEllipsis"
+                           Foreground="{DynamicResource QxTextPrimaryBrush}" />
+                <ContentPresenter Name="PART_Meta"
+                                  VerticalAlignment="Center"
+                                  Content="{TemplateBinding Meta}"
+                                  IsVisible="False" />
+              </StackPanel>
+              <TextBlock Name="PART_Subtitle"
+                         Text="{TemplateBinding Subtitle}"
+                         FontSize="{DynamicResource QxFontSizeBody}"
+                         LineHeight="{DynamicResource QxLineHeightBody}"
+                         Foreground="{DynamicResource QxTextSecondaryBrush}"
+                         TextTrimming="CharacterEllipsis"
+                         IsVisible="False" />
+            </StackPanel>
+            <ContentPresenter Grid.Column="1"
+                              Margin="24,0,0,0"
+                              VerticalAlignment="Center"
+                              Content="{TemplateBinding Actions}" />
+          </Grid>
+        </Border>
+      </ControlTemplate>
+    </Setter>
+    <Style Selector="^:meta /template/ ContentPresenter#PART_Meta">
+      <Setter Property="IsVisible" Value="True" />
+    </Style>
+    <Style Selector="^:subtitle /template/ TextBlock#PART_Subtitle">
+      <Setter Property="IsVisible" Value="True" />
+    </Style>
+  </ControlTheme>
+
+  <ControlTheme x:Key="{x:Type c:PageLayout}" TargetType="c:PageLayout">
+    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+    <Setter Property="VerticalContentAlignment" Value="Stretch" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Grid RowDefinitions="Auto,Auto,*,Auto">
+          <c:PageHeader Title="{TemplateBinding Title}"
+                        Subtitle="{TemplateBinding Subtitle}"
+                        Meta="{TemplateBinding Meta}"
+                        Actions="{TemplateBinding Actions}" />
+          <Border Name="PART_ToolbarHost"
+                  Grid.Row="1"
+                  IsVisible="False"
+                  BorderBrush="{DynamicResource QxBorderSubtleBrush}"
+                  BorderThickness="0,0,0,1">
+            <ContentPresenter Content="{TemplateBinding Toolbar}" />
+          </Border>
+          <c:StateHost Name="PART_State"
+                       Grid.Row="2"
+                       State="{TemplateBinding State}"
+                       Content="{TemplateBinding Content}"
+                       ContentTemplate="{TemplateBinding ContentTemplate}"
+                       HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                       VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}" />
+          <Border Name="PART_Footer"
+                  Grid.Row="3"
+                  Height="32"
+                  Padding="24,0"
+                  IsVisible="False"
+                  BorderBrush="{DynamicResource QxBorderSubtleBrush}"
+                  BorderThickness="0,1,0,0">
+            <Grid ColumnDefinitions="Auto,*,Auto">
+              <TextBlock Name="PART_Count"
+                         Text="{TemplateBinding CountText}"
+                         VerticalAlignment="Center"
+                         FontSize="{DynamicResource QxFontSizeSmall}"
+                         Foreground="{DynamicResource QxTextTertiaryBrush}" />
+              <c:NoticeBar Name="PART_Notice"
+                           Grid.Column="2"
+                           IsVisible="False"
+                           Notice="{TemplateBinding Notice}"
+                           DismissCommand="{TemplateBinding DismissNotice}" />
+              <StackPanel Name="PART_Progress"
+                          Grid.Column="2"
+                          Orientation="Horizontal"
+                          Spacing="8"
+                          IsVisible="False"
+                          VerticalAlignment="Center">
+                <c:Spinner Size="12" VerticalAlignment="Center" Foreground="{DynamicResource QxTextSecondaryBrush}" />
+                <TextBlock Text="{TemplateBinding ProgressText}"
+                           VerticalAlignment="Center"
+                           FontSize="{DynamicResource QxFontSizeSmall}"
+                           Foreground="{DynamicResource QxTextSecondaryBrush}" />
+                <ProgressBar Name="PART_ProgressBar" Width="120" Value="{TemplateBinding ProgressValue}" IsVisible="False" />
+                <Button Name="PART_ProgressCancel" Classes="small subtle" Content="Stop" Command="{TemplateBinding ProgressCancel}" IsVisible="False" />
+              </StackPanel>
+            </Grid>
+          </Border>
+        </Grid>
+      </ControlTemplate>
+    </Setter>
+    <Style Selector="^:toolbar /template/ Border#PART_ToolbarHost">
+      <Setter Property="IsVisible" Value="True" />
+    </Style>
+    <Style Selector="^:footer /template/ Border#PART_Footer">
+      <Setter Property="IsVisible" Value="True" />
+    </Style>
+    <Style Selector="^:notice /template/ c|NoticeBar#PART_Notice">
+      <Setter Property="IsVisible" Value="True" />
+    </Style>
+    <Style Selector="^:progress /template/ StackPanel#PART_Progress">
+      <Setter Property="IsVisible" Value="True" />
+    </Style>
+    <Style Selector="^:progress-fraction /template/ ProgressBar#PART_ProgressBar">
+      <Setter Property="IsVisible" Value="True" />
+    </Style>
+    <Style Selector="^:progress-cancel /template/ Button#PART_ProgressCancel">
+      <Setter Property="IsVisible" Value="True" />
+    </Style>
+    <Style Selector="^:readable /template/ c|StateHost#PART_State">
+      <Setter Property="MaxWidth" Value="{DynamicResource QxDocumentMaxWidth}" />
+      <Setter Property="HorizontalAlignment" Value="Left" />
+      <Setter Property="Margin" Value="{DynamicResource QxPageInset}" />
+    </Style>
+  </ControlTheme>
+
+  <ControlTheme x:Key="{x:Type c:StateHost}" TargetType="c:StateHost">
+    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+    <Setter Property="VerticalContentAlignment" Value="Stretch" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Panel>
+          <ContentPresenter Name="PART_Content"
+                            Content="{TemplateBinding Content}"
+                            ContentTemplate="{TemplateBinding ContentTemplate}"
+                            HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                            VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}">
+            <ContentPresenter.Transitions>
+              <Transitions>
+                <DoubleTransition Property="Opacity" Duration="0:0:0.16" />
+              </Transitions>
+            </ContentPresenter.Transitions>
+          </ContentPresenter>
+          <Panel Name="PART_Loading" IsVisible="False" Margin="24" HorizontalAlignment="Center" VerticalAlignment="Center">
+            <StackPanel Spacing="12" HorizontalAlignment="Center" MaxWidth="320">
+              <c:Spinner Size="20" Thickness="2" HorizontalAlignment="Center" Foreground="{DynamicResource QxTextSecondaryBrush}" />
+              <TextBlock Name="PART_LoadingMessage"
+                         Text="{TemplateBinding Message}"
+                         Opacity="0"
+                         TextAlignment="Center"
+                         TextWrapping="Wrap"
+                         IsHitTestVisible="False"
+                         FontSize="{DynamicResource QxFontSizeBody}"
+                         LineHeight="{DynamicResource QxLineHeightBody}"
+                         Foreground="{DynamicResource QxTextSecondaryBrush}">
+                <TextBlock.Transitions>
+                  <Transitions>
+                    <DoubleTransition Property="Opacity" Duration="0:0:0.16" />
+                  </Transitions>
+                </TextBlock.Transitions>
+              </TextBlock>
+              <Button Name="PART_Cancel"
+                      Content="Cancel"
+                      HorizontalAlignment="Center"
+                      IsVisible="False"
+                      Command="{TemplateBinding Cancel}" />
+            </StackPanel>
+          </Panel>
+          <c:EmptyState Name="PART_Placeholder"
+                        IsVisible="False"
+                        Margin="24"
+                        Icon="{TemplateBinding Icon}"
+                        Title="{TemplateBinding Title}"
+                        Description="{TemplateBinding Message}"
+                        Action="{TemplateBinding Action}"
+                        ActionText="{TemplateBinding ActionText}"
+                        Tone="{TemplateBinding Tone}" />
+        </Panel>
+      </ControlTemplate>
+    </Setter>
+    <Style Selector="^:loading /template/ ContentPresenter#PART_Content">
+      <Setter Property="Opacity" Value="{DynamicResource QxBusyContentOpacity}" />
+      <Setter Property="IsHitTestVisible" Value="False" />
+    </Style>
+    <Style Selector="^:loading /template/ Panel#PART_Loading">
+      <Setter Property="IsVisible" Value="True" />
+    </Style>
+    <Style Selector="^:message /template/ TextBlock#PART_LoadingMessage">
+      <Setter Property="Opacity" Value="1" />
+    </Style>
+    <Style Selector="^:cancel /template/ Button#PART_Cancel">
+      <Setter Property="IsVisible" Value="True" />
+    </Style>
+    <Style Selector="^:empty /template/ c|EmptyState#PART_Placeholder, ^:unavailable /template/ c|EmptyState#PART_Placeholder, ^:error /template/ c|EmptyState#PART_Placeholder">
+      <Setter Property="IsVisible" Value="True" />
+    </Style>
+    <Style Selector="^:error /template/ ContentPresenter#PART_Content">
+      <Setter Property="IsVisible" Value="False" />
+    </Style>
+  </ControlTheme>
+
+  <ControlTheme x:Key="{x:Type c:EmptyState}" TargetType="c:EmptyState">
+    <Setter Property="HorizontalAlignment" Value="Center" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <StackPanel HorizontalAlignment="Center" MaxWidth="320">
+          <Border Name="PART_Badge"
+                  Width="40"
+                  Height="40"
+                  HorizontalAlignment="Center"
+                  IsHitTestVisible="False"
+                  CornerRadius="{DynamicResource QxRadiusLg}"
+                  Background="{DynamicResource QxFillSubtleBrush}"
+                  BorderBrush="{DynamicResource QxBorderSubtleBrush}"
+                  BorderThickness="1">
+            <c:Icon Name="PART_Icon" Kind="{TemplateBinding Icon}" Size="20" Foreground="{DynamicResource QxTextTertiaryBrush}" />
+          </Border>
+          <TextBlock Margin="0,12,0,0"
+                     HorizontalAlignment="Center"
+                     TextAlignment="Center"
+                     TextWrapping="Wrap"
+                     IsHitTestVisible="False"
+                     Text="{TemplateBinding Title}"
+                     FontSize="{DynamicResource QxFontSizeBody}"
+                     LineHeight="{DynamicResource QxLineHeightBody}"
+                     FontWeight="SemiBold"
+                     Foreground="{DynamicResource QxTextPrimaryBrush}" />
+          <TextBlock Name="PART_Description"
+                     Margin="0,4,0,0"
+                     HorizontalAlignment="Center"
+                     TextAlignment="Center"
+                     TextWrapping="Wrap"
+                     IsHitTestVisible="False"
+                     IsVisible="False"
+                     Text="{TemplateBinding Description}"
+                     FontSize="{DynamicResource QxFontSizeSmall}"
+                     LineHeight="{DynamicResource QxLineHeightSmall}"
+                     Foreground="{DynamicResource QxTextSecondaryBrush}" />
+          <Button Name="PART_Action"
+                  Margin="0,16,0,0"
+                  HorizontalAlignment="Center"
+                  Content="{TemplateBinding ActionText}"
+                  Command="{TemplateBinding Action}"
+                  IsVisible="False" />
+        </StackPanel>
+      </ControlTemplate>
+    </Setter>
+    <Style Selector="^:description /template/ TextBlock#PART_Description">
+      <Setter Property="IsVisible" Value="True" />
+    </Style>
+    <Style Selector="^:action /template/ Button#PART_Action">
+      <Setter Property="IsVisible" Value="True" />
+    </Style>
+    <Style Selector="^:danger">
+      <Style Selector="^ /template/ Border#PART_Badge">
+        <Setter Property="Background" Value="{DynamicResource QxDangerSoftBrush}" />
+        <Setter Property="BorderBrush" Value="Transparent" />
+      </Style>
+      <Style Selector="^ /template/ c|Icon#PART_Icon">
+        <Setter Property="Foreground" Value="{DynamicResource QxDangerBrush}" />
+      </Style>
+    </Style>
+    <Style Selector="^:warning">
+      <Style Selector="^ /template/ Border#PART_Badge">
+        <Setter Property="Background" Value="{DynamicResource QxWarningSoftBrush}" />
+        <Setter Property="BorderBrush" Value="Transparent" />
+      </Style>
+      <Style Selector="^ /template/ c|Icon#PART_Icon">
+        <Setter Property="Foreground" Value="{DynamicResource QxWarningBrush}" />
+      </Style>
+    </Style>
+  </ControlTheme>
+
+  <ControlTheme x:Key="{x:Type c:LoadingIndicator}" TargetType="c:LoadingIndicator">
+    <Setter Property="HorizontalAlignment" Value="Center" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Center">
+          <c:Spinner Size="14" Thickness="1.5" VerticalAlignment="Center" Foreground="{DynamicResource QxTextSecondaryBrush}" />
+          <TextBlock Text="{TemplateBinding Text}"
+                     VerticalAlignment="Center"
+                     FontSize="{DynamicResource QxFontSizeBody}"
+                     Foreground="{DynamicResource QxTextSecondaryBrush}" />
+        </StackPanel>
+      </ControlTemplate>
+    </Setter>
+  </ControlTheme>
+
+  <ControlTheme x:Key="{x:Type c:FilterBar}" TargetType="c:FilterBar">
+    <Setter Property="Padding" Value="{DynamicResource QxToolbarPadding}" />
+    <Setter Property="MinHeight" Value="44" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border Padding="{TemplateBinding Padding}"
+                MinHeight="{TemplateBinding MinHeight}"
+                Background="{TemplateBinding Background}"
+                BorderBrush="{TemplateBinding BorderBrush}"
+                BorderThickness="{TemplateBinding BorderThickness}">
+          <Grid ColumnDefinitions="Auto,Auto,*,Auto" VerticalAlignment="Center">
+            <ContentPresenter Grid.Column="0" VerticalAlignment="Center" Content="{TemplateBinding Search}" />
+            <ContentPresenter Name="PART_Filters" Grid.Column="1" Margin="0" VerticalAlignment="Center" Content="{TemplateBinding Filters}" />
+            <ContentPresenter Grid.Column="3" Margin="12,0,0,0" VerticalAlignment="Center" Content="{TemplateBinding Trailing}" />
+          </Grid>
+        </Border>
+      </ControlTemplate>
+    </Setter>
+    <Style Selector="^:search:filters /template/ ContentPresenter#PART_Filters">
+      <Setter Property="Margin" Value="16,0,0,0" />
+    </Style>
+  </ControlTheme>
+
+  <ControlTheme x:Key="{x:Type c:Section}" TargetType="c:Section">
+    <Setter Property="Background" Value="{DynamicResource QxSurfaceBaseBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource QxBorderSubtleBrush}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="{DynamicResource QxRadiusMd}" />
+    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border Background="{TemplateBinding Background}"
+                BorderBrush="{TemplateBinding BorderBrush}"
+                BorderThickness="{TemplateBinding BorderThickness}"
+                CornerRadius="{TemplateBinding CornerRadius}">
+          <StackPanel>
+            <Grid Name="PART_Header" ColumnDefinitions="*,Auto" MinHeight="56" Margin="16,10">
+              <StackPanel Spacing="2" VerticalAlignment="Center">
+                <TextBlock Name="PART_Title" Text="{TemplateBinding Title}"
+                           FontSize="{DynamicResource QxFontSizeBody}"
+                           LineHeight="{DynamicResource QxLineHeightBody}"
+                           FontWeight="SemiBold"
+                           Foreground="{DynamicResource QxTextPrimaryBrush}" />
+                <TextBlock Name="PART_Description"
+                           Text="{TemplateBinding Description}"
+                           FontSize="{DynamicResource QxFontSizeSmall}"
+                           LineHeight="{DynamicResource QxLineHeightSmall}"
+                           Foreground="{DynamicResource QxTextSecondaryBrush}"
+                           TextWrapping="Wrap"
+                           IsVisible="False" />
+              </StackPanel>
+              <ContentPresenter Grid.Column="1" Margin="16,0,0,0" VerticalAlignment="Center" Content="{TemplateBinding Actions}" />
+            </Grid>
+            <Border BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="0,1,0,0">
+              <ContentPresenter Name="PART_ContentPresenter"
+                                Content="{TemplateBinding Content}"
+                                ContentTemplate="{TemplateBinding ContentTemplate}"
+                                HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}" />
+            </Border>
+            <Border Name="PART_Footer"
+                    IsVisible="False"
+                    Padding="16,10"
+                    Background="{DynamicResource QxFillSubtleBrush}"
+                    BorderBrush="{TemplateBinding BorderBrush}"
+                    BorderThickness="0,1,0,0"
+                    CornerRadius="0,0,5,5">
+              <ContentPresenter Content="{TemplateBinding Footer}"
+                                TextElement.FontSize="{DynamicResource QxFontSizeSmall}"
+                                TextElement.Foreground="{DynamicResource QxTextTertiaryBrush}" />
+            </Border>
+          </StackPanel>
+        </Border>
+      </ControlTemplate>
+    </Setter>
+    <Style Selector="^:description /template/ TextBlock#PART_Description">
+      <Setter Property="IsVisible" Value="True" />
+    </Style>
+    <Style Selector="^:footer /template/ Border#PART_Footer">
+      <Setter Property="IsVisible" Value="True" />
+    </Style>
+    <Style Selector="^.compact /template/ Grid#PART_Header">
+      <Setter Property="MinHeight" Value="24" />
+      <Setter Property="Margin" Value="16,10" />
+    </Style>
+    <Style Selector="^.compact /template/ TextBlock#PART_Title">
+      <Setter Property="FontSize" Value="{DynamicResource QxFontSizeTitle}" />
+      <Setter Property="LineHeight" Value="{DynamicResource QxLineHeightTitle}" />
+    </Style>
+    <Style Selector="^.flat">
+      <Setter Property="Template">
+        <ControlTemplate>
+          <StackPanel>
+            <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,8">
+              <StackPanel Spacing="2" VerticalAlignment="Bottom">
+                <TextBlock Text="{TemplateBinding Title}"
+                           FontSize="{DynamicResource QxFontSizeTitle}"
+                           LineHeight="{DynamicResource QxLineHeightTitle}"
+                           FontWeight="SemiBold"
+                           Foreground="{DynamicResource QxTextPrimaryBrush}" />
+                <TextBlock Name="PART_Description"
+                           Text="{TemplateBinding Description}"
+                           FontSize="{DynamicResource QxFontSizeSmall}"
+                           LineHeight="{DynamicResource QxLineHeightSmall}"
+                           Foreground="{DynamicResource QxTextSecondaryBrush}"
+                           TextWrapping="Wrap"
+                           IsVisible="False" />
+              </StackPanel>
+              <ContentPresenter Grid.Column="1" VerticalAlignment="Bottom" Content="{TemplateBinding Actions}" />
+            </Grid>
+            <Border BorderBrush="{DynamicResource QxBorderSubtleBrush}" BorderThickness="0,1,0,0">
+              <ContentPresenter Name="PART_ContentPresenter"
+                                Content="{TemplateBinding Content}"
+                                ContentTemplate="{TemplateBinding ContentTemplate}"
+                                HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}" />
+            </Border>
+          </StackPanel>
+        </ControlTemplate>
+      </Setter>
+    </Style>
+  </ControlTheme>
+
+  <ControlTheme x:Key="{x:Type c:SettingRow}" TargetType="c:SettingRow">
+    <Setter Property="Padding" Value="16,12" />
+    <Setter Property="MinHeight" Value="56" />
+    <Setter Property="BorderBrush" Value="{DynamicResource QxBorderSubtleBrush}" />
+    <Setter Property="BorderThickness" Value="0,0,0,1" />
+    <Setter Property="HorizontalContentAlignment" Value="Right" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border Padding="{TemplateBinding Padding}"
+                MinHeight="{TemplateBinding MinHeight}"
+                BorderBrush="{TemplateBinding BorderBrush}"
+                BorderThickness="{TemplateBinding BorderThickness}"
+                Background="{TemplateBinding Background}">
+          <Grid ColumnDefinitions="*,Auto">
+            <StackPanel VerticalAlignment="Center" Spacing="2" Margin="0,0,32,0">
+              <TextBlock Text="{TemplateBinding Label}"
+                         FontSize="{DynamicResource QxFontSizeBody}"
+                         LineHeight="{DynamicResource QxLineHeightBody}"
+                         FontWeight="Medium"
+                         Foreground="{DynamicResource QxTextPrimaryBrush}" />
+              <TextBlock Name="PART_Description"
+                         Text="{TemplateBinding Description}"
+                         FontSize="{DynamicResource QxFontSizeSmall}"
+                         LineHeight="{DynamicResource QxLineHeightSmall}"
+                         Foreground="{DynamicResource QxTextSecondaryBrush}"
+                         TextWrapping="Wrap"
+                         IsVisible="False" />
+            </StackPanel>
+            <ContentPresenter Name="PART_ContentPresenter"
+                              Grid.Column="1"
+                              VerticalAlignment="Center"
+                              HorizontalAlignment="Right"
+                              Content="{TemplateBinding Content}"
+                              ContentTemplate="{TemplateBinding ContentTemplate}" />
+          </Grid>
+        </Border>
+      </ControlTemplate>
+    </Setter>
+    <Style Selector="^:description /template/ TextBlock#PART_Description">
+      <Setter Property="IsVisible" Value="True" />
+    </Style>
+    <Style Selector="^:nth-last-child(1)">
+      <Setter Property="BorderThickness" Value="0" />
+    </Style>
+    <Style Selector="^.last">
+      <Setter Property="BorderThickness" Value="0" />
+    </Style>
+    <Style Selector="^.stacked">
+      <Setter Property="Template">
+        <ControlTemplate>
+          <Border Padding="{TemplateBinding Padding}"
+                  MinHeight="{TemplateBinding MinHeight}"
+                  BorderBrush="{TemplateBinding BorderBrush}"
+                  BorderThickness="{TemplateBinding BorderThickness}"
+                  Background="{TemplateBinding Background}">
+            <StackPanel Spacing="8">
+              <StackPanel Spacing="2">
+                <TextBlock Text="{TemplateBinding Label}"
+                           FontSize="{DynamicResource QxFontSizeBody}"
+                           LineHeight="{DynamicResource QxLineHeightBody}"
+                           FontWeight="Medium"
+                           Foreground="{DynamicResource QxTextPrimaryBrush}" />
+                <TextBlock Name="PART_Description"
+                           Text="{TemplateBinding Description}"
+                           FontSize="{DynamicResource QxFontSizeSmall}"
+                           LineHeight="{DynamicResource QxLineHeightSmall}"
+                           Foreground="{DynamicResource QxTextSecondaryBrush}"
+                           TextWrapping="Wrap"
+                           IsVisible="False" />
+              </StackPanel>
+              <ContentPresenter Name="PART_ContentPresenter"
+                                HorizontalContentAlignment="Stretch"
+                                Content="{TemplateBinding Content}"
+                                ContentTemplate="{TemplateBinding ContentTemplate}" />
+            </StackPanel>
+          </Border>
+        </ControlTemplate>
+      </Setter>
+    </Style>
+  </ControlTheme>
+
+  <ControlTheme x:Key="{x:Type c:NoticeBar}" TargetType="c:NoticeBar">
+    <Setter Property="Foreground" Value="{DynamicResource QxInfoBrush}" />
+    <Setter Property="Background" Value="{DynamicResource QxInfoSoftBrush}" />
+    <Setter Property="FontSize" Value="{DynamicResource QxFontSizeSmall}" />
+    <Setter Property="Height" Value="24" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+    <Setter Property="HorizontalAlignment" Value="Right" />
+    <Setter Property="IsVisible" Value="False" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border Background="{TemplateBinding Background}"
+                CornerRadius="{DynamicResource QxRadiusXs}"
+                Padding="8,0,2,0">
+          <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+            <c:Icon Kind="{TemplateBinding Glyph}" Size="12" StrokeWidth="1.6" VerticalAlignment="Center" Foreground="{TemplateBinding Foreground}" />
+            <TextBlock Text="{TemplateBinding Text}"
+                       VerticalAlignment="Center"
+                       FontWeight="Medium"
+                       TextTrimming="CharacterEllipsis"
+                       MaxWidth="480"
+                       Foreground="{TemplateBinding Foreground}" />
+            <Button Name="PART_Dismiss"
+                    Theme="{StaticResource QxNoticeDismissButton}"
+                    Command="{TemplateBinding DismissCommand}"
+                    Foreground="{TemplateBinding Foreground}"
+                    IsVisible="False"
+                    ToolTip.Tip="Dismiss"
+                    AutomationProperties.Name="Dismiss notice">
+              <c:Icon Kind="Close" Size="12" StrokeWidth="1.6" />
+            </Button>
+          </StackPanel>
+        </Border>
+      </ControlTemplate>
+    </Setter>
+    <Style Selector="^:notice">
+      <Setter Property="IsVisible" Value="True" />
+    </Style>
+    <Style Selector="^:dismiss /template/ Button#PART_Dismiss">
+      <Setter Property="IsVisible" Value="True" />
+    </Style>
+    <Style Selector="^:success">
+      <Setter Property="Foreground" Value="{DynamicResource QxSuccessBrush}" />
+      <Setter Property="Background" Value="{DynamicResource QxSuccessSoftBrush}" />
+    </Style>
+    <Style Selector="^:warning">
+      <Setter Property="Foreground" Value="{DynamicResource QxWarningBrush}" />
+      <Setter Property="Background" Value="{DynamicResource QxWarningSoftBrush}" />
+    </Style>
+    <Style Selector="^:error">
+      <Setter Property="Foreground" Value="{DynamicResource QxDangerBrush}" />
+      <Setter Property="Background" Value="{DynamicResource QxDangerSoftBrush}" />
+    </Style>
+  </ControlTheme>
+
+  <ControlTheme x:Key="QxNoticeDismissButton" TargetType="Button">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="Width" Value="20" />
+    <Setter Property="Height" Value="20" />
+    <Setter Property="CornerRadius" Value="{DynamicResource QxRadiusXs}" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <ContentPresenter Name="PART_ContentPresenter"
+                          Background="{TemplateBinding Background}"
+                          CornerRadius="{TemplateBinding CornerRadius}"
+                          Content="{TemplateBinding Content}"
+                          HorizontalContentAlignment="Center"
+                          VerticalContentAlignment="Center" />
+      </ControlTemplate>
+    </Setter>
+    <Style Selector="^:pointerover">
+      <Setter Property="Background" Value="{DynamicResource QxFillHoverBrush}" />
+    </Style>
+    <Style Selector="^:pressed">
+      <Setter Property="Background" Value="{DynamicResource QxFillPressedBrush}" />
+    </Style>
+  </ControlTheme>
+
+</ResourceDictionary>

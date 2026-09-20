@@ -181,11 +181,6 @@ internal sealed partial class GiftApplication
         GiftOperationScope scope = CaptureScope(
             request.ExpectedSessionGeneration,
             cancellation_token);
-        if (UsesUnityGiftWire(scope.Session.Client))
-        {
-            throw new NotSupportedException(
-                "Typed offer-giftability refresh is available only for Flash sessions.");
-        }
         var await_state = new RouteAwaitState();
         await requests.RequestAsync(
             MessageContracts.Gifts.OfferGiftabilityRequest,
@@ -581,20 +576,20 @@ internal sealed partial class GiftApplication
     private static GiftStateUpdate Sanitize(
         GiftStateUpdate update,
         GiftStateChangeKind? preserve) => update with
-    {
-        State = update.State with
         {
-            Wrapping = preserve is GiftStateChangeKind.Wrapping
+            State = update.State with
+            {
+                Wrapping = preserve is GiftStateChangeKind.Wrapping
                 ? update.State.Wrapping
                 : null,
-            ClubInfo = preserve is GiftStateChangeKind.ClubInfo
+                ClubInfo = preserve is GiftStateChangeKind.ClubInfo
                 ? update.State.ClubInfo
                 : null,
-            ClubSelected = null,
-            OfferGiftability = empty_giftability,
-            NewUserOffer = null
-        }
-    };
+                ClubSelected = null,
+                OfferGiftability = empty_giftability,
+                NewUserOffer = null
+            }
+        };
 
     private static void AddCommit(
         List<ObservedGiftCommit> commits,
@@ -678,18 +673,7 @@ internal sealed partial class GiftApplication
         left.BundlePurchaseAllowed == right.BundlePurchaseAllowed &&
         left.IsPet == right.IsPet &&
         string.Equals(left.PreviewImage, right.PreviewImage, StringComparison.Ordinal) &&
-        left.Products.SequenceEqual(right.Products) &&
-        OptionalSequenceEqual(
-            left.UnityProductReferences,
-            right.UnityProductReferences) &&
-        OptionalSequenceEqual(left.UnityProducts, right.UnityProducts);
-
-    private static bool OptionalSequenceEqual<T>(
-        IReadOnlyList<T>? left,
-        IReadOnlyList<T>? right) =>
-        left is null
-            ? right is null
-            : right is not null && left.SequenceEqual(right);
+        left.Products.SequenceEqual(right.Products);
 
     private static void ValidateRefreshTimeout(int timeout_milliseconds)
     {

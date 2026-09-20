@@ -118,12 +118,6 @@ public sealed class InventoryPetQuery : QueryCollection<InventoryPet>
     public InventoryPetQuery WithKnownRarity(bool value = true) =>
         Where(pet => (pet.RarityLevel >= 0) == value);
 
-    public InventoryPetQuery InRoom(bool value = true) =>
-        Where(pet => pet.IsInRoom == value);
-
-    public InventoryPetQuery InRoom(Id room_id) =>
-        Where(pet => pet.RoomId == room_id);
-
     public InventoryPetQuery WithCustomParts(bool value = true) =>
         Where(pet => (pet.CustomParts.Count > 0) == value);
 

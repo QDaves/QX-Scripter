@@ -5,11 +5,9 @@ namespace Qx.Model.Messages.Incoming;
 public sealed record PurchaseNotAllowed(int ErrorCode) : IParserComposer<PurchaseNotAllowed>
 {
     public static PurchaseNotAllowed Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static PurchaseNotAllowed ParseFlash(in PacketReader p) => ParseResult(in p);
-
-    private static PurchaseNotAllowed ParseUnity(in PacketReader p) => ParseResult(in p);
 
     private static PurchaseNotAllowed ParseResult(in PacketReader p)
     {
@@ -19,11 +17,8 @@ public sealed record PurchaseNotAllowed(int ErrorCode) : IParserComposer<Purchas
     }
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(PurchaseNotAllowed value, in PacketWriter p) =>
-        p.WriteInt(value.ErrorCode);
-
-    private static void ComposeUnity(PurchaseNotAllowed value, in PacketWriter p) =>
         p.WriteInt(value.ErrorCode);
 }

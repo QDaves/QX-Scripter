@@ -1,0 +1,327 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:c="using:Qx.Desktop.Controls"
+                    xmlns:notifications="using:Qx.Presentation.Services.Notifications">
+
+  <ControlTheme x:Key="{x:Type c:Dialog}" TargetType="c:Dialog">
+    <Setter Property="Width" Value="{DynamicResource QxDialogWidth}" />
+    <Setter Property="HorizontalAlignment" Value="Center" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+    <Setter Property="Foreground" Value="{DynamicResource QxTextSecondaryBrush}" />
+    <Setter Property="ClipToBounds" Value="False" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border Background="{DynamicResource QxSurfaceOverlayBrush}"
+                BorderBrush="{DynamicResource QxBorderOverlayBrush}"
+                BorderThickness="1"
+                CornerRadius="{DynamicResource QxRadiusLg}"
+                BoxShadow="{DynamicResource QxShadowDialog}">
+          <StackPanel Margin="24" Spacing="20">
+            <Grid ColumnDefinitions="*,Auto">
+              <StackPanel Spacing="6">
+                <TextBlock Text="{TemplateBinding Title}"
+                           FontSize="{DynamicResource QxFontSizeTitle}"
+                           LineHeight="{DynamicResource QxLineHeightTitle}"
+                           FontWeight="SemiBold"
+                           TextWrapping="Wrap"
+                           Foreground="{DynamicResource QxTextPrimaryBrush}" />
+                <TextBlock Name="PART_Caption"
+                           Text="{TemplateBinding Caption}"
+                           FontSize="{DynamicResource QxFontSizeSmall}"
+                           LineHeight="{DynamicResource QxLineHeightSmall}"
+                           FontWeight="Medium"
+                           TextTrimming="CharacterEllipsis"
+                           IsVisible="False"
+                           Foreground="{DynamicResource QxTextTertiaryBrush}" />
+              </StackPanel>
+              <Button Name="PART_Close"
+                      Grid.Column="1"
+                      Classes="icon small"
+                      Margin="12,-4,-6,0"
+                      VerticalAlignment="Top"
+                      IsVisible="False"
+                      Command="{TemplateBinding CloseCommand}"
+                      ToolTip.Tip="Close (Esc)"
+                      AutomationProperties.Name="Close dialog">
+                <c:Icon Kind="Close" Size="14" />
+              </Button>
+            </Grid>
+            <StackPanel Spacing="12">
+              <ContentPresenter Content="{TemplateBinding Content}"
+                                ContentTemplate="{TemplateBinding ContentTemplate}"
+                                TextElement.Foreground="{DynamicResource QxTextSecondaryBrush}"
+                                TextElement.FontSize="{DynamicResource QxFontSizeBody}" />
+              <ContentPresenter Name="PART_Detail" Content="{TemplateBinding Detail}" IsVisible="False" />
+            </StackPanel>
+            <Border Padding="0,4,0,0">
+              <Grid ColumnDefinitions="*,Auto">
+                <ContentPresenter VerticalAlignment="Center"
+                                  Content="{TemplateBinding Hint}"
+                                  TextElement.FontSize="{DynamicResource QxFontSizeSmall}"
+                                  TextElement.Foreground="{DynamicResource QxTextTertiaryBrush}" />
+                <ContentPresenter Grid.Column="1" HorizontalAlignment="Right" Content="{TemplateBinding Buttons}" />
+              </Grid>
+            </Border>
+          </StackPanel>
+        </Border>
+      </ControlTemplate>
+    </Setter>
+    <Style Selector="^:caption /template/ TextBlock#PART_Caption">
+      <Setter Property="IsVisible" Value="True" />
+    </Style>
+    <Style Selector="^:detail /template/ ContentPresenter#PART_Detail">
+      <Setter Property="IsVisible" Value="True" />
+    </Style>
+    <Style Selector="^:close /template/ Button#PART_Close">
+      <Setter Property="IsVisible" Value="True" />
+    </Style>
+    <Style Selector="^:destructive">
+      <Setter Property="Foreground" Value="{DynamicResource QxDangerBrush}" />
+      <Setter Property="Background" Value="{DynamicResource QxDangerSoftBrush}" />
+    </Style>
+  </ControlTheme>
+
+  <ControlTheme x:Key="{x:Type c:DialogHost}" TargetType="c:DialogHost">
+    <Setter Property="IsVisible" Value="False" />
+    <Setter Property="Focusable" Value="False" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Panel>
+          <Border Name="PART_Scrim" Background="{DynamicResource QxScrimBrush}" />
+          <Border Name="PART_DragStrip"
+                  Height="{DynamicResource QxTitleBarHeight}"
+                  VerticalAlignment="Top"
+                  Background="Transparent"
+                  WindowDecorationProperties.ElementRole="TitleBar" />
+          <ContentControl Name="PART_Card"
+                          Content="{TemplateBinding Dialog}"
+                          ContentTemplate="{TemplateBinding Views}"
+                          HorizontalAlignment="Center"
+                          VerticalAlignment="Center"
+                          Margin="24"
+                          ClipToBounds="False"
+                          KeyboardNavigation.TabNavigation="Cycle">
+            <ContentControl.Transitions>
+              <Transitions>
+                <DoubleTransition Property="Opacity" Duration="0:0:0.24" Easing="0.2,0,0,1" />
+              </Transitions>
+            </ContentControl.Transitions>
+          </ContentControl>
+        </Panel>
+      </ControlTemplate>
+    </Setter>
+  </ControlTheme>
+
+  <ControlTheme x:Key="{x:Type c:Toast}" TargetType="c:Toast">
+    <Setter Property="Width" Value="360" />
+    <Setter Property="Foreground" Value="{DynamicResource QxInfoBrush}" />
+    <Setter Property="ClipToBounds" Value="False" />
+    <Setter Property="Focusable" Value="False" />
+    <Setter Property="AutomationProperties.LiveSetting" Value="Polite" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border Background="{DynamicResource QxSurfaceOverlayBrush}"
+                BorderBrush="{DynamicResource QxBorderOverlayBrush}"
+                BorderThickness="1"
+                CornerRadius="{DynamicResource QxRadiusMd}"
+                BoxShadow="{DynamicResource QxShadowPopup}">
+          <Grid ColumnDefinitions="Auto,*,Auto">
+            <c:Icon Kind="{TemplateBinding Glyph}"
+                    Size="16"
+                    Margin="12,12,10,0"
+                    VerticalAlignment="Top"
+                    Foreground="{TemplateBinding Foreground}" />
+            <StackPanel Grid.Column="1" Margin="0,10,0,10" Spacing="2">
+              <TextBlock Text="{TemplateBinding Title}"
+                         FontSize="{DynamicResource QxFontSizeBody}"
+                         LineHeight="{DynamicResource QxLineHeightBody}"
+                         FontWeight="Medium"
+                         TextWrapping="Wrap"
+                         Foreground="{DynamicResource QxTextPrimaryBrush}" />
+              <TextBlock Name="PART_Message"
+                         Text="{TemplateBinding Message}"
+                         FontSize="{DynamicResource QxFontSizeSmall}"
+                         LineHeight="{DynamicResource QxLineHeightSmall}"
+                         TextWrapping="Wrap"
+                         IsVisible="False"
+                         Foreground="{DynamicResource QxTextSecondaryBrush}" />
+              <Button Name="PART_Action"
+                      Classes="small"
+                      Margin="0,6,0,0"
+                      IsVisible="False"
+                      Content="{TemplateBinding ActionText}"
+                      Command="{TemplateBinding ActionCommand}" />
+            </StackPanel>
+            <Button Grid.Column="2"
+                    Classes="icon small"
+                    Margin="4,6,6,0"
+                    VerticalAlignment="Top"
+                    Command="{TemplateBinding DismissCommand}"
+                    CommandParameter="{TemplateBinding DismissParameter}"
+                    ToolTip.Tip="Dismiss"
+                    AutomationProperties.Name="Dismiss notification">
+              <c:Icon Kind="Close" Size="14" />
+            </Button>
+          </Grid>
+        </Border>
+      </ControlTemplate>
+    </Setter>
+    <Style Selector="^:message /template/ TextBlock#PART_Message">
+      <Setter Property="IsVisible" Value="True" />
+    </Style>
+    <Style Selector="^:action /template/ Button#PART_Action">
+      <Setter Property="IsVisible" Value="True" />
+    </Style>
+    <Style Selector="^:success">
+      <Setter Property="Foreground" Value="{DynamicResource QxSuccessBrush}" />
+    </Style>
+    <Style Selector="^:warning">
+      <Setter Property="Foreground" Value="{DynamicResource QxWarningBrush}" />
+    </Style>
+    <Style Selector="^:error">
+      <Setter Property="Foreground" Value="{DynamicResource QxDangerBrush}" />
+      <Setter Property="AutomationProperties.LiveSetting" Value="Assertive" />
+    </Style>
+  </ControlTheme>
+
+  <ControlTheme x:Key="{x:Type c:ToastHost}" TargetType="c:ToastHost">
+    <Setter Property="HorizontalAlignment" Value="Right" />
+    <Setter Property="VerticalAlignment" Value="Bottom" />
+    <Setter Property="Margin" Value="16" />
+    <Setter Property="Focusable" Value="False" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <ItemsControl ItemsSource="{TemplateBinding Toasts}" Focusable="False">
+          <ItemsControl.ItemsPanel>
+            <ItemsPanelTemplate>
+              <StackPanel Spacing="8" />
+            </ItemsPanelTemplate>
+          </ItemsControl.ItemsPanel>
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="notifications:Toast">
+              <c:Toast Severity="{Binding Severity}"
+                       Title="{Binding Text}"
+                       ActionText="{Binding ActionText}"
+                       ActionCommand="{Binding Action}"
+                       DismissCommand="{Binding $parent[c:ToastHost].DismissCommand}"
+                       DismissParameter="{Binding}" />
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+      </ControlTemplate>
+    </Setter>
+  </ControlTheme>
+
+  <ControlTheme x:Key="{x:Type c:CommandPalette}" TargetType="c:CommandPalette">
+    <Setter Property="Width" Value="600" />
+    <Setter Property="HorizontalAlignment" Value="Center" />
+    <Setter Property="VerticalAlignment" Value="Top" />
+    <Setter Property="ClipToBounds" Value="False" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border Background="{DynamicResource QxSurfaceOverlayBrush}"
+                BorderBrush="{DynamicResource QxBorderOverlayBrush}"
+                BorderThickness="1"
+                CornerRadius="{DynamicResource QxRadiusLg}"
+                BoxShadow="{DynamicResource QxShadowDialog}">
+          <Grid RowDefinitions="48,Auto,Auto">
+            <Grid ColumnDefinitions="Auto,*" Margin="16,0,12,0">
+              <c:Icon Kind="Search" Size="16" VerticalAlignment="Center" Foreground="{DynamicResource QxTextTertiaryBrush}" />
+              <TextBox Name="PART_Query"
+                       Grid.Column="1"
+                       Classes="bare"
+                       Margin="10,0,0,0"
+                       FontSize="{DynamicResource QxFontSizeTitle}"
+                       Text="{TemplateBinding Query, Mode=TwoWay}"
+                       PlaceholderText="{TemplateBinding Placeholder}"
+                       AutomationProperties.Name="Search commands" />
+            </Grid>
+            <Border Grid.Row="1" Height="1" Background="{DynamicResource QxBorderOverlayBrush}" />
+            <StackPanel Grid.Row="2">
+              <ListBox Name="PART_List"
+                       MaxHeight="380"
+                       Padding="6"
+                       ItemsSource="{TemplateBinding ItemsSource}"
+                       ItemTemplate="{TemplateBinding ItemTemplate}"
+                       SelectedItem="{TemplateBinding SelectedItem, Mode=TwoWay}"
+                       ItemContainerTheme="{DynamicResource CommandPalette.Row}"
+                       AutomationProperties.Name="Matching commands" />
+              <TextBlock Name="PART_Empty"
+                         Margin="0,24"
+                         HorizontalAlignment="Center"
+                         Text="{TemplateBinding EmptyText}"
+                         FontSize="{DynamicResource QxFontSizeBody}"
+                         Foreground="{DynamicResource QxTextTertiaryBrush}"
+                         IsVisible="False" />
+              <Border Padding="16,0"
+                      Height="36"
+                      BorderBrush="{DynamicResource QxBorderSubtleBrush}"
+                      BorderThickness="0,1,0,0"
+                      Background="{DynamicResource QxFillSubtleBrush}"
+                      CornerRadius="0,0,7,7">
+                <StackPanel Orientation="Horizontal" Spacing="16" VerticalAlignment="Center">
+                  <StackPanel Orientation="Horizontal" Spacing="6">
+                    <StackPanel Orientation="Horizontal" Spacing="2">
+                      <c:Kbd Text="↑" />
+                      <c:Kbd Text="↓" />
+                    </StackPanel>
+                    <TextBlock Text="to navigate" FontSize="{DynamicResource QxFontSizeSmall}" VerticalAlignment="Center" Foreground="{DynamicResource QxTextTertiaryBrush}" />
+                  </StackPanel>
+                  <StackPanel Orientation="Horizontal" Spacing="6">
+                    <c:Kbd Text="Enter" />
+                    <TextBlock Text="to run" FontSize="{DynamicResource QxFontSizeSmall}" VerticalAlignment="Center" Foreground="{DynamicResource QxTextTertiaryBrush}" />
+                  </StackPanel>
+                  <StackPanel Orientation="Horizontal" Spacing="6">
+                    <c:Kbd Text="Esc" />
+                    <TextBlock Text="to close" FontSize="{DynamicResource QxFontSizeSmall}" VerticalAlignment="Center" Foreground="{DynamicResource QxTextTertiaryBrush}" />
+                  </StackPanel>
+                </StackPanel>
+              </Border>
+            </StackPanel>
+          </Grid>
+        </Border>
+      </ControlTemplate>
+    </Setter>
+    <Style Selector="^:empty">
+      <Style Selector="^ /template/ ListBox#PART_List">
+        <Setter Property="IsVisible" Value="False" />
+      </Style>
+      <Style Selector="^ /template/ TextBlock#PART_Empty">
+        <Setter Property="IsVisible" Value="True" />
+      </Style>
+    </Style>
+  </ControlTheme>
+
+  <ControlTheme x:Key="{x:Type c:CommandRow}" TargetType="c:CommandRow">
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Grid ColumnDefinitions="72,*,Auto" VerticalAlignment="Center">
+          <TextBlock Text="{TemplateBinding Group}"
+                     VerticalAlignment="Center"
+                     FontSize="{DynamicResource QxFontSizeSmall}"
+                     Foreground="{DynamicResource QxTextTertiaryBrush}"
+                     TextTrimming="CharacterEllipsis" />
+          <TextBlock Grid.Column="1"
+                     Text="{TemplateBinding Title}"
+                     VerticalAlignment="Center"
+                     FontSize="{DynamicResource QxFontSizeBody}"
+                     Foreground="{DynamicResource QxTextPrimaryBrush}"
+                     TextTrimming="CharacterEllipsis" />
+          <ItemsControl Grid.Column="2" Margin="16,0,0,0" ItemsSource="{TemplateBinding Keys}" VerticalAlignment="Center">
+            <ItemsControl.ItemsPanel>
+              <ItemsPanelTemplate>
+                <StackPanel Orientation="Horizontal" Spacing="2" />
+              </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="x:String">
+                <c:Kbd Text="{Binding}" />
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </Grid>
+      </ControlTemplate>
+    </Setter>
+  </ControlTheme>
+
+</ResourceDictionary>

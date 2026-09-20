@@ -1,0 +1,21 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:c="using:Qx.Desktop.Controls"
+             xmlns:d="using:Qx.Presentation.Dialogs"
+             x:Class="Qx.Desktop.Views.Dialogs.AlertDialogView"
+             x:DataType="d:AlertDialogViewModel">
+  <c:Dialog CloseCommand="{Binding CancelCommand}"
+            Title="{Binding Title}"
+            Icon="{Binding Icon}"
+            Tone="{Binding Tone}">
+    <TextBlock Text="{Binding Message}" TextWrapping="Wrap" LineHeight="{DynamicResource QxLineHeightBody}" />
+    <c:Dialog.Buttons>
+      <Button Classes="large primary"
+              MinWidth="88"
+              IsDefault="True"
+              IsCancel="True"
+              Content="{Binding AcceptText}"
+              Command="{Binding AcceptCommand}" />
+    </c:Dialog.Buttons>
+  </c:Dialog>
+</UserControl>

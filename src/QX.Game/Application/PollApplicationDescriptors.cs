@@ -79,7 +79,7 @@ internal static class PollApplicationDescriptors
                 typeof(IReadOnlyList<PollResponseInput>),
                 true,
                 null,
-                "Bounded question responses; Unity permits an empty array.",
+                "Bounded question responses.",
                 new(MinItems: 0, MaxItems: 500)),
             SessionGeneration()
         ],

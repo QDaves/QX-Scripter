@@ -23,13 +23,13 @@ public sealed record FavouriteMembershipUpdate(
     string GroupName) : IParserComposer<FavouriteMembershipUpdate>
 {
     public static FavouriteMembershipUpdate Parse(in PacketReader p) =>
-        ModernWireClients.ParseFlash(in p, ParseFlash);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static FavouriteMembershipUpdate ParseFlash(in PacketReader p) =>
         new(p.ReadInt(), p.ReadInt(), p.ReadInt(), p.ReadString());
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.ComposeFlash(this, in p, ComposeFlash);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(FavouriteMembershipUpdate value, in PacketWriter p)
     {
@@ -54,13 +54,13 @@ public sealed record SpecialSystemChat(int UserIndex, int SpecialSystemType)
     : IParserComposer<SpecialSystemChat>
 {
     public static SpecialSystemChat Parse(in PacketReader p) =>
-        ModernWireClients.ParseFlash(in p, ParseFlash);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static SpecialSystemChat ParseFlash(in PacketReader p) =>
         new(p.ReadInt(), p.ReadInt());
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.ComposeFlash(this, in p, ComposeFlash);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(SpecialSystemChat value, in PacketWriter p)
     {
@@ -77,7 +77,7 @@ public sealed record MOTDNotification(IReadOnlyList<string> Messages)
     : IParserComposer<MOTDNotification>
 {
     public static MOTDNotification Parse(in PacketReader p) =>
-        ModernWireClients.ParseFlash(in p, ParseFlash);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static MOTDNotification ParseFlash(in PacketReader p)
     {
@@ -94,7 +94,7 @@ public sealed record MOTDNotification(IReadOnlyList<string> Messages)
     }
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.ComposeFlash(this, in p, ComposeFlash);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(MOTDNotification value, in PacketWriter p)
     {

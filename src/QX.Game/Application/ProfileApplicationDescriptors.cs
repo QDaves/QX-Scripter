@@ -85,20 +85,6 @@ internal static class ProfileApplicationDescriptors
         MessageKeys.Users.Ignore.AddByIdRequest,
         ApplicationStateKey.ProfileIgnoreListLoaded);
 
-    public static ApplicationDescriptor IgnoreAddByName { get; } = new(
-        ApplicationMemberIds.ProfileIgnoreAddByName,
-        "Ignore user by name",
-        "Adds a hotel user name to the local account's ignore list when the active dialect supports it.",
-        ApplicationMemberKind.Operation,
-        ApplicationExposure.All,
-        typeof(ProfileUserNameRequest),
-        typeof(ProfileDispatchResult),
-        [RequiredText("user_name", "Hotel user name.")],
-        [ApplicationStateKey.HotelConnected],
-        [new(ApplicationStateKey.ProfileIgnoreListLoaded, ApplicationStateEffectKind.Changes)],
-        [Send(MessageKeys.Users.Ignore.AddByNameRequest)],
-        new(false, true, false, true));
-
     public static ApplicationDescriptor IgnoreRemove { get; } = new(
         ApplicationMemberIds.ProfileIgnoreRemove,
         "Unignore user",
@@ -126,7 +112,7 @@ internal static class ProfileApplicationDescriptors
     public static ApplicationDescriptor SanctionsList { get; } = Query<ProfileSanctionsRequest, ProfileSanctionsPage>(
         ApplicationMemberIds.ProfileSanctionsList,
         "Account sanctions",
-        "Reads a bounded sanction page or the active Unity call-for-help status.",
+        "Reads a bounded sanction page.",
         PagingParameters(100),
         [new(ApplicationStateKey.ProfileSanctionsLoaded, ApplicationStateEffectKind.Reads)]);
 
@@ -566,7 +552,7 @@ internal static class GroupReadsApplicationDescriptors
                 typeof(GuildMemberSearchType),
                 false,
                 GuildMemberSearchType.All,
-                "Requested group-member category; Unity supports All only."),
+                "Requested group-member category."),
             Timeout(),
             SessionGeneration()
         ],

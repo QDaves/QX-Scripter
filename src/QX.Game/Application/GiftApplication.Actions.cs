@@ -62,13 +62,6 @@ internal sealed partial class GiftApplication
             request.ExpectedSessionGeneration,
             request.ExpectedCatalogGeneration,
             cancellation_token);
-        bool unity_client = UsesUnityGiftWire(scope.Session.Client);
-        int effective_quantity = unity_client
-            ? request.Quantity
-            : 1;
-        int? wire_quantity = unity_client
-            ? effective_quantity
-            : null;
         var wire_request = new PurchaseFromCatalogAsGift(
             request.PageId,
             request.OfferId,
@@ -78,8 +71,7 @@ internal sealed partial class GiftApplication
             request.SpriteId,
             request.BoxType,
             request.RibbonType,
-            request.ShowPurchaserName,
-            wire_quantity);
+            request.ShowPurchaserName);
         message_dispatcher.Dispatch(
             MessageContracts.Gifts.Purchase,
             wire_request,
@@ -93,7 +85,7 @@ internal sealed partial class GiftApplication
             scope.CatalogGeneration,
             request.PageId,
             request.OfferId,
-            effective_quantity,
+            1,
             request.ShowPurchaserName,
             1);
     }
@@ -259,12 +251,6 @@ internal sealed partial class GiftApplication
                 null,
                 null,
                 cancellation_token);
-            bool unity_client = UsesUnityGiftWire(scope.Session.Client);
-            if (!unity_client && request.Quantity is not null)
-                throw new InvalidDataException("Flash gift purchases do not include a quantity.");
-            int? wire_quantity = unity_client
-                ? request.Quantity ?? 1
-                : null;
             var wire_request = new PurchaseFromCatalogAsGift(
                 request.PageId,
                 request.OfferId,
@@ -274,8 +260,7 @@ internal sealed partial class GiftApplication
                 request.BoxType,
                 request.RibbonType,
                 request.Color,
-                !request.IsIncognito,
-                wire_quantity);
+                !request.IsIncognito);
             message_dispatcher.Dispatch(
                 MessageContracts.Gifts.Purchase,
                 wire_request,

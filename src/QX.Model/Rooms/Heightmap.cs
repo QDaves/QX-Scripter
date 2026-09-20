@@ -43,11 +43,9 @@ public sealed class Heightmap : IParserComposer<Heightmap>
     }
 
     public static Heightmap Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static Heightmap ParseFlash(in PacketReader p) => ParseMap(in p);
-
-    private static Heightmap ParseUnity(in PacketReader p) => ParseMap(in p);
 
     private static Heightmap ParseMap(in PacketReader p)
     {
@@ -60,11 +58,9 @@ public sealed class Heightmap : IParserComposer<Heightmap>
     }
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(Heightmap value, in PacketWriter p) => value.ComposeMap(in p);
-
-    private static void ComposeUnity(Heightmap value, in PacketWriter p) => value.ComposeMap(in p);
 
     private void ComposeMap(in PacketWriter p)
     {

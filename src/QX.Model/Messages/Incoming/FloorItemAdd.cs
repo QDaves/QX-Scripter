@@ -5,11 +5,9 @@ namespace Qx.Model.Messages.Incoming;
 public sealed record FloorItemAdd(FloorItem Item) : IParserComposer<FloorItemAdd>
 {
     public static FloorItemAdd Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static FloorItemAdd ParseFlash(in PacketReader p) => ParseItem(in p, 46);
-
-    private static FloorItemAdd ParseUnity(in PacketReader p) => ParseItem(in p, 62);
 
     private static FloorItemAdd ParseItem(in PacketReader p, int minimum_size)
     {
@@ -21,15 +19,9 @@ public sealed record FloorItemAdd(FloorItem Item) : IParserComposer<FloorItemAdd
     }
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(FloorItemAdd value, in PacketWriter p)
-    {
-        RoomPlacementWire.ValidateFloorItem(value.Item, true, in p);
-        value.ComposeItem(in p);
-    }
-
-    private static void ComposeUnity(FloorItemAdd value, in PacketWriter p)
     {
         RoomPlacementWire.ValidateFloorItem(value.Item, true, in p);
         value.ComposeItem(in p);

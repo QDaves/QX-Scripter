@@ -111,12 +111,9 @@ public sealed record HabboClubOffers : IParserComposer<HabboClubOffers>
     public int DaysLeft { get; init; }
 
     public static HabboClubOffers Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static HabboClubOffers ParseFlash(in PacketReader p)
-        => ParseSnapshot(in p);
-
-    private static HabboClubOffers ParseUnity(in PacketReader p)
         => ParseSnapshot(in p);
 
     private static HabboClubOffers ParseSnapshot(in PacketReader p)
@@ -148,12 +145,9 @@ public sealed record HabboClubOffers : IParserComposer<HabboClubOffers>
     }
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(HabboClubOffers value, in PacketWriter p) =>
-        ComposeSnapshot(value, in p);
-
-    private static void ComposeUnity(HabboClubOffers value, in PacketWriter p) =>
         ComposeSnapshot(value, in p);
 
     private static void ComposeSnapshot(
@@ -191,11 +185,9 @@ public sealed record HabboClubOffers : IParserComposer<HabboClubOffers>
 public sealed record GetClubOffers(int OfferType) : IParserComposer<GetClubOffers>
 {
     public static GetClubOffers Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static GetClubOffers ParseFlash(in PacketReader p) => ParseRequest(in p);
-
-    private static GetClubOffers ParseUnity(in PacketReader p) => ParseRequest(in p);
 
     private static GetClubOffers ParseRequest(in PacketReader p)
     {
@@ -206,12 +198,9 @@ public sealed record GetClubOffers(int OfferType) : IParserComposer<GetClubOffer
     }
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(GetClubOffers value, in PacketWriter p) =>
-        p.WriteInt(value.OfferType);
-
-    private static void ComposeUnity(GetClubOffers value, in PacketWriter p) =>
         p.WriteInt(value.OfferType);
 }
 

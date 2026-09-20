@@ -1,0 +1,107 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:b="using:Qx.Desktop.Behaviors"
+             xmlns:c="using:Qx.Desktop.Controls"
+             xmlns:log="using:Qx.Desktop.Views.Log"
+             xmlns:logging="using:Qx.Presentation.Services.Logging"
+             xmlns:vm="using:Qx.Presentation.ViewModels.Log"
+             x:Class="Qx.Desktop.Views.Log.LogView"
+             x:DataType="vm:LogViewModel">
+
+  <UserControl.Styles>
+    <Style Selector="Panel.wrapped log|LogLine">
+      <Setter Property="IsWrapped" Value="True" />
+    </Style>
+  </UserControl.Styles>
+
+  <c:PageLayout Page="{Binding}" CountText="{Binding CountText}">
+
+    <c:PageLayout.Actions>
+      <StackPanel Orientation="Horizontal" Spacing="2" VerticalAlignment="Center">
+        <c:CopyButton Command="{Binding Copy.CopyCommand}"
+                      IsCopied="{Binding Copy.Copied}"
+                      ToolTip.Tip="Copy visible log entries"
+                      AutomationProperties.Name="Copy visible application log entries" />
+        <Button Classes="icon"
+                Command="{Binding ClearCommand}"
+                ToolTip.Tip="Clear application log"
+                AutomationProperties.Name="Clear application log">
+          <c:Icon Kind="ClearAll" Size="{DynamicResource QxIconSizeMd}" />
+        </Button>
+      </StackPanel>
+    </c:PageLayout.Actions>
+
+    <c:PageLayout.Toolbar>
+      <c:FilterBar>
+        <c:FilterBar.Search>
+          <c:SearchBox Name="Filter"
+                       Text="{Binding FilterText, Mode=TwoWay}"
+                       PlaceholderText="Filter messages or categories"
+                       AutomationProperties.Name="Filter application log" />
+        </c:FilterBar.Search>
+        <c:FilterBar.Filters>
+          <StackPanel Orientation="Horizontal" Spacing="6">
+            <ToggleButton Name="Problems"
+                          IsChecked="{Binding ProblemsOnly, Mode=TwoWay}"
+                          ToolTip.Tip="Show only warnings and errors"
+                          AutomationProperties.Name="Show only application log warnings and errors">
+              <StackPanel Orientation="Horizontal" Spacing="6">
+                <c:Icon Kind="Problems" Size="{DynamicResource QxIconSizeSm}" VerticalAlignment="Center" />
+                <TextBlock Text="Problems" VerticalAlignment="Center" />
+              </StackPanel>
+            </ToggleButton>
+            <ToggleButton Classes="icon"
+                          IsChecked="{Binding WrapLines, Mode=TwoWay}"
+                          ToolTip.Tip="Wrap long log lines"
+                          AutomationProperties.Name="Wrap long application log lines">
+              <c:Icon Kind="Wrap" Size="{DynamicResource QxIconSizeSm}" />
+            </ToggleButton>
+          </StackPanel>
+        </c:FilterBar.Filters>
+        <c:FilterBar.Trailing>
+          <Panel>
+            <c:Badge Tone="Danger" Text="{Binding ProblemText}" IsVisible="{Binding HasErrors}" />
+            <c:Badge Tone="Warning" Text="{Binding ProblemText}" IsVisible="{Binding HasWarningsOnly}" />
+          </Panel>
+        </c:FilterBar.Trailing>
+      </c:FilterBar>
+    </c:PageLayout.Toolbar>
+
+    <Panel Name="Body" Classes.wrapped="{Binding WrapLines}">
+      <ListBox Name="Entries"
+               ItemsSource="{Binding Visible}"
+               ItemContainerTheme="{StaticResource QxConsoleLineItem}"
+               SelectionMode="Multiple"
+               Padding="{DynamicResource Log.ListPadding}"
+               Background="Transparent"
+               BorderThickness="0"
+               b:ListBehaviors.Selection="{Binding Selection}"
+               b:ListBehaviors.CopyCommand="{Binding Copy.CopyCommand}"
+               AutomationProperties.Name="Application log entries">
+        <ListBox.ItemTemplate>
+          <DataTemplate x:DataType="logging:LogEntry">
+            <log:LogLine Theme="{StaticResource Log.Line}"
+                         Time="{Binding Time}"
+                         Level="{Binding Level}"
+                         LevelName="{Binding LevelName}"
+                         Category="{Binding Category}"
+                         Message="{Binding Message}" />
+          </DataTemplate>
+        </ListBox.ItemTemplate>
+      </ListBox>
+      <Button Classes="primary small"
+              Margin="{DynamicResource Log.JumpMargin}"
+              HorizontalAlignment="Center"
+              VerticalAlignment="Bottom"
+              IsVisible="{Binding HasPending}"
+              Command="{Binding JumpToLatestCommand}">
+        <StackPanel Orientation="Horizontal" Spacing="6">
+          <c:Icon Kind="ArrowDown" Size="{DynamicResource QxIconSizeXs}" />
+          <TextBlock Text="{Binding PendingText}" />
+        </StackPanel>
+      </Button>
+    </Panel>
+
+  </c:PageLayout>
+
+</UserControl>

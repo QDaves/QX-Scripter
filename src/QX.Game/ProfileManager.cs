@@ -288,17 +288,7 @@ internal sealed class ProfileManager : GameStateManager
             generation,
             ProfileStateChangeKind.BlockResult,
             message,
-            current => client is ClientType.Unity
-                ? current with
-                {
-                    BlockedUserIds = message.Result switch
-                    {
-                        0 => Ids(current.BlockedUserIds.Where(id => id != message.UserId)),
-                        1 => Ids(current.BlockedUserIds.Append(message.UserId)),
-                        _ => current.BlockedUserIds
-                    }
-                }
-                : current);
+            current => current);
     }
 
     private void ApplyFigureSetAdded(FigureSetIdAdded message, long generation) => Store(

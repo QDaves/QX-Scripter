@@ -105,8 +105,7 @@ public static class MessageRegistryQuery
                 descriptor.HasExplicitKey,
                 descriptor.HasExplicitKey ? "semantic" : "legacy",
                 new MessageRegistryDialects(
-                    ProtocolDialect(descriptor, ProtocolClients.Flash),
-                    ProtocolDialect(descriptor, ProtocolClients.Unity)),
+                    ProtocolDialect(descriptor, ProtocolClients.Flash)),
                 active));
     }
 
@@ -118,7 +117,7 @@ public static class MessageRegistryQuery
         ClientType? client_filter,
         string search)
     {
-        if (active_client is not (ProtocolClients.Flash or ProtocolClients.Unity) ||
+        if (active_client is not (ProtocolClients.Flash) ||
             binding?.Client != active_client ||
             binding.Catalog is not { } catalog ||
             client_filter is { } selected_client && selected_client != active_client)
@@ -159,8 +158,8 @@ public static class MessageRegistryQuery
                 false,
                 "unmapped",
                 active_client == ProtocolClients.Flash
-                    ? new MessageRegistryDialects(dialect, unavailable)
-                    : new MessageRegistryDialects(unavailable, dialect),
+                    ? new MessageRegistryDialects(dialect)
+                    : new MessageRegistryDialects(unavailable),
                 new MessageRegistryActiveBinding(
                     ClientName(active_client),
                     true,
@@ -245,8 +244,7 @@ public static class MessageRegistryQuery
     {
         "" or "all" => null,
         "flash" => ProtocolClients.Flash,
-        "unity" => ProtocolClients.Unity,
-        _ => throw new ArgumentException("'client' must be flash, unity, or all.", nameof(value))
+        _ => throw new ArgumentException("'client' must be flash or all.", nameof(value))
     };
 
     private static string DirectionName(Direction direction) => direction switch
@@ -259,7 +257,6 @@ public static class MessageRegistryQuery
     private static string ClientName(ClientType client) => client switch
     {
         ProtocolClients.Flash => "flash",
-        ProtocolClients.Unity => "unity",
         _ => "none"
     };
 
@@ -310,8 +307,7 @@ public sealed record MessageRegistryEntry(
     MessageRegistryActiveBinding Active);
 
 public sealed record MessageRegistryDialects(
-    MessageRegistryDialect Flash,
-    MessageRegistryDialect Unity);
+    MessageRegistryDialect Flash);
 
 public sealed record MessageRegistryDialect(
     bool Supported,

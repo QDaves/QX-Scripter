@@ -379,17 +379,9 @@ internal sealed class MarketplaceApplication : IApplicationFeature
         ThrowIfDisposed();
         ArgumentNullException.ThrowIfNull(request);
         ValidateOfferId(request.OfferId);
-        ValidateText(request.ExtraData, nameof(request.ExtraData));
         ValidateTimeout(request.TimeoutMilliseconds);
         Session session = RequireSession(cancellation_token);
-        MarketplaceBuyOfferRequest outgoing = BuyRequest(
-            session,
-            request.OfferId,
-            request.ExtraData);
-        Func<MarketplaceBuyResult, bool>? response_match =
-            outgoing is BuyMarketplaceOffer
-                ? response => response.RequestedOfferId == request.OfferId
-                : null;
+        MarketplaceBuyOfferRequest outgoing = new BuyMarketplaceOffer(request.OfferId);
         return Request<
             MarketplaceBuyOfferRequest,
             MarketplaceBuyResult,
@@ -398,7 +390,7 @@ internal sealed class MarketplaceApplication : IApplicationFeature
             outgoing,
             MessageContracts.Marketplace.Offers.BuyResult,
             MarketplaceStateChangeKind.BuyResult,
-            response_match,
+            response => response.RequestedOfferId == request.OfferId,
             static value => value,
             null,
             request.TimeoutMilliseconds,
@@ -414,12 +406,8 @@ internal sealed class MarketplaceApplication : IApplicationFeature
         ThrowIfDisposed();
         ArgumentNullException.ThrowIfNull(request);
         ValidateOfferId(request.OfferId);
-        ValidateText(request.ExtraData, nameof(request.ExtraData));
         Session session = RequireSession(cancellation_token);
-        MarketplaceBuyOfferRequest outgoing = BuyRequest(
-            session,
-            request.OfferId,
-            request.ExtraData);
+        MarketplaceBuyOfferRequest outgoing = new BuyMarketplaceOffer(request.OfferId);
         messages.Dispatch(
             MessageContracts.Marketplace.Offers.Buy,
             outgoing,
@@ -440,7 +428,7 @@ internal sealed class MarketplaceApplication : IApplicationFeature
         if (session.Client is not ClientType.Flash)
         {
             throw new NotSupportedException(
-                "The Unity marketplace cancel-offer result has no verified payload layout.");
+                "Marketplace cancellation requires a Flash session.");
         }
         return Request<
             CancelMarketplaceOffer,
@@ -655,42 +643,8 @@ internal sealed class MarketplaceApplication : IApplicationFeature
                 "The committed marketplace response changed type.");
     }
 
-    private MarketplaceBuyOfferRequest BuyRequest(
-        Session session,
-        Id offer_id,
-        string extra_data)
-    {
-        if (session.Client is ClientType.Flash)
-            return new BuyMarketplaceOffer(offer_id);
-        MarketplaceBuyWireLayout layout = interceptor.Messages
-            .GetWireProfile(ClientType.Unity)
-            .RequireUnityMarketplaceBuyLayout();
-        if (layout is MarketplaceBuyWireLayout.OfferId)
-            return new BuyMarketplaceOffer(offer_id);
-        MarketplaceOfferSnapshot offer = marketplace.Snapshot.FindOffer(offer_id) ??
-            throw new InvalidOperationException(
-                "The Unity furniture-details purchase layout requires the offer in marketplace state.");
-        string wire_extra_data = extra_data.Length == 0 && offer.IsWall
-            ? offer.WallData
-            : extra_data;
-        return new BuyMarketplaceOfferByDetails(
-            offer.FurniCategory,
-            offer.FurniTypeId,
-            offer.Price,
-            wire_extra_data);
-    }
-
     private bool? SearchGrouping(Session session, bool combine_unique_offers)
     {
-        if (session.Client is ClientType.Unity)
-        {
-            if (!combine_unique_offers)
-            {
-                throw new NotSupportedException(
-                    "Unity marketplace searches do not expose unique-offer grouping.");
-            }
-            return null;
-        }
         FlashMarketplaceWireLayout layout = FlashLayout();
         if (layout is FlashMarketplaceWireLayout.Legacy)
         {
@@ -708,15 +662,6 @@ internal sealed class MarketplaceApplication : IApplicationFeature
         Session session,
         MarketplaceOwnOffersCategory category)
     {
-        if (session.Client is ClientType.Unity)
-        {
-            if (category is not MarketplaceOwnOffersCategory.Open)
-            {
-                throw new NotSupportedException(
-                    "Unity marketplace own offers expose only open offers.");
-            }
-            return null;
-        }
         FlashMarketplaceWireLayout layout = FlashLayout();
         if (layout is FlashMarketplaceWireLayout.Legacy)
         {
@@ -965,20 +910,20 @@ internal sealed class MarketplaceApplication : IApplicationFeature
 
     private static MarketplaceChangeKind ChangeKind(
         MarketplaceStateChangeKind kind) => kind switch
-    {
-        MarketplaceStateChangeKind.Configuration => MarketplaceChangeKind.Configuration,
-        MarketplaceStateChangeKind.Eligibility => MarketplaceChangeKind.Eligibility,
-        MarketplaceStateChangeKind.Search => MarketplaceChangeKind.Search,
-        MarketplaceStateChangeKind.OwnOffers => MarketplaceChangeKind.OwnOffers,
-        MarketplaceStateChangeKind.ItemStats => MarketplaceChangeKind.ItemStats,
-        MarketplaceStateChangeKind.MakeResult => MarketplaceChangeKind.MakeResult,
-        MarketplaceStateChangeKind.BuyResult => MarketplaceChangeKind.BuyResult,
-        MarketplaceStateChangeKind.CancelResult => MarketplaceChangeKind.CancelResult,
-        MarketplaceStateChangeKind.CancelAllResult => MarketplaceChangeKind.CancelAllResult,
-        MarketplaceStateChangeKind.ClearHistoryResult => MarketplaceChangeKind.ClearHistoryResult,
-        MarketplaceStateChangeKind.Reset => MarketplaceChangeKind.Reset,
-        _ => throw new ArgumentOutOfRangeException(nameof(kind))
-    };
+        {
+            MarketplaceStateChangeKind.Configuration => MarketplaceChangeKind.Configuration,
+            MarketplaceStateChangeKind.Eligibility => MarketplaceChangeKind.Eligibility,
+            MarketplaceStateChangeKind.Search => MarketplaceChangeKind.Search,
+            MarketplaceStateChangeKind.OwnOffers => MarketplaceChangeKind.OwnOffers,
+            MarketplaceStateChangeKind.ItemStats => MarketplaceChangeKind.ItemStats,
+            MarketplaceStateChangeKind.MakeResult => MarketplaceChangeKind.MakeResult,
+            MarketplaceStateChangeKind.BuyResult => MarketplaceChangeKind.BuyResult,
+            MarketplaceStateChangeKind.CancelResult => MarketplaceChangeKind.CancelResult,
+            MarketplaceStateChangeKind.CancelAllResult => MarketplaceChangeKind.CancelAllResult,
+            MarketplaceStateChangeKind.ClearHistoryResult => MarketplaceChangeKind.ClearHistoryResult,
+            MarketplaceStateChangeKind.Reset => MarketplaceChangeKind.Reset,
+            _ => throw new ArgumentOutOfRangeException(nameof(kind))
+        };
 
     private static void ValidateRefresh(MarketplaceRefreshRequest request)
     {
@@ -1055,19 +1000,19 @@ internal sealed class MarketplaceApplication : IApplicationFeature
 
     private static MarketplaceFurniCategory SellCategory(
         MarketplaceSellCategory category) => category switch
-    {
-        MarketplaceSellCategory.Floor => MarketplaceFurniCategory.Floor,
-        MarketplaceSellCategory.Wall => MarketplaceFurniCategory.Wall,
-        _ => throw new ArgumentOutOfRangeException(nameof(category))
-    };
+        {
+            MarketplaceSellCategory.Floor => MarketplaceFurniCategory.Floor,
+            MarketplaceSellCategory.Wall => MarketplaceFurniCategory.Wall,
+            _ => throw new ArgumentOutOfRangeException(nameof(category))
+        };
 
     private static MarketplaceOwnOffersCategory HistoryCategory(
         MarketplaceHistoryCategory category) => category switch
-    {
-        MarketplaceHistoryCategory.Sold => MarketplaceOwnOffersCategory.Sold,
-        MarketplaceHistoryCategory.Expired => MarketplaceOwnOffersCategory.Expired,
-        _ => throw new ArgumentOutOfRangeException(nameof(category))
-    };
+        {
+            MarketplaceHistoryCategory.Sold => MarketplaceOwnOffersCategory.Sold,
+            MarketplaceHistoryCategory.Expired => MarketplaceOwnOffersCategory.Expired,
+            _ => throw new ArgumentOutOfRangeException(nameof(category))
+        };
 
     private static void ValidateOfferId(Id offer_id)
     {

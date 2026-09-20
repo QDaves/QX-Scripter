@@ -5,17 +5,9 @@ namespace Qx.Model.Messages.Incoming;
 public sealed record TradeOffers(TradeOffer First, TradeOffer Second) : IParserComposer<TradeOffers>
 {
     public static TradeOffers Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static TradeOffers ParseFlash(in PacketReader p)
-    {
-        var value = new TradeOffers(p.Parse<TradeOffer>(), p.Parse<TradeOffer>());
-        ValidateParticipants(value);
-        TradeWire.RequireEmpty(in p, nameof(TradeOffers));
-        return value;
-    }
-
-    private static TradeOffers ParseUnity(in PacketReader p)
     {
         var value = new TradeOffers(p.Parse<TradeOffer>(), p.Parse<TradeOffer>());
         ValidateParticipants(value);
@@ -27,22 +19,13 @@ public sealed record TradeOffers(TradeOffer First, TradeOffer Second) : IParserC
         First.UserId == user_id ? First : Second.UserId == user_id ? Second : null;
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(TradeOffers value, in PacketWriter p)
     {
         ValidateParticipants(value);
         value.First.ValidateFlash(in p);
         value.Second.ValidateFlash(in p);
-        p.Compose(value.First);
-        p.Compose(value.Second);
-    }
-
-    private static void ComposeUnity(TradeOffers value, in PacketWriter p)
-    {
-        ValidateParticipants(value);
-        value.First.ValidateUnity(in p);
-        value.Second.ValidateUnity(in p);
         p.Compose(value.First);
         p.Compose(value.Second);
     }
@@ -65,10 +48,9 @@ public sealed record TradeOpened(
     Id OtherUserId,
     bool OtherUserCanTrade) : IParserComposer<TradeOpened>
 {
-    public bool? UnityExtensionFlag { get; init; }
 
     public static TradeOpened Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static TradeOpened ParseFlash(in PacketReader p)
     {
@@ -82,45 +64,18 @@ public sealed record TradeOpened(
         return value;
     }
 
-    private static TradeOpened ParseUnity(in PacketReader p)
-    {
-        var value = new TradeOpened(
-            p.ReadLong(),
-            TradeWire.ReadBooleanInt(p.ReadInt(), nameof(UserCanTrade)),
-            p.ReadLong(),
-            TradeWire.ReadBooleanInt(p.ReadInt(), nameof(OtherUserCanTrade)));
-        if (p.Available > 0)
-            value = value with { UnityExtensionFlag = p.ReadBool() };
-        ValidateParticipants(value);
-        TradeWire.RequireEmpty(in p, nameof(TradeOpened));
-        return value;
-    }
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(TradeOpened value, in PacketWriter p)
     {
         ValidateParticipants(value);
-        if (value.UnityExtensionFlag.HasValue)
-            throw new InvalidDataException("Flash trade-open messages cannot carry Unity metadata.");
         int user_id = TradeWire.FlashId(value.UserId, nameof(UserId));
         int other_user_id = TradeWire.FlashId(value.OtherUserId, nameof(OtherUserId));
         p.WriteInt(user_id);
         p.WriteInt(value.UserCanTrade ? 1 : 0);
         p.WriteInt(other_user_id);
         p.WriteInt(value.OtherUserCanTrade ? 1 : 0);
-    }
-
-    private static void ComposeUnity(TradeOpened value, in PacketWriter p)
-    {
-        ValidateParticipants(value);
-        p.WriteLong(value.UserId);
-        p.WriteInt(value.UserCanTrade ? 1 : 0);
-        p.WriteLong(value.OtherUserId);
-        p.WriteInt(value.OtherUserCanTrade ? 1 : 0);
-        if (value.UnityExtensionFlag.HasValue)
-            p.WriteBool(value.UnityExtensionFlag.Value);
     }
 
     private static void ValidateParticipants(TradeOpened value)
@@ -136,7 +91,7 @@ public sealed record TradeOpened(
 public sealed record TradeAccepted(Id UserId, bool Accepted) : IParserComposer<TradeAccepted>
 {
     public static TradeAccepted Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static TradeAccepted ParseFlash(in PacketReader p)
     {
@@ -148,18 +103,8 @@ public sealed record TradeAccepted(Id UserId, bool Accepted) : IParserComposer<T
         return value;
     }
 
-    private static TradeAccepted ParseUnity(in PacketReader p)
-    {
-        var value = new TradeAccepted(
-            p.ReadLong(),
-            p.ReadInt() > 0);
-        TradeWire.RequirePositiveId(value.UserId, nameof(UserId));
-        TradeWire.RequireEmpty(in p, nameof(TradeAccepted));
-        return value;
-    }
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(TradeAccepted value, in PacketWriter p)
     {
@@ -167,19 +112,12 @@ public sealed record TradeAccepted(Id UserId, bool Accepted) : IParserComposer<T
         p.WriteInt(TradeWire.FlashId(value.UserId, nameof(UserId)));
         p.WriteInt(value.Accepted ? 1 : 0);
     }
-
-    private static void ComposeUnity(TradeAccepted value, in PacketWriter p)
-    {
-        TradeWire.RequirePositiveId(value.UserId, nameof(UserId));
-        p.WriteLong(value.UserId);
-        p.WriteInt(value.Accepted ? 1 : 0);
-    }
 }
 
 public sealed record TradeClosed(Id UserId, int Reason) : IParserComposer<TradeClosed>
 {
     public static TradeClosed Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static TradeClosed ParseFlash(in PacketReader p)
     {
@@ -189,16 +127,8 @@ public sealed record TradeClosed(Id UserId, int Reason) : IParserComposer<TradeC
         return value;
     }
 
-    private static TradeClosed ParseUnity(in PacketReader p)
-    {
-        var value = new TradeClosed(p.ReadLong(), p.ReadInt());
-        TradeWire.RequirePositiveId(value.UserId, nameof(UserId));
-        TradeWire.RequireEmpty(in p, nameof(TradeClosed));
-        return value;
-    }
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(TradeClosed value, in PacketWriter p)
     {
@@ -206,19 +136,12 @@ public sealed record TradeClosed(Id UserId, int Reason) : IParserComposer<TradeC
         p.WriteInt(TradeWire.FlashId(value.UserId, nameof(UserId)));
         p.WriteInt(value.Reason);
     }
-
-    private static void ComposeUnity(TradeClosed value, in PacketWriter p)
-    {
-        TradeWire.RequirePositiveId(value.UserId, nameof(UserId));
-        p.WriteLong(value.UserId);
-        p.WriteInt(value.Reason);
-    }
 }
 
 public sealed record TradeCompleted : IParserComposer<TradeCompleted>
 {
     public static TradeCompleted Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static TradeCompleted ParseFlash(in PacketReader p)
     {
@@ -226,24 +149,16 @@ public sealed record TradeCompleted : IParserComposer<TradeCompleted>
         return new();
     }
 
-    private static TradeCompleted ParseUnity(in PacketReader p)
-    {
-        TradeWire.RequireEmpty(in p, nameof(TradeCompleted));
-        return new();
-    }
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(TradeCompleted value, in PacketWriter p) { }
-
-    private static void ComposeUnity(TradeCompleted value, in PacketWriter p) { }
 }
 
 public sealed record TradeConfirmation : IParserComposer<TradeConfirmation>
 {
     public static TradeConfirmation Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static TradeConfirmation ParseFlash(in PacketReader p)
     {
@@ -251,24 +166,16 @@ public sealed record TradeConfirmation : IParserComposer<TradeConfirmation>
         return new();
     }
 
-    private static TradeConfirmation ParseUnity(in PacketReader p)
-    {
-        TradeWire.RequireEmpty(in p, nameof(TradeConfirmation));
-        return new();
-    }
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(TradeConfirmation value, in PacketWriter p) { }
-
-    private static void ComposeUnity(TradeConfirmation value, in PacketWriter p) { }
 }
 
 public sealed record TradeSilverSet(int OwnSilver, int OtherSilver) : IParserComposer<TradeSilverSet>
 {
     public static TradeSilverSet Parse(in PacketReader p) =>
-        ModernWireClients.ParseFlash(in p, ParseFlash);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static TradeSilverSet ParseFlash(in PacketReader p)
     {
@@ -279,7 +186,7 @@ public sealed record TradeSilverSet(int OwnSilver, int OtherSilver) : IParserCom
     }
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.ComposeFlash(this, in p, ComposeFlash);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(TradeSilverSet value, in PacketWriter p)
     {
@@ -298,7 +205,7 @@ public sealed record TradeSilverSet(int OwnSilver, int OtherSilver) : IParserCom
 public sealed record TradeSilverFee(int SilverFee) : IParserComposer<TradeSilverFee>
 {
     public static TradeSilverFee Parse(in PacketReader p) =>
-        ModernWireClients.ParseFlash(in p, ParseFlash);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static TradeSilverFee ParseFlash(in PacketReader p)
     {
@@ -309,7 +216,7 @@ public sealed record TradeSilverFee(int SilverFee) : IParserComposer<TradeSilver
     }
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.ComposeFlash(this, in p, ComposeFlash);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(TradeSilverFee value, in PacketWriter p)
     {
@@ -363,7 +270,7 @@ public sealed record TradeNftAsset : IParserComposer<TradeNftAsset>
     public string Rarity { get; init; }
 
     public static TradeNftAsset Parse(in PacketReader p) =>
-        ModernWireClients.ParseFlash(in p, ParseFlash);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static TradeNftAsset ParseFlash(in PacketReader p)
     {
@@ -396,7 +303,7 @@ public sealed record TradeNftAsset : IParserComposer<TradeNftAsset>
     }
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.ComposeFlash(this, in p, ComposeFlash);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(TradeNftAsset value, in PacketWriter p)
     {
@@ -456,7 +363,7 @@ public sealed record TradeNftAssets : IParserComposer<TradeNftAssets>
     }
 
     public static TradeNftAssets Parse(in PacketReader p) =>
-        ModernWireClients.ParseFlash(in p, ParseFlash);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static TradeNftAssets ParseFlash(in PacketReader p)
     {
@@ -483,7 +390,7 @@ public sealed record TradeNftAssets : IParserComposer<TradeNftAssets>
     }
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.ComposeFlash(this, in p, ComposeFlash);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(TradeNftAssets value, in PacketWriter p)
     {
@@ -531,7 +438,7 @@ public sealed record TradeNftAssetInventory : IParserComposer<TradeNftAssetInven
     }
 
     public static TradeNftAssetInventory Parse(in PacketReader p) =>
-        ModernWireClients.ParseFlash(in p, ParseFlash);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static TradeNftAssetInventory ParseFlash(in PacketReader p)
     {
@@ -550,7 +457,7 @@ public sealed record TradeNftAssetInventory : IParserComposer<TradeNftAssetInven
     }
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.ComposeFlash(this, in p, ComposeFlash);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(TradeNftAssetInventory value, in PacketWriter p)
     {
@@ -580,7 +487,7 @@ public sealed record TradeNftAssetInventory : IParserComposer<TradeNftAssetInven
 public sealed record TradeOpenFailed(int Reason, string OtherUserName) : IParserComposer<TradeOpenFailed>
 {
     public static TradeOpenFailed Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static TradeOpenFailed ParseFlash(in PacketReader p)
     {
@@ -589,24 +496,10 @@ public sealed record TradeOpenFailed(int Reason, string OtherUserName) : IParser
         return value;
     }
 
-    private static TradeOpenFailed ParseUnity(in PacketReader p)
-    {
-        var value = new TradeOpenFailed(p.ReadInt(), p.ReadString());
-        TradeWire.RequireEmpty(in p, nameof(TradeOpenFailed));
-        return value;
-    }
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(TradeOpenFailed value, in PacketWriter p)
-    {
-        TradeWire.RequireString(value.OtherUserName, nameof(OtherUserName), in p);
-        p.WriteInt(value.Reason);
-        p.WriteString(value.OtherUserName);
-    }
-
-    private static void ComposeUnity(TradeOpenFailed value, in PacketWriter p)
     {
         TradeWire.RequireString(value.OtherUserName, nameof(OtherUserName), in p);
         p.WriteInt(value.Reason);

@@ -1,0 +1,21 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:c="using:Qx.Desktop.Controls">
+
+  <x:Double x:Key="Wardrobe.CaptionWidth">104</x:Double>
+  <Thickness x:Key="Wardrobe.GridPadding">12,8,12,12</Thickness>
+  <Thickness x:Key="Wardrobe.FigureMargin">0,10,0,0</Thickness>
+  <Thickness x:Key="Wardrobe.CaptionMargin">0,0,0,8</Thickness>
+  <Thickness x:Key="Wardrobe.ActionsMargin">0,0,0,28</Thickness>
+  <Thickness x:Key="Wardrobe.ActionPadding">2</Thickness>
+
+  <ControlTheme x:Key="Wardrobe.Tile" TargetType="ListBoxItem" BasedOn="{StaticResource QxTile}">
+    <Setter Property="Width" Value="{DynamicResource QxTileOutfitWidth}" />
+    <Setter Property="Height" Value="{DynamicResource QxTileOutfitHeight}" />
+  </ControlTheme>
+
+  <ItemsPanelTemplate x:Key="Wardrobe.TilePanel">
+    <c:UniformTilePanel ItemWidth="{DynamicResource QxTileOutfitPitchWidth}" ItemHeight="{DynamicResource QxTileOutfitPitchHeight}" />
+  </ItemsPanelTemplate>
+
+</ResourceDictionary>

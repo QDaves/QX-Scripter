@@ -22,7 +22,7 @@ public sealed class HeaderCatalogCoordinator : IAsyncDisposable, IMessageCatalog
     readonly Dictionary<string, PendingPreparation> _pending;
     readonly Dictionary<string, HeaderCatalogPreparationStatus> _statuses;
     readonly Dictionary<string, PreparedHeaderCatalog> _prepared = new(StringComparer.Ordinal);
-    readonly Dictionary<ClientType, Dictionary<string, PreparedHeaderCatalog>> _by_path = [];
+    readonly Dictionary<string, PreparedHeaderCatalog> _by_path;
     readonly Dictionary<string, string> _current_by_path;
     TaskCompletionSource _idle = CompletedSource();
     Task? _startup;
@@ -55,6 +55,7 @@ public sealed class HeaderCatalogCoordinator : IAsyncDisposable, IMessageCatalog
         _pending = new Dictionary<string, PendingPreparation>(path_comparer);
         _statuses = new Dictionary<string, HeaderCatalogPreparationStatus>(path_comparer);
         _current_by_path = new Dictionary<string, string>(path_comparer);
+        _by_path = new Dictionary<string, PreparedHeaderCatalog>(path_comparer);
     }
 
     public event EventHandler<HeaderCatalogPreparationChangedEventArgs>? PreparationChanged;
@@ -81,8 +82,8 @@ public sealed class HeaderCatalogCoordinator : IAsyncDisposable, IMessageCatalog
     {
         lock (_gate)
         {
-            return _by_path.TryGetValue(client, out Dictionary<string, PreparedHeaderCatalog>? values)
-                ? Array.AsReadOnly(values.Values.OrderBy(value => value.NormalizedPath, PathComparer()).ToArray())
+            return client is ClientType.Flash
+                ? Array.AsReadOnly(_by_path.Values.OrderBy(value => value.NormalizedPath, PathComparer()).ToArray())
                 : [];
         }
     }
@@ -196,8 +197,8 @@ public sealed class HeaderCatalogCoordinator : IAsyncDisposable, IMessageCatalog
         string normalized = Path.GetFullPath(path);
         lock (_gate)
         {
-            catalog = _by_path.TryGetValue(client, out Dictionary<string, PreparedHeaderCatalog>? values)
-                ? values.GetValueOrDefault(normalized)
+            catalog = client is ClientType.Flash
+                ? _by_path.GetValueOrDefault(normalized)
                 : null;
             return catalog is not null;
         }
@@ -574,7 +575,7 @@ public sealed class HeaderCatalogCoordinator : IAsyncDisposable, IMessageCatalog
             if (_current_by_path.GetValueOrDefault(
                     PathIdentity(prepared.Key.Client, prepared.NormalizedPath)) == identity)
             {
-                PathCatalogs(prepared.Key.Client)[prepared.NormalizedPath] = prepared;
+                _by_path[prepared.NormalizedPath] = prepared;
             }
         }
     }
@@ -601,11 +602,10 @@ public sealed class HeaderCatalogCoordinator : IAsyncDisposable, IMessageCatalog
             if (_current_by_path.GetValueOrDefault(path_identity) != candidate_identity)
                 return;
             _current_by_path.Remove(path_identity);
-            if (_by_path.TryGetValue(client, out Dictionary<string, PreparedHeaderCatalog>? values) &&
-                values.TryGetValue(normalized_path, out PreparedHeaderCatalog? prepared) &&
+            if (_by_path.TryGetValue(normalized_path, out PreparedHeaderCatalog? prepared) &&
                 Identity(prepared.Candidate, prepared.NormalizedPath) == candidate_identity)
             {
-                values.Remove(normalized_path);
+                _by_path.Remove(normalized_path);
             }
         }
     }
@@ -619,16 +619,6 @@ public sealed class HeaderCatalogCoordinator : IAsyncDisposable, IMessageCatalog
                     PathIdentity(preparation.Client, preparation.NormalizedPath)) ==
                 Identity(preparation.Candidate, preparation.NormalizedPath);
         }
-    }
-
-    Dictionary<string, PreparedHeaderCatalog> PathCatalogs(ClientType client)
-    {
-        if (!_by_path.TryGetValue(client, out Dictionary<string, PreparedHeaderCatalog>? values))
-        {
-            values = new Dictionary<string, PreparedHeaderCatalog>(PathComparer());
-            _by_path.Add(client, values);
-        }
-        return values;
     }
 
     void PublishStatus(HeaderCatalogPreparationStatus status)

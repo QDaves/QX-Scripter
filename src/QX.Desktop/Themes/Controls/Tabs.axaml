@@ -1,0 +1,329 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:c="using:Qx.Desktop.Controls"
+                    xmlns:conv="using:Qx.Desktop.Converters">
+
+  <conv:TabState x:Key="QxTabState" />
+
+  <ControlTheme x:Key="{x:Type TabControl}" TargetType="TabControl">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="Padding" Value="16,0" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <DockPanel Background="{TemplateBinding Background}">
+          <Border DockPanel.Dock="Top"
+                  BorderBrush="{DynamicResource QxBorderSubtleBrush}"
+                  BorderThickness="0,0,0,1"
+                  Padding="{TemplateBinding Padding}">
+            <ItemsPresenter Name="PART_ItemsPresenter" ItemsPanel="{TemplateBinding ItemsPanel}" />
+          </Border>
+          <Panel>
+            <ContentPresenter Name="PART_SelectedContentHost2"
+                              HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                              VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
+                              IsVisible="False" />
+            <ContentPresenter Name="PART_SelectedContentHost"
+                              HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                              VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}" />
+          </Panel>
+        </DockPanel>
+      </ControlTemplate>
+    </Setter>
+    <Setter Property="ItemsPanel">
+      <ItemsPanelTemplate>
+        <StackPanel Orientation="Horizontal" Spacing="4" />
+      </ItemsPanelTemplate>
+    </Setter>
+  </ControlTheme>
+
+  <ControlTheme x:Key="{x:Type TabItem}" TargetType="TabItem">
+    <Setter Property="Foreground" Value="{DynamicResource QxTextSecondaryBrush}" />
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="FontSize" Value="{DynamicResource QxFontSizeBody}" />
+    <Setter Property="FontWeight" Value="Medium" />
+    <Setter Property="Padding" Value="8,0" />
+    <Setter Property="MinHeight" Value="{DynamicResource QxTabStripHeight}" />
+    <Setter Property="VerticalContentAlignment" Value="Center" />
+    <Setter Property="ClipToBounds" Value="False" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Panel Background="Transparent">
+          <Border Name="PART_Plate"
+                  Margin="0,6"
+                  CornerRadius="{DynamicResource QxRadiusSm}"
+                  Background="{TemplateBinding Background}" />
+          <ContentPresenter Name="PART_ContentPresenter"
+                            Margin="{TemplateBinding Padding}"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                            Content="{TemplateBinding Header}"
+                            ContentTemplate="{TemplateBinding HeaderTemplate}"
+                            RecognizesAccessKey="True" />
+          <Border Name="PART_FocusRing"
+                  Margin="-2,4"
+                  BorderThickness="{DynamicResource QxFocusRingThickness}"
+                  BorderBrush="{DynamicResource QxFocusRingBrush}"
+                  CornerRadius="{DynamicResource QxRadiusMd}"
+                  IsHitTestVisible="False"
+                  IsVisible="False" />
+        </Panel>
+      </ControlTemplate>
+    </Setter>
+    <Style Selector="^:pointerover">
+      <Setter Property="Foreground" Value="{DynamicResource QxTextPrimaryBrush}" />
+      <Style Selector="^ /template/ Border#PART_Plate">
+        <Setter Property="Background" Value="{DynamicResource QxFillHoverBrush}" />
+      </Style>
+    </Style>
+    <Style Selector="^:selected">
+      <Setter Property="Foreground" Value="{DynamicResource QxTextPrimaryBrush}" />
+      <Style Selector="^ /template/ Border#PART_Plate">
+        <Setter Property="Background" Value="{DynamicResource QxFillSelectedBrush}" />
+      </Style>
+    </Style>
+    <Style Selector="^:selected:pointerover /template/ Border#PART_Plate">
+      <Setter Property="Background" Value="{DynamicResource QxFillSelectedHoverBrush}" />
+    </Style>
+    <Style Selector="^:focus-visible /template/ Border#PART_FocusRing">
+      <Setter Property="IsVisible" Value="True" />
+    </Style>
+    <Style Selector="^:disabled">
+      <Setter Property="Opacity" Value="{DynamicResource QxDisabledOpacity}" />
+    </Style>
+  </ControlTheme>
+
+  <ControlTheme x:Key="{x:Type TabStrip}" TargetType="TabStrip">
+    <Setter Property="Padding" Value="16,0" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border BorderBrush="{DynamicResource QxBorderSubtleBrush}" BorderThickness="0,0,0,1" Padding="{TemplateBinding Padding}">
+          <ItemsPresenter Name="PART_ItemsPresenter" ItemsPanel="{TemplateBinding ItemsPanel}" />
+        </Border>
+      </ControlTemplate>
+    </Setter>
+    <Setter Property="ItemsPanel">
+      <ItemsPanelTemplate>
+        <StackPanel Orientation="Horizontal" Spacing="4" />
+      </ItemsPanelTemplate>
+    </Setter>
+  </ControlTheme>
+
+  <ControlTheme x:Key="{x:Type TabStripItem}" TargetType="TabStripItem">
+    <Setter Property="Foreground" Value="{DynamicResource QxTextSecondaryBrush}" />
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="FontSize" Value="{DynamicResource QxFontSizeBody}" />
+    <Setter Property="FontWeight" Value="Medium" />
+    <Setter Property="Padding" Value="8,0" />
+    <Setter Property="MinHeight" Value="{DynamicResource QxTabStripHeight}" />
+    <Setter Property="ClipToBounds" Value="False" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Panel Background="Transparent">
+          <Border Name="PART_Plate" Margin="0,6" CornerRadius="{DynamicResource QxRadiusSm}" Background="{TemplateBinding Background}" />
+          <ContentPresenter Name="PART_ContentPresenter"
+                            Margin="{TemplateBinding Padding}"
+                            VerticalAlignment="Center"
+                            Content="{TemplateBinding Content}"
+                            ContentTemplate="{TemplateBinding ContentTemplate}" />
+          <Border Name="PART_FocusRing"
+                  Margin="-2,4"
+                  BorderThickness="{DynamicResource QxFocusRingThickness}"
+                  BorderBrush="{DynamicResource QxFocusRingBrush}"
+                  CornerRadius="{DynamicResource QxRadiusMd}"
+                  IsHitTestVisible="False"
+                  IsVisible="False" />
+        </Panel>
+      </ControlTemplate>
+    </Setter>
+    <Style Selector="^:pointerover">
+      <Setter Property="Foreground" Value="{DynamicResource QxTextPrimaryBrush}" />
+      <Style Selector="^ /template/ Border#PART_Plate">
+        <Setter Property="Background" Value="{DynamicResource QxFillHoverBrush}" />
+      </Style>
+    </Style>
+    <Style Selector="^:selected">
+      <Setter Property="Foreground" Value="{DynamicResource QxTextPrimaryBrush}" />
+      <Style Selector="^ /template/ Border#PART_Plate">
+        <Setter Property="Background" Value="{DynamicResource QxFillSelectedBrush}" />
+      </Style>
+    </Style>
+    <Style Selector="^:selected:pointerover /template/ Border#PART_Plate">
+      <Setter Property="Background" Value="{DynamicResource QxFillSelectedHoverBrush}" />
+    </Style>
+    <Style Selector="^:focus-visible /template/ Border#PART_FocusRing">
+      <Setter Property="IsVisible" Value="True" />
+    </Style>
+    <Style Selector="^:disabled">
+      <Setter Property="Opacity" Value="{DynamicResource QxDisabledOpacity}" />
+    </Style>
+  </ControlTheme>
+
+  <ControlTheme x:Key="QxDocumentTabScroll" TargetType="ScrollViewer" BasedOn="{StaticResource {x:Type ScrollViewer}}">
+    <Style Selector="^ /template/ ScrollBar#PART_HorizontalScrollBar">
+      <Setter Property="Height" Value="8" />
+      <Setter Property="Opacity" Value="0" />
+      <Setter Property="AutomationProperties.Name" Value="Scroll script tabs" />
+    </Style>
+    <Style Selector="^:pointerover /template/ ScrollBar#PART_HorizontalScrollBar, ^.scroll-drag /template/ ScrollBar#PART_HorizontalScrollBar">
+      <Setter Property="Opacity" Value="1" />
+    </Style>
+  </ControlTheme>
+
+  <ControlTheme x:Key="QxDocumentTabs" TargetType="ListBox">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Auto" />
+    <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Disabled" />
+    <Setter Property="SelectionMode" Value="Single,AlwaysSelected" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <ScrollViewer Name="PART_ScrollViewer"
+                      Theme="{StaticResource QxDocumentTabScroll}"
+                      Background="{TemplateBinding Background}"
+                      HorizontalScrollBarVisibility="{TemplateBinding (ScrollViewer.HorizontalScrollBarVisibility)}"
+                      VerticalScrollBarVisibility="Disabled">
+          <ItemsPresenter Name="PART_ItemsPresenter" ItemsPanel="{TemplateBinding ItemsPanel}" Margin="{TemplateBinding Padding}" />
+        </ScrollViewer>
+      </ControlTemplate>
+    </Setter>
+    <Setter Property="ItemsPanel">
+      <ItemsPanelTemplate>
+        <StackPanel Orientation="Horizontal" />
+      </ItemsPanelTemplate>
+    </Setter>
+  </ControlTheme>
+
+  <ControlTheme x:Key="QxDocumentTab" TargetType="ListBoxItem">
+    <Setter Property="Foreground" Value="{DynamicResource QxTextSecondaryBrush}" />
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="FontSize" Value="{DynamicResource QxFontSizeBody}" />
+    <Setter Property="Padding" Value="12,0,6,0" />
+    <Setter Property="MinWidth" Value="96" />
+    <Setter Property="MaxWidth" Value="240" />
+    <Setter Property="Height" Value="{DynamicResource QxTabStripHeight}" />
+    <Setter Property="VerticalContentAlignment" Value="Center" />
+    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border Name="PART_Root"
+                Background="{TemplateBinding Background}"
+                BorderBrush="{DynamicResource QxBorderSubtleBrush}"
+                BorderThickness="0,0,1,1">
+          <Panel>
+            <ContentPresenter Name="PART_ContentPresenter"
+                              Padding="{TemplateBinding Padding}"
+                              Content="{TemplateBinding Content}"
+                              ContentTemplate="{TemplateBinding ContentTemplate}"
+                              HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                              VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}" />
+            <Border Name="PART_FocusRing"
+                    Margin="3,5"
+                    BorderThickness="{DynamicResource QxFocusRingThickness}"
+                    BorderBrush="{DynamicResource QxFocusRingBrush}"
+                    CornerRadius="{DynamicResource QxRadiusSm}"
+                    IsHitTestVisible="False"
+                    IsVisible="False" />
+          </Panel>
+        </Border>
+      </ControlTemplate>
+    </Setter>
+    <Style Selector="^:pointerover">
+      <Setter Property="Foreground" Value="{DynamicResource QxTextPrimaryBrush}" />
+      <Setter Property="Background" Value="{DynamicResource QxFillSubtleBrush}" />
+    </Style>
+    <Style Selector="^:selected">
+      <Setter Property="Foreground" Value="{DynamicResource QxTextPrimaryBrush}" />
+      <Setter Property="Background" Value="{DynamicResource QxSurfaceBaseBrush}" />
+      <Style Selector="^ /template/ Border#PART_Root">
+        <Setter Property="BorderThickness" Value="0,0,1,0" />
+      </Style>
+    </Style>
+    <Style Selector="^:focus-visible /template/ Border#PART_FocusRing">
+      <Setter Property="IsVisible" Value="True" />
+    </Style>
+  </ControlTheme>
+
+  <ControlTheme x:Key="{x:Type c:TabHeader}" TargetType="c:TabHeader">
+    <Setter Property="VerticalAlignment" Value="Center" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Grid ColumnDefinitions="16,*,24">
+          <Panel VerticalAlignment="Center" HorizontalAlignment="Center">
+            <c:Icon Name="PART_FileIcon" Kind="Script" Size="14" Foreground="{DynamicResource QxTextTertiaryBrush}" />
+            <c:Spinner Name="PART_Spinner" Size="12" IsVisible="False" Foreground="{DynamicResource QxRunningBrush}" />
+            <c:Icon Name="PART_ArmedIcon" Kind="Stop" Size="14" IsVisible="False" Foreground="{DynamicResource QxAccentBrush}" />
+            <c:Icon Name="PART_FailedIcon" Kind="Error" Size="14" IsVisible="False" Foreground="{DynamicResource QxDangerBrush}" />
+          </Panel>
+          <TextBlock Grid.Column="1"
+                     Margin="8,0"
+                     Text="{TemplateBinding FileName}"
+                     VerticalAlignment="Center"
+                     TextTrimming="CharacterEllipsis" />
+          <Panel Grid.Column="2" VerticalAlignment="Center" HorizontalAlignment="Center">
+            <Ellipse Name="PART_ModifiedMark" Width="7" Height="7" IsVisible="False" Fill="{DynamicResource QxTextTertiaryBrush}" />
+            <Button Name="PART_Close"
+                    Classes="icon small"
+                    Width="24"
+                    Height="24"
+                    MinHeight="24"
+                    Opacity="0"
+                    IsHitTestVisible="False"
+                    Command="{TemplateBinding CloseCommand}"
+                    CommandParameter="{TemplateBinding CloseCommandParameter}"
+                    ToolTip.Tip="Close tab (Ctrl+W)"
+                    AutomationProperties.Name="Close tab">
+              <c:Icon Kind="Close" Size="14" />
+            </Button>
+          </Panel>
+        </Grid>
+      </ControlTemplate>
+    </Setter>
+    <Style Selector="^:compiling">
+      <Style Selector="^ /template/ c|Icon#PART_FileIcon">
+        <Setter Property="IsVisible" Value="False" />
+      </Style>
+      <Style Selector="^ /template/ c|Spinner#PART_Spinner">
+        <Setter Property="IsVisible" Value="True" />
+        <Setter Property="Foreground" Value="{DynamicResource QxWarningBrush}" />
+      </Style>
+    </Style>
+    <Style Selector="^:running">
+      <Style Selector="^ /template/ c|Icon#PART_FileIcon">
+        <Setter Property="IsVisible" Value="False" />
+      </Style>
+      <Style Selector="^ /template/ c|Spinner#PART_Spinner">
+        <Setter Property="IsVisible" Value="True" />
+      </Style>
+    </Style>
+    <Style Selector="^:armed">
+      <Style Selector="^ /template/ c|Icon#PART_FileIcon">
+        <Setter Property="IsVisible" Value="False" />
+      </Style>
+      <Style Selector="^ /template/ c|Icon#PART_ArmedIcon">
+        <Setter Property="IsVisible" Value="True" />
+      </Style>
+    </Style>
+    <Style Selector="^:failed">
+      <Style Selector="^ /template/ c|Icon#PART_FileIcon">
+        <Setter Property="IsVisible" Value="False" />
+      </Style>
+      <Style Selector="^ /template/ c|Icon#PART_FailedIcon">
+        <Setter Property="IsVisible" Value="True" />
+      </Style>
+    </Style>
+    <Style Selector="^:modified /template/ Ellipse#PART_ModifiedMark">
+      <Setter Property="IsVisible" Value="True" />
+    </Style>
+    <Style Selector="^:active:not(:modified) /template/ Button#PART_Close">
+      <Setter Property="Opacity" Value="1" />
+      <Setter Property="IsHitTestVisible" Value="True" />
+    </Style>
+    <Style Selector="^:tab-hover /template/ Button#PART_Close">
+      <Setter Property="Opacity" Value="1" />
+      <Setter Property="IsHitTestVisible" Value="True" />
+    </Style>
+    <Style Selector="^:tab-hover /template/ Ellipse#PART_ModifiedMark">
+      <Setter Property="IsVisible" Value="False" />
+    </Style>
+  </ControlTheme>
+
+</ResourceDictionary>

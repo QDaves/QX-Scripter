@@ -118,37 +118,6 @@ public sealed record QueryEnvelope<T>(
     T? Data,
     QueryErrorSnapshot? Error);
 
-/// <summary>
-/// The state of the link to G-Earth and to the hotel, and what is known about the wire
-/// format of the connected client.
-/// </summary>
-/// <param name="InterceptorConnected">Whether the packet interceptor (G-Earth) is attached.</param>
-/// <param name="HotelConnected">Whether a hotel session is currently open.</param>
-/// <param name="MessageCatalogLoaded">
-/// Whether the message-name catalog is available. Until this is <see langword="true"/>
-/// packets can only be addressed by raw header, not by name.
-/// </param>
-/// <param name="WireProfileAnalyzed">
-/// Whether the connected client build has been analysed, which is what lets structure-varying
-/// messages (guest room results, marketplace offers, inventory items) be parsed at all.
-/// </param>
-/// <param name="WireProfileExact">
-/// Whether the analysis produced an exact match for this build rather than a best-effort
-/// fallback. Messages that require an exact profile throw
-/// <see cref="NotSupportedException"/> while this is <see langword="false"/>.
-/// </param>
-/// <param name="MissingWireCapabilities">
-/// The names of wire capabilities the connected build does not provide. Any feature listed
-/// here will fail rather than silently misbehave.
-/// </param>
-/// <param name="Client">
-/// The client flavour, <c>Flash</c>, <c>Unity</c> or <c>None</c>; <see langword="null"/>
-/// when no session is open.
-/// </param>
-/// <param name="Host">The hotel host the client connected to, or <see langword="null"/> with no session.</param>
-/// <param name="Port">The hotel port, or <see langword="null"/> with no session.</param>
-/// <param name="HotelVersion">The hotel build string reported at connect, or <see langword="null"/>.</param>
-/// <param name="ClientIdentifier">The client identifier reported at connect, or <see langword="null"/>.</param>
 public sealed record ConnectionSnapshot(
     bool InterceptorConnected,
     bool HotelConnected,
@@ -267,36 +236,6 @@ public sealed record HiddenAreaSnapshot(
     int Length,
     bool Invert);
 
-/// <summary>
-/// The room's static geometry: the tile height map the room was built with, plus the
-/// camera hint and any area hiders.
-/// </summary>
-/// <param name="UseLegacyScale">
-/// Whether the room is drawn at the old 32-pixel tile scale instead of 64.
-/// </param>
-/// <param name="WallHeight">
-/// The extra wall height configured for the room, in tile units; -1 means the client
-/// derives it from the floor plan.
-/// </param>
-/// <param name="Map">
-/// The raw floor plan text, one line per row. <c>x</c> marks a void tile; digits
-/// <c>0</c>-<c>9</c> and letters <c>a</c>-<c>z</c> encode heights 0 to 35.
-/// </param>
-/// <param name="Width">The number of columns, taken from the longest line of <paramref name="Map"/>.</param>
-/// <param name="Length">The number of rows in <paramref name="Map"/>.</param>
-/// <param name="Scale">The tile scale in pixels: 32 when <paramref name="UseLegacyScale"/> is set, otherwise 64.</param>
-/// <param name="Tiles">
-/// The decoded heights in row-major order (<c>y * Width + x</c>), with -1 for void tiles.
-/// </param>
-/// <param name="HiddenAreas">The area-hider rectangles declared for this room.</param>
-/// <param name="HasCameraData">
-/// Whether the client sent a camera hint. The three camera fields are
-/// <see langword="null"/> when this is <see langword="false"/>, which happens on Unity
-/// builds that omit the tail.
-/// </param>
-/// <param name="CameraX">The X tile the camera centres on.</param>
-/// <param name="CameraY">The Y tile the camera centres on.</param>
-/// <param name="CameraZ">The camera height in tile units.</param>
 public sealed record FloorPlanSnapshot(
     bool UseLegacyScale,
     int WallHeight,
@@ -441,34 +380,8 @@ public sealed record RoomChatSettingsSnapshot(
 /// <param name="Ban">Who may ban other users; the hotel only offers 0 and 1 outside group rooms.</param>
 public sealed record RoomModerationSettingsSnapshot(int Mute, int Kick, int Ban);
 
-/// <summary>A room thumbnail reference, sent by Unity builds with the guest room result.</summary>
-/// <param name="RoomId">The room the thumbnail belongs to.</param>
-/// <param name="Reference">The hotel-side reference of the stored image.</param>
-/// <param name="ImageUrl">The absolute URL the image can be fetched from.</param>
 public sealed record RoomThumbnailSnapshot(Id RoomId, string Reference, string ImageUrl);
 
-/// <summary>
-/// The detail block that accompanies a guest room result, carrying the viewer-specific
-/// facts the navigator record does not.
-/// </summary>
-/// <remarks>
-/// The tail differs per client: Flash sends <paramref name="OpeningConnection"/>, Unity
-/// sends <paramref name="UnityContextId"/> and optionally <paramref name="UnityThumbnail"/>.
-/// The field that does not apply to the connected client stays at its default.
-/// </remarks>
-/// <param name="Forward">Whether the client should immediately enter the room rather than only display it.</param>
-/// <param name="IsStaffPick">Whether the room is currently a staff pick.</param>
-/// <param name="IsGroupMember">Whether the local user belongs to the room's group.</param>
-/// <param name="IsRoomMuted">Whether the room is muted for everyone right now.</param>
-/// <param name="Moderation">Who may mute, kick and ban in this room.</param>
-/// <param name="CanMute">Whether the local user is allowed to mute in this room.</param>
-/// <param name="Chat">The room's chat configuration.</param>
-/// <param name="OpeningConnection">
-/// Flash only: whether this result was delivered as part of opening a room connection
-/// rather than merely inspecting the room. <see langword="null"/> on Unity.
-/// </param>
-/// <param name="UnityContextId">Unity only: the navigator context the result was produced for; 0 on Flash.</param>
-/// <param name="UnityThumbnail">Unity only: the room thumbnail, when one exists. Always <see langword="null"/> on Flash.</param>
 public sealed record RoomResultDetailsSnapshot(
     bool Forward,
     bool IsStaffPick,
@@ -477,9 +390,7 @@ public sealed record RoomResultDetailsSnapshot(
     RoomModerationSettingsSnapshot Moderation,
     bool CanMute,
     RoomChatSettingsSnapshot Chat,
-    bool? OpeningConnection,
-    Id UnityContextId,
-    RoomThumbnailSnapshot? UnityThumbnail);
+    bool? OpeningConnection);
 
 /// <summary>
 /// The decoration and layout of the room the session is inside. Every member is
@@ -624,7 +535,7 @@ public sealed record RoomKickSnapshot(
 /// <param name="WasEntered">Whether the room had been fully entered before the exit.</param>
 /// <param name="Source">
 /// The transport that ended the session: <c>RoomTransition</c>, <c>ConnectionClosed</c>,
-/// <c>NativeReason</c>, <c>ClientQuit</c>, <c>Disconnected</c>, <c>AccessFailure</c>,
+/// <c>ClientQuit</c>, <c>Disconnected</c>, <c>AccessFailure</c>,
 /// <c>SelfRemoved</c> or <c>Kicked</c>.
 /// </param>
 /// <param name="Cause">
@@ -635,7 +546,6 @@ public sealed record RoomKickSnapshot(
 /// The native room-exit reason code, when the transport carried one; otherwise
 /// <see langword="null"/>.
 /// </param>
-/// <param name="HasNativeReason">Whether a native room exit reason accompanied the exit.</param>
 /// <param name="WasKicked">Whether this exit was caused by a kick.</param>
 /// <param name="Kick">The kick that caused the exit, or <see langword="null"/> when none did.</param>
 public sealed record RoomExitSnapshot(
@@ -644,7 +554,6 @@ public sealed record RoomExitSnapshot(
     string Source,
     string Cause,
     short? Reason,
-    bool HasNativeReason,
     bool WasKicked,
     RoomKickSnapshot? Kick);
 
@@ -737,48 +646,6 @@ public sealed record RoomSnapshot(
     FloorPlanSnapshot? FloorPlan,
     HeightmapSummarySnapshot? Heightmap);
 
-/// <summary>
-/// The decoded contents of an avatar's last status update: where it is, what it is doing,
-/// and the raw status string those facts were parsed out of.
-/// </summary>
-/// <param name="StatusId">
-/// The single integer the status packet carries besides the fragments. On Flash it is the
-/// avatar's jumping power; on Unity builds that send it, it is a target identifier.
-/// </param>
-/// <param name="Position">The tile the avatar occupies, including its height.</param>
-/// <param name="Direction">The body facing, 0-7 clockwise from north.</param>
-/// <param name="HeadDirection">The head facing, 0-7 clockwise from north.</param>
-/// <param name="Raw">
-/// The recompiled status string, in the wire form <c>/key arg arg/key/</c>. Useful when a
-/// fragment QX does not model needs to be read.
-/// </param>
-/// <param name="Stance">
-/// The posture derived from the fragments: <c>Sit</c> when a <c>sit</c> fragment is present,
-/// <c>Lay</c> for <c>lay</c>, otherwise <c>Stand</c>.
-/// </param>
-/// <param name="IsController">Whether the avatar carries a <c>flatctrl</c> fragment, meaning it holds rights.</param>
-/// <param name="RightsLevel">
-/// The argument of the <c>flatctrl</c> fragment, 0 when absent. The client's scale is
-/// 0 not a controller, 1 room controller, 2 group member, 3 group admin, 4 room owner,
-/// 5 moderator.
-/// </param>
-/// <param name="IsTrading">Whether the avatar carries the <c>trd</c> fragment, meaning it is in a trade.</param>
-/// <param name="SittingOnFloor">
-/// Whether the <c>sit</c> fragment's second argument is <c>1</c>, meaning the avatar sits on
-/// the floor rather than on furni.
-/// </param>
-/// <param name="Sign">
-/// The number of the hand sign the avatar is holding up, from the <c>sign</c> fragment;
-/// 0 when no sign is shown.
-/// </param>
-/// <param name="MovingTo">
-/// The destination tile from the <c>mv</c> fragment while the avatar is walking, or
-/// <see langword="null"/> when it is standing still.
-/// </param>
-/// <param name="Fragments">
-/// Every status fragment keyed case-insensitively by its name, with its space-separated
-/// arguments. A snapshot copy, not a live view.
-/// </param>
 public sealed record AvatarStatusSnapshot(
     int StatusId,
     PositionSnapshot Position,
@@ -794,16 +661,8 @@ public sealed record AvatarStatusSnapshot(
     PositionSnapshot? MovingTo,
     IReadOnlyDictionary<string, IReadOnlyList<string>> Fragments)
 {
-    /// <summary>
-    /// The jumping-power field of the status packet. Flash only; 0 on Unity, where the same
-    /// wire slot carries <see cref="TargetId"/> instead.
-    /// </summary>
     public int JumpingPower { get; init; }
 
-    /// <summary>
-    /// The target identifier of the status packet. Unity only, and only on builds that send
-    /// the field; 0 on Flash.
-    /// </summary>
     public int TargetId { get; init; }
 
     /// <summary>
@@ -813,26 +672,6 @@ public sealed record AvatarStatusSnapshot(
     public double? ActionHeight { get; init; }
 }
 
-/// <summary>The fields that only a user avatar has.</summary>
-/// <param name="Gender">The avatar's gender: <c>Male</c>, <c>Female</c> or <c>Unisex</c>.</param>
-/// <param name="GroupId">The favourite group's identifier, or -1 when no group is worn.</param>
-/// <param name="GroupStatus">The user's membership status in the worn group as sent by the hotel.</param>
-/// <param name="GroupName">The worn group's name; empty when none.</param>
-/// <param name="FigureExtra">The extra figure string the hotel attaches, for example a swim outfit.</param>
-/// <param name="AchievementScore">The user's total achievement score.</param>
-/// <param name="IsModerator">Whether the hotel flags this user as staff.</param>
-/// <param name="BadgeCode">Unity only: the worn badge code; empty on Flash.</param>
-/// <param name="GroupBadge">Unity only: the worn group badge code; empty on Flash.</param>
-/// <param name="GroupPayload">
-/// Unity only: the flat group tail, three integers per group in the order the hotel sent
-/// them. Empty on Flash.
-/// </param>
-/// <param name="BadgeRank">Flash only: the number of badges shown next to the avatar; -1 on Unity.</param>
-/// <param name="RightsLevel">
-/// The controller level taken from the avatar's current status fragment, 0 when it carries
-/// none. Same scale as <see cref="AvatarStatusSnapshot.RightsLevel"/>.
-/// </param>
-/// <param name="HasRights">Whether <paramref name="RightsLevel"/> is above 0.</param>
 public sealed record UserAvatarSnapshot(
     string Gender,
     Id GroupId,
@@ -1372,30 +1211,6 @@ public sealed record ProfileSnapshot(
     }
 }
 
-/// <summary>One entry of the messenger friend list.</summary>
-/// <remarks>
-/// The last five fields only exist on Unity builds; Flash leaves them at their defaults.
-/// </remarks>
-/// <param name="Id">The friend's user identifier.</param>
-/// <param name="Name">The friend's user name.</param>
-/// <param name="Figure">The friend's figure string.</param>
-/// <param name="Gender">The friend's gender: <c>Male</c>, <c>Female</c> or <c>Unisex</c>.</param>
-/// <param name="Motto">The friend's motto. Unity only; empty on Flash.</param>
-/// <param name="RealName">The friend's real name, when the hotel discloses it.</param>
-/// <param name="IsOnline">Whether the friend is online right now.</param>
-/// <param name="CanFollow">Whether the friend may be followed into their room.</param>
-/// <param name="CategoryId">The friend-list category this friend is filed under; 0 means uncategorised.</param>
-/// <param name="FacebookId">The linked Facebook identifier; empty when none.</param>
-/// <param name="IsAcceptingOfflineMessages">Whether offline messages may be sent to this friend. Unity only.</param>
-/// <param name="IsVipMember">Whether the friend holds a VIP membership. Unity only.</param>
-/// <param name="IsPocketHabboUser">Whether the friend is connected from the mobile client. Unity only.</param>
-/// <param name="Relation">The relationship tag: <c>None</c>, <c>Heart</c>, <c>Smile</c> or <c>Skull</c>.</param>
-/// <param name="LastOnline">
-/// When the friend was last online, as the hotel's own epoch value. Unity only; 0 on Flash.
-/// Serialised exactly rather than as a JSON number so no precision is lost.
-/// </param>
-/// <param name="UnityStatus">Unity only: the raw presence code the hotel sends; 0 on Flash.</param>
-/// <param name="UnityPlatform">Unity only: the raw platform code the hotel sends; 0 on Flash.</param>
 public sealed record FriendSnapshot(
     Id Id,
     string Name,
@@ -1412,46 +1227,38 @@ public sealed record FriendSnapshot(
     bool IsPocketHabboUser,
     string Relation,
     [property: JsonConverter(typeof(ExactInt64JsonConverter))]
-    long LastOnline,
-    short UnityStatus,
-    short UnityPlatform)
+    long LastOnline)
 {
-    /// <summary>
-    /// Compatibility overload carrying only the fields both clients send; every Unity-only
-    /// field is left at its default.
-    /// </summary>
     public FriendSnapshot(
-        long Id,
-        string Name,
-        string Figure,
-        string Gender,
-        string Motto,
-        string RealName,
-        bool IsOnline,
-        bool CanFollow,
-        string Relation)
-        : this(
-            (Qx.Id)Id,
-            Name,
-            Figure,
-            Gender,
-            Motto,
-            RealName,
-            IsOnline,
-            CanFollow,
-            0,
-            string.Empty,
-            false,
-            false,
-            false,
-            Relation,
-            0,
-            0,
-            0)
+    long Id,
+    string Name,
+    string Figure,
+    string Gender,
+    string Motto,
+    string RealName,
+    bool IsOnline,
+    bool CanFollow,
+    string Relation)
+    : this(
+        (Qx.Id)Id,
+        Name,
+        Figure,
+        Gender,
+        Motto,
+        RealName,
+        IsOnline,
+        CanFollow,
+        0,
+        string.Empty,
+        false,
+        false,
+        false,
+        Relation,
+        0)
     {
     }
 
-    /// <summary>Compatibility deconstruction that yields only the fields both clients send.</summary>
+    /// <summary>Compatibility deconstruction for the original friend snapshot fields.</summary>
     public void Deconstruct(
         out long Id,
         out string Name,
@@ -1712,45 +1519,6 @@ public sealed record HighScoreSnapshot(
     int Score,
     IReadOnlyList<string> Names);
 
-/// <summary>
-/// The per-item payload a furni carries. Which of the optional members are populated is
-/// decided by <paramref name="Type"/>; the ones that do not apply are omitted from JSON.
-/// </summary>
-/// <param name="Type">
-/// The payload shape: <c>Legacy</c> (0), <c>Map</c> (1), <c>StringArray</c> (2),
-/// <c>VoteResult</c> (3), <c>Empty</c> (4), <c>IntArray</c> (5), <c>HighScore</c> (6) or
-/// <c>CrackableFurni</c> (7).
-/// </param>
-/// <param name="Flags">
-/// The numeric value of <see cref="ItemDataFlags"/>; bit 0 (value 1) marks a limited rare.
-/// </param>
-/// <param name="Value">
-/// The payload's primary string. For <c>Legacy</c> this is the whole payload; for the other
-/// shapes it is the leading string the shape carries.
-/// </param>
-/// <param name="State">
-/// <paramref name="Value"/> interpreted as a furni state: <c>C</c>, <c>FALSE</c> and
-/// <c>OFF</c> map to 0, <c>O</c>, <c>TRUE</c> and <c>ON</c> map to 1, any other integer text
-/// maps to itself, and anything unparseable maps to -1.
-/// </param>
-/// <param name="IsLimitedRare">Whether the limited-rare flag is set, which is what makes the three unique fields meaningful.</param>
-/// <param name="UniqueSerialNumber">This copy's number within the limited series; 0 when not a limited rare.</param>
-/// <param name="UniqueSeriesSize">How many copies the limited series has; 0 when not a limited rare.</param>
-/// <param name="UniqueLimitedData">Unity only: the extra limited-edition string; empty on Flash.</param>
-/// <param name="MapEntries">The key-value payload; present only for <c>Map</c>.</param>
-/// <param name="StringValues">The string list payload; present only for <c>StringArray</c>.</param>
-/// <param name="IntValues">The integer list payload; present only for <c>IntArray</c>.</param>
-/// <param name="VoteResult">The vote tally; present only for <c>VoteResult</c>.</param>
-/// <param name="ScoreType">
-/// How the game furni scores, as the hotel's own code; present only for <c>HighScore</c>.
-/// </param>
-/// <param name="ClearType">
-/// When the game furni clears its table, as the hotel's own code; present only for
-/// <c>HighScore</c>.
-/// </param>
-/// <param name="HighScores">The score table; present only for <c>HighScore</c>.</param>
-/// <param name="Hits">How many hits the crackable furni has taken; present only for <c>CrackableFurni</c>.</param>
-/// <param name="Target">How many hits the crackable furni needs in total; present only for <c>CrackableFurni</c>.</param>
 public sealed record ItemDataSnapshot(
     string Type,
     int Flags,
@@ -2137,46 +1905,6 @@ public sealed record FurniCollectionSnapshot(
     }
 }
 
-/// <summary>One item in the local user's hand (inventory).</summary>
-/// <param name="ItemId">
-/// The inventory slot identifier. This is what inventory and placement packets address, and
-/// it is the value the collection is ordered and paged by.
-/// </param>
-/// <param name="Type">Whether the item is a <c>Floor</c> or a <c>Wall</c> item.</param>
-/// <param name="Id">
-/// The item's own identifier, which is the identifier it takes once placed in a room. Often
-/// equal to <paramref name="ItemId"/> but not guaranteed to be.
-/// </param>
-/// <param name="Kind">The furni kind identifier.</param>
-/// <param name="Definition">The catalog definition, or <see langword="null"/> when definitions are not loaded.</param>
-/// <param name="Category">
-/// The furni's special category, matching <see cref="FurniCategory"/>: 1 default,
-/// 9 present, 11 trophy, 19 monsterplant seed and so on.
-/// </param>
-/// <param name="Data">The item's payload, which is where limited-rare and game data live.</param>
-/// <param name="IsRecyclable">Whether the item may be recycled.</param>
-/// <param name="IsTradeable">Whether the item may be traded.</param>
-/// <param name="IsGroupable">Whether the client stacks this item with identical ones in the hand view.</param>
-/// <param name="IsSellable">Whether the item may be listed on the marketplace.</param>
-/// <param name="SecondsToExpiration">Seconds until a rented item expires; -1 when it does not expire.</param>
-/// <param name="HasRentPeriodStarted">Whether the rental clock has already started running.</param>
-/// <param name="RoomId">The room a rented item is bound to; 0 when it is not bound.</param>
-/// <param name="IsUnseen">Unity only: whether the item is still marked as new; <see langword="false"/> on Flash.</param>
-/// <param name="Timestamp">
-/// Unity only: when the item entered the hand, as the hotel's own epoch value; 0 on Flash.
-/// Serialised exactly rather than as a JSON number so no precision is lost.
-/// </param>
-/// <param name="IsNft">Unity only, and only on builds that send the extended tail: whether the item is an NFT.</param>
-/// <param name="NftName">The NFT name, present only when <paramref name="IsNft"/> is set.</param>
-/// <param name="IsExternalImage">Unity only: whether the item renders an externally hosted image.</param>
-/// <param name="SlotId">
-/// The hotel's grouping slot for identical floor items; empty for wall items, which do not
-/// carry it.
-/// </param>
-/// <param name="Extra">
-/// The extra identifier attached to floor items; 0 for wall items. Serialised exactly rather
-/// than as a JSON number so no precision is lost.
-/// </param>
 public sealed record InventoryItemSnapshot(
     Id ItemId,
     string Type,
@@ -2192,12 +1920,6 @@ public sealed record InventoryItemSnapshot(
     int SecondsToExpiration,
     bool HasRentPeriodStarted,
     Id RoomId,
-    bool IsUnseen,
-    [property: JsonConverter(typeof(ExactInt64JsonConverter))]
-    long Timestamp,
-    bool IsNft,
-    string NftName,
-    bool IsExternalImage,
     string SlotId,
     [property: JsonConverter(typeof(ExactInt64JsonConverter))]
     long Extra);

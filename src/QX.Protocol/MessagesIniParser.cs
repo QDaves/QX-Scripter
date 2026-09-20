@@ -92,7 +92,7 @@ public static class MessagesIniParser
                 continue;
             }
 
-            if (runes is not ("u" or "f" or "uf"))
+            if (runes != "f")
                 throw new InvalidDataException($"Message field '{field}' uses unsupported client runes '{runes}'.");
             if (name.Length == 0)
                 throw new InvalidDataException($"Message field '{field}' has no alias name.");
@@ -110,9 +110,7 @@ public static class MessagesIniParser
 
     private static IReadOnlyList<MessageAlias> AliasesFor(string runes, string name) => runes switch
     {
-        "u" => [new(ProtocolClients.Unity, name)],
         "f" => [new(ProtocolClients.Flash, name)],
-        "uf" => [new(ProtocolClients.Unity, name), new(ProtocolClients.Flash, name)],
         _ => throw new InvalidDataException($"Unsupported client runes '{runes}'.")
     };
 

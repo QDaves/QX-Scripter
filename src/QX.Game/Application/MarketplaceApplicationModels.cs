@@ -41,12 +41,9 @@ public sealed record MarketplaceMakeOfferRequest(
 
 public sealed record MarketplaceBuyRequest(
     Id OfferId,
-    string ExtraData = "",
     int TimeoutMilliseconds = 10000);
 
-public sealed record MarketplaceBuySendRequest(
-    Id OfferId,
-    string ExtraData = "");
+public sealed record MarketplaceBuySendRequest(Id OfferId);
 
 public sealed record MarketplaceCancelRequest(
     Id OfferId,

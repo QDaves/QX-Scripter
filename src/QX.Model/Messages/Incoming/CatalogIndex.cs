@@ -82,21 +82,15 @@ public sealed record CatalogNode : IParserComposer<CatalogNode>
     }
 
     public static CatalogNode Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static CatalogNode ParseFlash(in PacketReader p) =>
         CatalogIndexWire.ParseStandaloneNode(in p);
 
-    private static CatalogNode ParseUnity(in PacketReader p) =>
-        CatalogIndexWire.ParseStandaloneNode(in p);
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(CatalogNode value, in PacketWriter p) =>
-        CatalogIndexWire.ComposeNode(value, in p);
-
-    private static void ComposeUnity(CatalogNode value, in PacketWriter p) =>
         CatalogIndexWire.ComposeNode(value, in p);
 
     internal static CatalogNode FromOwned(
@@ -155,21 +149,15 @@ public sealed record CatalogIndex : IParserComposer<CatalogIndex>
     }
 
     public static CatalogIndex Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static CatalogIndex ParseFlash(in PacketReader p) =>
         CatalogIndexWire.ParseIndex(in p);
 
-    private static CatalogIndex ParseUnity(in PacketReader p) =>
-        CatalogIndexWire.ParseIndex(in p);
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(CatalogIndex value, in PacketWriter p) =>
-        CatalogIndexWire.ComposeIndex(value, in p);
-
-    private static void ComposeUnity(CatalogIndex value, in PacketWriter p) =>
         CatalogIndexWire.ComposeIndex(value, in p);
 
     public void Deconstruct(

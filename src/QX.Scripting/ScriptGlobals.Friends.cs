@@ -181,9 +181,7 @@ public partial class ScriptGlobals
             IsVipMember = snapshot.IsVipMember,
             IsPocketHabboUser = snapshot.IsPocketHabboUser,
             Relation = relation,
-            LastOnline = snapshot.LastOnline,
-            UnityStatus = snapshot.UnityStatus,
-            UnityPlatform = snapshot.UnityPlatform
+            LastOnline = snapshot.LastOnline
         };
     }
 

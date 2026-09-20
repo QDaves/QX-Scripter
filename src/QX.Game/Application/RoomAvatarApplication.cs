@@ -321,5 +321,5 @@ internal sealed class RoomAvatarApplication : IApplicationFeature, IRoomAvatarOp
             tool_hints: new(false, true, false, true));
 
     private static ApplicationParameterDescriptor Parameter(string name) =>
-        new(name, typeof(int), true, null, "Integer value sent to the active client dialect.");
+        new(name, typeof(int), true, null, "Integer value sent to Flash.");
 }

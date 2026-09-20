@@ -1,4 +1,4 @@
-﻿using Qx.Game.Protocol;
+using Qx.Game.Protocol;
 using Qx.Game.Application;
 using Qx.Model.Messages.Incoming;
 using Qx.Protocol;
@@ -125,8 +125,6 @@ public partial class ScriptGlobals
         }
     }
 
-    public CfhSanctionStatus? UnitySanctions => ReadSanctions().CallForHelp;
-
     /// <summary>Subscribes to the block list arriving or changing.</summary>
     /// <param name="handler">Invoked with no arguments.</param>
     /// <returns>A handle that unsubscribes when disposed; also disposed when the script stops.</returns>
@@ -172,18 +170,6 @@ public partial class ScriptGlobals
             Guarded<ProfileChanged>(change =>
             {
                 if (change.Kind is ProfileChangeKind.Sanctions && MySanctions is { } sanctions)
-                    handler(sanctions);
-            })));
-    }
-
-    public IDisposable OnUnitySanctionsChanged(Action<CfhSanctionStatus> handler)
-    {
-        ArgumentNullException.ThrowIfNull(handler);
-        return Track(Application.Subscribe<ProfileChanged>(
-            ApplicationMemberIds.ProfileChanged,
-            Guarded<ProfileChanged>(change =>
-            {
-                if (change.Kind is ProfileChangeKind.Sanctions && UnitySanctions is { } sanctions)
                     handler(sanctions);
             })));
     }

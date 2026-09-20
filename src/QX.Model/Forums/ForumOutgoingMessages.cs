@@ -7,22 +7,16 @@ namespace Qx.Model.Messages.Outgoing;
 public sealed record GetForumStats(Id GroupId) : IParserComposer<GetForumStats>
 {
     public static GetForumStats Parse(in PacketReader p) =>
-        ForumRequestProtocol.ParseRoot(in p, ParseFlash, ParseUnity);
+        ForumRequestProtocol.ParseRoot(in p, ParseFlash);
 
     private static GetForumStats ParseFlash(in PacketReader p) =>
         new(ForumRequestProtocol.ReadFlashGroupId(in p));
 
-    private static GetForumStats ParseUnity(in PacketReader p) =>
-        new(ForumRequestProtocol.ReadUnityGroupId(in p));
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(GetForumStats value, in PacketWriter p) =>
         ForumRequestProtocol.WriteFlashGroupId(in p, value.GroupId);
-
-    private static void ComposeUnity(GetForumStats value, in PacketWriter p) =>
-        ForumRequestProtocol.WriteUnityGroupId(in p, value.GroupId);
 }
 
 public sealed record GetThreads(
@@ -31,7 +25,7 @@ public sealed record GetThreads(
     int MaxCount) : IParserComposer<GetThreads>
 {
     public static GetThreads Parse(in PacketReader p) =>
-        ForumRequestProtocol.ParseRoot(in p, ParseFlash, ParseUnity);
+        ForumRequestProtocol.ParseRoot(in p, ParseFlash);
 
     private static GetThreads ParseFlash(in PacketReader p) =>
         new(
@@ -39,25 +33,12 @@ public sealed record GetThreads(
             p.ReadInt(),
             p.ReadInt());
 
-    private static GetThreads ParseUnity(in PacketReader p) =>
-        new(
-            ForumRequestProtocol.ReadUnityGroupId(in p),
-            p.ReadInt(),
-            p.ReadInt());
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(GetThreads value, in PacketWriter p)
     {
         ForumRequestProtocol.WriteFlashGroupId(in p, value.GroupId);
-        p.WriteInt(value.StartIndex);
-        p.WriteInt(value.MaxCount);
-    }
-
-    private static void ComposeUnity(GetThreads value, in PacketWriter p)
-    {
-        ForumRequestProtocol.WriteUnityGroupId(in p, value.GroupId);
         p.WriteInt(value.StartIndex);
         p.WriteInt(value.MaxCount);
     }
@@ -70,7 +51,7 @@ public sealed record GetMessages(
     int MaxCount) : IParserComposer<GetMessages>
 {
     public static GetMessages Parse(in PacketReader p) =>
-        ForumRequestProtocol.ParseRoot(in p, ParseFlash, ParseUnity);
+        ForumRequestProtocol.ParseRoot(in p, ParseFlash);
 
     private static GetMessages ParseFlash(in PacketReader p) =>
         new(
@@ -79,29 +60,13 @@ public sealed record GetMessages(
             p.ReadInt(),
             p.ReadInt());
 
-    private static GetMessages ParseUnity(in PacketReader p) =>
-        new(
-            ForumRequestProtocol.ReadUnityGroupId(in p),
-            ForumRequestProtocol.ReadIntId(in p),
-            p.ReadInt(),
-            p.ReadInt());
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(GetMessages value, in PacketWriter p)
     {
         ForumRequestProtocol.PrepareIds(p.Client, value.GroupId, value.ThreadId);
         ForumRequestProtocol.WriteFlashGroupId(in p, value.GroupId);
-        ForumRequestProtocol.WriteIntId(in p, value.ThreadId, "thread");
-        p.WriteInt(value.StartIndex);
-        p.WriteInt(value.MaxCount);
-    }
-
-    private static void ComposeUnity(GetMessages value, in PacketWriter p)
-    {
-        ForumRequestProtocol.PrepareIds(p.Client, value.GroupId, value.ThreadId);
-        ForumRequestProtocol.WriteUnityGroupId(in p, value.GroupId);
         ForumRequestProtocol.WriteIntId(in p, value.ThreadId, "thread");
         p.WriteInt(value.StartIndex);
         p.WriteInt(value.MaxCount);
@@ -113,32 +78,20 @@ public sealed record GetThread(
     Id ThreadId) : IParserComposer<GetThread>
 {
     public static GetThread Parse(in PacketReader p) =>
-        ForumRequestProtocol.ParseRoot(in p, ParseFlash, ParseUnity);
+        ForumRequestProtocol.ParseRoot(in p, ParseFlash);
 
     private static GetThread ParseFlash(in PacketReader p) =>
         new(
             ForumRequestProtocol.ReadFlashGroupId(in p),
             ForumRequestProtocol.ReadIntId(in p));
 
-    private static GetThread ParseUnity(in PacketReader p) =>
-        new(
-            ForumRequestProtocol.ReadUnityGroupId(in p),
-            ForumRequestProtocol.ReadIntId(in p));
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(GetThread value, in PacketWriter p)
     {
         ForumRequestProtocol.PrepareIds(p.Client, value.GroupId, value.ThreadId);
         ForumRequestProtocol.WriteFlashGroupId(in p, value.GroupId);
-        ForumRequestProtocol.WriteIntId(in p, value.ThreadId, "thread");
-    }
-
-    private static void ComposeUnity(GetThread value, in PacketWriter p)
-    {
-        ForumRequestProtocol.PrepareIds(p.Client, value.GroupId, value.ThreadId);
-        ForumRequestProtocol.WriteUnityGroupId(in p, value.GroupId);
         ForumRequestProtocol.WriteIntId(in p, value.ThreadId, "thread");
     }
 }
@@ -149,7 +102,7 @@ public sealed record GetForumsList(
     int MaxCount) : IParserComposer<GetForumsList>
 {
     public static GetForumsList Parse(in PacketReader p) =>
-        ForumRequestProtocol.ParseRoot(in p, ParseFlash, ParseUnity);
+        ForumRequestProtocol.ParseRoot(in p, ParseFlash);
 
     private static GetForumsList ParseFlash(in PacketReader p) =>
         new(
@@ -157,23 +110,10 @@ public sealed record GetForumsList(
             p.ReadInt(),
             p.ReadInt());
 
-    private static GetForumsList ParseUnity(in PacketReader p) =>
-        new(
-            (ForumListCode)p.ReadInt(),
-            p.ReadInt(),
-            p.ReadInt());
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(GetForumsList value, in PacketWriter p)
-    {
-        p.WriteInt((int)value.ListCode);
-        p.WriteInt(value.StartIndex);
-        p.WriteInt(value.MaxCount);
-    }
-
-    private static void ComposeUnity(GetForumsList value, in PacketWriter p)
     {
         p.WriteInt((int)value.ListCode);
         p.WriteInt(value.StartIndex);
@@ -189,7 +129,7 @@ public sealed record UpdateForumSettings(
     int ModerateLevel) : IParserComposer<UpdateForumSettings>
 {
     public static UpdateForumSettings Parse(in PacketReader p) =>
-        ForumRequestProtocol.ParseRoot(in p, ParseFlash, ParseUnity);
+        ForumRequestProtocol.ParseRoot(in p, ParseFlash);
 
     private static UpdateForumSettings ParseFlash(in PacketReader p) =>
         new(
@@ -199,29 +139,12 @@ public sealed record UpdateForumSettings(
             p.ReadInt(),
             p.ReadInt());
 
-    private static UpdateForumSettings ParseUnity(in PacketReader p) =>
-        new(
-            ForumRequestProtocol.ReadUnityGroupId(in p),
-            p.ReadInt(),
-            p.ReadInt(),
-            p.ReadInt(),
-            p.ReadInt());
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(UpdateForumSettings value, in PacketWriter p)
     {
         ForumRequestProtocol.WriteFlashGroupId(in p, value.GroupId);
-        p.WriteInt(value.ReadLevel);
-        p.WriteInt(value.PostMessageLevel);
-        p.WriteInt(value.PostThreadLevel);
-        p.WriteInt(value.ModerateLevel);
-    }
-
-    private static void ComposeUnity(UpdateForumSettings value, in PacketWriter p)
-    {
-        ForumRequestProtocol.WriteUnityGroupId(in p, value.GroupId);
         p.WriteInt(value.ReadLevel);
         p.WriteInt(value.PostMessageLevel);
         p.WriteInt(value.PostThreadLevel);
@@ -232,18 +155,14 @@ public sealed record UpdateForumSettings(
 public sealed record GetUnreadForumsCount : IParserComposer<GetUnreadForumsCount>
 {
     public static GetUnreadForumsCount Parse(in PacketReader p) =>
-        ForumRequestProtocol.ParseRoot(in p, ParseFlash, ParseUnity);
+        ForumRequestProtocol.ParseRoot(in p, ParseFlash);
 
     private static GetUnreadForumsCount ParseFlash(in PacketReader p) => new();
 
-    private static GetUnreadForumsCount ParseUnity(in PacketReader p) => new();
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(GetUnreadForumsCount value, in PacketWriter p) { }
-
-    private static void ComposeUnity(GetUnreadForumsCount value, in PacketWriter p) { }
 }
 
 public sealed record ModerateThread(
@@ -252,7 +171,7 @@ public sealed record ModerateThread(
     int State) : IParserComposer<ModerateThread>
 {
     public static ModerateThread Parse(in PacketReader p) =>
-        ForumRequestProtocol.ParseRoot(in p, ParseFlash, ParseUnity);
+        ForumRequestProtocol.ParseRoot(in p, ParseFlash);
 
     private static ModerateThread ParseFlash(in PacketReader p) =>
         new(
@@ -260,27 +179,13 @@ public sealed record ModerateThread(
             ForumRequestProtocol.ReadIntId(in p),
             p.ReadInt());
 
-    private static ModerateThread ParseUnity(in PacketReader p) =>
-        new(
-            ForumRequestProtocol.ReadUnityGroupId(in p),
-            ForumRequestProtocol.ReadIntId(in p),
-            p.ReadInt());
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(ModerateThread value, in PacketWriter p)
     {
         ForumRequestProtocol.PrepareIds(p.Client, value.GroupId, value.ThreadId);
         ForumRequestProtocol.WriteFlashGroupId(in p, value.GroupId);
-        ForumRequestProtocol.WriteIntId(in p, value.ThreadId, "thread");
-        p.WriteInt(value.State);
-    }
-
-    private static void ComposeUnity(ModerateThread value, in PacketWriter p)
-    {
-        ForumRequestProtocol.PrepareIds(p.Client, value.GroupId, value.ThreadId);
-        ForumRequestProtocol.WriteUnityGroupId(in p, value.GroupId);
         ForumRequestProtocol.WriteIntId(in p, value.ThreadId, "thread");
         p.WriteInt(value.State);
     }
@@ -293,7 +198,7 @@ public sealed record ModerateMessage(
     int State) : IParserComposer<ModerateMessage>
 {
     public static ModerateMessage Parse(in PacketReader p) =>
-        ForumRequestProtocol.ParseRoot(in p, ParseFlash, ParseUnity);
+        ForumRequestProtocol.ParseRoot(in p, ParseFlash);
 
     private static ModerateMessage ParseFlash(in PacketReader p) =>
         new(
@@ -302,29 +207,13 @@ public sealed record ModerateMessage(
             ForumRequestProtocol.ReadIntId(in p),
             p.ReadInt());
 
-    private static ModerateMessage ParseUnity(in PacketReader p) =>
-        new(
-            ForumRequestProtocol.ReadUnityGroupId(in p),
-            ForumRequestProtocol.ReadIntId(in p),
-            ForumRequestProtocol.ReadIntId(in p),
-            p.ReadInt());
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(ModerateMessage value, in PacketWriter p)
     {
         ForumRequestProtocol.PrepareIds(p.Client, value.GroupId, value.ThreadId, value.MessageId);
         ForumRequestProtocol.WriteFlashGroupId(in p, value.GroupId);
-        ForumRequestProtocol.WriteIntId(in p, value.ThreadId, "thread");
-        ForumRequestProtocol.WriteIntId(in p, value.MessageId, "message");
-        p.WriteInt(value.State);
-    }
-
-    private static void ComposeUnity(ModerateMessage value, in PacketWriter p)
-    {
-        ForumRequestProtocol.PrepareIds(p.Client, value.GroupId, value.ThreadId, value.MessageId);
-        ForumRequestProtocol.WriteUnityGroupId(in p, value.GroupId);
         ForumRequestProtocol.WriteIntId(in p, value.ThreadId, "thread");
         ForumRequestProtocol.WriteIntId(in p, value.MessageId, "message");
         p.WriteInt(value.State);
@@ -340,7 +229,7 @@ public sealed record CallForHelpFromForumThread(
     string SecondContext) : IParserComposer<CallForHelpFromForumThread>
 {
     public static CallForHelpFromForumThread Parse(in PacketReader p) =>
-        ForumRequestProtocol.ParseRoot(in p, ParseFlash, ParseUnity);
+        ForumRequestProtocol.ParseRoot(in p, ParseFlash);
 
     private static CallForHelpFromForumThread ParseFlash(in PacketReader p)
     {
@@ -353,11 +242,8 @@ public sealed record CallForHelpFromForumThread(
             p.ReadString());
     }
 
-    private static CallForHelpFromForumThread ParseUnity(in PacketReader p) =>
-        ForumProtocol.UnsupportedUnity<CallForHelpFromForumThread>(p.Client);
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(CallForHelpFromForumThread value, in PacketWriter p)
     {
@@ -370,9 +256,6 @@ public sealed record CallForHelpFromForumThread(
         p.WriteString(value.FirstContext);
         p.WriteString(value.SecondContext);
     }
-
-    private static void ComposeUnity(CallForHelpFromForumThread value, in PacketWriter p) =>
-        ForumProtocol.UnsupportedUnity(p.Client);
 }
 
 public sealed record CallForHelpFromForumMessage(
@@ -385,7 +268,7 @@ public sealed record CallForHelpFromForumMessage(
     string SecondContext) : IParserComposer<CallForHelpFromForumMessage>
 {
     public static CallForHelpFromForumMessage Parse(in PacketReader p) =>
-        ForumRequestProtocol.ParseRoot(in p, ParseFlash, ParseUnity);
+        ForumRequestProtocol.ParseRoot(in p, ParseFlash);
 
     private static CallForHelpFromForumMessage ParseFlash(in PacketReader p)
     {
@@ -399,11 +282,8 @@ public sealed record CallForHelpFromForumMessage(
             p.ReadString());
     }
 
-    private static CallForHelpFromForumMessage ParseUnity(in PacketReader p) =>
-        ForumProtocol.UnsupportedUnity<CallForHelpFromForumMessage>(p.Client);
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(CallForHelpFromForumMessage value, in PacketWriter p)
     {
@@ -417,9 +297,6 @@ public sealed record CallForHelpFromForumMessage(
         p.WriteString(value.FirstContext);
         p.WriteString(value.SecondContext);
     }
-
-    private static void ComposeUnity(CallForHelpFromForumMessage value, in PacketWriter p) =>
-        ForumProtocol.UnsupportedUnity(p.Client);
 }
 
 public readonly record struct ForumReadMarker(
@@ -430,10 +307,10 @@ public readonly record struct ForumReadMarker(
     public bool MarkEntireForumRead => MarkAsRead;
 
     public static ForumReadMarker Parse(in PacketReader p) =>
-        ForumRequestProtocol.ParseRoot(in p, ParseFlash, ParseUnity);
+        ForumRequestProtocol.ParseRoot(in p, ParseFlash);
 
     internal static ForumReadMarker ParseWire(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static ForumReadMarker ParseFlash(in PacketReader p) =>
         new(
@@ -441,37 +318,21 @@ public readonly record struct ForumReadMarker(
             ForumRequestProtocol.ReadIntId(in p),
             p.ReadBool());
 
-    private static ForumReadMarker ParseUnity(in PacketReader p) =>
-        new(
-            ForumRequestProtocol.ReadUnityGroupId(in p),
-            ForumRequestProtocol.ReadIntId(in p),
-            p.ReadBool());
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     internal static void Prepare(ForumReadMarker value, ClientType client)
     {
-        if (client is ClientType.Flash)
-            ForumProtocol.RequireFlashId(value.GroupId, "forum group");
-        else if (client is not ClientType.Unity)
-            throw new UnsupportedClientException(client);
+        ForumProtocol.RequireFlashId(value.GroupId, "forum group");
         ForumProtocol.RequireFlashId(value.LastReadMessageId, "last-read message");
     }
 
     internal static void ComposeWire(ForumReadMarker value, in PacketWriter p) =>
-        ModernWireClients.Compose(value, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(value, in p, ComposeFlash);
 
     private static void ComposeFlash(ForumReadMarker value, in PacketWriter p)
     {
         ForumRequestProtocol.WriteFlashGroupId(in p, value.GroupId);
-        ForumRequestProtocol.WriteIntId(in p, value.LastReadMessageId, "last-read message");
-        p.WriteBool(value.MarkAsRead);
-    }
-
-    private static void ComposeUnity(ForumReadMarker value, in PacketWriter p)
-    {
-        ForumRequestProtocol.WriteUnityGroupId(in p, value.GroupId);
         ForumRequestProtocol.WriteIntId(in p, value.LastReadMessageId, "last-read message");
         p.WriteBool(value.MarkAsRead);
     }
@@ -490,7 +351,7 @@ public sealed record UpdateForumReadMarker(
     }
 
     public static UpdateForumReadMarker Parse(in PacketReader p) =>
-        ForumRequestProtocol.ParseRoot(in p, ParseFlash, ParseUnity);
+        ForumRequestProtocol.ParseRoot(in p, ParseFlash);
 
     private static UpdateForumReadMarker ParseFlash(in PacketReader p)
     {
@@ -501,19 +362,8 @@ public sealed record UpdateForumReadMarker(
         return new UpdateForumReadMarker(markers);
     }
 
-    private static UpdateForumReadMarker ParseUnity(in PacketReader p)
-    {
-        int count = ForumRequestProtocol.ReadUnityMarkerCount(in p);
-        if (count > p.Available / 13)
-            throw new InvalidDataException("Forum read marker count exceeds the remaining payload capacity.");
-        var markers = new ForumReadMarker[count];
-        for (int index = 0; index < count; index++)
-            markers[index] = ForumReadMarker.ParseWire(in p);
-        return new UpdateForumReadMarker(markers);
-    }
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(UpdateForumReadMarker value, in PacketWriter p)
     {
@@ -525,17 +375,6 @@ public sealed record UpdateForumReadMarker(
         for (int index = 0; index < count; index++)
             ForumReadMarker.ComposeWire(value.Markers[index], in p);
     }
-
-    private static void ComposeUnity(UpdateForumReadMarker value, in PacketWriter p)
-    {
-        ArgumentNullException.ThrowIfNull(value);
-        int count = ForumProtocol.RequireCount(value.Markers.Count, nameof(Markers));
-        for (int index = 0; index < count; index++)
-            ForumReadMarker.Prepare(value.Markers[index], p.Client);
-        ForumRequestProtocol.WriteUnityMarkerCount(in p, count);
-        for (int index = 0; index < count; index++)
-            ForumReadMarker.ComposeWire(value.Markers[index], in p);
-    }
 }
 
 public sealed record GetForumThreads(
@@ -544,7 +383,7 @@ public sealed record GetForumThreads(
     int Amount) : IParserComposer<GetForumThreads>
 {
     public static GetForumThreads Parse(in PacketReader p) =>
-        ForumRequestProtocol.ParseRoot(in p, ParseFlash, ParseUnity);
+        ForumRequestProtocol.ParseRoot(in p, ParseFlash);
 
     private static GetForumThreads ParseFlash(in PacketReader p) =>
         new(
@@ -552,25 +391,12 @@ public sealed record GetForumThreads(
             p.ReadInt(),
             p.ReadInt());
 
-    private static GetForumThreads ParseUnity(in PacketReader p) =>
-        new(
-            ForumRequestProtocol.ReadUnityGroupId(in p),
-            p.ReadInt(),
-            p.ReadInt());
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(GetForumThreads value, in PacketWriter p)
     {
         ForumRequestProtocol.WriteFlashGroupId(in p, value.GroupId);
-        p.WriteInt(value.StartIndex);
-        p.WriteInt(value.Amount);
-    }
-
-    private static void ComposeUnity(GetForumThreads value, in PacketWriter p)
-    {
-        ForumRequestProtocol.WriteUnityGroupId(in p, value.GroupId);
         p.WriteInt(value.StartIndex);
         p.WriteInt(value.Amount);
     }
@@ -583,7 +409,7 @@ public sealed record GetForumThreadMessages(
     int Amount) : IParserComposer<GetForumThreadMessages>
 {
     public static GetForumThreadMessages Parse(in PacketReader p) =>
-        ForumRequestProtocol.ParseRoot(in p, ParseFlash, ParseUnity);
+        ForumRequestProtocol.ParseRoot(in p, ParseFlash);
 
     private static GetForumThreadMessages ParseFlash(in PacketReader p) =>
         new(
@@ -592,29 +418,13 @@ public sealed record GetForumThreadMessages(
             p.ReadInt(),
             p.ReadInt());
 
-    private static GetForumThreadMessages ParseUnity(in PacketReader p) =>
-        new(
-            ForumRequestProtocol.ReadUnityGroupId(in p),
-            ForumRequestProtocol.ReadIntId(in p),
-            p.ReadInt(),
-            p.ReadInt());
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(GetForumThreadMessages value, in PacketWriter p)
     {
         ForumRequestProtocol.PrepareIds(p.Client, value.GroupId, value.ThreadId);
         ForumRequestProtocol.WriteFlashGroupId(in p, value.GroupId);
-        ForumRequestProtocol.WriteIntId(in p, value.ThreadId, "thread");
-        p.WriteInt(value.StartIndex);
-        p.WriteInt(value.Amount);
-    }
-
-    private static void ComposeUnity(GetForumThreadMessages value, in PacketWriter p)
-    {
-        ForumRequestProtocol.PrepareIds(p.Client, value.GroupId, value.ThreadId);
-        ForumRequestProtocol.WriteUnityGroupId(in p, value.GroupId);
         ForumRequestProtocol.WriteIntId(in p, value.ThreadId, "thread");
         p.WriteInt(value.StartIndex);
         p.WriteInt(value.Amount);
@@ -626,32 +436,20 @@ public sealed record GetForumThread(
     Id ThreadId) : IParserComposer<GetForumThread>
 {
     public static GetForumThread Parse(in PacketReader p) =>
-        ForumRequestProtocol.ParseRoot(in p, ParseFlash, ParseUnity);
+        ForumRequestProtocol.ParseRoot(in p, ParseFlash);
 
     private static GetForumThread ParseFlash(in PacketReader p) =>
         new(
             ForumRequestProtocol.ReadFlashGroupId(in p),
             ForumRequestProtocol.ReadIntId(in p));
 
-    private static GetForumThread ParseUnity(in PacketReader p) =>
-        new(
-            ForumRequestProtocol.ReadUnityGroupId(in p),
-            ForumRequestProtocol.ReadIntId(in p));
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(GetForumThread value, in PacketWriter p)
     {
         ForumRequestProtocol.PrepareIds(p.Client, value.GroupId, value.ThreadId);
         ForumRequestProtocol.WriteFlashGroupId(in p, value.GroupId);
-        ForumRequestProtocol.WriteIntId(in p, value.ThreadId, "thread");
-    }
-
-    private static void ComposeUnity(GetForumThread value, in PacketWriter p)
-    {
-        ForumRequestProtocol.PrepareIds(p.Client, value.GroupId, value.ThreadId);
-        ForumRequestProtocol.WriteUnityGroupId(in p, value.GroupId);
         ForumRequestProtocol.WriteIntId(in p, value.ThreadId, "thread");
     }
 }
@@ -663,7 +461,7 @@ public sealed record PostForumMessage(
     string MessageText) : IParserComposer<PostForumMessage>
 {
     public static PostForumMessage Parse(in PacketReader p) =>
-        ForumRequestProtocol.ParseRoot(in p, ParseFlash, ParseUnity);
+        ForumRequestProtocol.ParseRoot(in p, ParseFlash);
 
     private static PostForumMessage ParseFlash(in PacketReader p) =>
         new(
@@ -672,31 +470,14 @@ public sealed record PostForumMessage(
             p.ReadString(),
             p.ReadString());
 
-    private static PostForumMessage ParseUnity(in PacketReader p) =>
-        new(
-            ForumRequestProtocol.ReadUnityGroupId(in p),
-            ForumRequestProtocol.ReadIntId(in p),
-            p.ReadString(),
-            p.ReadString());
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(PostForumMessage value, in PacketWriter p)
     {
         ForumRequestProtocol.PrepareIds(p.Client, value.GroupId, value.ThreadId);
         ForumRequestProtocol.PrepareStrings(in p, value.Subject, value.MessageText);
         ForumRequestProtocol.WriteFlashGroupId(in p, value.GroupId);
-        ForumRequestProtocol.WriteIntId(in p, value.ThreadId, "thread");
-        p.WriteString(value.Subject);
-        p.WriteString(value.MessageText);
-    }
-
-    private static void ComposeUnity(PostForumMessage value, in PacketWriter p)
-    {
-        ForumRequestProtocol.PrepareIds(p.Client, value.GroupId, value.ThreadId);
-        ForumRequestProtocol.PrepareStrings(in p, value.Subject, value.MessageText);
-        ForumRequestProtocol.WriteUnityGroupId(in p, value.GroupId);
         ForumRequestProtocol.WriteIntId(in p, value.ThreadId, "thread");
         p.WriteString(value.Subject);
         p.WriteString(value.MessageText);
@@ -709,7 +490,7 @@ public sealed record ModerateForumThread(
     int State) : IParserComposer<ModerateForumThread>
 {
     public static ModerateForumThread Parse(in PacketReader p) =>
-        ForumRequestProtocol.ParseRoot(in p, ParseFlash, ParseUnity);
+        ForumRequestProtocol.ParseRoot(in p, ParseFlash);
 
     private static ModerateForumThread ParseFlash(in PacketReader p) =>
         new(
@@ -717,27 +498,13 @@ public sealed record ModerateForumThread(
             ForumRequestProtocol.ReadIntId(in p),
             p.ReadInt());
 
-    private static ModerateForumThread ParseUnity(in PacketReader p) =>
-        new(
-            ForumRequestProtocol.ReadUnityGroupId(in p),
-            ForumRequestProtocol.ReadIntId(in p),
-            p.ReadInt());
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(ModerateForumThread value, in PacketWriter p)
     {
         ForumRequestProtocol.PrepareIds(p.Client, value.GroupId, value.ThreadId);
         ForumRequestProtocol.WriteFlashGroupId(in p, value.GroupId);
-        ForumRequestProtocol.WriteIntId(in p, value.ThreadId, "thread");
-        p.WriteInt(value.State);
-    }
-
-    private static void ComposeUnity(ModerateForumThread value, in PacketWriter p)
-    {
-        ForumRequestProtocol.PrepareIds(p.Client, value.GroupId, value.ThreadId);
-        ForumRequestProtocol.WriteUnityGroupId(in p, value.GroupId);
         ForumRequestProtocol.WriteIntId(in p, value.ThreadId, "thread");
         p.WriteInt(value.State);
     }
@@ -750,7 +517,7 @@ public sealed record ModerateForumMessage(
     int State) : IParserComposer<ModerateForumMessage>
 {
     public static ModerateForumMessage Parse(in PacketReader p) =>
-        ForumRequestProtocol.ParseRoot(in p, ParseFlash, ParseUnity);
+        ForumRequestProtocol.ParseRoot(in p, ParseFlash);
 
     private static ModerateForumMessage ParseFlash(in PacketReader p) =>
         new(
@@ -759,29 +526,13 @@ public sealed record ModerateForumMessage(
             ForumRequestProtocol.ReadIntId(in p),
             p.ReadInt());
 
-    private static ModerateForumMessage ParseUnity(in PacketReader p) =>
-        new(
-            ForumRequestProtocol.ReadUnityGroupId(in p),
-            ForumRequestProtocol.ReadIntId(in p),
-            ForumRequestProtocol.ReadIntId(in p),
-            p.ReadInt());
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(ModerateForumMessage value, in PacketWriter p)
     {
         ForumRequestProtocol.PrepareIds(p.Client, value.GroupId, value.ThreadId, value.MessageId);
         ForumRequestProtocol.WriteFlashGroupId(in p, value.GroupId);
-        ForumRequestProtocol.WriteIntId(in p, value.ThreadId, "thread");
-        ForumRequestProtocol.WriteIntId(in p, value.MessageId, "message");
-        p.WriteInt(value.State);
-    }
-
-    private static void ComposeUnity(ModerateForumMessage value, in PacketWriter p)
-    {
-        ForumRequestProtocol.PrepareIds(p.Client, value.GroupId, value.ThreadId, value.MessageId);
-        ForumRequestProtocol.WriteUnityGroupId(in p, value.GroupId);
         ForumRequestProtocol.WriteIntId(in p, value.ThreadId, "thread");
         ForumRequestProtocol.WriteIntId(in p, value.MessageId, "message");
         p.WriteInt(value.State);
@@ -795,7 +546,7 @@ public sealed record UpdateForumThread(
     bool IsLocked) : IParserComposer<UpdateForumThread>
 {
     public static UpdateForumThread Parse(in PacketReader p) =>
-        ForumRequestProtocol.ParseRoot(in p, ParseFlash, ParseUnity);
+        ForumRequestProtocol.ParseRoot(in p, ParseFlash);
 
     private static UpdateForumThread ParseFlash(in PacketReader p) =>
         new(
@@ -804,29 +555,13 @@ public sealed record UpdateForumThread(
             p.ReadBool(),
             p.ReadBool());
 
-    private static UpdateForumThread ParseUnity(in PacketReader p) =>
-        new(
-            ForumRequestProtocol.ReadUnityGroupId(in p),
-            ForumRequestProtocol.ReadIntId(in p),
-            p.ReadBool(),
-            p.ReadBool());
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(UpdateForumThread value, in PacketWriter p)
     {
         ForumRequestProtocol.PrepareIds(p.Client, value.GroupId, value.ThreadId);
         ForumRequestProtocol.WriteFlashGroupId(in p, value.GroupId);
-        ForumRequestProtocol.WriteIntId(in p, value.ThreadId, "thread");
-        p.WriteBool(value.IsSticky);
-        p.WriteBool(value.IsLocked);
-    }
-
-    private static void ComposeUnity(UpdateForumThread value, in PacketWriter p)
-    {
-        ForumRequestProtocol.PrepareIds(p.Client, value.GroupId, value.ThreadId);
-        ForumRequestProtocol.WriteUnityGroupId(in p, value.GroupId);
         ForumRequestProtocol.WriteIntId(in p, value.ThreadId, "thread");
         p.WriteBool(value.IsSticky);
         p.WriteBool(value.IsLocked);
@@ -846,7 +581,7 @@ public sealed record UpdateForumReadMarkers(
     }
 
     public static UpdateForumReadMarkers Parse(in PacketReader p) =>
-        ForumRequestProtocol.ParseRoot(in p, ParseFlash, ParseUnity);
+        ForumRequestProtocol.ParseRoot(in p, ParseFlash);
 
     private static UpdateForumReadMarkers ParseFlash(in PacketReader p)
     {
@@ -857,19 +592,8 @@ public sealed record UpdateForumReadMarkers(
         return new UpdateForumReadMarkers(markers);
     }
 
-    private static UpdateForumReadMarkers ParseUnity(in PacketReader p)
-    {
-        int count = ForumRequestProtocol.ReadUnityMarkerCount(in p);
-        if (count > p.Available / 13)
-            throw new InvalidDataException("Forum read marker count exceeds the remaining payload capacity.");
-        var markers = new ForumReadMarker[count];
-        for (int index = 0; index < count; index++)
-            markers[index] = ForumReadMarker.ParseWire(in p);
-        return new UpdateForumReadMarkers(markers);
-    }
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(UpdateForumReadMarkers value, in PacketWriter p)
     {
@@ -878,17 +602,6 @@ public sealed record UpdateForumReadMarkers(
         for (int index = 0; index < count; index++)
             ForumReadMarker.Prepare(value.Markers[index], p.Client);
         ForumRequestProtocol.WriteFlashMarkerCount(in p, count);
-        for (int index = 0; index < count; index++)
-            ForumReadMarker.ComposeWire(value.Markers[index], in p);
-    }
-
-    private static void ComposeUnity(UpdateForumReadMarkers value, in PacketWriter p)
-    {
-        ArgumentNullException.ThrowIfNull(value);
-        int count = ForumProtocol.RequireCount(value.Markers.Count, nameof(Markers));
-        for (int index = 0; index < count; index++)
-            ForumReadMarker.Prepare(value.Markers[index], p.Client);
-        ForumRequestProtocol.WriteUnityMarkerCount(in p, count);
         for (int index = 0; index < count; index++)
             ForumReadMarker.ComposeWire(value.Markers[index], in p);
     }
@@ -901,33 +614,16 @@ public sealed record ReportForumThread(
     string Report) : IParserComposer<ReportForumThread>
 {
     public static ReportForumThread Parse(in PacketReader p) =>
-        ForumRequestProtocol.ParseRoot(in p, ParseFlash, ParseUnity);
+        ForumRequestProtocol.ParseRoot(in p, ParseFlash);
 
     private static ReportForumThread ParseFlash(in PacketReader p) =>
         throw new UnsupportedClientException(p.Client);
 
-    private static ReportForumThread ParseUnity(in PacketReader p) =>
-        new(
-            ForumRequestProtocol.ReadUnityGroupId(in p),
-            ForumRequestProtocol.ReadIntId(in p),
-            p.ReadInt(),
-            p.ReadString());
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(ReportForumThread value, in PacketWriter p) =>
         throw new UnsupportedClientException(p.Client);
-
-    private static void ComposeUnity(ReportForumThread value, in PacketWriter p)
-    {
-        ForumRequestProtocol.PrepareIds(p.Client, value.GroupId, value.ThreadId);
-        ForumRequestProtocol.PrepareStrings(in p, value.Report);
-        ForumRequestProtocol.WriteUnityGroupId(in p, value.GroupId);
-        ForumRequestProtocol.WriteIntId(in p, value.ThreadId, "thread");
-        p.WriteInt(value.CategoryId);
-        p.WriteString(value.Report);
-    }
 }
 
 public sealed record ReportForumMessage(
@@ -938,33 +634,14 @@ public sealed record ReportForumMessage(
     string Report) : IParserComposer<ReportForumMessage>
 {
     public static ReportForumMessage Parse(in PacketReader p) =>
-        ForumRequestProtocol.ParseRoot(in p, ParseFlash, ParseUnity);
+        ForumRequestProtocol.ParseRoot(in p, ParseFlash);
 
     private static ReportForumMessage ParseFlash(in PacketReader p) =>
         throw new UnsupportedClientException(p.Client);
 
-    private static ReportForumMessage ParseUnity(in PacketReader p) =>
-        new(
-            ForumRequestProtocol.ReadUnityGroupId(in p),
-            ForumRequestProtocol.ReadIntId(in p),
-            ForumRequestProtocol.ReadIntId(in p),
-            p.ReadInt(),
-            p.ReadString());
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(ReportForumMessage value, in PacketWriter p) =>
         throw new UnsupportedClientException(p.Client);
-
-    private static void ComposeUnity(ReportForumMessage value, in PacketWriter p)
-    {
-        ForumRequestProtocol.PrepareIds(p.Client, value.GroupId, value.ThreadId, value.MessageId);
-        ForumRequestProtocol.PrepareStrings(in p, value.Report);
-        ForumRequestProtocol.WriteUnityGroupId(in p, value.GroupId);
-        ForumRequestProtocol.WriteIntId(in p, value.ThreadId, "thread");
-        ForumRequestProtocol.WriteIntId(in p, value.MessageId, "message");
-        p.WriteInt(value.CategoryId);
-        p.WriteString(value.Report);
-    }
 }

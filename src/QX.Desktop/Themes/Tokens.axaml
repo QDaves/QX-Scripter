@@ -1,0 +1,323 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:sys="using:System">
+
+  <ResourceDictionary.ThemeDictionaries>
+
+    <ResourceDictionary x:Key="Dark">
+      <SolidColorBrush x:Key="QxBrandBrush" Color="#FFFFFF" />
+      <Color x:Key="QxAccentColor">#9B8CFF</Color>
+      <Color x:Key="QxAccentFillColor">#6E5EE6</Color>
+      <Color x:Key="QxSurfaceBaseColor">#15171C</Color>
+      <Color x:Key="QxShadowColor">#000000</Color>
+
+      <SolidColorBrush x:Key="QxSurfaceChromeBrush" Color="#101216" />
+      <SolidColorBrush x:Key="QxSurfaceBaseBrush" Color="#15171C" />
+      <SolidColorBrush x:Key="QxSurfaceRaisedBrush" Color="#1B1E24" />
+      <SolidColorBrush x:Key="QxSurfaceOverlayBrush" Color="#20232A" />
+      <SolidColorBrush x:Key="QxSurfaceSunkenBrush" Color="#0E1013" />
+      <SolidColorBrush x:Key="QxSurfaceInverseBrush" Color="#2C3038" />
+      <SolidColorBrush x:Key="QxScrimBrush" Color="#A3090A0C" />
+
+      <SolidColorBrush x:Key="QxFieldBrush" Color="#101216" />
+      <SolidColorBrush x:Key="QxFieldHoverBrush" Color="#121419" />
+      <SolidColorBrush x:Key="QxFieldDisabledBrush" Color="#15171C" />
+      <SolidColorBrush x:Key="QxControlFillBrush" Color="#0DFFFFFF" />
+
+      <SolidColorBrush x:Key="QxFillSubtleBrush" Color="#0AFFFFFF" />
+      <SolidColorBrush x:Key="QxFillHoverBrush" Color="#0FFFFFFF" />
+      <SolidColorBrush x:Key="QxFillPressedBrush" Color="#18FFFFFF" />
+      <SolidColorBrush x:Key="QxFillSelectedBrush" Color="#249B8CFF" />
+      <SolidColorBrush x:Key="QxFillSelectedHoverBrush" Color="#2E9B8CFF" />
+      <SolidColorBrush x:Key="QxFillTrackBrush" Color="#2B2F37" />
+      <SolidColorBrush x:Key="QxProgressFillBrush" Color="#9B8CFF" />
+      <SolidColorBrush x:Key="QxOnAccentSubtleBrush" Color="#33000000" />
+
+      <SolidColorBrush x:Key="QxBorderSubtleBrush" Color="#22252C" />
+      <SolidColorBrush x:Key="QxBorderDefaultBrush" Color="#2F333B" />
+      <SolidColorBrush x:Key="QxBorderStrongBrush" Color="#40454F" />
+      <SolidColorBrush x:Key="QxBorderControlBrush" Color="#6A707C" />
+      <SolidColorBrush x:Key="QxBorderOverlayBrush" Color="#2E323A" />
+      <SolidColorBrush x:Key="QxFocusRingBrush" Color="#9B8CFF" />
+
+      <SolidColorBrush x:Key="QxTextPrimaryBrush" Color="#E8EAF0" />
+      <SolidColorBrush x:Key="QxTextSecondaryBrush" Color="#A9AEBB" />
+      <SolidColorBrush x:Key="QxTextTertiaryBrush" Color="#8C92A1" />
+      <SolidColorBrush x:Key="QxTextDisabledBrush" Color="#5C616D" />
+      <SolidColorBrush x:Key="QxTextOnAccentBrush" Color="#FFFFFF" />
+      <SolidColorBrush x:Key="QxTextOnInverseBrush" Color="#EDEFF3" />
+
+      <SolidColorBrush x:Key="QxAccentBrush" Color="#9B8CFF" />
+      <SolidColorBrush x:Key="QxAccentFillBrush" Color="#6E5EE6" />
+      <SolidColorBrush x:Key="QxAccentFillHoverBrush" Color="#6454DE" />
+      <SolidColorBrush x:Key="QxAccentFillPressedBrush" Color="#5A4AD0" />
+      <SolidColorBrush x:Key="QxAccentSoftBrush" Color="#249B8CFF" />
+
+      <SolidColorBrush x:Key="QxRunningBrush" Color="#45D4E6" />
+      <SolidColorBrush x:Key="QxRunningSoftBrush" Color="#1F45D4E6" />
+      <SolidColorBrush x:Key="QxSuccessBrush" Color="#55D38F" />
+      <SolidColorBrush x:Key="QxSuccessSoftBrush" Color="#1F55D38F" />
+      <SolidColorBrush x:Key="QxWarningBrush" Color="#F0B45B" />
+      <SolidColorBrush x:Key="QxWarningSoftBrush" Color="#1FF0B45B" />
+      <SolidColorBrush x:Key="QxWarningBandBrush" Color="#12F0B45B" />
+      <SolidColorBrush x:Key="QxDangerBrush" Color="#F47F7F" />
+      <SolidColorBrush x:Key="QxDangerSoftBrush" Color="#1FF47F7F" />
+      <SolidColorBrush x:Key="QxDangerBandBrush" Color="#12F47F7F" />
+      <SolidColorBrush x:Key="QxDangerFillBrush" Color="#C9474A" />
+      <SolidColorBrush x:Key="QxDangerFillHoverBrush" Color="#BB4043" />
+      <SolidColorBrush x:Key="QxDangerFillPressedBrush" Color="#AA383B" />
+      <SolidColorBrush x:Key="QxInfoBrush" Color="#72B8FF" />
+      <SolidColorBrush x:Key="QxInfoSoftBrush" Color="#1F72B8FF" />
+
+      <SolidColorBrush x:Key="QxCaptionCloseHoverBrush" Color="#E5484D" />
+      <SolidColorBrush x:Key="QxCaptionClosePressedBrush" Color="#C93A3F" />
+      <SolidColorBrush x:Key="QxScrollThumbBrush" Color="#2EFFFFFF" />
+      <SolidColorBrush x:Key="QxScrollThumbHoverBrush" Color="#57FFFFFF" />
+
+      <SolidColorBrush x:Key="QxEditorBackgroundBrush" Color="#15171C" />
+      <SolidColorBrush x:Key="QxEditorForegroundBrush" Color="#D8DBE2" />
+      <SolidColorBrush x:Key="QxEditorLineNumberBrush" Color="#646A76" />
+      <SolidColorBrush x:Key="QxEditorLineNumberActiveBrush" Color="#B9BEC9" />
+      <SolidColorBrush x:Key="QxEditorSelectionBrush" Color="#476E5EE6" />
+      <SolidColorBrush x:Key="QxEditorCurrentLineBrush" Color="#07FFFFFF" />
+
+      <SolidColorBrush x:Key="QxSyntaxKeywordBrush" Color="#B3A4FF" />
+      <SolidColorBrush x:Key="QxSyntaxTypeBrush" Color="#7DD3C8" />
+      <SolidColorBrush x:Key="QxSyntaxMethodBrush" Color="#E8C57A" />
+      <SolidColorBrush x:Key="QxSyntaxStringBrush" Color="#9FD69A" />
+      <SolidColorBrush x:Key="QxSyntaxNumberBrush" Color="#F2A66E" />
+      <SolidColorBrush x:Key="QxSyntaxCommentBrush" Color="#7F8696" />
+      <SolidColorBrush x:Key="QxSyntaxParameterBrush" Color="#9CC7F5" />
+      <SolidColorBrush x:Key="QxSyntaxPunctuationBrush" Color="#8C92A1" />
+      <SolidColorBrush x:Key="QxSyntaxPreprocessorBrush" Color="#C79BE0" />
+      <SolidColorBrush x:Key="QxEditorBraceMatchBrush" Color="#406C8CFF" />
+
+      <SolidColorBrush x:Key="QxAvatarTone0Brush" Color="#2A2640" />
+      <SolidColorBrush x:Key="QxAvatarTone1Brush" Color="#1F3338" />
+      <SolidColorBrush x:Key="QxAvatarTone2Brush" Color="#3A2E23" />
+      <SolidColorBrush x:Key="QxAvatarTone3Brush" Color="#23304A" />
+      <SolidColorBrush x:Key="QxAvatarTone4Brush" Color="#3A2530" />
+      <SolidColorBrush x:Key="QxAvatarTone5Brush" Color="#27342A" />
+      <SolidColorBrush x:Key="QxAvatarTone0TextBrush" Color="#C4BBFF" />
+      <SolidColorBrush x:Key="QxAvatarTone1TextBrush" Color="#8FD6D6" />
+      <SolidColorBrush x:Key="QxAvatarTone2TextBrush" Color="#E9BE8C" />
+      <SolidColorBrush x:Key="QxAvatarTone3TextBrush" Color="#9CC2F5" />
+      <SolidColorBrush x:Key="QxAvatarTone4TextBrush" Color="#EFA5C4" />
+      <SolidColorBrush x:Key="QxAvatarTone5TextBrush" Color="#9FD49E" />
+
+      <BoxShadows x:Key="QxShadowPopup">0 8 24 0 #73000000, 0 1 3 0 #4D000000</BoxShadows>
+      <BoxShadows x:Key="QxShadowDialog">0 24 64 -8 #A6000000, 0 2 8 0 #59000000</BoxShadows>
+      <BoxShadows x:Key="QxShadowControl">0 1 2 0 #40000000</BoxShadows>
+      <BoxShadows x:Key="QxFocusGlow">0 0 0 3 #479B8CFF</BoxShadows>
+    </ResourceDictionary>
+
+    <ResourceDictionary x:Key="Light">
+      <SolidColorBrush x:Key="QxBrandBrush" Color="#15171C" />
+      <Color x:Key="QxAccentColor">#5140CC</Color>
+      <Color x:Key="QxAccentFillColor">#5B4BD6</Color>
+      <Color x:Key="QxSurfaceBaseColor">#FFFFFF</Color>
+      <Color x:Key="QxShadowColor">#101828</Color>
+
+      <SolidColorBrush x:Key="QxSurfaceChromeBrush" Color="#F3F4F7" />
+      <SolidColorBrush x:Key="QxSurfaceBaseBrush" Color="#FFFFFF" />
+      <SolidColorBrush x:Key="QxSurfaceRaisedBrush" Color="#FFFFFF" />
+      <SolidColorBrush x:Key="QxSurfaceOverlayBrush" Color="#FFFFFF" />
+      <SolidColorBrush x:Key="QxSurfaceSunkenBrush" Color="#EEF0F3" />
+      <SolidColorBrush x:Key="QxSurfaceInverseBrush" Color="#1E2127" />
+      <SolidColorBrush x:Key="QxScrimBrush" Color="#73101828" />
+
+      <SolidColorBrush x:Key="QxFieldBrush" Color="#FFFFFF" />
+      <SolidColorBrush x:Key="QxFieldHoverBrush" Color="#FFFFFF" />
+      <SolidColorBrush x:Key="QxFieldDisabledBrush" Color="#F6F7F9" />
+      <SolidColorBrush x:Key="QxControlFillBrush" Color="#FFFFFF" />
+
+      <SolidColorBrush x:Key="QxFillSubtleBrush" Color="#08101828" />
+      <SolidColorBrush x:Key="QxFillHoverBrush" Color="#0B101828" />
+      <SolidColorBrush x:Key="QxFillPressedBrush" Color="#14101828" />
+      <SolidColorBrush x:Key="QxFillSelectedBrush" Color="#1A5B4BD6" />
+      <SolidColorBrush x:Key="QxFillSelectedHoverBrush" Color="#245B4BD6" />
+      <SolidColorBrush x:Key="QxFillTrackBrush" Color="#DDE0E6" />
+      <SolidColorBrush x:Key="QxProgressFillBrush" Color="#5B4BD6" />
+      <SolidColorBrush x:Key="QxOnAccentSubtleBrush" Color="#2E000000" />
+
+      <SolidColorBrush x:Key="QxBorderSubtleBrush" Color="#E6E8ED" />
+      <SolidColorBrush x:Key="QxBorderDefaultBrush" Color="#D5D8DF" />
+      <SolidColorBrush x:Key="QxBorderStrongBrush" Color="#B9BEC8" />
+      <SolidColorBrush x:Key="QxBorderControlBrush" Color="#8A909C" />
+      <SolidColorBrush x:Key="QxBorderOverlayBrush" Color="#DCDFE5" />
+      <SolidColorBrush x:Key="QxFocusRingBrush" Color="#5140CC" />
+
+      <SolidColorBrush x:Key="QxTextPrimaryBrush" Color="#16181D" />
+      <SolidColorBrush x:Key="QxTextSecondaryBrush" Color="#474D5A" />
+      <SolidColorBrush x:Key="QxTextTertiaryBrush" Color="#5D6371" />
+      <SolidColorBrush x:Key="QxTextDisabledBrush" Color="#A3A8B2" />
+      <SolidColorBrush x:Key="QxTextOnAccentBrush" Color="#FFFFFF" />
+      <SolidColorBrush x:Key="QxTextOnInverseBrush" Color="#F3F4F7" />
+
+      <SolidColorBrush x:Key="QxAccentBrush" Color="#5140CC" />
+      <SolidColorBrush x:Key="QxAccentFillBrush" Color="#5B4BD6" />
+      <SolidColorBrush x:Key="QxAccentFillHoverBrush" Color="#5041C8" />
+      <SolidColorBrush x:Key="QxAccentFillPressedBrush" Color="#4636B8" />
+      <SolidColorBrush x:Key="QxAccentSoftBrush" Color="#1A5B4BD6" />
+
+      <SolidColorBrush x:Key="QxRunningBrush" Color="#0A6E85" />
+      <SolidColorBrush x:Key="QxRunningSoftBrush" Color="#140A6E85" />
+      <SolidColorBrush x:Key="QxSuccessBrush" Color="#16713D" />
+      <SolidColorBrush x:Key="QxSuccessSoftBrush" Color="#1716713D" />
+      <SolidColorBrush x:Key="QxWarningBrush" Color="#835300" />
+      <SolidColorBrush x:Key="QxWarningSoftBrush" Color="#24D99A1E" />
+      <SolidColorBrush x:Key="QxWarningBandBrush" Color="#17D99A1E" />
+      <SolidColorBrush x:Key="QxDangerBrush" Color="#B42D32" />
+      <SolidColorBrush x:Key="QxDangerSoftBrush" Color="#14B42D32" />
+      <SolidColorBrush x:Key="QxDangerBandBrush" Color="#0DB42D32" />
+      <SolidColorBrush x:Key="QxDangerFillBrush" Color="#B42D32" />
+      <SolidColorBrush x:Key="QxDangerFillHoverBrush" Color="#A3262B" />
+      <SolidColorBrush x:Key="QxDangerFillPressedBrush" Color="#8F2025" />
+      <SolidColorBrush x:Key="QxInfoBrush" Color="#195DB0" />
+      <SolidColorBrush x:Key="QxInfoSoftBrush" Color="#14195DB0" />
+
+      <SolidColorBrush x:Key="QxCaptionCloseHoverBrush" Color="#E5484D" />
+      <SolidColorBrush x:Key="QxCaptionClosePressedBrush" Color="#C93A3F" />
+      <SolidColorBrush x:Key="QxScrollThumbBrush" Color="#2E101828" />
+      <SolidColorBrush x:Key="QxScrollThumbHoverBrush" Color="#59101828" />
+
+      <SolidColorBrush x:Key="QxEditorBackgroundBrush" Color="#FFFFFF" />
+      <SolidColorBrush x:Key="QxEditorForegroundBrush" Color="#1F2328" />
+      <SolidColorBrush x:Key="QxEditorLineNumberBrush" Color="#8B919C" />
+      <SolidColorBrush x:Key="QxEditorLineNumberActiveBrush" Color="#3B404A" />
+      <SolidColorBrush x:Key="QxEditorSelectionBrush" Color="#2E5B4BD6" />
+      <SolidColorBrush x:Key="QxEditorCurrentLineBrush" Color="#06101828" />
+
+      <SolidColorBrush x:Key="QxSyntaxKeywordBrush" Color="#5B3FCF" />
+      <SolidColorBrush x:Key="QxSyntaxTypeBrush" Color="#0B7268" />
+      <SolidColorBrush x:Key="QxSyntaxMethodBrush" Color="#8A5700" />
+      <SolidColorBrush x:Key="QxSyntaxStringBrush" Color="#2D7631" />
+      <SolidColorBrush x:Key="QxSyntaxNumberBrush" Color="#AD520A" />
+      <SolidColorBrush x:Key="QxSyntaxCommentBrush" Color="#6A717D" />
+      <SolidColorBrush x:Key="QxSyntaxParameterBrush" Color="#1B5FA6" />
+      <SolidColorBrush x:Key="QxSyntaxPunctuationBrush" Color="#5D6371" />
+      <SolidColorBrush x:Key="QxSyntaxPreprocessorBrush" Color="#8B2FA8" />
+      <SolidColorBrush x:Key="QxEditorBraceMatchBrush" Color="#302E5B4B" />
+
+      <SolidColorBrush x:Key="QxAvatarTone0Brush" Color="#ECEAFD" />
+      <SolidColorBrush x:Key="QxAvatarTone1Brush" Color="#E1F2F1" />
+      <SolidColorBrush x:Key="QxAvatarTone2Brush" Color="#F8EEDF" />
+      <SolidColorBrush x:Key="QxAvatarTone3Brush" Color="#E4EDFA" />
+      <SolidColorBrush x:Key="QxAvatarTone4Brush" Color="#F8E6EE" />
+      <SolidColorBrush x:Key="QxAvatarTone5Brush" Color="#E6F2E4" />
+      <SolidColorBrush x:Key="QxAvatarTone0TextBrush" Color="#4A3BBF" />
+      <SolidColorBrush x:Key="QxAvatarTone1TextBrush" Color="#0B6B65" />
+      <SolidColorBrush x:Key="QxAvatarTone2TextBrush" Color="#8A4F07" />
+      <SolidColorBrush x:Key="QxAvatarTone3TextBrush" Color="#1D58A3" />
+      <SolidColorBrush x:Key="QxAvatarTone4TextBrush" Color="#A3305F" />
+      <SolidColorBrush x:Key="QxAvatarTone5TextBrush" Color="#2E6B2C" />
+
+      <BoxShadows x:Key="QxShadowPopup">0 8 24 -4 #24101828, 0 1 3 0 #14101828</BoxShadows>
+      <BoxShadows x:Key="QxShadowDialog">0 24 56 -12 #3D101828, 0 2 8 0 #14101828</BoxShadows>
+      <BoxShadows x:Key="QxShadowControl">0 1 2 0 #12101828</BoxShadows>
+      <BoxShadows x:Key="QxFocusGlow">0 0 0 3 #385B4BD6</BoxShadows>
+    </ResourceDictionary>
+
+  </ResourceDictionary.ThemeDictionaries>
+
+  <x:Double x:Key="QxSpace1">4</x:Double>
+  <x:Double x:Key="QxSpace2">8</x:Double>
+  <x:Double x:Key="QxSpace3">12</x:Double>
+  <x:Double x:Key="QxSpace4">16</x:Double>
+  <x:Double x:Key="QxSpace5">20</x:Double>
+  <x:Double x:Key="QxSpace6">24</x:Double>
+  <x:Double x:Key="QxSpace8">32</x:Double>
+  <x:Double x:Key="QxSpace10">40</x:Double>
+  <x:Double x:Key="QxSpace12">48</x:Double>
+
+  <Thickness x:Key="QxPageInset">24,0,24,0</Thickness>
+  <Thickness x:Key="QxPageHeaderPadding">24,20,24,16</Thickness>
+  <Thickness x:Key="QxToolbarPadding">24,8,24,8</Thickness>
+  <Thickness x:Key="QxPageBodyPadding">24,8,24,32</Thickness>
+  <Thickness x:Key="QxPopupShadowMargin">12,4,12,16</Thickness>
+  <Thickness x:Key="QxPaletteTopMargin">0,56,0,0</Thickness>
+  <Thickness x:Key="QxCaptionReserveMargin">6,0,0,0</Thickness>
+
+  <CornerRadius x:Key="QxRadiusXs">3</CornerRadius>
+  <CornerRadius x:Key="QxRadiusSm">4</CornerRadius>
+  <CornerRadius x:Key="QxRadiusMd">6</CornerRadius>
+  <CornerRadius x:Key="QxRadiusLg">8</CornerRadius>
+  <CornerRadius x:Key="QxRadiusFull">999</CornerRadius>
+  <CornerRadius x:Key="QxRadiusFocusXs">7</CornerRadius>
+  <CornerRadius x:Key="QxRadiusFocusSm">8</CornerRadius>
+  <CornerRadius x:Key="QxRadiusFocusMd">10</CornerRadius>
+  <CornerRadius x:Key="QxRadiusFocusLg">12</CornerRadius>
+  <Thickness x:Key="QxFocusRingMargin">-4</Thickness>
+  <Thickness x:Key="QxFocusRingThickness">2</Thickness>
+
+  <x:Double x:Key="QxControlHeightSm">24</x:Double>
+  <x:Double x:Key="QxControlHeightMd">28</x:Double>
+  <x:Double x:Key="QxControlHeightLg">32</x:Double>
+  <x:Double x:Key="QxRowHeightCompact">28</x:Double>
+  <x:Double x:Key="QxRowHeight">32</x:Double>
+  <x:Double x:Key="QxRowHeightLarge">40</x:Double>
+  <x:Double x:Key="QxConsoleLineHeight">20</x:Double>
+
+  <x:Double x:Key="QxWindowDefaultWidth">1440</x:Double>
+  <x:Double x:Key="QxWindowDefaultHeight">900</x:Double>
+  <x:Double x:Key="QxWindowMinWidth">960</x:Double>
+  <x:Double x:Key="QxWindowMinHeight">600</x:Double>
+
+  <x:Double x:Key="QxTitleBarHeight">40</x:Double>
+  <x:Double x:Key="QxRailWidth">48</x:Double>
+  <x:Double x:Key="QxTabStripHeight">36</x:Double>
+  <x:Double x:Key="QxToolbarHeight">40</x:Double>
+  <x:Double x:Key="QxStatusBarHeight">26</x:Double>
+  <x:Double x:Key="QxConsoleHeaderHeight">36</x:Double>
+  <x:Double x:Key="QxCaptionButtonWidth">46</x:Double>
+  <x:Double x:Key="QxCommandTriggerWidth">380</x:Double>
+  <x:Double x:Key="QxTitleContextMaxWidth">260</x:Double>
+  <x:Double x:Key="QxDialogWidth">460</x:Double>
+  <x:Double x:Key="QxDialogWidthPrompt">400</x:Double>
+  <x:Double x:Key="QxDialogWidthUpdate">520</x:Double>
+
+  <x:Double x:Key="QxConsoleCollapsedHeight">36</x:Double>
+  <x:Double x:Key="QxConsoleDefaultHeight">330</x:Double>
+  <x:Double x:Key="QxConsoleMinHeight">100</x:Double>
+  <x:Double x:Key="QxApiBrowserWidth">320</x:Double>
+  <x:Double x:Key="QxApiBrowserMinWidth">280</x:Double>
+  <x:Double x:Key="QxApiBrowserMaxWidth">480</x:Double>
+
+  <x:Double x:Key="QxDocumentMaxWidth">760</x:Double>
+  <x:Double x:Key="QxPanelMaxWidth">720</x:Double>
+  <x:Double x:Key="QxFormColumnMinWidth">440</x:Double>
+  <x:Double x:Key="QxFormColumnGap">24</x:Double>
+
+  <x:Double x:Key="QxTileGap">8</x:Double>
+  <x:Double x:Key="QxTileFurniSize">64</x:Double>
+  <x:Double x:Key="QxTileFurniPitch">72</x:Double>
+  <x:Double x:Key="QxTileInventorySize">88</x:Double>
+  <x:Double x:Key="QxTileInventoryPitch">96</x:Double>
+  <x:Double x:Key="QxTileOutfitWidth">120</x:Double>
+  <x:Double x:Key="QxTileOutfitHeight">160</x:Double>
+  <x:Double x:Key="QxTileOutfitPitchWidth">128</x:Double>
+  <x:Double x:Key="QxTileOutfitPitchHeight">168</x:Double>
+
+  <x:Double x:Key="QxIconSizeXs">12</x:Double>
+  <x:Double x:Key="QxIconSizeSm">14</x:Double>
+  <x:Double x:Key="QxIconSizeMd">16</x:Double>
+  <x:Double x:Key="QxIconSizeLg">18</x:Double>
+  <x:Double x:Key="QxIconSizeXl">20</x:Double>
+  <x:Double x:Key="QxIconStroke">1.5</x:Double>
+
+  <x:Double x:Key="QxDisabledOpacity">0.45</x:Double>
+  <x:Double x:Key="QxBusyContentOpacity">0.5</x:Double>
+
+  <sys:TimeSpan x:Key="QxDurationInstant">0:0:0.06</sys:TimeSpan>
+  <sys:TimeSpan x:Key="QxDurationFast">0:0:0.1</sys:TimeSpan>
+  <sys:TimeSpan x:Key="QxDurationBase">0:0:0.16</sys:TimeSpan>
+  <sys:TimeSpan x:Key="QxDurationSlow">0:0:0.24</sys:TimeSpan>
+  <sys:TimeSpan x:Key="QxDurationSpinner">0:0:0.8</sys:TimeSpan>
+  <sys:TimeSpan x:Key="QxDurationComet">0:0:1.6</sys:TimeSpan>
+  <sys:TimeSpan x:Key="QxDurationCopyFeedback">0:0:1.4</sys:TimeSpan>
+  <sys:TimeSpan x:Key="QxDurationToastHold">0:0:6</sys:TimeSpan>
+  <sys:TimeSpan x:Key="QxDelayLoading">0:0:0.4</sys:TimeSpan>
+  <SplineEasing x:Key="QxEaseStandard" X1="0.2" Y1="0" X2="0" Y2="1" />
+  <SplineEasing x:Key="QxEaseExit" X1="0.4" Y1="0" X2="1" Y2="1" />
+
+</ResourceDictionary>

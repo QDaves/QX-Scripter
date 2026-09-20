@@ -1,0 +1,140 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:b="using:Qx.Desktop.Behaviors"
+             xmlns:c="using:Qx.Desktop.Controls"
+             xmlns:vm="using:Qx.Presentation.ViewModels.BugReports"
+             x:Class="Qx.Desktop.Views.BugReports.BugReportView"
+             x:DataType="vm:BugReportViewModel">
+  <c:PageLayout Page="{Binding}" Notices="{Binding Notices}">
+    <c:PageLayout.Actions>
+      <Button Classes="subtle"
+              Command="{Binding ReloadCommand}"
+              ToolTip.Tip="Read the application log again"
+              AutomationProperties.Name="Read the application log again">
+        <StackPanel Orientation="Horizontal" Spacing="6">
+          <c:Icon Kind="Refresh" Size="14" />
+          <TextBlock Text="Reload" />
+        </StackPanel>
+      </Button>
+    </c:PageLayout.Actions>
+    <ScrollViewer Padding="{DynamicResource QxPageBodyPadding}" HorizontalScrollBarVisibility="Disabled">
+      <StackPanel MaxWidth="960" HorizontalAlignment="Stretch" Spacing="24">
+
+        <c:Section Title="What happened">
+          <StackPanel>
+            <c:SettingRow Classes="stacked" Label="Summary">
+              <StackPanel Spacing="6">
+                <TextBox x:Name="SummaryBox"
+                         MaxLength="100"
+                         Text="{Binding Summary, Mode=TwoWay}"
+                         b:FocusRequest.IsRequested="{Binding FocusSummary, Mode=TwoWay}"
+                         AutomationProperties.Name="Bug report summary" />
+                <TextBlock Text="{Binding SummaryCounter}"
+                           Classes="mono caption tertiary"
+                           HorizontalAlignment="Right" />
+              </StackPanel>
+            </c:SettingRow>
+            <c:SettingRow Classes="stacked"
+                          Label="Details"
+                          Description="What did you do, what did you expect, and what happened instead?">
+              <StackPanel Spacing="6">
+                <TextBox x:Name="DescriptionBox"
+                         MaxLength="3000"
+                         AcceptsReturn="True"
+                         TextWrapping="Wrap"
+                         Height="{DynamicResource BugReports.DetailsHeight}"
+                         Padding="10,9"
+                         VerticalContentAlignment="Top"
+                         Text="{Binding Description, Mode=TwoWay}"
+                         AutomationProperties.Name="Bug report description" />
+                <TextBlock Text="{Binding DescriptionCounter}"
+                           Classes="mono caption tertiary"
+                           HorizontalAlignment="Right" />
+              </StackPanel>
+            </c:SettingRow>
+          </StackPanel>
+        </c:Section>
+
+        <c:Section Title="Diagnostics">
+          <StackPanel Margin="{DynamicResource BugReports.CardPadding}" Spacing="10">
+            <TextBlock x:Name="DiagnosticsText"
+                       Text="{Binding DiagnosticsText}"
+                       Classes="body secondary"
+                       TextWrapping="Wrap"
+                       AutomationProperties.LiveSetting="Polite" />
+            <CheckBox x:Name="IncludeLogsOption"
+                      Content="Include sanitized application logs from the last 24 hours"
+                      IsChecked="{Binding IncludeLogs, Mode=TwoWay}"
+                      IsEnabled="{Binding CanIncludeLogs}"
+                      AutomationProperties.Name="Include sanitized application logs" />
+          </StackPanel>
+        </c:Section>
+
+        <Border Classes="panel" Padding="4">
+          <StackPanel>
+            <ToggleButton Classes="subtle"
+                          HorizontalAlignment="Stretch"
+                          HorizontalContentAlignment="Left"
+                          IsChecked="{Binding IsPreviewOpen, Mode=TwoWay}"
+                          AutomationProperties.Name="Preview the diagnostics that will be sent">
+              <StackPanel Orientation="Horizontal" Spacing="8">
+                <Panel VerticalAlignment="Center">
+                  <c:Icon Kind="ChevronRight" Size="14" IsVisible="{Binding !IsPreviewOpen}" />
+                  <c:Icon Kind="ChevronDown" Size="14" IsVisible="{Binding IsPreviewOpen}" />
+                </Panel>
+                <TextBlock Text="Preview what will be sent" VerticalAlignment="Center" />
+              </StackPanel>
+            </ToggleButton>
+            <Border Classes="well"
+                    Margin="{DynamicResource BugReports.PreviewMargin}"
+                    Padding="{DynamicResource BugReports.PreviewPadding}"
+                    IsVisible="{Binding IsPreviewOpen}">
+              <ScrollViewer Height="{DynamicResource BugReports.PreviewHeight}"
+                            HorizontalScrollBarVisibility="Auto"
+                            VerticalScrollBarVisibility="Auto">
+                <SelectableTextBlock x:Name="PreviewBox"
+                                     Classes="mono"
+                                     Text="{Binding PreviewText}"
+                                     AutomationProperties.Name="Diagnostics preview" />
+              </ScrollViewer>
+            </Border>
+          </StackPanel>
+        </Border>
+
+        <Grid ColumnDefinitions="*,Auto,Auto">
+          <TextBlock Grid.Column="0"
+                     Classes="helper"
+                     Margin="0,0,16,0"
+                     VerticalAlignment="Center"
+                     TextWrapping="Wrap"
+                     Text="{Binding ContinueHint}"
+                     IsVisible="{Binding HasContinueHint}" />
+          <Button Grid.Column="1"
+                  Classes="subtle"
+                  Margin="0,0,8,0"
+                  Command="{Binding LinkCopy.CopyCommand}"
+                  IsEnabled="{Binding !HasContinueHint}"
+                  ToolTip.Tip="Copy the GitHub link instead of opening it"
+                  AutomationProperties.Name="Copy the bug report link">
+            <Panel>
+              <StackPanel Orientation="Horizontal" Spacing="6" IsVisible="{Binding !LinkCopy.Copied}">
+                <c:Icon Kind="Copy" Size="14" />
+                <TextBlock Text="Copy link" />
+              </StackPanel>
+              <StackPanel Orientation="Horizontal" Spacing="6" IsVisible="{Binding LinkCopy.Copied}">
+                <c:Icon Kind="Check" Size="14" Classes="success" />
+                <TextBlock Text="Copied" Classes="success" />
+              </StackPanel>
+            </Panel>
+          </Button>
+          <Button Grid.Column="2"
+                  Classes="primary"
+                  Content="Continue to GitHub"
+                  Command="{Binding ContinueCommand}"
+                  AutomationProperties.Name="Continue bug report to GitHub" />
+        </Grid>
+
+      </StackPanel>
+    </ScrollViewer>
+  </c:PageLayout>
+</UserControl>

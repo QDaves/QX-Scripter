@@ -1,0 +1,74 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:c="using:Qx.Desktop.Controls"
+             xmlns:vm="using:Qx.Presentation.ViewModels.Shell"
+             x:Class="Qx.Desktop.Views.Shell.StatusBar"
+             x:DataType="vm:ShellViewModel"
+             Height="{DynamicResource QxStatusBarHeight}">
+
+  <Border Background="{DynamicResource QxSurfaceChromeBrush}"
+          BorderBrush="{DynamicResource QxBorderSubtleBrush}"
+          BorderThickness="0,1,0,0">
+    <Grid ColumnDefinitions="Auto,*,Auto" Margin="6,0">
+      <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="2" VerticalAlignment="Center">
+        <c:StatusBarItem Classes="connection"
+                         Label="{Binding Status.GEarthLabel}"
+                         IsMuted="{Binding Status.IsGEarthMuted}"
+                         ToolTip.Tip="{Binding Status.GEarthTooltip}"
+                         AutomationProperties.Name="G-Earth connection"
+                         AutomationProperties.HelpText="{Binding Status.GEarthTooltip}" />
+        <c:StatusBarItem Classes="connection"
+                         Label="{Binding Status.McpLabel}"
+                         IsMuted="{Binding Status.IsMcpMuted}"
+                         ToolTip.Tip="{Binding Status.McpTooltip}"
+                         AutomationProperties.Name="MCP server state"
+                         AutomationProperties.HelpText="{Binding Status.McpTooltip}" />
+        <c:StatusBarItem Icon="Client"
+                         Label="{Binding Status.ClientLabel}"
+                         Detail="{Binding Status.ClientDetail}"
+                         IsVisible="{Binding Status.HasClient}"
+                         ToolTip.Tip="{Binding Status.ClientTooltip}"
+                         AutomationProperties.Name="Connected client" />
+      </StackPanel>
+
+      <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="2" VerticalAlignment="Center">
+        <c:StatusBarItem Icon="User"
+                         Label="{Binding Status.UserName}"
+                         IsVisible="{Binding Status.HasUser}"
+                         ToolTip.Tip="{Binding Status.UserTooltip}"
+                         AutomationProperties.Name="Signed-in user" />
+        <c:StatusBarItem Icon="Room"
+                         Label="{Binding Status.RoomName}"
+                         Detail="{Binding Status.RoomDetail}"
+                         IsVisible="{Binding Status.HasRoom}"
+                         Command="{Binding Status.CopyRoomIdCommand}"
+                         ToolTip.Tip="{Binding Status.RoomTooltip}"
+                         AutomationProperties.Name="Copy the room id" />
+        <Rectangle Classes="divider-vertical" IsVisible="{Binding Status.HasRoom}" />
+        <StackPanel Orientation="Horizontal" Spacing="2" IsVisible="{Binding Status.HasRoom}">
+          <c:StatusBarItem Classes="count"
+                           Icon="Users"
+                           Label="{Binding Status.UserCountText}"
+                           ToolTip.Tip="Users"
+                           AutomationProperties.Name="Users in the room" />
+          <c:StatusBarItem Classes="count"
+                           Icon="Bot"
+                           Label="{Binding Status.BotCountText}"
+                           ToolTip.Tip="Bots"
+                           AutomationProperties.Name="Bots in the room" />
+          <c:StatusBarItem Classes="count"
+                           Icon="Pet"
+                           Label="{Binding Status.PetCountText}"
+                           ToolTip.Tip="Pets"
+                           AutomationProperties.Name="Pets in the room" />
+          <c:StatusBarItem Classes="count"
+                           Icon="Furni"
+                           Label="{Binding Status.FurniCountText}"
+                           ToolTip.Tip="Furni"
+                           AutomationProperties.Name="Furni in the room" />
+        </StackPanel>
+      </StackPanel>
+    </Grid>
+  </Border>
+
+</UserControl>

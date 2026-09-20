@@ -199,14 +199,8 @@ public sealed class InventoryItemQuery : QueryCollection<InventoryItem>
         return Where(item => !values.Contains(item.Data.State));
     }
 
-    public InventoryItemQuery Nft(bool value = true) =>
-        Where(item => item.IsNft == value);
-
     public InventoryItemQuery Rental(bool value = true) =>
         Where(item => IsRental(item) == value);
-
-    public InventoryItemQuery Unseen(bool value = true) =>
-        Where(item => item.IsUnseen == value);
 
     public InventoryItemQuery Tradeable(bool value = true) =>
         Where(item => item.IsTradeable == value);
@@ -220,20 +214,8 @@ public sealed class InventoryItemQuery : QueryCollection<InventoryItem>
     public InventoryItemQuery Recyclable(bool value = true) =>
         Where(item => item.IsRecyclable == value);
 
-    public InventoryItemQuery ExternalImage(bool value = true) =>
-        Where(item => item.IsExternalImage == value);
-
     public InventoryItemQuery InRoom(Id roomId) =>
         Where(item => item.RoomId == roomId);
-
-    public InventoryItemQuery NftNamed(params string[] names) =>
-        NftNamed((IEnumerable<string>)names);
-
-    public InventoryItemQuery NftNamed(IEnumerable<string> names)
-    {
-        HashSet<string> values = QueryValues.Strings(names);
-        return Where(item => item.IsNft && values.Contains(item.NftName));
-    }
 
     private InventoryItemQuery Next(IEnumerable<InventoryItem> items) =>
         new(items, _furniData);

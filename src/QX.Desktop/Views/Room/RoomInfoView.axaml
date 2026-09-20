@@ -1,0 +1,64 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:c="using:Qx.Desktop.Controls"
+             xmlns:s="using:Qx.Presentation.Services.Room"
+             xmlns:vm="using:Qx.Presentation.ViewModels.Room"
+             x:Class="Qx.Desktop.Views.Room.RoomInfoView"
+             x:DataType="vm:RoomInfoViewModel">
+  <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+    <StackPanel Margin="24,24,24,32" Spacing="28">
+      <Grid ColumnDefinitions="150,28,*">
+        <Border Width="150" Height="150" ClipToBounds="True"
+                Background="{DynamicResource QxSurfaceSunkenBrush}"
+                CornerRadius="{DynamicResource QxRadiusMd}">
+          <Panel>
+            <c:Icon Kind="Room" Size="24" Classes="tertiary" HorizontalAlignment="Center" VerticalAlignment="Center" />
+            <c:RemoteImage Request="{Binding Thumbnail}" Stretch="Uniform"
+                           HorizontalAlignment="Stretch" VerticalAlignment="Stretch" />
+            <TextBlock Text="{Binding ThumbnailNote}" IsVisible="{Binding HasThumbnailNote}"
+                       Classes="caption tertiary" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,10" />
+          </Panel>
+        </Border>
+        <StackPanel Grid.Column="2" Spacing="10" VerticalAlignment="Center">
+          <TextBlock Text="{Binding RoomTitle}" Classes="display" TextWrapping="Wrap" />
+          <TextBlock Text="{Binding OwnerText}" IsVisible="{Binding HasOwner}" Classes="small secondary" TextWrapping="Wrap" />
+          <TextBlock Text="{Binding Description}" IsVisible="{Binding HasDescription}"
+                     Classes="body secondary" TextWrapping="Wrap" MaxWidth="680" HorizontalAlignment="Left" />
+          <Grid ColumnDefinitions="*,Auto" HorizontalAlignment="Left" Margin="-4,4,0,0">
+            <Button Classes="subtle small" Padding="4,0" Command="{Binding OpenLinkCommand}"
+                    ToolTip.Tip="Open this room in Habbo" AutomationProperties.Name="Open this room in Habbo">
+              <TextBlock Text="{Binding LinkText}" Classes="small secondary" TextTrimming="CharacterEllipsis" />
+            </Button>
+            <c:CopyButton Grid.Column="1" Margin="4,0,0,0" Command="{Binding CopyLink.CopyCommand}"
+                          IsCopied="{Binding CopyLink.Copied}" AutomationProperties.Name="Copy room link" />
+          </Grid>
+        </StackPanel>
+      </Grid>
+      <Border Height="1" Background="{DynamicResource QxBorderSubtleBrush}" />
+      <ItemsControl ItemsSource="{Binding Sections}">
+        <ItemsControl.ItemsPanel>
+          <ItemsPanelTemplate>
+            <c:AdaptiveColumns MinColumnWidth="220" MaxColumns="4" ColumnSpacing="28" RowSpacing="28" />
+          </ItemsPanelTemplate>
+        </ItemsControl.ItemsPanel>
+        <ItemsControl.ItemTemplate>
+          <DataTemplate x:DataType="vm:RoomInfoSection">
+            <StackPanel Spacing="16">
+              <TextBlock Text="{Binding Title}" Classes="heading" />
+              <ItemsControl ItemsSource="{Binding Facts}">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate x:DataType="s:RoomFact">
+                    <Grid ColumnDefinitions="3*,2*" MinHeight="32" ColumnSpacing="12">
+                      <TextBlock Text="{Binding Caption}" Classes="small tertiary" TextWrapping="Wrap" Margin="0,0,0,8" />
+                      <TextBlock Grid.Column="1" Text="{Binding Value}" Classes="small secondary" TextWrapping="Wrap" TextAlignment="Right" Margin="0,0,0,8" />
+                    </Grid>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+            </StackPanel>
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

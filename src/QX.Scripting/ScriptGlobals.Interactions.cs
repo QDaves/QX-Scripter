@@ -1,4 +1,4 @@
-﻿using Qx.Model;
+using Qx.Model;
 using Qx.Protocol;
 using Qx.Game.Application;
 
@@ -40,21 +40,6 @@ public partial class ScriptGlobals
         RespectUser(user.Id);
     }
 
-    /// <summary>
-    /// Lifts a user's ban from a room. Requires ownership of that room; the server ignores the
-    /// message otherwise.
-    /// </summary>
-    /// <param name="user_id">The banned user's account id.</param>
-    /// <param name="room_id">
-    /// The room to unban them from. When omitted, the room the local user is currently in is used.
-    /// </param>
-    /// <exception cref="InvalidOperationException">
-    /// No room id was given and the local user is not in a room, so there is nothing to default to.
-    /// </exception>
-    /// <remarks>
-    /// The message name differs by client — <c>RoomUnbanUser</c> on Unity,
-    /// <c>UnbanUserFromRoom</c> on Flash — and is selected automatically.
-    /// </remarks>
     public void UnbanUser(Id user_id, Id? room_id = null)
     {
         RoomModerationStateView state = Application.Invoke<
@@ -89,17 +74,8 @@ public partial class ScriptGlobals
         UnbanUser(user.Id, room_id);
     }
 
-    /// <summary>
-    /// Lifts a user's ban from a room. Alternative name for the same call, matching the Unity
-    /// message name.
-    /// </summary>
-    /// <param name="user_id">The banned user's account id.</param>
-    /// <param name="room_id">The room to unban them from, or the current room when omitted.</param>
-    /// <exception cref="InvalidOperationException">
-    /// No room id was given and the local user is not in a room.
-    /// </exception>
     public void RoomUnbanUser(Id user_id, Id? room_id = null) =>
-        UnbanUser(user_id, room_id);
+    UnbanUser(user_id, room_id);
 
     /// <summary>Lifts a user's ban from a room. Alternative name for the same call.</summary>
     /// <param name="user">The banned user; only its id is used.</param>
@@ -148,26 +124,11 @@ public partial class ScriptGlobals
         EnterOneWayDoor(item.Id);
     }
 
-    /// <summary>
-    /// Rewrites a sticky note's colour and text. The message replaces both values, so pass the
-    /// current colour when only the text should change.
-    /// </summary>
-    /// <param name="item_id">The wall item id of the sticky note.</param>
-    /// <param name="color">
-    /// The note's background colour as the hotel encodes it, for example <c>FFFF33</c>. It is
-    /// encoded independently from the text.
-    /// </param>
-    /// <param name="text">The note's text.</param>
-    /// <exception cref="ArgumentNullException"><paramref name="color"/> or <paramref name="text"/> is null.</exception>
-    /// <remarks>
-    /// The message name differs by client — <c>SetStickyData</c> on Unity, <c>SetItemData</c> on
-    /// Flash — and is selected automatically.
-    /// </remarks>
     public void SetStickyData(Id item_id, string color, string text) =>
-        Application.Invoke<RoomStickySetRequest, RoomItemDispatchResult>(
-            ApplicationMemberIds.RoomItemStickySet,
-            new RoomStickySetRequest(item_id, color, text),
-            Ct);
+    Application.Invoke<RoomStickySetRequest, RoomItemDispatchResult>(
+        ApplicationMemberIds.RoomItemStickySet,
+        new RoomStickySetRequest(item_id, color, text),
+        Ct);
 
     /// <summary>Rewrites a sticky note's colour and text.</summary>
     /// <param name="item">The wall item holding the note; only its id is used.</param>

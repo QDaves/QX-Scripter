@@ -6,26 +6,15 @@ public readonly record struct WardrobeOutfit(int SlotId, string Figure, string G
     : IParserComposer<WardrobeOutfit>
 {
     public static WardrobeOutfit Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static WardrobeOutfit ParseFlash(in PacketReader p) =>
         new(p.ReadInt(), p.ReadString(), p.ReadString());
 
-    private static WardrobeOutfit ParseUnity(in PacketReader p) =>
-        new(p.ReadInt(), p.ReadString(), p.ReadString());
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(WardrobeOutfit value, in PacketWriter p)
-    {
-        Validate(value, in p);
-        p.WriteInt(value.SlotId);
-        p.WriteString(value.Figure);
-        p.WriteString(value.Gender);
-    }
-
-    private static void ComposeUnity(WardrobeOutfit value, in PacketWriter p)
     {
         Validate(value, in p);
         p.WriteInt(value.SlotId);
@@ -59,7 +48,7 @@ public sealed record Wardrobe : IParserComposer<Wardrobe>
     }
 
     public static Wardrobe Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static Wardrobe ParseFlash(in PacketReader p)
     {
@@ -71,34 +60,14 @@ public sealed record Wardrobe : IParserComposer<Wardrobe>
         return new Wardrobe(state, outfits);
     }
 
-    private static Wardrobe ParseUnity(in PacketReader p)
-    {
-        int state = p.ReadInt();
-        int count = WardrobeWire.ReadUnityCount(in p, nameof(Outfits));
-        var outfits = new WardrobeOutfit[count];
-        for (int i = 0; i < count; i++)
-            outfits[i] = p.Parse<WardrobeOutfit>();
-        return new Wardrobe(state, outfits);
-    }
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(Wardrobe value, in PacketWriter p)
     {
         Validate(value, in p);
         p.WriteInt(value.State);
         p.WriteInt(value.Outfits.Count);
-        foreach (WardrobeOutfit outfit in value.Outfits)
-            p.Compose(outfit);
-    }
-
-    private static void ComposeUnity(Wardrobe value, in PacketWriter p)
-    {
-        WardrobeWire.RequireUnityCount(value.Outfits.Count, nameof(Outfits));
-        Validate(value, in p);
-        p.WriteInt(value.State);
-        p.WriteLength((Length)value.Outfits.Count);
         foreach (WardrobeOutfit outfit in value.Outfits)
             p.Compose(outfit);
     }
@@ -132,19 +101,6 @@ internal static class WardrobeWire
         int available = p.Available;
         int count = p.ReadInt();
         return RequireBoundedCount(count, available - sizeof(int), name);
-    }
-
-    public static int ReadUnityCount(in PacketReader p, string name)
-    {
-        int available = p.Available;
-        int count = p.ReadLength();
-        return RequireBoundedCount(count, available - sizeof(short), name);
-    }
-
-    public static void RequireUnityCount(int count, string name)
-    {
-        if ((uint)count > ushort.MaxValue)
-            throw new InvalidDataException($"{name} count {count} exceeds the Unity wire limit.");
     }
 
     private static int RequireBoundedCount(int count, int available, string name)

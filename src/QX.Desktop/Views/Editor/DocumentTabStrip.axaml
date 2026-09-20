@@ -1,0 +1,48 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:c="using:Qx.Desktop.Controls"
+             xmlns:vm="using:Qx.Presentation.ViewModels.Editor"
+             xmlns:doc="using:Qx.Presentation.Services.Workspace"
+             x:Class="Qx.Desktop.Views.Editor.DocumentTabStrip"
+             x:DataType="vm:WorkspaceViewModel">
+
+  <Border BorderBrush="{DynamicResource QxBorderSubtleBrush}"
+          MinHeight="{DynamicResource QxTabStripHeight}"
+          BorderThickness="0,0,0,1"
+          Background="{DynamicResource QxSurfaceRaisedBrush}">
+    <Grid ColumnDefinitions="Auto,*">
+      <ListBox Name="Tabs"
+               Grid.Column="0"
+               HorizontalAlignment="Left"
+               Theme="{StaticResource QxDocumentTabs}"
+               ItemContainerTheme="{StaticResource QxDocumentTab}"
+               ItemsSource="{Binding Documents}"
+               SelectedItem="{Binding Active, Mode=TwoWay}">
+        <ListBox.ItemTemplate>
+          <DataTemplate x:DataType="doc:ScriptDocument">
+            <c:TabHeader FileName="{Binding Name}"
+                         State="{Binding Badge, Converter={StaticResource QxTabState}}"
+                         IsModified="{Binding IsModified}"
+                         IsActive="{Binding $parent[ListBoxItem].IsSelected}"
+                         IsTabHovered="{Binding $parent[ListBoxItem].IsPointerOver}"
+                         CloseCommand="{Binding $parent[UserControl].((vm:WorkspaceViewModel)DataContext).CloseCommand}"
+                         CloseCommandParameter="{Binding}"
+                         ToolTip.Tip="{Binding FilePath}" />
+          </DataTemplate>
+        </ListBox.ItemTemplate>
+      </ListBox>
+      <Button Grid.Column="1"
+              Classes="icon small"
+              Width="28"
+              Margin="4,0,0,0"
+              HorizontalAlignment="Left"
+              VerticalAlignment="Center"
+              Command="{Binding NewCommand}"
+              ToolTip.Tip="New script (Ctrl+N)"
+              AutomationProperties.Name="New script">
+        <c:Icon Kind="Add" Size="14" />
+      </Button>
+    </Grid>
+  </Border>
+
+</UserControl>

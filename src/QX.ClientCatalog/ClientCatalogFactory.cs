@@ -2,13 +2,11 @@ using Qx;
 using Qx.Messages;
 using Qx.Protocol;
 using Qx.Headers.Flash;
-using Qx.Unity;
 
 namespace Qx.ClientCatalog;
 
 public static class ClientCatalogFactory
 {
-    const long UnityWireFamilyRelease = 2415;
 
     public static MessageCatalog Create(PreparedHeaderCatalog prepared)
     {
@@ -26,7 +24,6 @@ public static class ClientCatalogFactory
             throw new InvalidDataException("The prepared header catalog contains no named headers.");
         catalog.SetBuildFingerprint(prepared.Key.SourceSha256);
         ApplyFlashCompatibilityProfile(catalog, prepared);
-        ApplyUnityCompatibilityProfile(catalog, prepared.Key.Client, prepared.Candidate.Version);
         return catalog;
     }
 
@@ -51,32 +48,6 @@ public static class ClientCatalogFactory
         {
             throw new InvalidDataException("The prepared header catalog has inconsistent source provenance.");
         }
-    }
-
-    public static MessageCatalog CreateUnityReference()
-    {
-        UnityHeaderNameDatabase names = UnityHeaderNameDatabase.LoadDefault();
-        var catalog = new MessageCatalog();
-        foreach ((short id, UnityHeaderNames entry) in names.Incoming)
-            Add(catalog, Direction.In, id, entry.Name, entry.FlashName);
-        foreach ((short id, UnityHeaderNames entry) in names.Outgoing)
-            Add(catalog, Direction.Out, id, entry.Name, entry.FlashName);
-        return catalog;
-    }
-
-    public static MessageCatalog Create(UnityMessageMap messages) => Create(messages, null);
-
-    public static MessageCatalog Create(UnityMessageMap messages, string? client_version)
-    {
-        ArgumentNullException.ThrowIfNull(messages);
-        var catalog = new MessageCatalog();
-        foreach (UnityHeaderDefinition message in messages.Incoming)
-            Add(catalog, Direction.In, message.Id, message.Name, message.FlashName, message.SourceName);
-        foreach (UnityHeaderDefinition message in messages.Outgoing)
-            Add(catalog, Direction.Out, message.Id, message.Name, message.FlashName, message.SourceName);
-        catalog.SetBuildFingerprint(messages.MetadataSha256);
-        ApplyUnityCompatibilityProfile(catalog, ClientCatalogClients.Unity, client_version);
-        return catalog;
     }
 
     public static MessageCatalog Create(FlashHeaderMap messages)
@@ -108,40 +79,6 @@ public static class ClientCatalogFactory
         catalog.Add(direction, id, aliases[0]);
         foreach (string alias in aliases.Skip(1))
             catalog.AddAlias(direction, id, alias);
-    }
-
-    static void ApplyUnityCompatibilityProfile(
-        MessageCatalog catalog,
-        ClientType client,
-        string? client_version)
-    {
-        if (client != ClientCatalogClients.Unity ||
-            !long.TryParse(client_version, out long release) ||
-            release < UnityWireFamilyRelease)
-        {
-            return;
-        }
-
-        short? marketplace_header = catalog.TryGetId(
-            Direction.Out,
-            "MarketplaceBuyOffer",
-            out short header)
-                ? header
-                : null;
-        catalog.SetWireProfile(new MessageWireProfile(
-            MessageWiredContextLayout.Full,
-            true,
-            UnityAvatarStatusHasTargetId: true,
-            UnityUpdateAvatarHasBadgeRank: true,
-            UnityInventoryItemHasExtendedMetadata: true,
-            UnityGuestRoomResultHasExtendedData: true,
-            UnityCraftingProductHasProductCode: true,
-            UnityMarketplaceBuyLayout: marketplace_header is null
-                ? MarketplaceBuyWireLayout.Unknown
-                : MarketplaceBuyWireLayout.OfferId,
-            UnityMarketplaceBuyHeaderId: marketplace_header,
-            UnityConsoleMessageLayout: ConsoleMessageWireLayout.TaggedHabbicon,
-            UnityRoomSettingsLayout: UnityRoomSettingsWireLayout.Modern));
     }
 
     static void ApplyFlashCompatibilityProfile(

@@ -1,0 +1,108 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+  <ControlTheme x:Key="QxCaptionButton" TargetType="Button">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="Foreground" Value="{DynamicResource QxTextSecondaryBrush}" />
+    <Setter Property="Width" Value="46" />
+    <Setter Property="VerticalAlignment" Value="Stretch" />
+    <Setter Property="Focusable" Value="False" />
+    <Setter Property="(WindowDecorationProperties.ElementRole)" Value="DecorationsElement" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <ContentPresenter Name="PART_ContentPresenter"
+                          Background="{TemplateBinding Background}"
+                          Content="{TemplateBinding Content}"
+                          HorizontalContentAlignment="Center"
+                          VerticalContentAlignment="Center" />
+      </ControlTemplate>
+    </Setter>
+    <Style Selector="^:pointerover">
+      <Setter Property="Background" Value="{DynamicResource QxFillHoverBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource QxTextPrimaryBrush}" />
+    </Style>
+    <Style Selector="^:pressed">
+      <Setter Property="Background" Value="{DynamicResource QxFillPressedBrush}" />
+    </Style>
+    <Style Selector="^.close:pointerover">
+      <Setter Property="Background" Value="{DynamicResource QxCaptionCloseHoverBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource QxTextOnAccentBrush}" />
+    </Style>
+    <Style Selector="^.close:pressed">
+      <Setter Property="Background" Value="{DynamicResource QxCaptionClosePressedBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource QxTextOnAccentBrush}" />
+    </Style>
+  </ControlTheme>
+
+  <StreamGeometry x:Key="QxCaptionMinimizeGlyph">M0,0.5 H10</StreamGeometry>
+  <StreamGeometry x:Key="QxCaptionMaximizeGlyph">M0.5,0.5 H9.5 V9.5 H0.5 Z</StreamGeometry>
+  <StreamGeometry x:Key="QxCaptionRestoreGlyph">M2.5,0.5 H9.5 V7.5 M0.5,2.5 H7.5 V9.5 H0.5 Z</StreamGeometry>
+  <StreamGeometry x:Key="QxCaptionCloseGlyph">M0.5,0.5 L9.5,9.5 M9.5,0.5 L0.5,9.5</StreamGeometry>
+
+  <ControlTheme x:Key="QxWindowDecorations" TargetType="WindowDrawnDecorations">
+    <Setter Property="DefaultTitleBarHeight" Value="40" />
+    <Setter Property="DefaultFrameThickness" Value="1" />
+    <Setter Property="DefaultShadowThickness" Value="8" />
+    <Setter Property="Template">
+      <WindowDrawnDecorationsTemplate>
+        <WindowDrawnDecorationsContent>
+          <WindowDrawnDecorationsContent.Underlay>
+            <Panel Name="PART_UnderlayWrapper">
+              <Border Name="PART_WindowBorder"
+                      BorderThickness="{TemplateBinding FrameThickness}"
+                      BorderBrush="{DynamicResource QxBorderDefaultBrush}"
+                      IsHitTestVisible="False" />
+              <Panel Name="PART_TitleBar"
+                     VerticalAlignment="Top"
+                     Height="{TemplateBinding TitleBarHeight}"
+                     IsVisible="{TemplateBinding HasTitleBar}"
+                     WindowDecorationProperties.ElementRole="TitleBar" />
+            </Panel>
+          </WindowDrawnDecorationsContent.Underlay>
+          <WindowDrawnDecorationsContent.Overlay>
+            <Panel Name="PART_OverlayWrapper">
+              <StackPanel Name="PART_OverlayPanel"
+                          VerticalAlignment="Top"
+                          HorizontalAlignment="Right"
+                          Height="{TemplateBinding TitleBarHeight}"
+                          IsVisible="{TemplateBinding HasTitleBar}"
+                          Orientation="Horizontal">
+                <Button Name="PART_MinimizeButton" Theme="{StaticResource QxCaptionButton}" WindowDecorationProperties.ElementRole="MinimizeButton">
+                  <Path Width="10" Height="1" Stretch="None" Stroke="{Binding $parent[Button].Foreground}" StrokeThickness="1" Data="{StaticResource QxCaptionMinimizeGlyph}" />
+                </Button>
+                <Button Name="PART_MaximizeButton" Theme="{StaticResource QxCaptionButton}" WindowDecorationProperties.ElementRole="MaximizeButton">
+                  <Path Name="MaximizeGlyph" Width="10" Height="10" Stretch="None" Stroke="{Binding $parent[Button].Foreground}" StrokeThickness="1" Data="{StaticResource QxCaptionMaximizeGlyph}" />
+                </Button>
+                <Button Name="PART_CloseButton" Classes="close" Theme="{StaticResource QxCaptionButton}" WindowDecorationProperties.ElementRole="CloseButton">
+                  <Path Width="10" Height="10" Stretch="None" Stroke="{Binding $parent[Button].Foreground}" StrokeThickness="1" Data="{StaticResource QxCaptionCloseGlyph}" />
+                </Button>
+              </StackPanel>
+            </Panel>
+          </WindowDrawnDecorationsContent.Overlay>
+        </WindowDrawnDecorationsContent>
+      </WindowDrawnDecorationsTemplate>
+    </Setter>
+    <Style Selector="^:has-shadow /template/ Panel#PART_UnderlayWrapper">
+      <Setter Property="Margin" Value="{TemplateBinding ShadowThickness}" />
+    </Style>
+    <Style Selector="^:has-shadow /template/ Border#PART_WindowBorder">
+      <Setter Property="BoxShadow" Value="{DynamicResource QxShadowDialog}" />
+    </Style>
+    <Style Selector="^:has-shadow /template/ Panel#PART_OverlayWrapper">
+      <Setter Property="Margin" Value="{TemplateBinding ShadowThickness}" />
+    </Style>
+    <Style Selector="^:maximized /template/ Path#MaximizeGlyph">
+      <Setter Property="Data" Value="{StaticResource QxCaptionRestoreGlyph}" />
+    </Style>
+    <Style Selector="^:not(:has-minimize) /template/ Button#PART_MinimizeButton">
+      <Setter Property="IsVisible" Value="False" />
+    </Style>
+    <Style Selector="^:not(:has-maximize) /template/ Button#PART_MaximizeButton">
+      <Setter Property="IsVisible" Value="False" />
+    </Style>
+    <Style Selector="^:fullscreen /template/ StackPanel#PART_OverlayPanel">
+      <Setter Property="IsVisible" Value="False" />
+    </Style>
+  </ControlTheme>
+
+</ResourceDictionary>

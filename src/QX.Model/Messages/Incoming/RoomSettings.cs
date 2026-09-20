@@ -5,8 +5,6 @@ namespace Qx.Model.Messages.Incoming;
 public sealed record RoomSettings : IParserComposer<RoomSettings>
 {
     private const int FlashFixedTailBytes = 57;
-    private const int UnityVisitorLimitBytes = 13;
-    private const int UnityModernBytes = 12;
 
     private IReadOnlyList<string> _tags = Array.AsReadOnly(Array.Empty<string>());
     private IReadOnlyList<Id> _nft_group_ids = Array.AsReadOnly(Array.Empty<Id>());
@@ -52,11 +50,8 @@ public sealed record RoomSettings : IParserComposer<RoomSettings>
     public RoomModerationPermission WhoCanKick { get; init; }
     public RoomModerationPermission WhoCanBan { get; init; }
 
-    internal UnityRoomSettingsWireLayout? UnityWireLayout { get; init; }
-    internal int? UnityVisitorFieldCount { get; init; }
-
     public static RoomSettings Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static RoomSettings ParseFlash(in PacketReader p)
     {
@@ -129,102 +124,8 @@ public sealed record RoomSettings : IParserComposer<RoomSettings>
         };
     }
 
-    private static RoomSettings ParseUnity(in PacketReader p)
-    {
-        UnityRoomSettingsWireLayout layout = RequireUnityLayout(in p);
-        Id room_id = p.ReadLong();
-        string name = p.ReadString();
-        string description = p.ReadString();
-        RoomDoorMode door_mode = (RoomDoorMode)p.ReadInt();
-        int category_id = p.ReadInt();
-        bool allow_pets = p.ReadInt() > 0;
-        bool is_group_room = p.ReadBool();
-        int group_rights_policy = p.ReadInt();
-        bool requires_builders_club = p.ReadBool();
-        RoomModerationPermission who_can_mute = (RoomModerationPermission)p.ReadInt();
-        RoomModerationPermission who_can_kick = (RoomModerationPermission)p.ReadInt();
-        RoomModerationPermission who_can_ban = (RoomModerationPermission)p.ReadInt();
-        if (p.Available < 2)
-            throw new InvalidDataException($"{nameof(RoomSettings)} has no NFT group count.");
-
-        int nft_group_count = unchecked((ushort)p.ReadShort());
-        int mandatory_tail = layout is UnityRoomSettingsWireLayout.Modern
-            ? UnityVisitorLimitBytes + UnityModernBytes
-            : 0;
-        long minimum_remaining = (long)nft_group_count * 8 + mandatory_tail;
-        if (p.Available < minimum_remaining)
-            throw new InvalidDataException($"{nameof(RoomSettings)} NFT group count exceeds the remaining payload.");
-
-        var nft_group_ids = new Id[nft_group_count];
-        for (int i = 0; i < nft_group_ids.Length; i++)
-            nft_group_ids[i] = p.ReadLong();
-
-        int tail_length = p.Available;
-        int visitor_field_count = layout switch
-        {
-            UnityRoomSettingsWireLayout.Legacy when tail_length == 0 => 0,
-            UnityRoomSettingsWireLayout.Legacy when tail_length == 1 => 1,
-            UnityRoomSettingsWireLayout.Legacy when tail_length == 5 => 2,
-            UnityRoomSettingsWireLayout.Legacy when tail_length == 9 => 3,
-            UnityRoomSettingsWireLayout.Legacy when tail_length == UnityVisitorLimitBytes => 4,
-            UnityRoomSettingsWireLayout.Modern when tail_length == UnityVisitorLimitBytes + UnityModernBytes => 4,
-            _ => throw new InvalidDataException(
-                $"{nameof(RoomSettings)} has an invalid {layout} tail length ({tail_length}).")
-        };
-
-        bool is_habbo_x_demo_room = false;
-        int maximum_visitors = 0;
-        int maximum_visitors_limit = 0;
-        int maximum_visitors_lower_limit = 0;
-        if (visitor_field_count >= 1)
-            is_habbo_x_demo_room = p.ReadBool();
-        if (visitor_field_count >= 2)
-            maximum_visitors = p.ReadInt();
-        if (visitor_field_count >= 3)
-            maximum_visitors_limit = p.ReadInt();
-        if (visitor_field_count >= 4)
-            maximum_visitors_lower_limit = p.ReadInt();
-
-        RoomTradeMode trade_mode = RoomTradeMode.Disabled;
-        bool allow_food_consume = false;
-        bool allow_walk_through = false;
-        if (layout is UnityRoomSettingsWireLayout.Modern)
-        {
-            trade_mode = (RoomTradeMode)p.ReadInt();
-            allow_food_consume = p.ReadInt() > 0;
-            allow_walk_through = p.ReadInt() > 0;
-        }
-        RequireEmpty(in p);
-
-        return new RoomSettings
-        {
-            RoomId = room_id,
-            Name = name,
-            Description = description,
-            DoorMode = door_mode,
-            CategoryId = category_id,
-            AllowPets = allow_pets,
-            IsGroupRoom = is_group_room,
-            GroupRightsPolicy = group_rights_policy,
-            RequiresBuildersClub = requires_builders_club,
-            WhoCanMute = who_can_mute,
-            WhoCanKick = who_can_kick,
-            WhoCanBan = who_can_ban,
-            NftGroupIds = nft_group_ids,
-            IsHabboXDemoRoom = is_habbo_x_demo_room,
-            MaximumVisitors = maximum_visitors,
-            MaximumVisitorsLimit = maximum_visitors_limit,
-            MaximumVisitorsLowerLimit = maximum_visitors_lower_limit,
-            TradeMode = trade_mode,
-            AllowFoodConsume = allow_food_consume,
-            AllowWalkThrough = allow_walk_through,
-            UnityWireLayout = layout,
-            UnityVisitorFieldCount = visitor_field_count
-        };
-    }
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(RoomSettings value, in PacketWriter p)
     {
@@ -265,80 +166,6 @@ public sealed record RoomSettings : IParserComposer<RoomSettings>
         p.WriteBool(value.HiddenByBc);
     }
 
-    private static void ComposeUnity(RoomSettings value, in PacketWriter p)
-    {
-        UnityRoomSettingsWireLayout layout = RequireUnityLayout(in p);
-        if (value.UnityWireLayout is not UnityRoomSettingsWireLayout parsed_layout || parsed_layout != layout)
-            throw new NotSupportedException("The active Unity session has no compatible room settings wire layout.");
-        if (value.UnityVisitorFieldCount is not int visitor_field_count ||
-            visitor_field_count is < 0 or > 4)
-        {
-            throw new NotSupportedException("Unity room settings require their parsed visitor-field count.");
-        }
-        if (layout is UnityRoomSettingsWireLayout.Modern && visitor_field_count != 4)
-        {
-            throw new NotSupportedException("The modern Unity room settings layout requires all visitor fields.");
-        }
-        if ((visitor_field_count < 1 && value.IsHabboXDemoRoom) ||
-            (visitor_field_count < 2 && value.MaximumVisitors != 0) ||
-            (visitor_field_count < 3 && value.MaximumVisitorsLimit != 0) ||
-            (visitor_field_count < 4 && value.MaximumVisitorsLowerLimit != 0))
-        {
-            throw new NotSupportedException("The selected Unity room settings tail cannot represent later visitor fields.");
-        }
-        if (layout is UnityRoomSettingsWireLayout.Legacy &&
-            (value.TradeMode is not RoomTradeMode.Disabled ||
-             value.AllowFoodConsume ||
-             value.AllowWalkThrough))
-        {
-            throw new NotSupportedException("The legacy Unity room settings layout cannot represent trade or consumption settings.");
-        }
-
-        Id[] nft_group_ids = [.. value.NftGroupIds];
-        if (nft_group_ids.Length > ushort.MaxValue)
-            throw new ArgumentException("NftGroupIds exceeds the Unity wire count limit.", nameof(NftGroupIds));
-        RequireString(value.Name, nameof(Name), in p);
-        RequireString(value.Description, nameof(Description), in p);
-
-        p.WriteLong(value.RoomId);
-        p.WriteString(value.Name);
-        p.WriteString(value.Description);
-        p.WriteInt((int)value.DoorMode);
-        p.WriteInt(value.CategoryId);
-        p.WriteInt(value.AllowPets ? 1 : 0);
-        p.WriteBool(value.IsGroupRoom);
-        p.WriteInt(value.GroupRightsPolicy);
-        p.WriteBool(value.RequiresBuildersClub);
-        p.WriteInt((int)value.WhoCanMute);
-        p.WriteInt((int)value.WhoCanKick);
-        p.WriteInt((int)value.WhoCanBan);
-        p.WriteLength((Length)(ushort)nft_group_ids.Length);
-        foreach (Id nft_group_id in nft_group_ids)
-            p.WriteLong(nft_group_id);
-        if (visitor_field_count >= 1)
-            p.WriteBool(value.IsHabboXDemoRoom);
-        if (visitor_field_count >= 2)
-            p.WriteInt(value.MaximumVisitors);
-        if (visitor_field_count >= 3)
-            p.WriteInt(value.MaximumVisitorsLimit);
-        if (visitor_field_count >= 4)
-            p.WriteInt(value.MaximumVisitorsLowerLimit);
-        if (layout is UnityRoomSettingsWireLayout.Modern)
-        {
-            p.WriteInt((int)value.TradeMode);
-            p.WriteInt(value.AllowFoodConsume ? 1 : 0);
-            p.WriteInt(value.AllowWalkThrough ? 1 : 0);
-        }
-    }
-
-    private static UnityRoomSettingsWireLayout RequireUnityLayout(in PacketReader p) =>
-        p.Context?.WireProfile.RequireUnityRoomSettingsLayout() ??
-        throw new NotSupportedException("Unity room settings require wire-profile context.");
-
-    private static UnityRoomSettingsWireLayout RequireUnityLayout(in PacketWriter p) =>
-        p.Context?.WireProfile.RequireUnityRoomSettingsLayout() ??
-        throw new NotSupportedException("Unity room settings require wire-profile context.");
-
     private static IReadOnlyList<T> Freeze<T>(IReadOnlyList<T> values, string name)
     {
         ArgumentNullException.ThrowIfNull(values, name);
@@ -363,7 +190,7 @@ public sealed record RoomSettings : IParserComposer<RoomSettings>
 public sealed record RoomSettingsSaved(Id RoomId) : IParserComposer<RoomSettingsSaved>
 {
     public static RoomSettingsSaved Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static RoomSettingsSaved ParseFlash(in PacketReader p)
     {
@@ -372,24 +199,14 @@ public sealed record RoomSettingsSaved(Id RoomId) : IParserComposer<RoomSettings
         return new RoomSettingsSaved(room_id);
     }
 
-    private static RoomSettingsSaved ParseUnity(in PacketReader p)
-    {
-        Id room_id = p.ReadLong();
-        RequireEmpty(in p);
-        return new RoomSettingsSaved(room_id);
-    }
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(RoomSettingsSaved value, in PacketWriter p)
     {
         int room_id = checked((int)(long)value.RoomId);
         p.WriteInt(room_id);
     }
-
-    private static void ComposeUnity(RoomSettingsSaved value, in PacketWriter p) =>
-        p.WriteLong(value.RoomId);
 
     private static void RequireEmpty(in PacketReader p)
     {
@@ -401,7 +218,7 @@ public sealed record RoomSettingsSaved(Id RoomId) : IParserComposer<RoomSettings
 public sealed record RoomSettingsError(Id RoomId, int ErrorCode) : IParserComposer<RoomSettingsError>
 {
     public static RoomSettingsError Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static RoomSettingsError ParseFlash(in PacketReader p)
     {
@@ -411,27 +228,13 @@ public sealed record RoomSettingsError(Id RoomId, int ErrorCode) : IParserCompos
         return new RoomSettingsError(room_id, error_code);
     }
 
-    private static RoomSettingsError ParseUnity(in PacketReader p)
-    {
-        Id room_id = p.ReadLong();
-        int error_code = p.ReadInt();
-        RequireEmpty(in p);
-        return new RoomSettingsError(room_id, error_code);
-    }
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(RoomSettingsError value, in PacketWriter p)
     {
         int room_id = checked((int)(long)value.RoomId);
         p.WriteInt(room_id);
-        p.WriteInt(value.ErrorCode);
-    }
-
-    private static void ComposeUnity(RoomSettingsError value, in PacketWriter p)
-    {
-        p.WriteLong(value.RoomId);
         p.WriteInt(value.ErrorCode);
     }
 
@@ -446,7 +249,7 @@ public sealed record RoomSettingsSaveError(Id RoomId, int ErrorCode, string Info
     : IParserComposer<RoomSettingsSaveError>
 {
     public static RoomSettingsSaveError Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static RoomSettingsSaveError ParseFlash(in PacketReader p)
     {
@@ -457,31 +260,14 @@ public sealed record RoomSettingsSaveError(Id RoomId, int ErrorCode, string Info
         return new RoomSettingsSaveError(room_id, error_code, info);
     }
 
-    private static RoomSettingsSaveError ParseUnity(in PacketReader p)
-    {
-        Id room_id = p.ReadLong();
-        int error_code = p.ReadInt();
-        string info = p.ReadString();
-        RequireEmpty(in p);
-        return new RoomSettingsSaveError(room_id, error_code, info);
-    }
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(RoomSettingsSaveError value, in PacketWriter p)
     {
         int room_id = checked((int)(long)value.RoomId);
         RequireString(value.Info, in p);
         p.WriteInt(room_id);
-        p.WriteInt(value.ErrorCode);
-        p.WriteString(value.Info);
-    }
-
-    private static void ComposeUnity(RoomSettingsSaveError value, in PacketWriter p)
-    {
-        RequireString(value.Info, in p);
-        p.WriteLong(value.RoomId);
         p.WriteInt(value.ErrorCode);
         p.WriteString(value.Info);
     }

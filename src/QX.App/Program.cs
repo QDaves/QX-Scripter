@@ -83,10 +83,7 @@ static async Task<int> Run(string[] args)
             cts.Cancel();
     };
 
-    string scripts_directory = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-        "QX Scripter",
-        "scripts");
+    string scripts_directory = StoragePaths.Scripts;
     await using var runtime = new RuntimeHost(new RuntimeHostOptions
     {
         GEarth = options,

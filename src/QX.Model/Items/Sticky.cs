@@ -20,20 +20,14 @@ public sealed record Sticky(Id Id, string Color, string Text) : IParserComposer<
     }
 
     public static Sticky Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
-    private static Sticky ParseFlash(in PacketReader p) => ParseMessage(in p, true);
-
-    private static Sticky ParseUnity(in PacketReader p) => ParseMessage(in p, false);
-
-    private static Sticky ParseMessage(in PacketReader p, bool string_id)
+    private static Sticky ParseFlash(in PacketReader p)
     {
         var strings = new RoomObjectReadStringBudget();
-        Id id = string_id
-            ? long.TryParse(strings.Read(in p, sizeof(short), nameof(Id)), out long value)
-                ? value
-                : 0
-            : ReadUnityId(in p);
+        Id id = long.TryParse(strings.Read(in p, sizeof(short), nameof(Id)), out long value)
+            ? value
+            : 0;
         string data = strings.Read(in p, 0, nameof(Text));
 
         int space = data.IndexOf(' ');
@@ -44,26 +38,13 @@ public sealed record Sticky(Id Id, string Color, string Text) : IParserComposer<
     }
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(Sticky value, in PacketWriter p)
     {
         StickyWireSnapshot snapshot = Prepare(value, in p, true);
         p.WriteString(snapshot.IdText!);
         p.WriteString(snapshot.Data);
-    }
-
-    private static void ComposeUnity(Sticky value, in PacketWriter p)
-    {
-        StickyWireSnapshot snapshot = Prepare(value, in p, false);
-        p.WriteId(snapshot.Id);
-        p.WriteString(snapshot.Data);
-    }
-
-    private static Id ReadUnityId(in PacketReader p)
-    {
-        RoomObjectReadWire.RequireRemaining(in p, sizeof(long), sizeof(short), nameof(Id));
-        return p.ReadId();
     }
 
     private static StickyWireSnapshot Prepare(Sticky value, in PacketWriter p, bool string_id)

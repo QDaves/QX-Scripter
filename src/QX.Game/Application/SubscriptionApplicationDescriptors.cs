@@ -204,8 +204,7 @@ internal static class SubscriptionApplicationDescriptors
             new(
                 MessageKeys.Subscriptions.BuildersClubWallOfferPlace,
                 Direction.Out,
-                ApplicationMessageRole.Send,
-                SchemaCapability: "unityBuildersClubWallLocationSchema")
+                ApplicationMessageRole.Send)
         ],
         new(false, true, false, true));
 

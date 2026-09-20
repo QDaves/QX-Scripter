@@ -3,21 +3,6 @@ using Qx.Model.Messages.Incoming;
 
 namespace Qx.Scripting;
 
-/// <content>
-/// Badges: the local user's badge collection and the badge slots users have equipped. Available on
-/// both the Flash and the Unity client.
-/// <para>
-/// Two different things live here. The <em>owned badge</em> collection is the local user's own
-/// inventory; it arrives in fragments and has to be loaded once before it is complete. The
-/// <em>selected badge</em> sets are the up-to-five badges a user shows on their profile; they are
-/// cached per user as the server pushes them for avatars in the room and for profiles that were
-/// looked at, and are never fetched on their own by anything here.
-/// </para>
-/// <para>
-/// Only the load helpers touch the network. Every other member reads the cache and returns a copy
-/// taken under the tracker's lock.
-/// </para>
-/// </content>
 public partial class ScriptGlobals
 {
     /// <summary>
@@ -66,11 +51,6 @@ public partial class ScriptGlobals
     /// <returns>The badge, or <see langword="null"/> when the user does not own it.</returns>
     public OwnedBadge? GetOwnedBadge(int badge_id) => BadgeInventory.Badge(badge_id);
 
-    /// <summary>
-    /// Finds an owned badge by its native badge id, which is 64-bit wide on the Unity client.
-    /// </summary>
-    /// <param name="badge_id">The native badge id.</param>
-    /// <returns>The badge, or <see langword="null"/> when the user does not own it.</returns>
     public OwnedBadge? GetOwnedBadge(Id badge_id) => BadgeInventory.Badge(badge_id);
 
     /// <summary>

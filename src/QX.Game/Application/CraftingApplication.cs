@@ -395,7 +395,7 @@ internal sealed partial class CraftingApplication : IApplicationFeature, ICrafti
         long id = value;
         bool valid = ClientTypes.IsFlash(client)
             ? id is > 0 and <= int.MaxValue
-            : ClientTypes.IsUnity(client) && id > 0;
+            : false;
         if (!valid)
             throw new ArgumentOutOfRangeException(argument_name);
     }

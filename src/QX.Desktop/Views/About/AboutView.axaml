@@ -1,0 +1,98 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:c="using:Qx.Desktop.Controls"
+             xmlns:vm="using:Qx.Presentation.ViewModels.About"
+             x:Class="Qx.Desktop.Views.About.AboutView"
+             x:DataType="vm:AboutViewModel">
+  <c:PageLayout Page="{Binding}" Notices="{Binding Notices}">
+    <ScrollViewer Padding="{DynamicResource QxPageBodyPadding}" HorizontalScrollBarVisibility="Disabled">
+      <StackPanel MaxWidth="{DynamicResource QxDocumentMaxWidth}" HorizontalAlignment="Left" Spacing="24">
+
+        <StackPanel Spacing="16">
+          <StackPanel Orientation="Horizontal" Spacing="16">
+            <c:QxMark Height="{DynamicResource About.MarkSize}"
+                      VerticalAlignment="Center"
+                      Foreground="{DynamicResource QxBrandBrush}"
+                      AutomationProperties.Name="QX Scripter" />
+            <StackPanel Spacing="6" VerticalAlignment="Center">
+              <TextBlock Text="{Binding Wordmark}" Classes="display" />
+              <c:Chip Classes="mono" Text="{Binding VersionText}" AutomationProperties.Name="Version" />
+            </StackPanel>
+          </StackPanel>
+          <TextBlock Text="{Binding Description}" Classes="body secondary" TextWrapping="Wrap" />
+        </StackPanel>
+
+        <c:Section Title="People">
+          <StackPanel>
+
+            <c:SettingRow Label="Created by">
+              <Button Theme="{StaticResource QxLinkButton}"
+                      Content="{Binding Author.Text}"
+                      Command="{Binding Author.OpenCommand}"
+                      ToolTip.Tip="{Binding Author.Tooltip}" />
+            </c:SettingRow>
+
+            <Border Theme="{StaticResource About.CreditRow}">
+              <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                <TextBlock Text="{Binding ThanksBefore}" Classes="body secondary" VerticalAlignment="Center" />
+                <Button Theme="{StaticResource QxLinkButton}"
+                        Content="{Binding Xabbo.Text}"
+                        Command="{Binding Xabbo.OpenCommand}"
+                        ToolTip.Tip="{Binding Xabbo.Tooltip}" />
+                <TextBlock Text="{Binding ThanksAfter}" Classes="body secondary" VerticalAlignment="Center" />
+              </StackPanel>
+            </Border>
+
+            <c:SettingRow Label="Contributors">
+              <ItemsControl ItemsSource="{Binding Contributors}" Classes="bounded">
+                <ItemsControl.ItemsPanel>
+                  <ItemsPanelTemplate>
+                    <WrapPanel ItemSpacing="18" LineSpacing="4" />
+                  </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate x:DataType="vm:AboutLink">
+                    <Button Theme="{StaticResource QxLinkButton}"
+                            Content="{Binding Text}"
+                            Command="{Binding OpenCommand}"
+                            ToolTip.Tip="{Binding Tooltip}" />
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+            </c:SettingRow>
+
+          </StackPanel>
+        </c:Section>
+
+        <c:Section Title="Links">
+          <StackPanel>
+
+            <c:SettingRow Label="Repository">
+              <Button Theme="{StaticResource QxLinkButton}"
+                      Command="{Binding Repository.OpenCommand}"
+                      ToolTip.Tip="{Binding Repository.Tooltip}">
+                <StackPanel Orientation="Horizontal" Spacing="5">
+                  <TextBlock Text="{Binding Repository.Text}" VerticalAlignment="Center" />
+                  <c:Icon Kind="OpenExternal" Size="13" VerticalAlignment="Center" />
+                </StackPanel>
+              </Button>
+            </c:SettingRow>
+
+            <c:SettingRow Label="Releases">
+              <Button Theme="{StaticResource QxLinkButton}"
+                      Command="{Binding Releases.OpenCommand}"
+                      ToolTip.Tip="{Binding Releases.Tooltip}">
+                <StackPanel Orientation="Horizontal" Spacing="5">
+                  <TextBlock Text="{Binding Releases.Text}" VerticalAlignment="Center" />
+                  <c:Icon Kind="OpenExternal" Size="13" VerticalAlignment="Center" />
+                </StackPanel>
+              </Button>
+            </c:SettingRow>
+
+          </StackPanel>
+        </c:Section>
+
+      </StackPanel>
+    </ScrollViewer>
+  </c:PageLayout>
+</UserControl>

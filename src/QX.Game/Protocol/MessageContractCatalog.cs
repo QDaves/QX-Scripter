@@ -81,21 +81,10 @@ public sealed class MessageContractCatalog
             throw new InvalidDataException($"Message contract '{contract.Key}' is not declared in the message registry.");
         if (!descriptor.HasExplicitKey)
             throw new InvalidDataException($"Message contract '{contract.Key}' cannot use a generated legacy key.");
-        if (contract.Clients is null || contract.Clients.Count == 0)
-            throw new InvalidDataException($"Message contract '{contract.Key}' requires at least one client dialect.");
-
-        var clients = new HashSet<ClientType>();
-        foreach (ClientType client in contract.Clients)
+        if (!contract.Supports(ClientType.Flash) || descriptor.NameFor(ClientType.Flash) is null)
         {
-            if (client is not (ClientType.Flash or ClientType.Unity))
-                throw new InvalidDataException($"Message contract '{contract.Key}' declares unsupported client dialect '{client}'.");
-            if (!clients.Add(client))
-                throw new InvalidDataException($"Message contract '{contract.Key}' declares {client} more than once.");
-            if (descriptor.NameFor(client) is null)
-            {
-                throw new InvalidDataException(
-                    $"Message contract '{contract.Key}' declares {client}, but the message registry has no matching alias.");
-            }
+            throw new InvalidDataException(
+                $"Message contract '{contract.Key}' requires a matching Flash alias.");
         }
     }
 }

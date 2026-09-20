@@ -429,13 +429,6 @@ internal sealed partial class GiftApplication : IApplicationFeature, IGiftOperat
             throw new ArgumentOutOfRangeException(argument_name);
     }
 
-    private static bool UsesUnityGiftWire(ClientType client)
-    {
-        if (!ClientTypes.IsSupported(client))
-            throw new NotSupportedException("The gift operation requires a supported client.");
-        return client is ClientType.Unity;
-    }
-
     private void ThrowIfDisposed() =>
         ObjectDisposedException.ThrowIf(DisposalStarted(), this);
 

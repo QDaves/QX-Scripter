@@ -44,21 +44,6 @@ internal readonly record struct DailyTaskRequestCorrelation(
     long RequestEpoch,
     int OutstandingRequests);
 
-/// <summary>
-/// Mirrors the daily tasks: the short repeatable goals the hotel hands out each day, their progress
-/// and the rewards waiting to be claimed.
-/// </summary>
-/// <remarks>
-/// <para>
-/// The whole feature is Flash only. It has no Unity counterpart in <c>messages.ini</c>, so every
-/// binding here is made for Flash alone rather than cross-mapped.
-/// </para>
-/// <para>
-/// Ordering is preserved the way the client builds its list: the active-list message is a full
-/// snapshot, and the client rebuilds from it with the ordinary tasks first and the bonus task last,
-/// regardless of the order the hotel sent them in.
-/// </para>
-/// </remarks>
 public sealed class DailyTaskManager : GameStateManager
 {
     private const int RequestIntervalMs = 10000;

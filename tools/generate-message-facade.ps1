@@ -44,10 +44,6 @@ $compatibility_aliases = [ordered]@{
         ForwardToAcompetitionRoom = 'ForwardToACompetitionRoom'
         ForwardToArandomPromotedRoom = 'ForwardToARandomPromotedRoom'
         ForwardToAsubmittableRoom = 'ForwardToASubmittableRoom'
-        GetUserAchievementsForAresolution = 'GetUserAchievementsForAResolution'
-        LoginWithPasswordDeprecated = 'LoginWithPasswordDEPRECATED'
-        MoveItemDeprecated = 'MoveItemDEPRECATED'
-        PlaceStuffFromStripDeprecated = 'PlaceStuffFromStripDEPRECATED'
     }
 }
 $direction = $null
@@ -118,7 +114,7 @@ foreach ($raw_line in [IO.File]::ReadAllLines($messages_path))
             $has_key = $true
             continue
         }
-        if ($runes -ne 'u' -and $runes -ne 'f' -and $runes -ne 'uf')
+        if ($runes -ne 'f')
         {
             throw "Message field '$field' uses unsupported client runes '$runes'."
         }
@@ -145,7 +141,7 @@ foreach ($raw_line in [IO.File]::ReadAllLines($messages_path))
 
     if ($summary_fields.Count -eq 0)
     {
-        throw "Message row '$line' has no Flash or Unity aliases."
+        throw "Message row '$line' has no Flash aliases."
     }
     $summary = $summary_fields -join ' '
     foreach ($name in $names)
@@ -183,7 +179,7 @@ $lines.Add('namespace Qx.Protocol;')
 $lines.Add('')
 $lines.Add('/// <summary>')
 $lines.Add('/// Compile-checked message name constants generated from <c>Resources/messages.ini</c>.')
-$lines.Add('/// Each constant carries the exact spelling used by Flash or Unity.')
+$lines.Add('/// Each constant carries the exact spelling used by Flash.')
 $lines.Add('/// </summary>')
 $lines.Add('public static class Msg')
 $lines.Add('{')

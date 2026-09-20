@@ -53,7 +53,6 @@ public readonly ref struct PacketReader(IPacket packet, ref int pos, IParserCont
     public float ReadFloat() => Client switch
     {
         ClientType.Flash => (float)(FloatString)ReadString(),
-        ClientType.Unity => BinaryPrimitives.ReadSingleBigEndian(ReadSpan(4)),
         _ => throw new UnsupportedClientException(Client)
     };
 
@@ -75,7 +74,6 @@ public readonly ref struct PacketReader(IPacket packet, ref int pos, IParserCont
 
     public Id ReadId() => Client switch
     {
-        ClientType.Unity => ReadLong(),
         ClientType.Flash => ReadInt(),
         _ => throw new UnsupportedClientException(Client),
     };
@@ -90,7 +88,6 @@ public readonly ref struct PacketReader(IPacket packet, ref int pos, IParserCont
 
     public Length ReadLength() => Client switch
     {
-        ClientType.Unity => unchecked((ushort)ReadShort()),
         ClientType.Flash => (Length)ReadInt(),
         _ => throw new UnsupportedClientException(Client),
     };

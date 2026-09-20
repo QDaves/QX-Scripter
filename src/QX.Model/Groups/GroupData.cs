@@ -22,11 +22,10 @@ public sealed record GroupData(
     bool MembersCanDecorate,
     int PendingMemberCount,
     bool HasBoard,
-    Id? UnityExtensionId = null,
     int? MemberLimit = null) : IParserComposer<GroupData>
 {
     public static GroupData Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static GroupData ParseFlash(in PacketReader p)
     {
@@ -56,39 +55,12 @@ public sealed record GroupData(
         return value;
     }
 
-    private static GroupData ParseUnity(in PacketReader p)
-    {
-        var value = new GroupData(
-            p.ReadLong(),
-            p.ReadBool(),
-            p.ReadInt(),
-            p.ReadString(),
-            p.ReadString(),
-            p.ReadString(),
-            p.ReadLong(),
-            p.ReadString(),
-            p.ReadInt(),
-            p.ReadInt(),
-            p.ReadBool(),
-            p.ReadString(),
-            p.ReadBool(),
-            p.ReadBool(),
-            p.ReadString(),
-            p.ReadBool(),
-            p.ReadBool(),
-            p.ReadInt(),
-            p.ReadBool(),
-            p.ReadLong());
-        PeopleWire.RequireEmpty(in p, nameof(GroupData));
-        return value;
-    }
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(GroupData value, in PacketWriter p)
     {
-        Validate(value, true, in p);
+        Validate(value, in p);
         p.WriteInt(PeopleWire.RequireFlashId(value.Id, nameof(Id)));
         p.WriteBool(value.IsGuild);
         p.WriteInt(value.Type);
@@ -99,20 +71,6 @@ public sealed record GroupData(
         ComposeTail(value, in p);
         if (value.MemberLimit is { } limit)
             p.WriteInt(limit);
-    }
-
-    private static void ComposeUnity(GroupData value, in PacketWriter p)
-    {
-        Validate(value, false, in p);
-        p.WriteLong(value.Id);
-        p.WriteBool(value.IsGuild);
-        p.WriteInt(value.Type);
-        p.WriteString(value.Name);
-        p.WriteString(value.Description);
-        p.WriteString(value.BadgeCode);
-        p.WriteLong(value.RoomId);
-        ComposeTail(value, in p);
-        p.WriteLong(value.UnityExtensionId!.Value);
     }
 
     private static void ComposeTail(GroupData value, in PacketWriter p)
@@ -131,19 +89,12 @@ public sealed record GroupData(
         p.WriteBool(value.HasBoard);
     }
 
-    private static void Validate(GroupData value, bool flash, in PacketWriter p)
+    private static void Validate(GroupData value, in PacketWriter p)
     {
         ArgumentNullException.ThrowIfNull(value);
-        if (flash)
         {
             _ = PeopleWire.RequireFlashId(value.Id, nameof(Id));
             _ = PeopleWire.RequireFlashId(value.RoomId, nameof(RoomId));
-            if (value.UnityExtensionId is not null)
-                throw new InvalidDataException("Flash GroupData cannot contain UnityExtensionId.");
-        }
-        else if (value.UnityExtensionId is null)
-        {
-            throw new InvalidDataException("Unity GroupData requires UnityExtensionId.");
         }
         PeopleWire.RequireString(value.Name, nameof(Name), in p);
         PeopleWire.RequireString(value.Description, nameof(Description), in p);

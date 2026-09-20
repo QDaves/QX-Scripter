@@ -32,21 +32,15 @@ public sealed record CatalogPageLocalization : IParserComposer<CatalogPageLocali
     }
 
     public static CatalogPageLocalization Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static CatalogPageLocalization ParseFlash(in PacketReader p) =>
         CatalogPageWire.ParseStandaloneLocalization(in p);
 
-    private static CatalogPageLocalization ParseUnity(in PacketReader p) =>
-        CatalogPageWire.ParseStandaloneLocalization(in p);
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(CatalogPageLocalization value, in PacketWriter p) =>
-        CatalogPageWire.ComposeLocalization(value, in p);
-
-    private static void ComposeUnity(CatalogPageLocalization value, in PacketWriter p) =>
         CatalogPageWire.ComposeLocalization(value, in p);
 
     public void Deconstruct(out IReadOnlyList<string> Images, out IReadOnlyList<string> Texts)
@@ -56,63 +50,11 @@ public sealed record CatalogPageLocalization : IParserComposer<CatalogPageLocali
     }
 }
 
-public sealed record CatalogPageProductReference(short ProductType, string Identifier)
-    : IParserComposer<CatalogPageProductReference>
-{
-    public static CatalogPageProductReference Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
-
-    private static CatalogPageProductReference ParseFlash(in PacketReader p) =>
-        CatalogPageWire.ParseProductReference(in p);
-
-    private static CatalogPageProductReference ParseUnity(in PacketReader p) =>
-        CatalogPageWire.ParseProductReference(in p);
-
-    public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
-
-    private static void ComposeFlash(CatalogPageProductReference value, in PacketWriter p) =>
-        CatalogPageWire.ComposeProductReference(value, in p);
-
-    private static void ComposeUnity(CatalogPageProductReference value, in PacketWriter p) =>
-        CatalogPageWire.ComposeProductReference(value, in p);
-}
-
-public sealed record CatalogPageProduct(
-    short ProductType,
-    int FurniClassId,
-    string ExtraParam,
-    int ProductCount,
-    bool UniqueLimitedItem,
-    int UniqueLimitedItemSeriesSize,
-    int UniqueLimitedItemsLeft) : IParserComposer<CatalogPageProduct>
-{
-    public static CatalogPageProduct Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
-
-    private static CatalogPageProduct ParseFlash(in PacketReader p) =>
-        CatalogPageWire.ParsePageProduct(in p);
-
-    private static CatalogPageProduct ParseUnity(in PacketReader p) =>
-        CatalogPageWire.ParsePageProduct(in p);
-
-    public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
-
-    private static void ComposeFlash(CatalogPageProduct value, in PacketWriter p) =>
-        CatalogPageWire.ComposePageProduct(value, in p);
-
-    private static void ComposeUnity(CatalogPageProduct value, in PacketWriter p) =>
-        CatalogPageWire.ComposePageProduct(value, in p);
-}
-
 public sealed record CatalogPageOffer : IParserComposer<CatalogPageOffer>
 {
     private string _localization_id = "";
     private IReadOnlyList<CatalogProduct> _products = Array.AsReadOnly(Array.Empty<CatalogProduct>());
     private string _preview_image = "";
-    private IReadOnlyList<CatalogPageProductReference>? _unity_product_references;
-    private IReadOnlyList<CatalogPageProduct>? _unity_products;
 
     public CatalogPageOffer(
         int OfferId,
@@ -127,9 +69,7 @@ public sealed record CatalogPageOffer : IParserComposer<CatalogPageOffer>
         int ClubLevel,
         bool BundlePurchaseAllowed,
         bool IsPet,
-        string PreviewImage,
-        IReadOnlyList<CatalogPageProductReference>? UnityProductReferences = null,
-        IReadOnlyList<CatalogPageProduct>? UnityProducts = null)
+        string PreviewImage)
     {
         this.OfferId = OfferId;
         this.LocalizationId = LocalizationId;
@@ -144,8 +84,6 @@ public sealed record CatalogPageOffer : IParserComposer<CatalogPageOffer>
         this.BundlePurchaseAllowed = BundlePurchaseAllowed;
         this.IsPet = IsPet;
         this.PreviewImage = PreviewImage;
-        this.UnityProductReferences = UnityProductReferences;
-        this.UnityProducts = UnityProducts;
     }
 
     public int OfferId { get; init; }
@@ -189,41 +127,17 @@ public sealed record CatalogPageOffer : IParserComposer<CatalogPageOffer>
         init => _preview_image = CatalogWire.RequireReference(value, nameof(PreviewImage));
     }
 
-    public IReadOnlyList<CatalogPageProductReference>? UnityProductReferences
-    {
-        get => _unity_product_references;
-        init => _unity_product_references = CatalogWire.FreezeOptionalReferences(
-            value,
-            CatalogPageWire.MaximumProductReferences,
-            nameof(UnityProductReferences));
-    }
-
-    public IReadOnlyList<CatalogPageProduct>? UnityProducts
-    {
-        get => _unity_products;
-        init => _unity_products = CatalogWire.FreezeOptionalReferences(
-            value,
-            CatalogPageWire.MaximumProducts,
-            nameof(UnityProducts));
-    }
-
     public static CatalogPageOffer Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static CatalogPageOffer ParseFlash(in PacketReader p) =>
-        CatalogPageWire.ParseStandaloneOffer(in p, true);
-
-    private static CatalogPageOffer ParseUnity(in PacketReader p) =>
-        CatalogPageWire.ParseStandaloneOffer(in p, false);
+        CatalogPageWire.ParseStandaloneOffer(in p);
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(CatalogPageOffer value, in PacketWriter p) =>
-        CatalogPageWire.ComposeOffer(value, true, false, in p);
-
-    private static void ComposeUnity(CatalogPageOffer value, in PacketWriter p) =>
-        CatalogPageWire.ComposeOffer(value, false, false, in p);
+        CatalogPageWire.ComposeOffer(value, false, in p);
 
     public void Deconstruct(
         out int OfferId,
@@ -238,9 +152,7 @@ public sealed record CatalogPageOffer : IParserComposer<CatalogPageOffer>
         out int ClubLevel,
         out bool BundlePurchaseAllowed,
         out bool IsPet,
-        out string PreviewImage,
-        out IReadOnlyList<CatalogPageProductReference>? UnityProductReferences,
-        out IReadOnlyList<CatalogPageProduct>? UnityProducts)
+        out string PreviewImage)
     {
         OfferId = this.OfferId;
         LocalizationId = this.LocalizationId;
@@ -255,8 +167,6 @@ public sealed record CatalogPageOffer : IParserComposer<CatalogPageOffer>
         BundlePurchaseAllowed = this.BundlePurchaseAllowed;
         IsPet = this.IsPet;
         PreviewImage = this.PreviewImage;
-        UnityProductReferences = this.UnityProductReferences;
-        UnityProducts = this.UnityProducts;
     }
 }
 
@@ -271,21 +181,15 @@ public sealed record CatalogFrontPageItem(
     int ExpirationSeconds) : IParserComposer<CatalogFrontPageItem>
 {
     public static CatalogFrontPageItem Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static CatalogFrontPageItem ParseFlash(in PacketReader p) =>
         CatalogPageWire.ParseFrontPageItem(in p);
 
-    private static CatalogFrontPageItem ParseUnity(in PacketReader p) =>
-        CatalogPageWire.ParseFrontPageItem(in p);
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(CatalogFrontPageItem value, in PacketWriter p) =>
-        CatalogPageWire.ComposeFrontPageItem(value, in p);
-
-    private static void ComposeUnity(CatalogFrontPageItem value, in PacketWriter p) =>
         CatalogPageWire.ComposeFrontPageItem(value, in p);
 }
 
@@ -360,22 +264,16 @@ public sealed record CatalogPage : IParserComposer<CatalogPage>
     }
 
     public static CatalogPage Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static CatalogPage ParseFlash(in PacketReader p) =>
-        CatalogPageWire.ParsePage(in p, true);
-
-    private static CatalogPage ParseUnity(in PacketReader p) =>
-        CatalogPageWire.ParsePage(in p, false);
+        CatalogPageWire.ParsePage(in p);
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(CatalogPage value, in PacketWriter p) =>
-        CatalogPageWire.ComposePage(value, true, in p);
-
-    private static void ComposeUnity(CatalogPage value, in PacketWriter p) =>
-        CatalogPageWire.ComposePage(value, false, in p);
+        CatalogPageWire.ComposePage(value, in p);
 
     public void Deconstruct(
         out int PageId,
@@ -419,26 +317,12 @@ internal static class CatalogPageWire
         return ParseLocalization(in p, 0, ref budget, ref strings);
     }
 
-    public static CatalogPageProductReference ParseProductReference(in PacketReader p)
-    {
-        var strings = NewStringBudget();
-        return new CatalogPageProductReference(
-            p.ReadShort(),
-            strings.Read(in p, nameof(CatalogPageProductReference.Identifier)));
-    }
-
-    public static CatalogPageProduct ParsePageProduct(in PacketReader p)
-    {
-        var strings = NewStringBudget();
-        return ParseNativeProduct(in p, 0, ref strings);
-    }
-
-    public static CatalogPageOffer ParseStandaloneOffer(in PacketReader p, bool flash)
+    public static CatalogPageOffer ParseStandaloneOffer(in PacketReader p)
     {
         var budget = new CatalogPageBudget();
         budget.TakeOffers(1);
         var strings = NewStringBudget();
-        return ParseOffer(in p, flash, 0, ref budget, ref strings);
+        return ParseOffer(in p, 0, ref budget, ref strings);
     }
 
     public static CatalogFrontPageItem ParseFrontPageItem(in PacketReader p)
@@ -449,7 +333,7 @@ internal static class CatalogPageWire
         return ParseFrontPageItem(in p, ref strings);
     }
 
-    public static CatalogPage ParsePage(in PacketReader p, bool flash)
+    public static CatalogPage ParsePage(in PacketReader p)
     {
         var budget = new CatalogPageBudget();
         var strings = NewStringBudget();
@@ -458,29 +342,28 @@ internal static class CatalogPageWire
         string layout_code = strings.Read(in p, nameof(CatalogPage.LayoutCode));
         int count_width = CatalogWire.CountWidth(p.Client);
         int trailing_after_localization = count_width + sizeof(int) + sizeof(byte) +
-            (flash ? 0 : count_width);
+            (0);
         CatalogPageLocalization localization = ParseLocalization(
             in p,
             trailing_after_localization,
             ref budget,
             ref strings);
 
-        int offer_tail = sizeof(int) + sizeof(byte) + (flash ? 0 : count_width);
+        int offer_tail = sizeof(int) + sizeof(byte) + (0);
         int offer_count = CatalogWire.ReadCount(
             in p,
-            MinimumOfferBytes(flash),
+            MinimumOfferBytes(),
             offer_tail,
             MaximumOffers,
             nameof(CatalogPage.Offers));
         budget.TakeOffers(offer_count);
         var offers = new CatalogPageOffer[offer_count];
-        int minimum_offer_bytes = MinimumOfferBytes(flash);
+        int minimum_offer_bytes = MinimumOfferBytes();
         for (int index = 0; index < offers.Length; index++)
         {
             int sibling_bytes = checked((offers.Length - index - 1) * minimum_offer_bytes);
             offers[index] = ParseOffer(
                 in p,
-                flash,
                 checked(offer_tail + sibling_bytes),
                 ref budget,
                 ref strings);
@@ -489,7 +372,7 @@ internal static class CatalogPageWire
         int offer_id = p.ReadInt();
         bool accept_season_currency_as_credits = p.ReadBool();
         CatalogFrontPageItem[]? front_page_items = null;
-        if (!flash || p.Available > 0)
+        if (p.Available > 0)
         {
             int item_count = CatalogWire.ReadCount(
                 in p,
@@ -523,23 +406,8 @@ internal static class CatalogPageWire
         WriteLocalization(prepared, in p);
     }
 
-    public static void ComposeProductReference(CatalogPageProductReference value, in PacketWriter p)
-    {
-        var strings = NewStringBudget();
-        CatalogPageProductReference prepared = PrepareProductReference(value, ref strings, in p);
-        WriteProductReference(prepared, in p);
-    }
-
-    public static void ComposePageProduct(CatalogPageProduct value, in PacketWriter p)
-    {
-        var strings = NewStringBudget();
-        CatalogPageProduct prepared = PrepareNativeProduct(value, ref strings, in p);
-        WriteNativeProduct(prepared, in p);
-    }
-
     public static void ComposeOffer(
         CatalogPageOffer value,
-        bool flash,
         bool strict_page_fields,
         in PacketWriter p)
     {
@@ -548,12 +416,11 @@ internal static class CatalogPageWire
         var strings = NewStringBudget();
         CatalogPageOffer prepared = PrepareOffer(
             value,
-            flash,
             strict_page_fields,
             ref budget,
             ref strings,
             in p);
-        WriteOffer(prepared, flash, in p);
+        WriteOffer(prepared, in p);
     }
 
     public static void ComposeFrontPageItem(CatalogFrontPageItem value, in PacketWriter p)
@@ -563,7 +430,7 @@ internal static class CatalogPageWire
         WriteFrontPageItem(prepared, in p);
     }
 
-    public static void ComposePage(CatalogPage value, bool flash, in PacketWriter p)
+    public static void ComposePage(CatalogPage value, in PacketWriter p)
     {
         ArgumentNullException.ThrowIfNull(value);
         var budget = new CatalogPageBudget();
@@ -590,7 +457,6 @@ internal static class CatalogPageWire
         {
             offers[index] = PrepareOffer(
                 source_offers[index],
-                flash,
                 true,
                 ref budget,
                 ref strings,
@@ -613,10 +479,6 @@ internal static class CatalogPageWire
             for (int index = 0; index < front_page_items.Length; index++)
                 front_page_items[index] = PrepareFrontPageItem(source_items[index], ref strings, in p);
         }
-        else if (!flash)
-        {
-            throw new InvalidDataException("Unity catalog pages require a front-page item collection.");
-        }
 
         p.WriteInt(value.PageId);
         p.WriteString(value.CatalogType);
@@ -624,7 +486,7 @@ internal static class CatalogPageWire
         WriteLocalization(localization, in p);
         CatalogWire.WriteCount(offers.Length, in p);
         foreach (CatalogPageOffer offer in offers)
-            WriteOffer(offer, flash, in p);
+            WriteOffer(offer, in p);
         p.WriteInt(value.OfferId);
         p.WriteBool(value.AcceptSeasonCurrencyAsCredits);
         if (front_page_items is not null)
@@ -668,7 +530,6 @@ internal static class CatalogPageWire
 
     internal static CatalogPageOffer ParseOffer(
         in PacketReader p,
-        bool flash,
         int trailing_bytes,
         ref CatalogPageBudget budget,
         ref CatalogStringBudget strings)
@@ -676,7 +537,7 @@ internal static class CatalogPageWire
         int offer_id = p.ReadInt();
         int count_width = CatalogWire.CountWidth(p.Client);
         int fields_after_localization = sizeof(byte) + sizeof(int) * 4 + sizeof(byte) +
-            (flash ? count_width + FlashOfferTailBytes : count_width * 2 + UnityOfferTailBytes);
+            (count_width + FlashOfferTailBytes);
         string localization_id = strings.Read(
             in p,
             nameof(CatalogPageOffer.LocalizationId),
@@ -689,10 +550,7 @@ internal static class CatalogPageWire
         bool giftable = p.ReadBool();
 
         CatalogProduct[] products;
-        CatalogPageProductReference[]? unity_product_references = null;
-        CatalogPageProduct[]? unity_products = null;
         int club_level;
-        if (flash)
         {
             int product_count = CatalogWire.ReadCount(
                 in p,
@@ -712,50 +570,6 @@ internal static class CatalogPageWire
                     ref strings);
             }
             club_level = p.ReadInt();
-        }
-        else
-        {
-            int reference_count = CatalogWire.ReadCount(
-                in p,
-                ProductReferenceMinimumBytes,
-                checked(trailing_bytes + UnityOfferTailBytes + count_width),
-                MaximumProductReferences,
-                nameof(CatalogPageOffer.UnityProductReferences));
-            budget.TakeProductReferences(reference_count);
-            unity_product_references = new CatalogPageProductReference[reference_count];
-            for (int index = 0; index < unity_product_references.Length; index++)
-            {
-                int sibling_bytes = checked(
-                    (unity_product_references.Length - index - 1) * ProductReferenceMinimumBytes);
-                unity_product_references[index] = new CatalogPageProductReference(
-                    p.ReadShort(),
-                    strings.Read(
-                        in p,
-                        nameof(CatalogPageProductReference.Identifier),
-                        checked(trailing_bytes + UnityOfferTailBytes + count_width + sibling_bytes)));
-            }
-
-            int product_count = CatalogWire.ReadCount(
-                in p,
-                UnityProductMinimumBytes,
-                checked(trailing_bytes + UnityOfferTailBytes),
-                MaximumProducts,
-                nameof(CatalogPageOffer.UnityProducts));
-            budget.TakeProducts(product_count);
-            unity_products = new CatalogPageProduct[product_count];
-            products = new CatalogProduct[product_count];
-            for (int index = 0; index < unity_products.Length; index++)
-            {
-                int sibling_bytes = checked(
-                    (unity_products.Length - index - 1) * UnityProductMinimumBytes);
-                CatalogPageProduct product = ParseNativeProduct(
-                    in p,
-                    checked(trailing_bytes + UnityOfferTailBytes + sibling_bytes),
-                    ref strings);
-                unity_products[index] = product;
-                products[index] = ProjectProduct(product);
-            }
-            club_level = p.ReadShort();
         }
 
         bool bundle_purchase_allowed = p.ReadBool();
@@ -777,9 +591,7 @@ internal static class CatalogPageWire
             club_level,
             bundle_purchase_allowed,
             is_pet,
-            preview_image,
-            unity_product_references,
-            unity_products);
+            preview_image);
     }
 
     private static CatalogFrontPageItem ParseFrontPageItem(
@@ -872,40 +684,6 @@ internal static class CatalogPageWire
             items_left);
     }
 
-    internal static CatalogPageProduct ParseNativeProduct(
-        in PacketReader p,
-        int trailing_bytes,
-        ref CatalogStringBudget strings)
-    {
-        short product_type = p.ReadShort();
-        int furni_class_id = p.ReadInt();
-        string extra_param = strings.Read(
-            in p,
-            nameof(CatalogPageProduct.ExtraParam),
-            checked(trailing_bytes + sizeof(int) + sizeof(byte)));
-        int product_count = p.ReadInt();
-        bool unique_limited_item = p.ReadBool();
-        int series_size = 0;
-        int items_left = 0;
-        if (unique_limited_item)
-        {
-            RequireAvailable(
-                in p,
-                checked(trailing_bytes + sizeof(int) * 2),
-                nameof(CatalogPageProduct));
-            series_size = p.ReadInt();
-            items_left = p.ReadInt();
-        }
-        return new CatalogPageProduct(
-            product_type,
-            furni_class_id,
-            extra_param,
-            product_count,
-            unique_limited_item,
-            series_size,
-            items_left);
-    }
-
     private static CatalogPageLocalization PrepareLocalization(
         CatalogPageLocalization value,
         ref CatalogPageBudget budget,
@@ -937,34 +715,8 @@ internal static class CatalogPageWire
         return new CatalogPageLocalization(images, texts);
     }
 
-    private static CatalogPageProductReference PrepareProductReference(
-        CatalogPageProductReference value,
-        ref CatalogStringBudget strings,
-        in PacketWriter p)
-    {
-        ArgumentNullException.ThrowIfNull(value);
-        strings.Require(value.Identifier, nameof(CatalogPageProductReference.Identifier), in p);
-        return value;
-    }
-
-    internal static CatalogPageProduct PrepareNativeProduct(
-        CatalogPageProduct value,
-        ref CatalogStringBudget strings,
-        in PacketWriter p)
-    {
-        ArgumentNullException.ThrowIfNull(value);
-        strings.Require(value.ExtraParam, nameof(CatalogPageProduct.ExtraParam), in p);
-        RequireLimitedFields(
-            value.UniqueLimitedItem,
-            value.UniqueLimitedItemSeriesSize,
-            value.UniqueLimitedItemsLeft,
-            nameof(CatalogPageProduct));
-        return value;
-    }
-
     internal static CatalogPageOffer PrepareOffer(
         CatalogPageOffer value,
-        bool flash,
         bool strict_page_fields,
         ref CatalogPageBudget budget,
         ref CatalogStringBudget strings,
@@ -975,16 +727,7 @@ internal static class CatalogPageWire
         strings.Require(value.PreviewImage, nameof(CatalogPageOffer.PreviewImage), in p);
 
         CatalogProduct[] products;
-        CatalogPageProductReference[]? references = null;
-        CatalogPageProduct[]? native_products = null;
-        if (flash)
         {
-            if (strict_page_fields &&
-                (value.UnityProductReferences is not null || value.UnityProducts is not null))
-            {
-                throw new InvalidDataException(
-                    "Flash catalog pages cannot carry Unity product collections.");
-            }
             int product_count = CatalogWire.RequireListCount(
                 value.Products,
                 MaximumProducts,
@@ -996,73 +739,6 @@ internal static class CatalogPageWire
                 nameof(CatalogPageOffer.Products));
             for (int index = 0; index < products.Length; index++)
                 PrepareFlashProduct(products[index], strict_page_fields, ref strings, in p);
-        }
-        else
-        {
-            IReadOnlyList<CatalogPageProductReference> source_references =
-                value.UnityProductReferences ?? Array.Empty<CatalogPageProductReference>();
-            int reference_count = CatalogWire.RequireListCount(
-                source_references,
-                MaximumProductReferences,
-                nameof(CatalogPageOffer.UnityProductReferences));
-            budget.TakeProductReferences(reference_count);
-            references = CatalogWire.SnapshotReferences(
-                source_references,
-                MaximumProductReferences,
-                nameof(CatalogPageOffer.UnityProductReferences));
-            for (int index = 0; index < references.Length; index++)
-                references[index] = PrepareProductReference(references[index], ref strings, in p);
-
-            if (value.UnityProducts is null)
-            {
-                int product_count = CatalogWire.RequireListCount(
-                    value.Products,
-                    MaximumProducts,
-                    nameof(CatalogPageOffer.Products));
-                budget.TakeProducts(product_count);
-                products = CatalogWire.SnapshotReferences(
-                    value.Products,
-                    MaximumProducts,
-                    nameof(CatalogPageOffer.Products));
-                native_products = new CatalogPageProduct[products.Length];
-                for (int index = 0; index < products.Length; index++)
-                {
-                    native_products[index] = ConvertProduct(products[index], ref strings, in p);
-                }
-            }
-            else
-            {
-                int native_count = CatalogWire.RequireListCount(
-                    value.UnityProducts,
-                    MaximumProducts,
-                    nameof(CatalogPageOffer.UnityProducts));
-                int projected_count = CatalogWire.RequireListCount(
-                    value.Products,
-                    MaximumProducts,
-                    nameof(CatalogPageOffer.Products));
-                if (native_count != projected_count)
-                {
-                    throw new InvalidDataException(
-                        "Unity catalog product collections must have matching counts.");
-                }
-                budget.TakeProducts(native_count);
-                native_products = CatalogWire.SnapshotReferences(
-                    value.UnityProducts,
-                    MaximumProducts,
-                    nameof(CatalogPageOffer.UnityProducts));
-                products = CatalogWire.SnapshotReferences(
-                    value.Products,
-                    MaximumProducts,
-                    nameof(CatalogPageOffer.Products));
-                for (int index = 0; index < native_products.Length; index++)
-                {
-                    native_products[index] = PrepareNativeProduct(native_products[index], ref strings, in p);
-                    RequireProjection(products[index], native_products[index], in p);
-                }
-            }
-
-            if (value.ClubLevel < short.MinValue || value.ClubLevel > short.MaxValue)
-                throw new InvalidDataException("Unity catalog club level does not fit the Int16 wire format.");
         }
 
         return new CatalogPageOffer(
@@ -1078,9 +754,7 @@ internal static class CatalogPageWire
             value.ClubLevel,
             value.BundlePurchaseAllowed,
             value.IsPet,
-            value.PreviewImage,
-            references,
-            native_products);
+            value.PreviewImage);
     }
 
     private static CatalogFrontPageItem PrepareFrontPageItem(
@@ -1135,67 +809,11 @@ internal static class CatalogPageWire
             value.UniqueLimitedItemSeriesSize,
             value.UniqueLimitedItemsLeft,
             nameof(CatalogProduct));
-        if (strict_page_fields && value.UnityProductType is not null)
-            throw new InvalidDataException("Flash catalog products cannot carry a Unity product type.");
         if (value.ProductType == CatalogProduct.TypeBadge &&
             (value.FurniClassId != 0 || value.ProductCount != 1 || value.UniqueLimitedItem ||
              value.UniqueLimitedItemSeriesSize != 0 || value.UniqueLimitedItemsLeft != 0))
         {
             throw new InvalidDataException("Flash badge products contain fields absent from the wire layout.");
-        }
-    }
-
-    internal static CatalogPageProduct ConvertProduct(
-        CatalogProduct value,
-        ref CatalogStringBudget strings,
-        in PacketWriter p)
-    {
-        ArgumentNullException.ThrowIfNull(value);
-        CatalogWire.RequireString(value.ProductType, nameof(CatalogProduct.ProductType), in p);
-        strings.Require(value.ExtraParam, nameof(CatalogProduct.ExtraParam), in p);
-        RequireLimitedFields(
-            value.UniqueLimitedItem,
-            value.UniqueLimitedItemSeriesSize,
-            value.UniqueLimitedItemsLeft,
-            nameof(CatalogProduct));
-        short product_type = ParseUnityType(value.ProductType);
-        if (value.UnityProductType is short native_type && native_type != product_type)
-            throw new InvalidDataException("Catalog product type conflicts with its Unity product type.");
-        return new CatalogPageProduct(
-            value.UnityProductType ?? product_type,
-            value.FurniClassId,
-            value.ExtraParam,
-            value.ProductCount,
-            value.UniqueLimitedItem,
-            value.UniqueLimitedItemSeriesSize,
-            value.UniqueLimitedItemsLeft);
-    }
-
-    internal static void RequireProjection(
-        CatalogProduct value,
-        CatalogPageProduct native,
-        in PacketWriter p)
-    {
-        ArgumentNullException.ThrowIfNull(value);
-        CatalogWire.RequireString(value.ProductType, nameof(CatalogProduct.ProductType), in p);
-        CatalogWire.RequireString(value.ExtraParam, nameof(CatalogProduct.ExtraParam), in p);
-        RequireLimitedFields(
-            value.UniqueLimitedItem,
-            value.UniqueLimitedItemSeriesSize,
-            value.UniqueLimitedItemsLeft,
-            nameof(CatalogProduct));
-        short product_type = ParseUnityType(value.ProductType);
-        if (value.UnityProductType is short explicit_type && explicit_type != product_type)
-            throw new InvalidDataException("Catalog product type conflicts with its Unity product type.");
-        if (product_type != native.ProductType ||
-            value.FurniClassId != native.FurniClassId ||
-            !string.Equals(value.ExtraParam, native.ExtraParam, StringComparison.Ordinal) ||
-            value.ProductCount != native.ProductCount ||
-            value.UniqueLimitedItem != native.UniqueLimitedItem ||
-            value.UniqueLimitedItemSeriesSize != native.UniqueLimitedItemSeriesSize ||
-            value.UniqueLimitedItemsLeft != native.UniqueLimitedItemsLeft)
-        {
-            throw new InvalidDataException("Unity catalog product projection conflicts with its native product.");
         }
     }
 
@@ -1209,27 +827,7 @@ internal static class CatalogPageWire
             p.WriteString(text);
     }
 
-    private static void WriteProductReference(CatalogPageProductReference value, in PacketWriter p)
-    {
-        p.WriteShort(value.ProductType);
-        p.WriteString(value.Identifier);
-    }
-
-    internal static void WriteNativeProduct(CatalogPageProduct value, in PacketWriter p)
-    {
-        p.WriteShort(value.ProductType);
-        p.WriteInt(value.FurniClassId);
-        p.WriteString(value.ExtraParam);
-        p.WriteInt(value.ProductCount);
-        p.WriteBool(value.UniqueLimitedItem);
-        if (value.UniqueLimitedItem)
-        {
-            p.WriteInt(value.UniqueLimitedItemSeriesSize);
-            p.WriteInt(value.UniqueLimitedItemsLeft);
-        }
-    }
-
-    internal static void WriteOffer(CatalogPageOffer value, bool flash, in PacketWriter p)
+    internal static void WriteOffer(CatalogPageOffer value, in PacketWriter p)
     {
         p.WriteInt(value.OfferId);
         p.WriteString(value.LocalizationId);
@@ -1239,26 +837,11 @@ internal static class CatalogPageWire
         p.WriteInt(value.ActivityPointType);
         p.WriteInt(value.PriceInSilver);
         p.WriteBool(value.Giftable);
-        if (flash)
         {
             CatalogWire.WriteCount(value.Products.Count, in p);
             foreach (CatalogProduct product in value.Products)
                 WriteFlashProduct(product, in p);
             p.WriteInt(value.ClubLevel);
-        }
-        else
-        {
-            IReadOnlyList<CatalogPageProductReference> references =
-                value.UnityProductReferences ?? Array.Empty<CatalogPageProductReference>();
-            IReadOnlyList<CatalogPageProduct> products =
-                value.UnityProducts ?? throw new InvalidDataException("Prepared Unity products are missing.");
-            CatalogWire.WriteCount(references.Count, in p);
-            foreach (CatalogPageProductReference reference in references)
-                WriteProductReference(reference, in p);
-            CatalogWire.WriteCount(products.Count, in p);
-            foreach (CatalogPageProduct product in products)
-                WriteNativeProduct(product, in p);
-            p.WriteShort((short)value.ClubLevel);
         }
         p.WriteBool(value.BundlePurchaseAllowed);
         p.WriteBool(value.IsPet);
@@ -1305,35 +888,6 @@ internal static class CatalogPageWire
         }
     }
 
-    internal static CatalogProduct ProjectProduct(CatalogPageProduct value) =>
-        new(
-            $"unity:{value.ProductType}",
-            value.FurniClassId,
-            value.ExtraParam,
-            value.ProductCount,
-            value.UniqueLimitedItem,
-            value.UniqueLimitedItemSeriesSize,
-            value.UniqueLimitedItemsLeft,
-            value.ProductType);
-
-    private static short ParseUnityType(string value)
-    {
-        if (value.StartsWith("unity:", StringComparison.Ordinal) &&
-            short.TryParse(value.AsSpan(6), out short product_type))
-        {
-            return product_type;
-        }
-        if (value.Equals(CatalogProduct.TypeItem, StringComparison.OrdinalIgnoreCase))
-            return 0;
-        if (value.Equals(CatalogProduct.TypeStuff, StringComparison.OrdinalIgnoreCase))
-            return 1;
-        if (value.Equals(CatalogProduct.TypeEffect, StringComparison.OrdinalIgnoreCase))
-            return 2;
-        if (value.Equals(CatalogProduct.TypeBadge, StringComparison.OrdinalIgnoreCase))
-            return 4;
-        throw new InvalidDataException($"Unknown Unity catalog product type: {value}.");
-    }
-
     private static void RequireLimitedFields(
         bool limited,
         int series_size,
@@ -1353,20 +907,13 @@ internal static class CatalogPageWire
     internal static CatalogStringBudget NewStringBudget() =>
         new(MaximumStrings, MaximumStringBytes);
 
-    internal static int MinimumOfferBytes(bool flash) => flash
-        ? sizeof(int) + CatalogWire.StringMinimumBytes + sizeof(byte) + sizeof(int) * 4 +
-          sizeof(byte) + sizeof(int) + sizeof(int) + sizeof(byte) * 2 + CatalogWire.StringMinimumBytes
-        : sizeof(int) + CatalogWire.StringMinimumBytes + sizeof(byte) + sizeof(int) * 4 +
-          sizeof(byte) + sizeof(short) * 3 + sizeof(byte) * 2 + CatalogWire.StringMinimumBytes;
+    internal static int MinimumOfferBytes() => sizeof(int) + CatalogWire.StringMinimumBytes + sizeof(byte) + sizeof(int) * 4 +
+          sizeof(byte) + sizeof(int) + sizeof(int) + sizeof(byte) * 2 + CatalogWire.StringMinimumBytes;
 
     internal const int FlashProductMinimumBytes = CatalogWire.StringMinimumBytes * 2;
     internal const int ProductReferenceMinimumBytes = sizeof(short) + CatalogWire.StringMinimumBytes;
-    internal const int UnityProductMinimumBytes =
-        sizeof(short) + sizeof(int) + CatalogWire.StringMinimumBytes + sizeof(int) + sizeof(byte);
     private const int FlashOfferTailBytes =
         sizeof(int) + sizeof(byte) * 2 + CatalogWire.StringMinimumBytes;
-    private const int UnityOfferTailBytes =
-        sizeof(short) + sizeof(byte) * 2 + CatalogWire.StringMinimumBytes;
 }
 
 internal struct CatalogPageBudget

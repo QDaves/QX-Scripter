@@ -1,4 +1,4 @@
-﻿using Qx.Game.Protocol;
+using Qx.Game.Protocol;
 using Qx.Game.Snapshots;
 using Qx.Model;
 using Qx.Model.Messages.Incoming;
@@ -125,9 +125,6 @@ public sealed record WiredConfigurationSnapshot(
     bool AllowWallFurni,
     IReadOnlyList<WiredContextEntrySnapshot> Context,
     IReadOnlyList<int> DefaultIntParams,
-    IReadOnlyList<int> UnityContextTags,
-    UnityWiredContextLayout UnityContextLayout,
-    bool? UnityConditionHasSeparateInvert,
     int? DelayInPulses,
     int? QuantifierCode,
     int? QuantifierType,
@@ -851,9 +848,6 @@ public sealed class WiredManager : GameStateManager
             value.AllowWallFurni,
             SnapshotOf(value.Context),
             ReadOnly(value.DefaultIntParams),
-            ReadOnly(value.UnityContextTags),
-            value.UnityContextLayout,
-            value.UnityConditionHasSeparateInvert,
             (value as WiredActionConfig)?.DelayInPulses,
             (value as WiredConditionConfig)?.QuantifierCode,
             (value as WiredConditionConfig)?.QuantifierType,
@@ -1073,87 +1067,87 @@ public sealed class WiredManager : GameStateManager
     private static WiredContextEntrySnapshot SnapshotOf(
         int tag,
         IWiredContextEntry value) => (tag, value) switch
-    {
-        (WiredContext.TagRoomVariables, AllVariablesInRoom room) => new(
-            tag,
-            WiredContextValueKind.RoomVariables,
-            room.Hash,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null),
-        (WiredContext.TagFurniVariableInfo, VariableInfoAndHolders holders) => new(
-            tag,
-            WiredContextValueKind.FurniVariable,
-            null,
-            ContextSnapshotOf(holders.Variable),
-            ReadOnly(holders.Holders.Select(item =>
-                new WiredObjectValueSnapshot(item.ObjectId, item.Value))),
-            null,
-            null,
-            null,
-            null),
-        (WiredContext.TagUserVariableInfo, VariableInfoAndHolders holders) => new(
-            tag,
-            WiredContextValueKind.UserVariable,
-            null,
-            ContextSnapshotOf(holders.Variable),
-            ReadOnly(holders.Holders.Select(item =>
-                new WiredObjectValueSnapshot(item.ObjectId, item.Value))),
-            null,
-            null,
-            null,
-            null),
-        (WiredContext.TagGlobalVariableInfo, VariableInfoAndValue current) => new(
-            tag,
-            WiredContextValueKind.GlobalVariable,
-            null,
-            ContextSnapshotOf(current.Variable),
-            null,
-            current.Value,
-            null,
-            null,
-            null),
-        (WiredContext.TagReferenceVariables, SharedVariableList shared) => new(
-            tag,
-            WiredContextValueKind.ReferenceVariables,
-            null,
-            null,
-            null,
-            null,
-            ReadOnly(shared.SharedVariables.Select(item =>
-                SnapshotOf(item))),
-            null,
-            null),
-        (WiredContext.TagRulesetVariables, VariableList variables) => new(
-            tag,
-            WiredContextValueKind.RulesetVariables,
-            null,
-            null,
-            null,
-            null,
-            null,
-            ReadOnly(variables.Variables.Select(ContextSnapshotOf)),
-            null),
-        (WiredContext.TagReferencePlaceholders, SharedGlobalPlaceholderList placeholders) => new(
-            tag,
-            WiredContextValueKind.ReferencePlaceholders,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            ReadOnly(placeholders.SharedPlaceholders.Select(item =>
-                new WiredSharedPlaceholderSnapshot(
-                    item.RoomId,
-                    item.RoomName,
-                    item.PlaceholderName)))),
-        _ => throw new InvalidDataException(
-            $"Unsupported Wired context tag {tag} with value '{value.GetType().FullName}'.")
-    };
+        {
+            (WiredContext.TagRoomVariables, AllVariablesInRoom room) => new(
+                tag,
+                WiredContextValueKind.RoomVariables,
+                room.Hash,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null),
+            (WiredContext.TagFurniVariableInfo, VariableInfoAndHolders holders) => new(
+                tag,
+                WiredContextValueKind.FurniVariable,
+                null,
+                ContextSnapshotOf(holders.Variable),
+                ReadOnly(holders.Holders.Select(item =>
+                    new WiredObjectValueSnapshot(item.ObjectId, item.Value))),
+                null,
+                null,
+                null,
+                null),
+            (WiredContext.TagUserVariableInfo, VariableInfoAndHolders holders) => new(
+                tag,
+                WiredContextValueKind.UserVariable,
+                null,
+                ContextSnapshotOf(holders.Variable),
+                ReadOnly(holders.Holders.Select(item =>
+                    new WiredObjectValueSnapshot(item.ObjectId, item.Value))),
+                null,
+                null,
+                null,
+                null),
+            (WiredContext.TagGlobalVariableInfo, VariableInfoAndValue current) => new(
+                tag,
+                WiredContextValueKind.GlobalVariable,
+                null,
+                ContextSnapshotOf(current.Variable),
+                null,
+                current.Value,
+                null,
+                null,
+                null),
+            (WiredContext.TagReferenceVariables, SharedVariableList shared) => new(
+                tag,
+                WiredContextValueKind.ReferenceVariables,
+                null,
+                null,
+                null,
+                null,
+                ReadOnly(shared.SharedVariables.Select(item =>
+                    SnapshotOf(item))),
+                null,
+                null),
+            (WiredContext.TagRulesetVariables, VariableList variables) => new(
+                tag,
+                WiredContextValueKind.RulesetVariables,
+                null,
+                null,
+                null,
+                null,
+                null,
+                ReadOnly(variables.Variables.Select(ContextSnapshotOf)),
+                null),
+            (WiredContext.TagReferencePlaceholders, SharedGlobalPlaceholderList placeholders) => new(
+                tag,
+                WiredContextValueKind.ReferencePlaceholders,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                ReadOnly(placeholders.SharedPlaceholders.Select(item =>
+                    new WiredSharedPlaceholderSnapshot(
+                        item.RoomId,
+                        item.RoomName,
+                        item.PlaceholderName)))),
+            _ => throw new InvalidDataException(
+                $"Unsupported Wired context tag {tag} with value '{value.GetType().FullName}'.")
+        };
 
     private static WiredVariable CloneOf(WiredVariable value) => new()
     {

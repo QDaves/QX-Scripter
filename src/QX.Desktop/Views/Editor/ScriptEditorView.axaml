@@ -1,0 +1,32 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ae="clr-namespace:AvaloniaEdit;assembly=AvaloniaEdit"
+             xmlns:editor="clr-namespace:RoslynPad.Editor;assembly=RoslynPad.Editor.Avalonia"
+             xmlns:c="using:Qx.Desktop.Controls"
+             xmlns:vm="using:Qx.Presentation.Services.Workspace"
+             x:Class="Qx.Desktop.Views.Editor.ScriptEditorView"
+             x:DataType="vm:ScriptDocument">
+
+  <Grid RowDefinitions="Auto,*">
+    <c:NoticeBar Name="Fallback" Grid.Row="0" IsVisible="False" />
+    <Panel Grid.Row="1">
+      <editor:RoslynCodeEditor Name="Code"
+                               Classes="script"
+                               ShowLineNumbers="True"
+                               IsCodeFoldingEnabled="False"
+                               HorizontalScrollBarVisibility="Auto"
+                               VerticalScrollBarVisibility="Auto" />
+      <ae:TextEditor Name="Plain"
+                     Classes="script"
+                     IsVisible="False"
+                     ShowLineNumbers="True"
+                     HorizontalScrollBarVisibility="Auto"
+                     VerticalScrollBarVisibility="Auto" />
+      <c:LoadingIndicator Name="Loading"
+                          Text="Starting the code editor…"
+                          HorizontalAlignment="Center"
+                          VerticalAlignment="Center" />
+    </Panel>
+  </Grid>
+
+</UserControl>

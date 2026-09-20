@@ -1,0 +1,157 @@
+{
+  "version": 1,
+  "dependencies": {
+    "net10.0": {
+      "CommunityToolkit.Mvvm": {
+        "type": "Direct",
+        "requested": "[8.4.2, )",
+        "resolved": "8.4.2",
+        "contentHash": "WadCzGEc2U+3e20avRLng4qNtt4zoOGWrdUISqJWrHe3/FSnrYjuM5Sb4yQb09LhkBXrrI4Zt3dLKgRMbItsrg=="
+      },
+      "Microsoft.Extensions.DependencyInjection.Abstractions": {
+        "type": "Direct",
+        "requested": "[10.0.12, )",
+        "resolved": "10.0.12",
+        "contentHash": "9/qymSh7hVDMGTGwrLz8MRp5zRyXy9adGDOs4HwRdnLil3oZGYuWeZjbmHgCQ9BL1qBroVfgUK3U/nb61617Cw=="
+      },
+      "Microsoft.VisualStudio.Threading.Analyzers": {
+        "type": "Direct",
+        "requested": "[18.7.23, )",
+        "resolved": "18.7.23",
+        "contentHash": "dyj6z8m+LFjpeH69hdnciCcRCmD0YgMlvuQEywiEshjqj/blgQ+PuWX8Vd5gkWQFoBN4e+TFxx6DvGNSv/gIKg=="
+      },
+      "Microsoft.CodeAnalysis.Analyzers": {
+        "type": "Transitive",
+        "resolved": "5.3.0-2.25625.1",
+        "contentHash": "4Yhh2fnu3G+J0J1lDc8WZVgMjgbynSeTfkl5IFJMFrmiIO0sc7Tjx+f3sFVV8Sd35PrIUWfof0RWc3lAMl7Azg=="
+      },
+      "Microsoft.CodeAnalysis.Common": {
+        "type": "Transitive",
+        "resolved": "5.3.0",
+        "contentHash": "uC0qk3jzTQY7i90ehfnCqaOZpBUGJyPMiHJ3c0jOb8yaPBjWzIhVdNxPbeVzI74DB0C+YgBKPLqUkgFZzua5Mg==",
+        "dependencies": {
+          "Microsoft.CodeAnalysis.Analyzers": "5.3.0-2.25625.1"
+        }
+      },
+      "Microsoft.CodeAnalysis.CSharp": {
+        "type": "Transitive",
+        "resolved": "5.3.0",
+        "contentHash": "SQFNGQF4f7UfDXKxMzzGNMr3fjrPDIjLfmRvvVgDCw+dyvEHDaRfHuKA5q0Pr0/JW0Gcw89TxrxrS/MjwBvluQ==",
+        "dependencies": {
+          "Microsoft.CodeAnalysis.Analyzers": "5.3.0-2.25625.1",
+          "Microsoft.CodeAnalysis.Common": "[5.3.0]"
+        }
+      },
+      "Microsoft.CodeAnalysis.CSharp.Scripting": {
+        "type": "Transitive",
+        "resolved": "5.3.0",
+        "contentHash": "dKZE07CR6DMf1YxUmzV4+kXUn7lFPkT+Q84fvv75cAi4sx/tdl3gIxfBMp8ZnY9GYQK4Z+CIylVNfznaPSo2wQ==",
+        "dependencies": {
+          "Microsoft.CodeAnalysis.Analyzers": "5.3.0-2.25625.1",
+          "Microsoft.CodeAnalysis.CSharp": "[5.3.0]",
+          "Microsoft.CodeAnalysis.Common": "[5.3.0]",
+          "Microsoft.CodeAnalysis.Scripting.Common": "[5.3.0]"
+        }
+      },
+      "Microsoft.CodeAnalysis.Scripting.Common": {
+        "type": "Transitive",
+        "resolved": "5.3.0",
+        "contentHash": "Enl1poxX+fnMij0xp+b5iWovtWlXa0QBawtajIEdnv8NJNqo+fGwtoNAIDDVoIRcNUHIykUIgzYMmZEwHFD5xQ==",
+        "dependencies": {
+          "Microsoft.CodeAnalysis.Analyzers": "5.3.0-2.25625.1",
+          "Microsoft.CodeAnalysis.Common": "[5.3.0]"
+        }
+      },
+      "SharpCompress": {
+        "type": "Transitive",
+        "resolved": "0.50.0",
+        "contentHash": "EzoWIzA31rb/kADwHkcmdT1rzqnT91kR/Df8X/gqd3qvXhgMbCzyKIWH6M3LTDwPIr0uLoXfX9fvThidXHBdyQ=="
+      },
+      "flazzy": {
+        "type": "Project"
+      },
+      "qx.clientcatalog": {
+        "type": "Project",
+        "dependencies": {
+          "QX.FlashHeaders": "[0.0.1, )",
+          "QX.Protocol": "[0.0.1, )"
+        }
+      },
+      "qx.core": {
+        "type": "Project"
+      },
+      "qx.flashheaders": {
+        "type": "Project",
+        "dependencies": {
+          "Flazzy": "[0.0.1, )",
+          "QX.Core": "[0.0.1, )",
+          "SharpCompress": "[0.50.0, )"
+        }
+      },
+      "qx.game": {
+        "type": "Project",
+        "dependencies": {
+          "QX.Core": "[0.0.1, )",
+          "QX.Interception": "[0.0.1, )",
+          "QX.Model": "[0.0.1, )",
+          "QX.Protocol": "[0.0.1, )"
+        }
+      },
+      "qx.hosting": {
+        "type": "Project",
+        "dependencies": {
+          "QX.ClientCatalog": "[0.0.1, )",
+          "QX.Core": "[0.0.1, )",
+          "QX.Game": "[0.0.1, )",
+          "QX.Interception": "[0.0.1, )",
+          "QX.Mcp": "[0.0.1, )",
+          "QX.Model": "[0.0.1, )",
+          "QX.Protocol": "[0.0.1, )",
+          "QX.Scripting": "[0.0.1, )"
+        }
+      },
+      "qx.interception": {
+        "type": "Project",
+        "dependencies": {
+          "QX.Core": "[0.0.1, )",
+          "QX.Protocol": "[0.0.1, )",
+          "QX.Wire": "[0.0.1, )"
+        }
+      },
+      "qx.mcp": {
+        "type": "Project",
+        "dependencies": {
+          "QX.Core": "[0.0.1, )"
+        }
+      },
+      "qx.model": {
+        "type": "Project",
+        "dependencies": {
+          "QX.Wire": "[0.0.1, )"
+        }
+      },
+      "qx.protocol": {
+        "type": "Project",
+        "dependencies": {
+          "QX.Wire": "[0.0.1, )"
+        }
+      },
+      "qx.scripting": {
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.CodeAnalysis.CSharp.Scripting": "[5.3.0, )",
+          "QX.Game": "[0.0.1, )",
+          "QX.Interception": "[0.0.1, )",
+          "QX.Model": "[0.0.1, )"
+        }
+      },
+      "qx.wire": {
+        "type": "Project"
+      }
+    },
+    "net10.0/linux-x64": {},
+    "net10.0/osx-arm64": {},
+    "net10.0/osx-x64": {},
+    "net10.0/win-x64": {}
+  }
+}

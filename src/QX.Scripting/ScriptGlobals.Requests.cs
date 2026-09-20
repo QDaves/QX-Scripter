@@ -141,13 +141,6 @@ public partial class ScriptGlobals
             Array.AsReadOnly(result.Badges.ToArray()));
     }
 
-    /// <summary>
-    /// Requests the relationship (heart/smile/bobba) tallies a user has set on their profile.
-    /// </summary>
-    /// <param name="userId">The target user's account id.</param>
-    /// <param name="timeoutMs">Total time budget in milliseconds, across one retry.</param>
-    /// <exception cref="Qx.Game.RequestTimeoutException">No matching relationship info arrived in time.</exception>
-    /// <remarks>Unity sends an extra trailing field; the correct layout is chosen automatically.</remarks>
     public async Task<RelationshipStatus> GetRelationship(Id userId, int timeoutMs = 10000)
     {
         RemoteRelationshipResult result = await Application
@@ -306,35 +299,13 @@ public partial class ScriptGlobals
         string name = "", int minPrice = -1, int maxPrice = -1, int sort = 1, int timeoutMs = 10000) =>
         SearchMarketplace(name, minPrice, maxPrice, sort, true, timeoutMs);
 
-    /// <summary>
-    /// Searches the marketplace for offers currently on sale, with explicit control over
-    /// unique-offer grouping.
-    /// </summary>
-    /// <param name="name">Free-text name filter; empty matches everything.</param>
-    /// <param name="minPrice">Minimum price in credits, or -1 for no lower bound.</param>
-    /// <param name="maxPrice">Maximum price in credits, or -1 for no upper bound.</param>
-    /// <param name="sort">
-    /// Sort order: 1 highest price, 2 lowest price, 3 most trades, 4 least trades, 5 most
-    /// offers, 6 least offers.
-    /// </param>
-    /// <param name="combineUniques">
-    /// Whether duplicate unique (limited edition) offers are collapsed into one row. Only the
-    /// modern Flash marketplace layout can express <see langword="false"/>.
-    /// </param>
-    /// <param name="timeoutMs">Total time budget in milliseconds, across one retry.</param>
-    /// <exception cref="NotSupportedException">
-    /// <paramref name="combineUniques"/> is <see langword="false"/> on a Unity session or on a
-    /// legacy Flash marketplace layout, neither of which can carry the flag.
-    /// </exception>
-    /// <exception cref="UnsupportedClientException">The session's client flavour is unknown.</exception>
-    /// <exception cref="Qx.Game.RequestTimeoutException">No offers arrived in time.</exception>
     public Task<MarketplaceOfferPage> SearchMarketplace(
-        string name,
-        int minPrice,
-        int maxPrice,
-        int sort,
-        bool combineUniques,
-        int timeoutMs = 10000)
+    string name,
+    int minPrice,
+    int maxPrice,
+    int sort,
+    bool combineUniques,
+    int timeoutMs = 10000)
     {
         return Application.InvokeAsync<MarketplaceSearchRequest, MarketplaceOfferPage>(
             ApplicationMemberIds.MarketplaceSearch,
@@ -357,20 +328,9 @@ public partial class ScriptGlobals
     public Task<MarketplaceOwnOfferPage> GetMyMarketplaceOffers(int timeoutMs = 10000) =>
         GetMyMarketplaceOffers(1, timeoutMs);
 
-    /// <summary>
-    /// Requests one category of the local user's own marketplace offers.
-    /// </summary>
-    /// <param name="category">1 open offers, 2 sold offers, 3 expired offers.</param>
-    /// <param name="timeoutMs">Total time budget in milliseconds, across one retry.</param>
-    /// <exception cref="NotSupportedException">
-    /// A category other than 1 was requested on a Unity session or on a legacy Flash
-    /// marketplace layout; neither exposes the sold/expired history.
-    /// </exception>
-    /// <exception cref="UnsupportedClientException">The session's client flavour is unknown.</exception>
-    /// <exception cref="Qx.Game.RequestTimeoutException">No offers arrived in time.</exception>
     public Task<MarketplaceOwnOfferPage> GetMyMarketplaceOffers(
-        int category,
-        int timeoutMs)
+    int category,
+    int timeoutMs)
     {
         return Application.InvokeAsync<MarketplaceOwnOffersRequest, MarketplaceOwnOfferPage>(
             ApplicationMemberIds.MarketplaceOwnOffersGet,
@@ -586,7 +546,7 @@ public partial class ScriptGlobals
             if (page.Offset != offset ||
                 page.TotalMemberships < 0 ||
                 page.SnapshotRevision <= 0 ||
-                page.Client is not (ClientType.Flash or ClientType.Unity) ||
+                page.Client is not (ClientType.Flash) ||
                 page.Memberships.Count > page_limit ||
                 (long)page.Offset + page.Memberships.Count > page.TotalMemberships)
             {
@@ -716,33 +676,10 @@ public partial class ScriptGlobals
         return GetRightsFor(Room.RoomId, timeoutMs);
     }
 
-    /// <summary>
-    /// Reads a room's current settings, applies <paramref name="update"/> to them and saves the
-    /// result. This is the safe way to change one setting without clearing the others.
-    /// </summary>
-    /// <param name="update">
-    /// Receives the current settings and returns the modified copy. <see cref="RoomSettings"/>
-    /// is a record, so use <c>with</c> expressions. It must not change the room id and must not
-    /// return <see langword="null"/>.
-    /// </param>
-    /// <param name="roomId">The room to modify, or <see langword="null"/> for the current room.</param>
-    /// <param name="timeoutMs">Total time budget in milliseconds for reading and saving the settings.</param>
-    /// <exception cref="InvalidOperationException">
-    /// No room id was given and the user is not in a room, or <paramref name="update"/> returned
-    /// <see langword="null"/> or changed the room id.
-    /// </exception>
-    /// <exception cref="NotSupportedException">
-    /// The session is Unity and the settings contain fields the Unity wire layout cannot carry.
-    /// </exception>
-    /// <remarks>
-    /// The room password is not part of <see cref="RoomSettings"/> and is therefore saved as
-    /// empty; do not use this on a password-locked room unless clearing the password is
-    /// intended.
-    /// </remarks>
     public async Task<RoomSettings> ModifyRoomSettings(
-        Func<RoomSettings, RoomSettings> update,
-        Id? roomId = null,
-        int timeoutMs = 10000)
+    Func<RoomSettings, RoomSettings> update,
+    Id? roomId = null,
+    int timeoutMs = 10000)
     {
         ArgumentNullException.ThrowIfNull(update);
         Id target_room_id = roomId ?? Room.Capture(room => room.IsInRoom
@@ -1059,8 +996,6 @@ public partial class ScriptGlobals
         TotalBadges = profile.TotalBadges,
         AchievementLevel = profile.AchievementLevel,
         BadgeRarities = profile.BadgeRarities.ToArray(),
-        TotalBadgesRank = profile.TotalBadgesRank,
-        NameColor = profile.NameColor,
-        OldNames = profile.OldNames.ToArray()
+        TotalBadgesRank = profile.TotalBadgesRank
     };
 }

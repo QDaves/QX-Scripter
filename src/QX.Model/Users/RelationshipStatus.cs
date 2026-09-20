@@ -26,20 +26,17 @@ public sealed record RelationshipEntry(
     string RandomFriendFigure) : IParserComposer<RelationshipEntry>
 {
     public static RelationshipEntry Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static RelationshipEntry ParseFlash(in PacketReader p) =>
         new(p.ReadInt(), p.ReadInt(), p.ReadInt(), p.ReadString(), p.ReadString());
 
-    private static RelationshipEntry ParseUnity(in PacketReader p) =>
-        new(p.ReadInt(), p.ReadInt(), p.ReadLong(), p.ReadString(), p.ReadString());
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(RelationshipEntry value, in PacketWriter p)
     {
-        Validate(value, true, in p);
+        Validate(value, in p);
         p.WriteInt(value.Type);
         p.WriteInt(value.FriendCount);
         p.WriteInt(PeopleWire.RequireFlashId(value.RandomFriendId, nameof(RandomFriendId)));
@@ -47,21 +44,10 @@ public sealed record RelationshipEntry(
         p.WriteString(value.RandomFriendFigure);
     }
 
-    private static void ComposeUnity(RelationshipEntry value, in PacketWriter p)
-    {
-        Validate(value, false, in p);
-        p.WriteInt(value.Type);
-        p.WriteInt(value.FriendCount);
-        p.WriteLong(value.RandomFriendId);
-        p.WriteString(value.RandomFriendName);
-        p.WriteString(value.RandomFriendFigure);
-    }
-
-    internal static void Validate(RelationshipEntry value, bool flash, in PacketWriter p)
+    internal static void Validate(RelationshipEntry value, in PacketWriter p)
     {
         ArgumentNullException.ThrowIfNull(value);
-        if (flash)
-            _ = PeopleWire.RequireFlashId(value.RandomFriendId, nameof(RandomFriendId));
+        _ = PeopleWire.RequireFlashId(value.RandomFriendId, nameof(RandomFriendId));
         PeopleWire.RequireString(value.RandomFriendName, nameof(RandomFriendName), in p);
         PeopleWire.RequireString(value.RandomFriendFigure, nameof(RandomFriendFigure), in p);
     }
@@ -93,7 +79,7 @@ public sealed record RelationshipStatus : IParserComposer<RelationshipStatus>
     }
 
     public static RelationshipStatus Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static RelationshipStatus ParseFlash(in PacketReader p)
     {
@@ -109,56 +95,29 @@ public sealed record RelationshipStatus : IParserComposer<RelationshipStatus>
         return new RelationshipStatus(user_id, entries);
     }
 
-    private static RelationshipStatus ParseUnity(in PacketReader p)
-    {
-        Id user_id = p.ReadLong();
-        int count = PeopleWire.ReadUnityCount(
-            in p,
-            PeopleWire.UnityRelationshipEntryMinimumBytes,
-            nameof(Entries));
-        var entries = new RelationshipEntry[count];
-        for (int index = 0; index < entries.Length; index++)
-            entries[index] = p.Parse<RelationshipEntry>();
-        PeopleWire.RequireEmpty(in p, nameof(RelationshipStatus));
-        return new RelationshipStatus(user_id, entries);
-    }
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(RelationshipStatus value, in PacketWriter p)
     {
-        RelationshipStatus prepared = Prepare(value, true, in p);
+        RelationshipStatus prepared = Prepare(value, in p);
         p.WriteInt(PeopleWire.RequireFlashId(prepared.UserId, nameof(UserId)));
         p.WriteInt(prepared.Entries.Count);
         foreach (RelationshipEntry entry in prepared.Entries)
             p.Compose(entry);
     }
 
-    private static void ComposeUnity(RelationshipStatus value, in PacketWriter p)
-    {
-        RelationshipStatus prepared = Prepare(value, false, in p);
-        p.WriteLong(prepared.UserId);
-        PeopleWire.WriteUnityCount(prepared.Entries.Count, in p);
-        foreach (RelationshipEntry entry in prepared.Entries)
-            p.Compose(entry);
-    }
-
     private static RelationshipStatus Prepare(
         RelationshipStatus value,
-        bool flash,
         in PacketWriter p)
     {
         ArgumentNullException.ThrowIfNull(value);
         RelationshipEntry[] entries = PeopleWire.SnapshotReferences(
             value.Entries,
             nameof(Entries));
-        if (flash)
-            _ = PeopleWire.RequireFlashId(value.UserId, nameof(UserId));
-        else
-            PeopleWire.RequireUnityCount(entries.Length, nameof(Entries));
+        _ = PeopleWire.RequireFlashId(value.UserId, nameof(UserId));
         foreach (RelationshipEntry entry in entries)
-            RelationshipEntry.Validate(entry, flash, in p);
+            RelationshipEntry.Validate(entry, in p);
         return new RelationshipStatus(value.UserId, entries);
     }
 }

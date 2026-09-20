@@ -1,0 +1,153 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:b="using:Qx.Desktop.Behaviors"
+             xmlns:c="using:Qx.Desktop.Controls"
+             xmlns:vm="using:Qx.Presentation.ViewModels.Friends"
+             x:Class="Qx.Desktop.Views.Friends.FriendsView"
+             x:DataType="vm:FriendsViewModel">
+
+  <UserControl.Resources>
+    <ContextMenu x:Key="RowMenu" x:DataType="vm:FriendsViewModel">
+      <MenuItem Header="Whisper"
+                Command="{Binding WhisperCommand}"
+                ToolTip.Tip="Copies the whisper prefix so you can paste it into the chat box.">
+        <MenuItem.Icon>
+          <c:Icon Kind="Whisper" Size="16" />
+        </MenuItem.Icon>
+      </MenuItem>
+      <MenuItem Header="Follow"
+                Command="{Binding FollowCommand}"
+                ToolTip.Tip="{Binding FollowTip}"
+                ToolTip.IsEnabled="{Binding FollowTip, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                ToolTip.ShowOnDisabled="True">
+        <MenuItem.Icon>
+          <c:Icon Kind="Follow" Size="16" />
+        </MenuItem.Icon>
+      </MenuItem>
+      <MenuItem Header="Find in the room"
+                Command="{Binding FindCommand}"
+                ToolTip.Tip="{Binding FindTip}"
+                ToolTip.IsEnabled="{Binding FindTip, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                ToolTip.ShowOnDisabled="True">
+        <MenuItem.Icon>
+          <c:Icon Kind="Find" Size="16" />
+        </MenuItem.Icon>
+      </MenuItem>
+      <MenuItem Header="Open profile" Command="{Binding OpenProfileCommand}">
+        <MenuItem.Icon>
+          <c:Icon Kind="Profile" Size="16" />
+        </MenuItem.Icon>
+      </MenuItem>
+      <MenuItem Header="Add outfit to my wardrobe"
+                Command="{Binding AddOutfitCommand}"
+                ToolTip.Tip="{Binding AddOutfitTip}"
+                ToolTip.IsEnabled="{Binding AddOutfitTip, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                ToolTip.ShowOnDisabled="True">
+        <MenuItem.Icon>
+          <c:Icon Kind="Outfit" Size="16" />
+        </MenuItem.Icon>
+      </MenuItem>
+      <Separator />
+      <MenuItem Header="Copy" IsEnabled="{Binding HasOneSelected}">
+        <MenuItem.Icon>
+          <c:Icon Kind="Copy" Size="16" />
+        </MenuItem.Icon>
+        <MenuItem Header="Name" Command="{Binding CopyFieldCommand}" CommandParameter="{x:Static vm:FriendField.Name}" />
+        <MenuItem Header="Id" Command="{Binding CopyFieldCommand}" CommandParameter="{x:Static vm:FriendField.Id}" />
+        <MenuItem Header="Motto" Command="{Binding CopyFieldCommand}" CommandParameter="{x:Static vm:FriendField.Motto}" />
+        <MenuItem Header="Figure" Command="{Binding CopyFieldCommand}" CommandParameter="{x:Static vm:FriendField.Figure}" />
+      </MenuItem>
+      <Separator />
+      <MenuItem Header="Remove friend"
+                Classes="danger"
+                Command="{Binding RemoveCommand}"
+                ToolTip.Tip="{Binding RemoveTip}"
+                ToolTip.IsEnabled="{Binding RemoveTip, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                ToolTip.ShowOnDisabled="True">
+        <MenuItem.Icon>
+          <c:Icon Kind="FriendRemove" Size="16" />
+        </MenuItem.Icon>
+      </MenuItem>
+    </ContextMenu>
+  </UserControl.Resources>
+
+  <c:PageLayout Page="{Binding}" CountText="{Binding CountText}" Notices="{Binding Notices}">
+    <c:PageLayout.Toolbar>
+      <c:FilterBar>
+        <c:FilterBar.Search>
+          <c:SearchBox Name="Search"
+                       Text="{Binding SearchText, Mode=TwoWay}"
+                       PlaceholderText="Search your friends"
+                       AutomationProperties.Name="Search your friends" />
+        </c:FilterBar.Search>
+        <c:FilterBar.Filters>
+          <ToggleButton IsChecked="{Binding OnlineOnly, Mode=TwoWay}"
+                        Content="Online"
+                        ToolTip.Tip="Show only friends who are online"
+                        AutomationProperties.Name="Online only" />
+        </c:FilterBar.Filters>
+        <c:FilterBar.Trailing>
+          <Button Command="{Binding ReloadCommand}"
+                  ToolTip.Tip="Ask the hotel for the friend list again"
+                  AutomationProperties.Name="Reload">
+            <StackPanel Orientation="Horizontal" Spacing="6">
+              <c:Icon Kind="Refresh" Size="14" VerticalAlignment="Center" />
+              <TextBlock Text="Reload" VerticalAlignment="Center" />
+            </StackPanel>
+          </Button>
+        </c:FilterBar.Trailing>
+      </c:FilterBar>
+    </c:PageLayout.Toolbar>
+
+    <DataGrid Name="Rows"
+              ItemsSource="{Binding Rows.Visible}"
+              ContextMenu="{StaticResource RowMenu}"
+              b:ListBehaviors.Selection="{Binding Selection}"
+              b:ListBehaviors.SortRefresh="{Binding SortRefresh}"
+              b:ListBehaviors.CopyCommand="{Binding CopySelectionCommand}"
+              SelectionMode="Extended"
+              RowHeight="{DynamicResource QxRowHeightLarge}"
+              CanUserReorderColumns="True"
+              AutomationProperties.Name="Friends">
+      <DataGrid.Columns>
+        <c:DataGridGutterColumn x:DataType="vm:FriendRow" />
+        <DataGridTemplateColumn x:DataType="vm:FriendRow" Header="Name" Width="1.5*" SortMemberPath="Name">
+          <DataGridTemplateColumn.CellTemplate>
+            <DataTemplate x:DataType="vm:FriendRow">
+              <StackPanel Theme="{StaticResource Friends.RowContent}">
+                <c:Avatar DisplayName="{Binding Name}"
+                          Image="{Binding Head}"
+                          IsDimmed="{Binding !IsOnline}" />
+                <TextBlock Theme="{StaticResource Friends.Name}" Text="{Binding Name}" ToolTip.Tip="{Binding Name}" />
+                <c:Chip Text="here" IsVisible="{Binding IsHere}" VerticalAlignment="Center" />
+              </StackPanel>
+            </DataTemplate>
+          </DataGridTemplateColumn.CellTemplate>
+        </DataGridTemplateColumn>
+        <DataGridTemplateColumn x:DataType="vm:FriendRow" Header="Motto" Width="3*" SortMemberPath="Motto">
+          <DataGridTemplateColumn.CellTemplate>
+            <DataTemplate x:DataType="vm:FriendRow">
+              <TextBlock Theme="{StaticResource Friends.Cell}" Text="{Binding Motto}" ToolTip.Tip="{Binding MottoTip}" />
+            </DataTemplate>
+          </DataGridTemplateColumn.CellTemplate>
+        </DataGridTemplateColumn>
+        <DataGridTemplateColumn x:DataType="vm:FriendRow" Header="Last seen" Width="130" SortMemberPath="LastSeenOrder">
+          <DataGridTemplateColumn.CellTemplate>
+            <DataTemplate x:DataType="vm:FriendRow">
+              <TextBlock Theme="{StaticResource Friends.LastSeen}" Classes.online="{Binding IsOnline}" Text="{Binding LastSeen}" />
+            </DataTemplate>
+          </DataGridTemplateColumn.CellTemplate>
+        </DataGridTemplateColumn>
+        <DataGridTemplateColumn x:DataType="vm:FriendRow" Header="Id" Width="120" SortMemberPath="Id">
+          <DataGridTemplateColumn.CellTemplate>
+            <DataTemplate x:DataType="vm:FriendRow">
+              <TextBlock Theme="{StaticResource Friends.Identifier}" Text="{Binding IdText}" />
+            </DataTemplate>
+          </DataGridTemplateColumn.CellTemplate>
+        </DataGridTemplateColumn>
+        <c:DataGridGutterColumn x:DataType="vm:FriendRow" />
+      </DataGrid.Columns>
+    </DataGrid>
+  </c:PageLayout>
+
+</UserControl>

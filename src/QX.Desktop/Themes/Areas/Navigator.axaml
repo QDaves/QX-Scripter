@@ -1,0 +1,41 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+  <ControlTheme x:Key="Navigator.Cell" TargetType="TextBlock">
+    <Setter Property="Margin" Value="12,0" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+    <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+    <Setter Property="FontSize" Value="{DynamicResource QxFontSizeBody}" />
+    <Setter Property="LineHeight" Value="{DynamicResource QxLineHeightBody}" />
+    <Setter Property="Foreground" Value="{DynamicResource QxTextSecondaryBrush}" />
+  </ControlTheme>
+
+  <ControlTheme x:Key="Navigator.Name" TargetType="TextBlock">
+    <Setter Property="Margin" Value="12,0" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+    <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+    <Setter Property="FontSize" Value="{DynamicResource QxFontSizeBody}" />
+    <Setter Property="LineHeight" Value="{DynamicResource QxLineHeightBody}" />
+    <Setter Property="FontWeight" Value="Medium" />
+    <Setter Property="Foreground" Value="{DynamicResource QxTextPrimaryBrush}" />
+  </ControlTheme>
+
+  <ControlTheme x:Key="Navigator.Number" TargetType="TextBlock">
+    <Setter Property="Margin" Value="12,0" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+    <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+    <Setter Property="FontFamily" Value="{DynamicResource QxMonoFont}" />
+    <Setter Property="FontSize" Value="{DynamicResource QxFontSizeCodeSmall}" />
+    <Setter Property="Foreground" Value="{DynamicResource QxTextSecondaryBrush}" />
+  </ControlTheme>
+
+  <ControlTheme x:Key="Navigator.Identifier" TargetType="TextBlock">
+    <Setter Property="Margin" Value="12,0" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+    <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+    <Setter Property="FontFamily" Value="{DynamicResource QxMonoFont}" />
+    <Setter Property="FontSize" Value="{DynamicResource QxFontSizeCodeSmall}" />
+    <Setter Property="Foreground" Value="{DynamicResource QxTextTertiaryBrush}" />
+  </ControlTheme>
+
+</ResourceDictionary>

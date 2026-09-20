@@ -1,0 +1,226 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:b="using:Qx.Desktop.Behaviors"
+             xmlns:c="using:Qx.Desktop.Controls"
+             xmlns:vm="using:Qx.Presentation.ViewModels.Room"
+             x:Class="Qx.Desktop.Views.Room.RoomFurniView"
+             x:DataType="vm:RoomFurniViewModel">
+  <Grid RowDefinitions="Auto,*">
+    <c:FilterBar BorderBrush="{DynamicResource QxBorderSubtleBrush}" BorderThickness="0,0,0,1">
+      <c:FilterBar.Search>
+        <c:SearchBox Width="280"
+                     Text="{Binding Filter}"
+                     PlaceholderText="Filter the furni in the room"
+                     AutomationProperties.Name="Filter the furni in the room" />
+      </c:FilterBar.Search>
+      <c:FilterBar.Filters>
+        <StackPanel Orientation="Horizontal" Spacing="8">
+          <ToggleButton IsChecked="{Binding IsPicking, Mode=OneWay}"
+                        Command="{Binding PickAreaCommand}"
+                        ToolTip.Tip="Click two corners in the room to show only what stands between them"
+                        AutomationProperties.Name="Pick an area">
+            <StackPanel Orientation="Horizontal" Spacing="6">
+              <c:Icon Kind="Area" Size="14" VerticalAlignment="Center" />
+              <TextBlock Text="Pick area" VerticalAlignment="Center" />
+            </StackPanel>
+          </ToggleButton>
+          <Border IsVisible="{Binding HasArea}"
+                  Background="{DynamicResource QxAccentSoftBrush}"
+                  CornerRadius="{DynamicResource QxRadiusXs}"
+                  Padding="8,0"
+                  Height="{DynamicResource QxControlHeightSm}"
+                  VerticalAlignment="Center">
+            <StackPanel Orientation="Horizontal" Spacing="6">
+              <TextBlock Text="{Binding AreaText}" Classes="mono caption accent" VerticalAlignment="Center" />
+              <Button Classes="icon small"
+                      Command="{Binding ClearAreaCommand}"
+                      ToolTip.Tip="Show the whole room again"
+                      AutomationProperties.Name="Clear the area">
+                <c:Icon Kind="Close" Size="12" />
+              </Button>
+            </StackPanel>
+          </Border>
+          <Button IsVisible="{Binding HasHidden}"
+                  Command="{Binding ShowHiddenCommand}"
+                  ToolTip.Tip="Put everything hidden back on screen">
+            <StackPanel Orientation="Horizontal" Spacing="6">
+              <c:Icon Kind="Show" Size="14" VerticalAlignment="Center" />
+              <TextBlock Text="{Binding ShowHiddenText}" VerticalAlignment="Center" />
+            </StackPanel>
+          </Button>
+        </StackPanel>
+      </c:FilterBar.Filters>
+      <c:FilterBar.Trailing>
+        <c:SegmentedControl SelectedIndex="{Binding ViewIndex}" AutomationProperties.Name="Furni view">
+          <ListBoxItem ToolTip.Tip="List" AutomationProperties.Name="List view">
+            <c:Segment Icon="ViewList" Text="List" />
+          </ListBoxItem>
+          <ListBoxItem ToolTip.Tip="Grid" AutomationProperties.Name="Grid view">
+            <c:Segment Icon="ViewGrid" Text="Grid" />
+          </ListBoxItem>
+        </c:SegmentedControl>
+      </c:FilterBar.Trailing>
+    </c:FilterBar>
+
+    <c:StateHost Grid.Row="1" State="{Binding State}">
+      <Panel>
+        <Panel.ContextMenu>
+          <ContextMenu Opening="OnMenuOpening">
+            <MenuItem Header="{Binding HideText}" Command="{Binding HideCommand}">
+              <MenuItem.Icon>
+                <c:Icon Kind="Hide" />
+              </MenuItem.Icon>
+            </MenuItem>
+            <MenuItem Header="{Binding ShowText}" Command="{Binding ShowAgainCommand}">
+              <MenuItem.Icon>
+                <c:Icon Kind="Show" />
+              </MenuItem.Icon>
+            </MenuItem>
+            <Separator />
+            <MenuItem Header="{Binding ToggleText}"
+                      Command="{Binding ToggleCommand}"
+                      ToolTip.Tip="Press each one, as clicking it would">
+              <MenuItem.Icon>
+                <c:Icon Kind="Toggle" />
+              </MenuItem.Icon>
+            </MenuItem>
+            <MenuItem Header="Rotate" IsEnabled="{Binding HasSelection}" ItemsSource="{Binding RotationOptions}">
+              <MenuItem.Icon>
+                <c:Icon Kind="RotateRight" />
+              </MenuItem.Icon>
+              <MenuItem.ItemContainerTheme>
+                <ControlTheme TargetType="MenuItem" BasedOn="{StaticResource {x:Type MenuItem}}" x:DataType="vm:RotationOptionViewModel">
+                  <Setter Property="Command" Value="{Binding Turn}" />
+                  <Setter Property="CommandParameter" Value="{Binding}" />
+                  <Setter Property="IsEnabled" Value="{Binding CanPick}" />
+                </ControlTheme>
+              </MenuItem.ItemContainerTheme>
+              <MenuItem.ItemTemplate>
+                <DataTemplate x:DataType="vm:RotationOptionViewModel">
+                  <StackPanel Orientation="Horizontal" Spacing="8">
+                    <c:Icon Kind="ArrowUp" Size="14" IsVisible="{Binding HasDirection}" RenderTransformOrigin="50%,50%">
+                      <c:Icon.RenderTransform>
+                        <RotateTransform Angle="{Binding Angle}" />
+                      </c:Icon.RenderTransform>
+                    </c:Icon>
+                    <TextBlock Text="{Binding Name}" VerticalAlignment="Center" />
+                  </StackPanel>
+                </DataTemplate>
+              </MenuItem.ItemTemplate>
+            </MenuItem>
+            <MenuItem Header="Move to…"
+                      Command="{Binding MoveCommand}"
+                      ToolTip.Tip="Click a tile in the room for each one">
+              <MenuItem.Icon>
+                <c:Icon Kind="Move" />
+              </MenuItem.Icon>
+            </MenuItem>
+            <Separator />
+            <MenuItem Header="{Binding PickupText}"
+                      Command="{Binding PickupCommand}"
+                      ToolTip.Tip="Your own furni, back into your inventory">
+              <MenuItem.Icon>
+                <c:Icon Kind="Pickup" />
+              </MenuItem.Icon>
+            </MenuItem>
+            <MenuItem Header="{Binding EjectText}"
+                      Classes="danger"
+                      Command="{Binding EjectCommand}"
+                      ToolTip.Tip="Other people's furni, back to them. Room owner only">
+              <MenuItem.Icon>
+                <c:Icon Kind="Kick" />
+              </MenuItem.Icon>
+            </MenuItem>
+            <Separator />
+            <MenuItem Header="{Binding CopyIdsText}" Command="{Binding CopyIdsCommand}">
+              <MenuItem.Icon>
+                <c:Icon Kind="Copy" />
+              </MenuItem.Icon>
+            </MenuItem>
+          </ContextMenu>
+        </Panel.ContextMenu>
+
+        <DataGrid IsVisible="{Binding !IsGrid}"
+                  ItemsSource="{Binding Rows.Visible}"
+                  b:ListBehaviors.Selection="{Binding Selection}"
+                  b:ListBehaviors.SortRefresh="{Binding SortRefresh}"
+                  b:ListBehaviors.CopyCommand="{Binding CopySelectionCommand}"
+                  SelectionMode="Extended"
+                  HeadersVisibility="Column"
+                  RowHeight="{StaticResource QxRowHeightLarge}"
+                  IsReadOnly="True"
+                  CanUserSortColumns="True"
+                  CanUserResizeColumns="True"
+                  CanUserReorderColumns="True"
+                  ClipboardCopyMode="None"
+                  AutomationProperties.Name="Furni in the room">
+          <DataGrid.Columns>
+            <c:DataGridGutterColumn x:DataType="vm:FurniRowViewModel" />
+            <DataGridTemplateColumn x:DataType="vm:FurniRowViewModel" Header="Name" Width="3*" SortMemberPath="Name">
+              <DataGridTemplateColumn.CellTemplate>
+                <DataTemplate x:DataType="vm:FurniRowViewModel">
+                  <StackPanel Orientation="Horizontal" Spacing="10" Margin="12,0" VerticalAlignment="Center">
+                    <c:RemoteImage Request="{Binding Icon}"
+                                   Width="36"
+                                   Height="36"
+                                   MaxWidth="36"
+                                   MaxHeight="36"
+                                   Stretch="Uniform"
+                                   StretchDirection="DownOnly"
+                                   FallbackSize="16" />
+                    <StackPanel VerticalAlignment="Center">
+                      <TextBlock Text="{Binding Name}" Classes="strong" TextTrimming="CharacterEllipsis" />
+                      <TextBlock Text="{Binding Detail}"
+                                 IsVisible="{Binding HasDetail}"
+                                 Classes="small tertiary"
+                                 TextTrimming="CharacterEllipsis" />
+                    </StackPanel>
+                    <c:Chip Text="{Binding Tag}" IsVisible="{Binding HasTag}" VerticalAlignment="Center" />
+                  </StackPanel>
+                </DataTemplate>
+              </DataGridTemplateColumn.CellTemplate>
+            </DataGridTemplateColumn>
+            <DataGridTemplateColumn x:DataType="vm:FurniRowViewModel" Header="Tile" Width="100" SortMemberPath="Position">
+              <DataGridTemplateColumn.CellTemplate>
+                <DataTemplate x:DataType="vm:FurniRowViewModel">
+                  <TextBlock Text="{Binding Position}" Classes="mono secondary" Margin="12,0" VerticalAlignment="Center" />
+                </DataTemplate>
+              </DataGridTemplateColumn.CellTemplate>
+            </DataGridTemplateColumn>
+            <DataGridTemplateColumn x:DataType="vm:FurniRowViewModel" Header="Id" Width="*" SortMemberPath="ItemId">
+              <DataGridTemplateColumn.CellTemplate>
+                <DataTemplate x:DataType="vm:FurniRowViewModel">
+                  <TextBlock Text="{Binding IdText}" Classes="mono tertiary" Margin="12,0" VerticalAlignment="Center" />
+                </DataTemplate>
+              </DataGridTemplateColumn.CellTemplate>
+            </DataGridTemplateColumn>
+            <c:DataGridGutterColumn x:DataType="vm:FurniRowViewModel" />
+          </DataGrid.Columns>
+        </DataGrid>
+
+        <ListBox IsVisible="{Binding IsGrid}"
+                 ItemsSource="{Binding Stacks}"
+                 ItemContainerTheme="{StaticResource QxTile}"
+                 b:ListBehaviors.Selection="{Binding StackSelection}"
+                 SelectionMode="Multiple"
+                 Padding="24,12"
+                 AutomationProperties.Name="Furni in the room, by kind">
+          <ListBox.ItemsPanel>
+            <ItemsPanelTemplate>
+              <c:UniformTilePanel ItemWidth="{StaticResource QxTileFurniPitch}" ItemHeight="{StaticResource QxTileFurniPitch}" />
+            </ItemsPanelTemplate>
+          </ListBox.ItemsPanel>
+          <ListBox.ItemTemplate>
+            <DataTemplate x:DataType="vm:FurniStackViewModel">
+              <c:ItemTile Image="{Binding Icon}"
+                          Count="{Binding Count}"
+                          ImageMaxWidth="48"
+                          ImageMaxHeight="48"
+                          ToolTip.Tip="{Binding Tooltip}" />
+            </DataTemplate>
+          </ListBox.ItemTemplate>
+        </ListBox>
+      </Panel>
+    </c:StateHost>
+  </Grid>
+</UserControl>

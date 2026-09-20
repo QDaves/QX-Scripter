@@ -56,8 +56,8 @@ public readonly record struct FurniProgress(FurniOperation Operation, int Done, 
 /// was the room state we mirror.
 /// </para>
 /// <para>
-/// All of it works on both clients. Message names are resolved rather than hard-coded, and each
-/// typed request writes the client-specific layout before anything reaches the transport.
+/// Message names are resolved rather than hard-coded, and each typed request writes the Flash
+/// layout before anything reaches the transport.
 /// </para>
 /// </remarks>
 public sealed class RoomActions : GameStateManager
@@ -817,13 +817,6 @@ public sealed class RoomActions : GameStateManager
             cancellation_token);
     }
 
-    /// <summary>
-    /// Takes one piece of furni into the inventory.
-    /// </summary>
-    /// <remarks>
-    /// The category leads: two for a floor item, one for a wall item. Flash carries a third field
-    /// acknowledging the hotel's are-you-sure prompt, which Unity has no room for.
-    /// </remarks>
     public void Pickup(Furni item)
     {
         ArgumentNullException.ThrowIfNull(item);
@@ -1138,7 +1131,7 @@ public sealed class RoomActions : GameStateManager
     /// Waits for the next tile click and swallows it.
     /// </summary>
     /// <remarks>
-    /// A click on the floor is a walk request, which is the only thing either client sends that
+    /// A click on the floor is a walk request, which is the only thing the client sends that
     /// says "this tile". Blocking it is what turns walking into pointing.
     /// </remarks>
     private async Task<Point> NextClickAsync(CancellationToken cancellationToken) =>
@@ -1366,11 +1359,11 @@ public sealed class RoomActions : GameStateManager
 
             GameDataState? game_data = current_room.GameData?.State;
             FurniData? furni_data = game_data is
-                {
-                    Loaded: true,
-                    LoadGeneration: > 0,
-                    Furni: not null
-                } && string.Equals(
+            {
+                Loaded: true,
+                LoadGeneration: > 0,
+                Furni: not null
+            } && string.Equals(
                     game_data.WebHost,
                     web_host,
                     StringComparison.OrdinalIgnoreCase)

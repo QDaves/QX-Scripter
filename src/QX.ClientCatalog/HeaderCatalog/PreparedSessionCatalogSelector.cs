@@ -40,25 +40,14 @@ public sealed class PreparedSessionCatalogSelector : ISessionCatalogSelector
         PreparedHeaderCatalog? selected = request.Client switch
         {
             ClientCatalogClients.Flash => SelectFlash(request.HotelVersion),
-            ClientCatalogClients.Unity => SelectUnity(request),
             _ => null
         };
         if (selected is null)
             return null;
 
         MessageCatalog catalog = Catalog(selected);
-        CatalogSupplement? supplement = null;
-        if (request.Client == ClientCatalogClients.Flash)
-            catalog = EnrichFlashCatalog(request, selected, catalog, out supplement);
-        if (request.Intent == SessionCatalogSelectionIntent.CatalogReady &&
-            request.Client == ClientCatalogClients.Unity &&
-            !CanRefreshUnity(request, selected, catalog))
-        {
-            return null;
-        }
-        string client_version = request.Client == ClientCatalogClients.Flash
-            ? selected.Catalog.ClientBuildIds[0]
-            : selected.Candidate.Version;
+        catalog = EnrichFlashCatalog(request, selected, catalog, out CatalogSupplement? supplement);
+        string client_version = selected.Catalog.ClientBuildIds[0];
         return new SessionCatalogBinding(
             request.Client,
             catalog,
@@ -182,80 +171,6 @@ public sealed class PreparedSessionCatalogSelector : ISessionCatalogSelector
                 prepared.Catalog.ClientBuildIds[0].Equals(hotel_version, StringComparison.Ordinal))
             .ToArray();
         return matches.Length == 1 ? matches[0] : null;
-    }
-
-    PreparedHeaderCatalog? SelectUnity(SessionCatalogRequest request)
-    {
-        PreparedHeaderCatalog[] candidates = DistinctSources(
-            _current_catalogs(ClientCatalogClients.Unity),
-            false);
-        if (candidates.Length == 0)
-            return null;
-
-        string? release = UnityRelease(request.HotelVersion) ?? UnityRelease(request.ClientIdentifier);
-        if (release is not null)
-        {
-            candidates = candidates
-                .Where(value => value.Candidate.Version.Equals(release, StringComparison.Ordinal))
-                .ToArray();
-            return candidates.Length == 1 ? candidates[0] : null;
-        }
-        if (request.Fallback.Catalog is not { } fallback)
-            return null;
-        PreparedHeaderCatalog[] compatible = candidates
-            .Where(value => IsCompatibleUnityCatalog(fallback, Catalog(value)))
-            .OrderByDescending(value => Catalog(value).MatchingHeaders(fallback))
-            .ThenByDescending(value => VersionRank(value.Candidate.Version))
-            .ThenByDescending(value => value.Candidate.LastModified)
-            .ThenBy(value => value.NormalizedPath, PathComparer())
-            .ToArray();
-        return compatible.FirstOrDefault();
-    }
-
-    static bool CanRefreshUnity(
-        SessionCatalogRequest request,
-        PreparedHeaderCatalog selected,
-        MessageCatalog catalog)
-    {
-        string? release = UnityRelease(request.HotelVersion) ?? UnityRelease(request.ClientIdentifier);
-        if (release is not null)
-            return selected.Candidate.Version.Equals(release, StringComparison.Ordinal);
-        return request.Fallback.Catalog is { } fallback && IsCompatibleUnityCatalog(fallback, catalog);
-    }
-
-    static bool IsCompatibleUnityCatalog(MessageCatalog fallback, MessageCatalog candidate)
-    {
-        if (fallback.HeaderCount < 64 ||
-            candidate.HeaderCount < fallback.HeaderCount)
-        {
-            return false;
-        }
-        MessageCatalogHeader[] stable = fallback.Headers
-            .Where(header => !IsObfuscatedUnityName(header.Name))
-            .ToArray();
-        if (stable.Length < 64)
-            return false;
-        int matching = stable.Count(header =>
-            candidate.TryGetIds(header.Direction, header.Name, out IReadOnlyList<short> ids) &&
-            ids.Contains(unchecked((short)header.Id)));
-        return matching * 20 >= stable.Length * 19;
-    }
-
-    static bool IsObfuscatedUnityName(string name) =>
-        name.Length >= 20 && name.All(character => character is >= 'A' and <= 'D');
-
-    static string? UnityRelease(string value)
-    {
-        if (string.IsNullOrWhiteSpace(value))
-            return null;
-        string[] parts = value.Trim().Split('-', StringSplitOptions.RemoveEmptyEntries);
-        if (parts.Length < 2 ||
-            !parts[0].StartsWith("UNITY", StringComparison.OrdinalIgnoreCase) ||
-            !long.TryParse(parts[1], out _))
-        {
-            return null;
-        }
-        return parts[1];
     }
 
     static PreparedHeaderCatalog[] DistinctSources(

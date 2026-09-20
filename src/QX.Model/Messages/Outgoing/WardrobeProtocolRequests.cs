@@ -5,7 +5,7 @@ namespace Qx.Model.Messages.Outgoing;
 public sealed record WardrobeRequest : IParserComposer<WardrobeRequest>
 {
     public static WardrobeRequest Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static WardrobeRequest ParseFlash(in PacketReader p)
     {
@@ -13,18 +13,10 @@ public sealed record WardrobeRequest : IParserComposer<WardrobeRequest>
         return new();
     }
 
-    private static WardrobeRequest ParseUnity(in PacketReader p)
-    {
-        RequireEmpty(in p);
-        return new();
-    }
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(WardrobeRequest value, in PacketWriter p) { }
-
-    private static void ComposeUnity(WardrobeRequest value, in PacketWriter p) { }
 
     private static void RequireEmpty(in PacketReader p)
     {
@@ -40,26 +32,15 @@ public sealed record SaveWardrobeOutfitRequest(
     string Gender) : IParserComposer<SaveWardrobeOutfitRequest>
 {
     public static SaveWardrobeOutfitRequest Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static SaveWardrobeOutfitRequest ParseFlash(in PacketReader p) =>
         new(p.ReadInt(), p.ReadString(), p.ReadString());
 
-    private static SaveWardrobeOutfitRequest ParseUnity(in PacketReader p) =>
-        new(p.ReadInt(), p.ReadString(), p.ReadString());
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(SaveWardrobeOutfitRequest value, in PacketWriter p)
-    {
-        ValidateStrings(value, in p);
-        p.WriteInt(value.SlotId);
-        p.WriteString(value.Figure);
-        p.WriteString(value.Gender);
-    }
-
-    private static void ComposeUnity(SaveWardrobeOutfitRequest value, in PacketWriter p)
     {
         ValidateStrings(value, in p);
         p.WriteInt(value.SlotId);

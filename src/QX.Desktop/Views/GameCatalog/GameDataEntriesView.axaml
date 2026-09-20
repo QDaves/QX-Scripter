@@ -1,0 +1,78 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:b="using:Qx.Desktop.Behaviors"
+             xmlns:c="using:Qx.Desktop.Controls"
+             xmlns:vm="using:Qx.Presentation.ViewModels.GameCatalog"
+             x:Class="Qx.Desktop.Views.GameCatalog.GameDataEntriesView"
+             x:DataType="vm:KeyValueTabViewModel">
+
+  <UserControl.Styles>
+    <Style Selector="DataGridRow /template/ Rectangle#SelectionMarker">
+      <Setter Property="IsVisible" Value="False" />
+    </Style>
+    <Style Selector="c|StateHost:action /template/ Button#PART_Action">
+      <Setter Property="IsVisible" Value="True" />
+      <Setter Property="HorizontalAlignment" Value="Center" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+      <Setter Property="Margin" Value="0,150,0,0" />
+    </Style>
+  </UserControl.Styles>
+
+  <Grid RowDefinitions="Auto,*">
+
+    <c:FilterBar BorderBrush="{DynamicResource QxBorderSubtleBrush}" BorderThickness="0,0,0,1">
+      <c:FilterBar.Search>
+        <c:SearchBox Text="{Binding SearchText, Mode=TwoWay}"
+                     PlaceholderText="{Binding Labels.Placeholder}"
+                     AutomationProperties.Name="{Binding Labels.Placeholder}" />
+      </c:FilterBar.Search>
+      <c:FilterBar.Trailing>
+        <c:CopyButton Classes="icon"
+                      Command="{Binding Copy.CopyCommand}"
+                      IsCopied="{Binding Copy.Copied}"
+                      ToolTip.Tip="Copy the selected rows"
+                      AutomationProperties.Name="Copy the selected rows">
+          <c:Icon Kind="Copy" Size="{DynamicResource QxIconSizeSm}" />
+        </c:CopyButton>
+      </c:FilterBar.Trailing>
+    </c:FilterBar>
+
+    <c:StateHost Grid.Row="1" State="{Binding State}">
+      <DataGrid Name="EntriesGrid"
+                ItemsSource="{Binding Rows.Visible}"
+                b:ListBehaviors.Selection="{Binding Selection}"
+                b:ListBehaviors.Scroll="{Binding Scroll}"
+                b:ListBehaviors.CopyCommand="{Binding Copy.CopyCommand}"
+                HeadersVisibility="Column">
+        <DataGrid.Columns>
+          <c:DataGridGutterColumn x:DataType="vm:KeyValueRowViewModel" />
+          <DataGridTemplateColumn x:DataType="vm:KeyValueRowViewModel" Width="1.2*" SortMemberPath="Key">
+            <DataGridTemplateColumn.CellTemplate>
+              <DataTemplate x:DataType="vm:KeyValueRowViewModel">
+                <TextBlock Classes="mono secondary"
+                           Margin="12,0"
+                           VerticalAlignment="Center"
+                           TextTrimming="CharacterEllipsis"
+                           Text="{Binding Key}"
+                           ToolTip.Tip="{Binding Key}" />
+              </DataTemplate>
+            </DataGridTemplateColumn.CellTemplate>
+          </DataGridTemplateColumn>
+          <DataGridTemplateColumn x:DataType="vm:KeyValueRowViewModel" Width="2*" SortMemberPath="Value">
+            <DataGridTemplateColumn.CellTemplate>
+              <DataTemplate x:DataType="vm:KeyValueRowViewModel">
+                <TextBlock Margin="12,0"
+                           VerticalAlignment="Center"
+                           TextTrimming="CharacterEllipsis"
+                           Text="{Binding Value}"
+                           ToolTip.Tip="{Binding Value}" />
+              </DataTemplate>
+            </DataGridTemplateColumn.CellTemplate>
+          </DataGridTemplateColumn>
+          <c:DataGridGutterColumn x:DataType="vm:KeyValueRowViewModel" />
+        </DataGrid.Columns>
+      </DataGrid>
+    </c:StateHost>
+
+  </Grid>
+</UserControl>

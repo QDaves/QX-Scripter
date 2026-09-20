@@ -1,4 +1,4 @@
-﻿using Qx.Messages;
+using Qx.Messages;
 using Qx.Model.Messages.Incoming;
 using Qx.Game.Protocol;
 using Qx.Model.Messages.Outgoing;
@@ -206,25 +206,8 @@ public sealed class FriendManager : GameStateManager
 
     public bool IsFriend(string name) => FriendByName(name) is not null;
 
-    /// <summary>
-    /// Writes a private message to a friend.
-    /// </summary>
-    /// <remarks>
-    /// <para>
-    /// Flash carries a trailing sequence number. Unity builds exist with both two-field and
-    /// three-field layouts, so the active verified schema decides whether Unity carries it.
-    /// </para>
-    /// <para>
-    /// That number is the sender's own counter, not anything the hotel assigns. The client starts
-    /// it at zero per conversation and advances it on every line, then matches a delivery failure
-    /// back to the line that caused it. It is tracked here so a caller never has to; sending a
-    /// fixed number still delivers, it only makes two failures indistinguishable.
-    /// </para>
-    /// </remarks>
-    /// <param name="recipientId">The friend to write to.</param>
-    /// <param name="text">The message. Must not be empty; the client refuses to send one.</param>
     public void SendPrivateMessage(Id recipientId, string text) =>
-        SendPrivateMessageCore(recipientId, text, null, default);
+    SendPrivateMessageCore(recipientId, text, null, default);
 
     internal void SendPrivateMessage(
         Id recipient_id,
@@ -245,11 +228,7 @@ public sealed class FriendManager : GameStateManager
             new SendPrivateMessage(
                 recipient_id,
                 text,
-                FriendPrivateMessageSchema.UsesMessageIndex(
-                    Interceptor.Messages,
-                    expected_session?.Client ?? CurrentClient)
-                    ? NextMessageIndex(recipient_id)
-                    : null),
+                NextMessageIndex(recipient_id)),
             expected_session,
             cancellation_token);
     }
@@ -601,16 +580,6 @@ public sealed class FriendManager : GameStateManager
             _revision++;
 
             ClientType client = Interceptor.Session?.Client ?? Interceptor.Messages.ActiveClient;
-            if (client is ClientType.Unity && init.FriendCount == 0)
-            {
-                _expected_fragments = 0;
-                published = PublishSnapshot();
-                if (published is not null)
-                {
-                    published_generation = _generation;
-                    published_request_epoch = _fragment_request_epoch;
-                }
-            }
         }
 
         Initialized?.Invoke();

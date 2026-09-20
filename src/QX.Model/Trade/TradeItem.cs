@@ -22,7 +22,7 @@ public sealed class TradeItem : IParserComposer<TradeItem>
     public TradeItem() { }
 
     public static TradeItem Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static TradeItem ParseFlash(in PacketReader p)
     {
@@ -59,46 +59,8 @@ public sealed class TradeItem : IParserComposer<TradeItem>
         return value;
     }
 
-    private static TradeItem ParseUnity(in PacketReader p)
-    {
-        Id item_id = p.ReadLong();
-        ItemType type = p.ReadShort() switch
-        {
-            0 => ItemType.Wall,
-            1 => ItemType.Floor,
-            short wire_type => throw new InvalidDataException(
-                $"Unknown Unity trade item type '{wire_type}'.")
-        };
-        Id id = p.ReadLong();
-        int kind = p.ReadInt();
-        int category = p.ReadInt();
-        bool is_groupable = p.ReadBool();
-        ItemData data = p.Parse<ItemData>();
-        int creation_day = p.ReadInt();
-        int creation_month = p.ReadInt();
-        int creation_year = p.ReadInt();
-        long extra = type is ItemType.Floor ? p.ReadLong() : -1;
-        var value = new TradeItem
-        {
-            ItemId = item_id,
-            Type = type,
-            Id = id,
-            Kind = kind,
-            Category = category,
-            IsGroupable = is_groupable,
-            Data = data,
-            CreationDay = creation_day,
-            CreationMonth = creation_month,
-            CreationYear = creation_year,
-            Extra = extra
-        };
-        TradeWire.RequirePositiveId(value.Id, nameof(Id));
-        TradeWire.RequireFloorExtra(value.Type, value.Extra);
-        return value;
-    }
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(TradeItem value, in PacketWriter p)
     {
@@ -117,43 +79,16 @@ public sealed class TradeItem : IParserComposer<TradeItem>
             p.WriteInt(checked((int)value.Extra));
     }
 
-    private static void ComposeUnity(TradeItem value, in PacketWriter p)
-    {
-        value.ValidateUnity(in p);
-        p.WriteLong(value.ItemId);
-        p.WriteShort(value.Type is ItemType.Wall ? (short)0 : (short)1);
-        p.WriteLong(value.Id);
-        p.WriteInt(value.Kind);
-        p.WriteInt(value.Category);
-        p.WriteBool(value.IsGroupable);
-        p.Compose(value.Data);
-        p.WriteInt(value.CreationDay);
-        p.WriteInt(value.CreationMonth);
-        p.WriteInt(value.CreationYear);
-        if (value.Type is ItemType.Floor)
-            p.WriteLong(value.Extra);
-    }
-
     internal void ValidateFlash(in PacketWriter p)
     {
         TradeWire.RequireItemType(Type);
         _ = TradeWire.FlashId(ItemId, nameof(ItemId));
         TradeWire.RequirePositiveFlashId(Id, nameof(Id));
-        TradeWire.ValidateItemData(Data, false, in p);
+        TradeWire.ValidateItemData(Data, in p);
         TradeWire.RequireFloorExtra(Type, Extra);
         if (Type is ItemType.Floor)
             _ = checked((int)Extra);
         else if (Extra != -1)
-            throw new InvalidDataException("Wall trade items cannot carry floor-item metadata.");
-    }
-
-    internal void ValidateUnity(in PacketWriter p)
-    {
-        TradeWire.RequireItemType(Type);
-        TradeWire.RequirePositiveId(Id, nameof(Id));
-        TradeWire.ValidateItemData(Data, true, in p);
-        TradeWire.RequireFloorExtra(Type, Extra);
-        if (Type is ItemType.Wall && Extra != -1)
             throw new InvalidDataException("Wall trade items cannot carry floor-item metadata.");
     }
 
@@ -163,7 +98,6 @@ public sealed class TradeItem : IParserComposer<TradeItem>
 internal static class TradeWire
 {
     public const int FlashTradeItemMinimumBytes = 35;
-    public const int UnityTradeItemMinimumBytes = 43;
     public const int NftAssetMinimumBytes = 26;
 
     public static int FlashId(Id value, string name)
@@ -194,12 +128,6 @@ internal static class TradeWire
     {
         if (p.Available != 0)
             throw new InvalidDataException($"{name} contains {p.Available} unexpected bytes.");
-    }
-
-    public static void RequireUnityCount(int count, string name)
-    {
-        if ((uint)count > ushort.MaxValue)
-            throw new InvalidDataException($"{name} count {count} exceeds the Unity wire limit.");
     }
 
     public static void RequireItemType(ItemType type)
@@ -276,26 +204,20 @@ internal static class TradeWire
 
     public static void RequireDistinctIds(
         IReadOnlyList<Id> values,
-        bool flash,
         string name)
     {
         var seen = new HashSet<long>();
         foreach (Id value in values)
         {
-            if (flash)
-                RequireNonZeroFlashId(value, name);
-            else
-                RequireNonZeroId(value, name);
+            RequireNonZeroFlashId(value, name);
             if (!seen.Add(value))
                 throw new InvalidDataException($"{name} contains duplicate ID {value}.");
         }
     }
 
-    public static void ValidateItemData(ItemData data, bool unity, in PacketWriter p)
+    public static void ValidateItemData(ItemData data, in PacketWriter p)
     {
         ArgumentNullException.ThrowIfNull(data);
-        if (unity && data.IsLimitedRare)
-            RequireString(data.UniqueLimitedData, nameof(data.UniqueLimitedData), in p);
         switch (data)
         {
             case LegacyData legacy:

@@ -73,7 +73,7 @@ public enum RoomModerationPermission
     /// <summary>
     /// 5: the owner, the group's administrators and anyone holding room rights may perform the
     /// action. <c>navigator.roomsettings.moderation.group_admins_and_rights</c>; group rooms
-    /// only. Flash-only: no Unity build in the corpus declares this value.
+    /// only.
     /// </summary>
     GroupAdminsAndRightsHolders = 5
 }

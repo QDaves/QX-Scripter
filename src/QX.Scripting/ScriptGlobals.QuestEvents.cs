@@ -3,20 +3,6 @@ using Qx.Model.Quests;
 
 namespace Qx.Scripting;
 
-/// <content>
-/// Quest event subscriptions. Available on both the Flash and the Unity client.
-/// <para>
-/// Every <c>On*</c> method registers a handler and returns the handle that removes it again. The
-/// subscription is also tracked by the script and torn down when the script stops, so the handle
-/// only has to be kept when the script wants to unsubscribe earlier. Disposing it more than once
-/// is harmless.
-/// </para>
-/// <para>
-/// Handlers run inline on the interception thread while the triggering packet is dispatched, not
-/// on the script thread, and after the cached quest state has already been updated. Keep them
-/// short and do not block inside them.
-/// </para>
-/// </content>
 public partial class ScriptGlobals
 {
     /// <summary>

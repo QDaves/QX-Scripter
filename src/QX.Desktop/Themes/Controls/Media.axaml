@@ -1,0 +1,161 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:c="using:Qx.Desktop.Controls">
+
+  <ControlTheme x:Key="{x:Type c:RemoteImage}" TargetType="c:RemoteImage">
+    <Setter Property="HorizontalAlignment" Value="Center" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Panel>
+          <Image Name="PART_Image"
+                 Source="{TemplateBinding Source}"
+                 Stretch="{TemplateBinding Stretch}"
+                 StretchDirection="{TemplateBinding StretchDirection}"
+                 RenderOptions.BitmapInterpolationMode="None"
+                 IsVisible="False" />
+          <c:Icon Name="PART_Fallback"
+                  Kind="{TemplateBinding Fallback}"
+                  Size="{TemplateBinding FallbackSize}"
+                  HorizontalAlignment="Center"
+                  VerticalAlignment="Center"
+                  IsVisible="False"
+                  Foreground="{DynamicResource QxTextTertiaryBrush}" />
+        </Panel>
+      </ControlTemplate>
+    </Setter>
+    <Style Selector="^:image /template/ Image#PART_Image">
+      <Setter Property="IsVisible" Value="True" />
+    </Style>
+    <Style Selector="^:fallback /template/ c|Icon#PART_Fallback">
+      <Setter Property="IsVisible" Value="True" />
+    </Style>
+  </ControlTheme>
+
+  <ControlTheme x:Key="{x:Type c:Avatar}" TargetType="c:Avatar">
+    <Setter Property="Width" Value="28" />
+    <Setter Property="Height" Value="28" />
+    <Setter Property="FontSize" Value="{DynamicResource QxFontSizeSmall}" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="Background" Value="{DynamicResource QxAvatarTone0Brush}" />
+    <Setter Property="Foreground" Value="{DynamicResource QxAvatarTone0TextBrush}" />
+    <Setter Property="CornerRadius" Value="{DynamicResource QxRadiusMd}" />
+    <Setter Property="ClipToBounds" Value="False" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Panel>
+          <Border Name="PART_Tile" Background="{TemplateBinding Background}" CornerRadius="{TemplateBinding CornerRadius}">
+            <Panel>
+              <TextBlock Name="PART_Initials" Text="{TemplateBinding Initials}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+              <c:Icon Name="PART_Bot" Kind="Bot" Size="16" IsVisible="False" Foreground="{DynamicResource QxTextTertiaryBrush}" />
+              <c:Icon Name="PART_Pet" Kind="Pet" Size="16" IsVisible="False" Foreground="{DynamicResource QxTextTertiaryBrush}" />
+            </Panel>
+          </Border>
+          <c:RemoteImage Name="PART_Image"
+                         Request="{TemplateBinding Image}"
+                         Width="54"
+                         Height="62"
+                         Margin="-11,-17,-15,-17"
+                         Stretch="None"
+                         IsVisible="False"
+                         IsHitTestVisible="False" />
+        </Panel>
+      </ControlTemplate>
+    </Setter>
+    <Style Selector="^:tone1">
+      <Setter Property="Background" Value="{DynamicResource QxAvatarTone1Brush}" />
+      <Setter Property="Foreground" Value="{DynamicResource QxAvatarTone1TextBrush}" />
+    </Style>
+    <Style Selector="^:tone2">
+      <Setter Property="Background" Value="{DynamicResource QxAvatarTone2Brush}" />
+      <Setter Property="Foreground" Value="{DynamicResource QxAvatarTone2TextBrush}" />
+    </Style>
+    <Style Selector="^:tone3">
+      <Setter Property="Background" Value="{DynamicResource QxAvatarTone3Brush}" />
+      <Setter Property="Foreground" Value="{DynamicResource QxAvatarTone3TextBrush}" />
+    </Style>
+    <Style Selector="^:tone4">
+      <Setter Property="Background" Value="{DynamicResource QxAvatarTone4Brush}" />
+      <Setter Property="Foreground" Value="{DynamicResource QxAvatarTone4TextBrush}" />
+    </Style>
+    <Style Selector="^:tone5">
+      <Setter Property="Background" Value="{DynamicResource QxAvatarTone5Brush}" />
+      <Setter Property="Foreground" Value="{DynamicResource QxAvatarTone5TextBrush}" />
+    </Style>
+    <Style Selector="^:bot">
+      <Setter Property="Background" Value="{DynamicResource QxFillHoverBrush}" />
+      <Style Selector="^ /template/ TextBlock#PART_Initials">
+        <Setter Property="IsVisible" Value="False" />
+      </Style>
+      <Style Selector="^ /template/ c|Icon#PART_Bot">
+        <Setter Property="IsVisible" Value="True" />
+      </Style>
+    </Style>
+    <Style Selector="^:pet">
+      <Setter Property="Background" Value="{DynamicResource QxFillHoverBrush}" />
+      <Style Selector="^ /template/ TextBlock#PART_Initials">
+        <Setter Property="IsVisible" Value="False" />
+      </Style>
+      <Style Selector="^ /template/ c|Icon#PART_Pet">
+        <Setter Property="IsVisible" Value="True" />
+      </Style>
+    </Style>
+    <Style Selector="^:image">
+      <Style Selector="^ /template/ c|RemoteImage#PART_Image">
+        <Setter Property="IsVisible" Value="True" />
+      </Style>
+      <Style Selector="^ /template/ Border#PART_Tile">
+        <Setter Property="IsVisible" Value="False" />
+      </Style>
+    </Style>
+    <Style Selector="^:dimmed /template/ c|RemoteImage#PART_Image">
+      <Setter Property="Opacity" Value="0.45" />
+    </Style>
+  </ControlTheme>
+
+  <ControlTheme x:Key="{x:Type c:ItemTile}" TargetType="c:ItemTile">
+    <Setter Property="HorizontalAlignment" Value="Stretch" />
+    <Setter Property="VerticalAlignment" Value="Stretch" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Panel>
+          <c:RemoteImage Name="PART_Image"
+                         Request="{TemplateBinding Image}"
+                         Stretch="Uniform"
+                         StretchDirection="DownOnly"
+                         MaxWidth="{TemplateBinding ImageMaxWidth}"
+                         MaxHeight="{TemplateBinding ImageMaxHeight}"
+                         FallbackSize="20"
+                         HorizontalAlignment="Center"
+                         VerticalAlignment="Center" />
+          <Border Name="PART_Count" Classes="tile-badge" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="3" IsVisible="False">
+            <TextBlock Text="{TemplateBinding CountText}" />
+          </Border>
+          <Border Name="PART_Badge" Classes="tile-badge" HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="3" IsVisible="False">
+            <TextBlock Text="{TemplateBinding Badge}" />
+          </Border>
+          <TextBlock Name="PART_Caption"
+                     Text="{TemplateBinding Caption}"
+                     HorizontalAlignment="Center"
+                     VerticalAlignment="Bottom"
+                     Margin="4,0,4,8"
+                     TextTrimming="CharacterEllipsis"
+                     IsVisible="False"
+                     FontSize="{DynamicResource QxFontSizeSmall}"
+                     Foreground="{DynamicResource QxTextTertiaryBrush}" />
+        </Panel>
+      </ControlTemplate>
+    </Setter>
+    <Style Selector="^:count /template/ Border#PART_Count">
+      <Setter Property="IsVisible" Value="True" />
+    </Style>
+    <Style Selector="^:badge /template/ Border#PART_Badge">
+      <Setter Property="IsVisible" Value="True" />
+    </Style>
+    <Style Selector="^:caption /template/ TextBlock#PART_Caption">
+      <Setter Property="IsVisible" Value="True" />
+    </Style>
+  </ControlTheme>
+
+</ResourceDictionary>

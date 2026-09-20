@@ -154,9 +154,7 @@ internal sealed class ApplicationAvailabilityResolver(
         };
         ApplicationClientAvailability[] clients =
         [
-            Client(descriptor, ClientType.Flash),
-            Client(descriptor, ClientType.Unity)
-        ];
+            Client(descriptor, ClientType.Flash)        ];
         return new ApplicationAvailability(
             missing_states.Length == 0 && messages_available,
             active_client,
@@ -195,12 +193,8 @@ internal sealed class ApplicationAvailabilityResolver(
             descriptor.NamesFor(client).Count != 0;
         bool contracted = contracts.TryGet(requirement.Key, out IMessageContract contract) &&
             contract.Supports(client);
-        bool schema_selected = contracted && contract.AllowsSchemaSelectedHeader(client);
-        string? required_schema_capability = schema_selected
-            ? requirement.SchemaCapability
-            : null;
         int[] headers = [];
-        MessageDialectCapability capability = MessageDialectCapability.Ready();
+        MessageCapability capability = MessageCapability.Ready();
         ApplicationMessageHeaderCapability[] header_capabilities = [];
         if (resolve && registry_support && contracted &&
             interceptor.Messages.TryGetHeaders(client, requirement.Key, out IReadOnlyList<Header> resolved))
@@ -212,98 +206,31 @@ internal sealed class ApplicationAvailabilityResolver(
             var capabilities = new List<ApplicationMessageHeaderCapability>();
             foreach (Header header in matching_headers)
             {
-                MessageDialectCapability current = contract.Capability(
+                MessageCapability current = contract.Capability(
                     client,
                     interceptor.Messages,
                     header);
-                bool schema_available = !schema_selected ||
-                    interceptor.Messages.TryGetOutgoingSchemas(
-                        client,
-                        header,
-                        out IReadOnlyList<OutgoingMessageSchema> schemas) &&
-                    schemas.Count != 0;
-                bool available = current.Available && schema_available;
-                string? reason = current.Reason;
-                if (!schema_available && reason is null)
-                    reason = "The resolved header has no verified outgoing schema.";
                 capabilities.Add(new ApplicationMessageHeaderCapability(
                     (int)unchecked((ushort)header.Value),
                     current.Name,
-                    available,
-                    reason));
+                    current.Available,
+                    current.Reason));
                 if (!current.Available || capability.Name is null && current.Name is not null)
                     capability = current;
             }
             header_capabilities = capabilities
                 .OrderBy(candidate => candidate.Header)
                 .ToArray();
-            if (required_schema_capability is not null)
-            {
-                header_capabilities = header_capabilities
-                    .Where(candidate => string.Equals(
-                        candidate.Capability,
-                        required_schema_capability,
-                        StringComparison.Ordinal))
-                    .ToArray();
-                headers = header_capabilities
-                    .Select(candidate => candidate.Header)
-                    .Distinct()
-                    .Order()
-                    .ToArray();
-                if (header_capabilities.Any(candidate => candidate.Available))
-                {
-                    capability = MessageDialectCapability.Ready(required_schema_capability);
-                }
-                else
-                {
-                    capability = MessageDialectCapability.Missing(
-                        required_schema_capability,
-                        header_capabilities.FirstOrDefault()?.Reason ??
-                        $"No resolved header provides the required wire capability '{required_schema_capability}'.");
-                }
-            }
-            else
-            {
-                headers = matching_headers
-                    .Select(header => (int)unchecked((ushort)header.Value))
-                    .Distinct()
-                    .Order()
-                    .ToArray();
-                if (schema_selected)
-                {
-                    ApplicationMessageHeaderCapability? available = header_capabilities
-                        .FirstOrDefault(candidate => candidate.Available);
-                    if (available is not null)
-                    {
-                        capability = MessageDialectCapability.Ready(available.Capability);
-                    }
-                    else if (header_capabilities.FirstOrDefault() is { } missing)
-                    {
-                        capability = MessageDialectCapability.Missing(
-                            missing.Capability ?? "schemaSelectedHeader",
-                            missing.Reason ?? "No resolved header has a verified outgoing schema.");
-                    }
-                }
-            }
-        }
-        if (resolve && required_schema_capability is not null && capability.Name is null)
-        {
-            capability = MessageDialectCapability.Missing(
-                required_schema_capability,
-                $"No resolved header provides the required wire capability '{required_schema_capability}'.");
+            headers = matching_headers
+                .Select(header => (int)unchecked((ushort)header.Value))
+                .Distinct()
+                .Order()
+                .ToArray();
         }
         bool header_resolved = requirement.Role is not ApplicationMessageRole.Send
             ? headers.Length != 0
-            : required_schema_capability is not null
-                ? headers.Length == 1
-                : schema_selected
-                ? headers.Length != 0
-                : headers.Length == 1;
-        bool? wire_available = schema_selected && header_capabilities.Length != 0
-            ? header_capabilities.Any(candidate => candidate.Available)
-            : capability.Name is null
-                ? null
-                : capability.Available;
+            : headers.Length == 1;
+        bool? wire_available = capability.Name is null ? null : capability.Available;
         return new ApplicationMessageAvailability(
             requirement.Key,
             requirement.Direction,

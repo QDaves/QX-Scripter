@@ -130,59 +130,6 @@ internal static class MarketplaceCodec
         };
     }
 
-    public static MarketplaceOffer ReadUnityOffer(
-        in PacketReader p,
-        bool own_format)
-    {
-        Id offer_id = p.ReadLong();
-        int status = p.ReadInt();
-        int type = p.ReadInt();
-        MarketplaceWire.RequireOfferType(type);
-
-        int kind = p.ReadInt();
-        ItemData? data = null;
-        string wall_data = "";
-        int serial_number = 0;
-        int series_size = 0;
-
-        switch (type)
-        {
-            case 1:
-                data = p.Parse<ItemData>();
-                break;
-            case 2:
-                wall_data = p.ReadString();
-                break;
-            case 3:
-                serial_number = p.ReadInt();
-                series_size = p.ReadInt();
-                break;
-        }
-
-        int price = p.ReadInt();
-        int minutes_remaining = p.ReadInt();
-        int average_price = p.ReadInt();
-        int trade_volume = p.ReadInt();
-        int offers = own_format ? 0 : p.ReadInt();
-
-        return new MarketplaceOffer
-        {
-            OfferId = offer_id,
-            Status = status,
-            WireType = type,
-            Kind = kind,
-            Data = data,
-            WallData = wall_data,
-            UniqueSerialNumber = serial_number,
-            UniqueSeriesSize = series_size,
-            Price = price,
-            MinutesRemaining = minutes_remaining,
-            AveragePrice = average_price,
-            TradeVolume = trade_volume,
-            Offers = offers
-        };
-    }
-
     public static void ValidateFlashOffer(
         MarketplaceOffer offer,
         bool own_format,
@@ -197,7 +144,6 @@ internal static class MarketplaceCodec
                 MarketplaceWire.ValidateItemData(
                     offer.Data ?? throw new InvalidDataException(
                         "Floor marketplace offers require item data."),
-                    false,
                     in p);
                 break;
             case 2:
@@ -207,7 +153,6 @@ internal static class MarketplaceCodec
                 MarketplaceWire.ValidateItemData(
                     offer.Data ?? throw new InvalidDataException(
                         "Flash marketplace type 4 offers require item data."),
-                    false,
                     in p);
                 if (offer.IsUsed is null)
                 {
@@ -223,34 +168,6 @@ internal static class MarketplaceCodec
         {
             throw new InvalidDataException(
                 $"A marketplace own offer in status {offer.Status} cannot carry a status time.");
-        }
-    }
-
-    public static void ValidateUnityOffer(
-        MarketplaceOffer offer,
-        bool own_format,
-        in PacketWriter p)
-    {
-        ArgumentNullException.ThrowIfNull(offer);
-        MarketplaceWire.RequireOfferType(offer.WireType);
-        switch (offer.WireType)
-        {
-            case 1:
-                MarketplaceWire.ValidateItemData(
-                    offer.Data ?? throw new InvalidDataException(
-                        "Floor marketplace offers require item data."),
-                    true,
-                    in p);
-                break;
-            case 2:
-                MarketplaceWire.RequireString(offer.WallData, nameof(offer.WallData), in p);
-                break;
-        }
-
-        if (own_format && offer.StatusTimeMilliseconds is not null)
-        {
-            throw new InvalidDataException(
-                "Unity marketplace own offers cannot carry a status time.");
         }
     }
 
@@ -297,37 +214,6 @@ internal static class MarketplaceCodec
             p.WriteInt(offer.Offers);
         }
     }
-
-    public static void WriteUnityOffer(
-        in PacketWriter p,
-        MarketplaceOffer offer,
-        bool own_format)
-    {
-        p.WriteLong(offer.OfferId);
-        p.WriteInt(offer.Status);
-        p.WriteInt(offer.WireType);
-        p.WriteInt(offer.Kind);
-        switch (offer.WireType)
-        {
-            case 1:
-                p.Compose(offer.Data!);
-                break;
-            case 2:
-                p.WriteString(offer.WallData);
-                break;
-            case 3:
-                p.WriteInt(offer.UniqueSerialNumber);
-                p.WriteInt(offer.UniqueSeriesSize);
-                break;
-        }
-
-        p.WriteInt(offer.Price);
-        p.WriteInt(offer.MinutesRemaining);
-        p.WriteInt(offer.AveragePrice);
-        p.WriteInt(offer.TradeVolume);
-        if (!own_format)
-            p.WriteInt(offer.Offers);
-    }
 }
 
 public sealed record MarketplaceOffers : IParserComposer<MarketplaceOffers>
@@ -351,7 +237,7 @@ public sealed record MarketplaceOffers : IParserComposer<MarketplaceOffers>
     public int TotalItemsFound { get; init; }
 
     public static MarketplaceOffers Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static MarketplaceOffers ParseFlash(in PacketReader p)
     {
@@ -362,17 +248,8 @@ public sealed record MarketplaceOffers : IParserComposer<MarketplaceOffers>
         return new MarketplaceOffers(offers, p.ReadInt());
     }
 
-    private static MarketplaceOffers ParseUnity(in PacketReader p)
-    {
-        int count = p.ReadLength();
-        var offers = new MarketplaceOffer[count];
-        for (int i = 0; i < count; i++)
-            offers[i] = MarketplaceCodec.ReadUnityOffer(in p, false);
-        return new MarketplaceOffers(offers, p.ReadInt());
-    }
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(MarketplaceOffers value, in PacketWriter p)
     {
@@ -382,18 +259,6 @@ public sealed record MarketplaceOffers : IParserComposer<MarketplaceOffers>
         p.WriteInt(value.Offers.Count);
         foreach (MarketplaceOffer offer in value.Offers)
             MarketplaceCodec.WriteFlashOffer(in p, offer, false);
-        p.WriteInt(value.TotalItemsFound);
-    }
-
-    private static void ComposeUnity(MarketplaceOffers value, in PacketWriter p)
-    {
-        MarketplaceWire.RequireUnityCount(value.Offers.Count, nameof(Offers));
-        foreach (MarketplaceOffer offer in value.Offers)
-            MarketplaceCodec.ValidateUnityOffer(offer, false, in p);
-
-        p.WriteLength((Length)value.Offers.Count);
-        foreach (MarketplaceOffer offer in value.Offers)
-            MarketplaceCodec.WriteUnityOffer(in p, offer, false);
         p.WriteInt(value.TotalItemsFound);
     }
 }
@@ -419,7 +284,7 @@ public sealed record MarketplaceOwnOffers : IParserComposer<MarketplaceOwnOffers
     }
 
     public static MarketplaceOwnOffers Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static MarketplaceOwnOffers ParseFlash(in PacketReader p)
     {
@@ -438,15 +303,6 @@ public sealed record MarketplaceOwnOffers : IParserComposer<MarketplaceOwnOffers
 
         throw new InvalidDataException(
             "The marketplace own-offer list matches neither Flash wire layout.");
-    }
-
-    private static MarketplaceOwnOffers ParseUnity(in PacketReader p)
-    {
-        int count = p.ReadLength();
-        var offers = new MarketplaceOffer[count];
-        for (int i = 0; i < count; i++)
-            offers[i] = MarketplaceCodec.ReadUnityOffer(in p, true);
-        return new MarketplaceOwnOffers(0, offers);
     }
 
     private static ReadOnlySpan<bool> StatusTimeAttempts => [true, false];
@@ -480,7 +336,7 @@ public sealed record MarketplaceOwnOffers : IParserComposer<MarketplaceOwnOffers
     }
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(MarketplaceOwnOffers value, in PacketWriter p)
     {
@@ -491,17 +347,6 @@ public sealed record MarketplaceOwnOffers : IParserComposer<MarketplaceOwnOffers
         p.WriteInt(value.Offers.Count);
         foreach (MarketplaceOffer offer in value.Offers)
             MarketplaceCodec.WriteFlashOffer(in p, offer, true);
-    }
-
-    private static void ComposeUnity(MarketplaceOwnOffers value, in PacketWriter p)
-    {
-        MarketplaceWire.RequireUnityCount(value.Offers.Count, nameof(Offers));
-        foreach (MarketplaceOffer offer in value.Offers)
-            MarketplaceCodec.ValidateUnityOffer(offer, true, in p);
-
-        p.WriteLength((Length)value.Offers.Count);
-        foreach (MarketplaceOffer offer in value.Offers)
-            MarketplaceCodec.WriteUnityOffer(in p, offer, true);
     }
 }
 
@@ -559,7 +404,7 @@ public sealed record MarketplaceItemStats : IParserComposer<MarketplaceItemStats
         (MarketplaceFurniCategory)FurniCategoryId;
 
     public static MarketplaceItemStats Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static MarketplaceItemStats ParseFlash(in PacketReader p)
     {
@@ -572,28 +417,6 @@ public sealed record MarketplaceItemStats : IParserComposer<MarketplaceItemStats
         int furni_type_id = p.ReadInt();
         (int? lowest_price, int? suggested_price) =
             ReadPriceTail(in p, "Flash");
-        return new MarketplaceItemStats(
-            average_sale_price,
-            offer_count,
-            history_length_days,
-            history,
-            furni_type_id,
-            furni_category_id,
-            lowest_price,
-            suggested_price);
-    }
-
-    private static MarketplaceItemStats ParseUnity(in PacketReader p)
-    {
-        int average_sale_price = p.ReadInt();
-        int offer_count = p.ReadInt();
-        int history_length_days = p.ReadInt();
-        int count = p.ReadLength();
-        MarketplaceTradeInfo[] history = ReadHistory(in p, count);
-        int furni_category_id = p.ReadInt();
-        int furni_type_id = p.ReadInt();
-        (int? lowest_price, int? suggested_price) =
-            ReadPriceTail(in p, "Unity");
         return new MarketplaceItemStats(
             average_sale_price,
             offer_count,
@@ -623,15 +446,15 @@ public sealed record MarketplaceItemStats : IParserComposer<MarketplaceItemStats
     private static (int? LowestPrice, int? SuggestedPrice) ReadPriceTail(
         in PacketReader p,
         string client) => p.Available switch
-    {
-        0 => (null, null),
-        8 => (p.ReadInt(), p.ReadInt()),
-        _ => throw new InvalidDataException(
-            $"Unsupported {client} marketplace item-stats tail length {p.Available}.")
-    };
+        {
+            0 => (null, null),
+            8 => (p.ReadInt(), p.ReadInt()),
+            _ => throw new InvalidDataException(
+                $"Unsupported {client} marketplace item-stats tail length {p.Available}.")
+        };
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(MarketplaceItemStats value, in PacketWriter p)
     {
@@ -642,32 +465,12 @@ public sealed record MarketplaceItemStats : IParserComposer<MarketplaceItemStats
         WriteFlash(value, in p);
     }
 
-    private static void ComposeUnity(MarketplaceItemStats value, in PacketWriter p)
-    {
-        MarketplaceWire.RequireUnityCount(value.History.Count, nameof(History));
-        MarketplaceWire.RequirePriceTail(
-            value.LowestPrice,
-            value.SuggestedPrice,
-            "Unity");
-        WriteUnity(value, in p);
-    }
-
     private static void WriteFlash(MarketplaceItemStats value, in PacketWriter p)
     {
         p.WriteInt(value.AverageSalePrice);
         p.WriteInt(value.OfferCount);
         p.WriteInt(value.HistoryLengthDays);
         p.WriteInt(value.History.Count);
-        WriteHistory(value.History, in p);
-        WriteIdentityAndPriceTail(value, in p);
-    }
-
-    private static void WriteUnity(MarketplaceItemStats value, in PacketWriter p)
-    {
-        p.WriteInt(value.AverageSalePrice);
-        p.WriteInt(value.OfferCount);
-        p.WriteInt(value.HistoryLengthDays);
-        p.WriteLength((Length)value.History.Count);
         WriteHistory(value.History, in p);
         WriteIdentityAndPriceTail(value, in p);
     }
@@ -709,7 +512,7 @@ public sealed record MarketplaceBuyResult(
         (MarketplaceBuyResultCode)Result;
 
     public static MarketplaceBuyResult Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static MarketplaceBuyResult ParseFlash(in PacketReader p)
     {
@@ -724,21 +527,8 @@ public sealed record MarketplaceBuyResult(
             new_price);
     }
 
-    private static MarketplaceBuyResult ParseUnity(in PacketReader p)
-    {
-        int result = p.ReadInt();
-        Id new_offer_id = p.ReadLong();
-        int new_price = p.ReadInt();
-        Id requested_offer_id = p.ReadLong();
-        return new MarketplaceBuyResult(
-            result,
-            requested_offer_id,
-            new_offer_id,
-            new_price);
-    }
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(MarketplaceBuyResult value, in PacketWriter p)
     {
@@ -748,14 +538,6 @@ public sealed record MarketplaceBuyResult(
         p.WriteInt(new_offer_id);
         p.WriteInt(value.NewPrice);
         p.WriteInt(requested_offer_id);
-    }
-
-    private static void ComposeUnity(MarketplaceBuyResult value, in PacketWriter p)
-    {
-        p.WriteInt(value.Result);
-        p.WriteLong(value.NewOfferId);
-        p.WriteInt(value.NewPrice);
-        p.WriteLong(value.RequestedOfferId);
     }
 }
 
@@ -767,16 +549,13 @@ public sealed record MarketplaceCanMakeOfferResult(
         (MarketplaceEligibilityResult)ResultCode;
 
     public static MarketplaceCanMakeOfferResult Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static MarketplaceCanMakeOfferResult ParseFlash(in PacketReader p) =>
         new(p.ReadInt(), p.ReadInt());
 
-    private static MarketplaceCanMakeOfferResult ParseUnity(in PacketReader p) =>
-        new(p.ReadInt(), null);
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(
         MarketplaceCanMakeOfferResult value,
@@ -788,32 +567,21 @@ public sealed record MarketplaceCanMakeOfferResult(
         p.WriteInt(value.ResultCode);
         p.WriteInt(token_count);
     }
-
-    private static void ComposeUnity(
-        MarketplaceCanMakeOfferResult value,
-        in PacketWriter p) => p.WriteInt(value.ResultCode);
 }
 
 public sealed record MarketplaceMakeOfferResult(int Result)
     : IParserComposer<MarketplaceMakeOfferResult>
 {
     public static MarketplaceMakeOfferResult Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static MarketplaceMakeOfferResult ParseFlash(in PacketReader p) =>
         new(p.ReadInt());
 
-    private static MarketplaceMakeOfferResult ParseUnity(in PacketReader p) =>
-        new(p.ReadInt());
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(
-        MarketplaceMakeOfferResult value,
-        in PacketWriter p) => p.WriteInt(value.Result);
-
-    private static void ComposeUnity(
         MarketplaceMakeOfferResult value,
         in PacketWriter p) => p.WriteInt(value.Result);
 }
@@ -822,17 +590,13 @@ public sealed record MarketplaceCancelOfferResult(Id OfferId, bool Success)
     : IParserComposer<MarketplaceCancelOfferResult>
 {
     public static MarketplaceCancelOfferResult Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static MarketplaceCancelOfferResult ParseFlash(in PacketReader p) =>
         new(p.ReadInt(), p.ReadBool());
 
-    private static MarketplaceCancelOfferResult ParseUnity(in PacketReader p) =>
-        throw new NotSupportedException(
-            "The Unity marketplace cancel-offer result has no verified payload layout.");
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(
         MarketplaceCancelOfferResult value,
@@ -842,11 +606,6 @@ public sealed record MarketplaceCancelOfferResult(Id OfferId, bool Success)
         p.WriteInt(offer_id);
         p.WriteBool(value.Success);
     }
-
-    private static void ComposeUnity(
-        MarketplaceCancelOfferResult value,
-        in PacketWriter p) => throw new NotSupportedException(
-            "The Unity marketplace cancel-offer result has no verified payload layout.");
 }
 
 public sealed record MarketplaceConfiguration(
@@ -863,12 +622,9 @@ public sealed record MarketplaceConfiguration(
     int HalfTaxLimit) : IParserComposer<MarketplaceConfiguration>
 {
     public static MarketplaceConfiguration Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static MarketplaceConfiguration ParseFlash(in PacketReader p) =>
-        Read(in p);
-
-    private static MarketplaceConfiguration ParseUnity(in PacketReader p) =>
         Read(in p);
 
     private static MarketplaceConfiguration Read(in PacketReader p) => new(
@@ -885,13 +641,9 @@ public sealed record MarketplaceConfiguration(
         p.ReadInt());
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(
-        MarketplaceConfiguration value,
-        in PacketWriter p) => Write(value, in p);
-
-    private static void ComposeUnity(
         MarketplaceConfiguration value,
         in PacketWriter p) => Write(value, in p);
 
@@ -933,7 +685,7 @@ public sealed record MarketplaceCancelAllOffersResult
     public bool Success { get; init; }
 
     public static MarketplaceCancelAllOffersResult Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static MarketplaceCancelAllOffersResult ParseFlash(in PacketReader p)
     {
@@ -944,17 +696,8 @@ public sealed record MarketplaceCancelAllOffersResult
         return new MarketplaceCancelAllOffersResult(offer_ids, p.ReadBool());
     }
 
-    private static MarketplaceCancelAllOffersResult ParseUnity(in PacketReader p)
-    {
-        int count = p.ReadLength();
-        var offer_ids = new Id[count];
-        for (int i = 0; i < count; i++)
-            offer_ids[i] = p.ReadLong();
-        return new MarketplaceCancelAllOffersResult(offer_ids, p.ReadBool());
-    }
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(
         MarketplaceCancelAllOffersResult value,
@@ -969,43 +712,23 @@ public sealed record MarketplaceCancelAllOffersResult
             p.WriteInt(offer_id);
         p.WriteBool(value.Success);
     }
-
-    private static void ComposeUnity(
-        MarketplaceCancelAllOffersResult value,
-        in PacketWriter p)
-    {
-        MarketplaceWire.RequireUnityCount(value.OfferIds.Count, nameof(OfferIds));
-        p.WriteLength((Length)value.OfferIds.Count);
-        foreach (Id offer_id in value.OfferIds)
-            p.WriteLong(offer_id);
-        p.WriteBool(value.Success);
-    }
 }
 
 public sealed record MarketplaceClearOwnHistoryResult(bool Success)
     : IParserComposer<MarketplaceClearOwnHistoryResult>
 {
     public static MarketplaceClearOwnHistoryResult Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static MarketplaceClearOwnHistoryResult ParseFlash(in PacketReader p) =>
         new(p.ReadBool());
 
-    private static MarketplaceClearOwnHistoryResult ParseUnity(in PacketReader p) =>
-        throw new NotSupportedException(
-            "Marketplace history clearing is only verified for Flash.");
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(
         MarketplaceClearOwnHistoryResult value,
         in PacketWriter p) => p.WriteBool(value.Success);
-
-    private static void ComposeUnity(
-        MarketplaceClearOwnHistoryResult value,
-        in PacketWriter p) => throw new NotSupportedException(
-            "Marketplace history clearing is only verified for Flash.");
 }
 
 internal static class MarketplaceWire
@@ -1019,15 +742,6 @@ internal static class MarketplaceWire
     }
 
     public static int FlashId(Id id) => checked((int)(long)id);
-
-    public static void RequireUnityCount(int count, string name)
-    {
-        if ((uint)count > ushort.MaxValue)
-        {
-            throw new InvalidDataException(
-                $"{name} count {count} exceeds the Unity wire limit {ushort.MaxValue}.");
-        }
-    }
 
     public static void RequireEmpty(in PacketReader p, string message_name)
     {
@@ -1065,16 +779,6 @@ internal static class MarketplaceWire
                 "The active Flash marketplace layout does not support this message.");
         }
     }
-
-    public static MarketplaceBuyWireLayout UnityBuyLayout(in PacketReader p) =>
-        p.Context?.WireProfile.RequireUnityMarketplaceBuyLayout() ??
-        throw new NotSupportedException(
-            "The Unity marketplace message has no wire-profile context.");
-
-    public static MarketplaceBuyWireLayout UnityBuyLayout(in PacketWriter p) =>
-        p.Context?.WireProfile.RequireUnityMarketplaceBuyLayout() ??
-        throw new NotSupportedException(
-            "The Unity marketplace message has no wire-profile context.");
 
     public static MarketplaceFurniCategory ReadCategory(in PacketReader p)
     {
@@ -1210,7 +914,6 @@ internal static class MarketplaceWire
 
     public static void ValidateItemData(
         ItemData data,
-        bool unity,
         in PacketWriter p)
     {
         ArgumentNullException.ThrowIfNull(data);
@@ -1257,14 +960,6 @@ internal static class MarketplaceWire
             default:
                 throw new NotSupportedException(
                     $"Unsupported marketplace item-data type {data.GetType().FullName}.");
-        }
-
-        if (unity && data.IsLimitedRare)
-        {
-            RequireString(
-                data.UniqueLimitedData,
-                nameof(data.UniqueLimitedData),
-                in p);
         }
     }
 

@@ -84,7 +84,7 @@ public sealed record LeaderboardEntry : IParserComposer<LeaderboardEntry>
     }
 
     public static LeaderboardEntry Parse(in PacketReader p) =>
-        ModernWireClients.ParseFlash(in p, ParseFlash);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static LeaderboardEntry ParseFlash(in PacketReader p)
     {
@@ -95,7 +95,7 @@ public sealed record LeaderboardEntry : IParserComposer<LeaderboardEntry>
     }
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.ComposeFlash(this, in p, ComposeFlash);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(LeaderboardEntry value, in PacketWriter p)
     {
@@ -221,7 +221,7 @@ public sealed record Leaderboard : IParserComposer<Leaderboard>
     public bool HasMoreBelow => Entries.Count > 0 && LastRank < TotalListSize;
 
     public static Leaderboard Parse(in PacketReader p) =>
-        ModernWireClients.ParseFlash(in p, ParseFlash);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static Leaderboard ParseFlash(in PacketReader p)
     {
@@ -232,7 +232,7 @@ public sealed record Leaderboard : IParserComposer<Leaderboard>
     }
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.ComposeFlash(this, in p, ComposeFlash);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(Leaderboard value, in PacketWriter p)
     {
@@ -323,7 +323,7 @@ public sealed record TotalLeaderboard : IParserComposer<TotalLeaderboard>
     }
 
     public static TotalLeaderboard Parse(in PacketReader p) =>
-        ModernWireClients.ParseFlash(in p, ParseFlash);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static TotalLeaderboard ParseFlash(in PacketReader p)
     {
@@ -334,7 +334,7 @@ public sealed record TotalLeaderboard : IParserComposer<TotalLeaderboard>
     }
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.ComposeFlash(this, in p, ComposeFlash);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(TotalLeaderboard value, in PacketWriter p)
     {
@@ -372,7 +372,7 @@ public sealed record FriendsLeaderboard : IParserComposer<FriendsLeaderboard>
     }
 
     public static FriendsLeaderboard Parse(in PacketReader p) =>
-        ModernWireClients.ParseFlash(in p, ParseFlash);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static FriendsLeaderboard ParseFlash(in PacketReader p)
     {
@@ -383,7 +383,7 @@ public sealed record FriendsLeaderboard : IParserComposer<FriendsLeaderboard>
     }
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.ComposeFlash(this, in p, ComposeFlash);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(FriendsLeaderboard value, in PacketWriter p)
     {
@@ -426,7 +426,7 @@ public sealed record TotalGroupLeaderboard : IParserComposer<TotalGroupLeaderboa
     }
 
     public static TotalGroupLeaderboard Parse(in PacketReader p) =>
-        ModernWireClients.ParseFlash(in p, ParseFlash);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static TotalGroupLeaderboard ParseFlash(in PacketReader p)
     {
@@ -439,7 +439,7 @@ public sealed record TotalGroupLeaderboard : IParserComposer<TotalGroupLeaderboa
     }
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.ComposeFlash(this, in p, ComposeFlash);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(TotalGroupLeaderboard value, in PacketWriter p)
     {
@@ -474,7 +474,7 @@ public sealed record WeeklyLeaderboardPeriod(
     public bool IsCurrentWeek => CurrentOffset == 0;
 
     public static WeeklyLeaderboardPeriod Parse(in PacketReader p) =>
-        ModernWireClients.ParseFlash(in p, ParseFlash);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static WeeklyLeaderboardPeriod ParseFlash(in PacketReader p)
     {
@@ -484,7 +484,7 @@ public sealed record WeeklyLeaderboardPeriod(
     }
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.ComposeFlash(this, in p, ComposeFlash);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(WeeklyLeaderboardPeriod value, in PacketWriter p)
     {
@@ -558,7 +558,7 @@ public sealed record WeeklyLeaderboard : IParserComposer<WeeklyLeaderboard>
     }
 
     public static WeeklyLeaderboard Parse(in PacketReader p) =>
-        ModernWireClients.ParseFlash(in p, ParseFlash);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static WeeklyLeaderboard ParseFlash(in PacketReader p)
     {
@@ -572,7 +572,7 @@ public sealed record WeeklyLeaderboard : IParserComposer<WeeklyLeaderboard>
     }
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.ComposeFlash(this, in p, ComposeFlash);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(WeeklyLeaderboard value, in PacketWriter p)
     {
@@ -626,7 +626,7 @@ public sealed record WeeklyFriendsLeaderboard : IParserComposer<WeeklyFriendsLea
     }
 
     public static WeeklyFriendsLeaderboard Parse(in PacketReader p) =>
-        ModernWireClients.ParseFlash(in p, ParseFlash);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static WeeklyFriendsLeaderboard ParseFlash(in PacketReader p)
     {
@@ -640,7 +640,7 @@ public sealed record WeeklyFriendsLeaderboard : IParserComposer<WeeklyFriendsLea
     }
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.ComposeFlash(this, in p, ComposeFlash);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(WeeklyFriendsLeaderboard value, in PacketWriter p)
     {
@@ -711,7 +711,7 @@ public sealed record WeeklyGroupLeaderboard : IParserComposer<WeeklyGroupLeaderb
     }
 
     public static WeeklyGroupLeaderboard Parse(in PacketReader p) =>
-        ModernWireClients.ParseFlash(in p, ParseFlash);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static WeeklyGroupLeaderboard ParseFlash(in PacketReader p)
     {
@@ -727,7 +727,7 @@ public sealed record WeeklyGroupLeaderboard : IParserComposer<WeeklyGroupLeaderb
     }
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.ComposeFlash(this, in p, ComposeFlash);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(WeeklyGroupLeaderboard value, in PacketWriter p)
     {

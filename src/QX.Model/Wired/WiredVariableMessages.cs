@@ -62,7 +62,7 @@ public sealed record WiredAllVariableHolders(int LeadingValue, VariableInfoAndHo
     : IParserComposer<WiredAllVariableHolders>
 {
     public static WiredAllVariableHolders Parse(in PacketReader p) =>
-        ModernWireClients.ParseFlash(in p, ParseFlash);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static WiredAllVariableHolders ParseFlash(in PacketReader p)
     {
@@ -72,16 +72,13 @@ public sealed record WiredAllVariableHolders(int LeadingValue, VariableInfoAndHo
     }
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.ComposeFlash(this, in p, ComposeFlash);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(WiredAllVariableHolders value, in PacketWriter p)
     {
         ArgumentNullException.ThrowIfNull(value.VariableInfoAndHolders);
-        WiredVariable.Validate(value.VariableInfoAndHolders.Variable, in p, false);
+        WiredVariable.Validate(value.VariableInfoAndHolders.Variable, in p);
         ArgumentNullException.ThrowIfNull(value.VariableInfoAndHolders.Holders);
-        WiredWire.RequireUnityCount(
-            value.VariableInfoAndHolders.Holders.Count,
-            nameof(value.VariableInfoAndHolders.Holders));
         foreach (ObjectIdAndValuePair holder in value.VariableInfoAndHolders.Holders)
         {
             _ = WiredWire.FlashId(holder.ObjectId);
@@ -118,7 +115,7 @@ public sealed record WiredAllVariablesDiffs(
     IReadOnlyList<WiredVariableWithHash> AddedOrUpdated) : IParserComposer<WiredAllVariablesDiffs>
 {
     public static WiredAllVariablesDiffs Parse(in PacketReader p) =>
-        ModernWireClients.ParseFlash(in p, ParseFlash);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static WiredAllVariablesDiffs ParseFlash(in PacketReader p)
     {
@@ -149,7 +146,7 @@ public sealed record WiredAllVariablesDiffs(
     }
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.ComposeFlash(this, in p, ComposeFlash);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(WiredAllVariablesDiffs value, in PacketWriter p)
     {
@@ -160,7 +157,7 @@ public sealed record WiredAllVariablesDiffs(
         foreach (WiredVariableWithHash item in value.AddedOrUpdated)
         {
             ArgumentNullException.ThrowIfNull(item);
-            WiredVariable.Validate(item.Variable, in p, false);
+            WiredVariable.Validate(item.Variable, in p);
         }
         p.WriteInt(value.AllVariablesHash);
         p.WriteBool(value.IsLastChunk);
@@ -178,12 +175,12 @@ public sealed record WiredAllVariablesDiffs(
 public sealed record WiredAllVariablesHash(int AllVariablesHash) : IParserComposer<WiredAllVariablesHash>
 {
     public static WiredAllVariablesHash Parse(in PacketReader p) =>
-        ModernWireClients.ParseFlash(in p, ParseFlash);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static WiredAllVariablesHash ParseFlash(in PacketReader p) => new(p.ReadInt());
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.ComposeFlash(this, in p, ComposeFlash);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(WiredAllVariablesHash value, in PacketWriter p) =>
         p.WriteInt(value.AllVariablesHash);
@@ -259,13 +256,13 @@ public sealed record WiredUserVariablesList(WiredUserVariablesPage Page)
     : IParserComposer<WiredUserVariablesList>
 {
     public static WiredUserVariablesList Parse(in PacketReader p) =>
-        ModernWireClients.ParseFlash(in p, ParseFlash);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static WiredUserVariablesList ParseFlash(in PacketReader p) =>
         new(p.Parse<WiredUserVariablesPage>());
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.ComposeFlash(this, in p, ComposeFlash);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(WiredUserVariablesList value, in PacketWriter p)
     {
@@ -340,13 +337,13 @@ public sealed record WiredUserPermanentVariables(WiredUserPermanentVariablesList
     : IParserComposer<WiredUserPermanentVariables>
 {
     public static WiredUserPermanentVariables Parse(in PacketReader p) =>
-        ModernWireClients.ParseFlash(in p, ParseFlash);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static WiredUserPermanentVariables ParseFlash(in PacketReader p) =>
         new(p.Parse<WiredUserPermanentVariablesList>());
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.ComposeFlash(this, in p, ComposeFlash);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(WiredUserPermanentVariables value, in PacketWriter p)
     {
@@ -417,13 +414,13 @@ public sealed record WiredVariablesForObject(WiredObjectInspectionData Data)
     : IParserComposer<WiredVariablesForObject>
 {
     public static WiredVariablesForObject Parse(in PacketReader p) =>
-        ModernWireClients.ParseFlash(in p, ParseFlash);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static WiredVariablesForObject ParseFlash(in PacketReader p) =>
         new(p.Parse<WiredObjectInspectionData>());
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.ComposeFlash(this, in p, ComposeFlash);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(WiredVariablesForObject value, in PacketWriter p)
     {
@@ -436,13 +433,13 @@ public sealed record WiredSetUserPermanentVariableResult(bool Success)
     : IParserComposer<WiredSetUserPermanentVariableResult>
 {
     public static WiredSetUserPermanentVariableResult Parse(in PacketReader p) =>
-        ModernWireClients.ParseFlash(in p, ParseFlash);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static WiredSetUserPermanentVariableResult ParseFlash(in PacketReader p) =>
         new(p.ReadBool());
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.ComposeFlash(this, in p, ComposeFlash);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(WiredSetUserPermanentVariableResult value, in PacketWriter p) =>
         p.WriteBool(value.Success);
@@ -453,12 +450,12 @@ public sealed record WiredGetAllVariableHolders(string VariableId)
     : IParserComposer<WiredGetAllVariableHolders>
 {
     public static WiredGetAllVariableHolders Parse(in PacketReader p) =>
-        ModernWireClients.ParseFlash(in p, ParseFlash);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static WiredGetAllVariableHolders ParseFlash(in PacketReader p) => new(p.ReadString());
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.ComposeFlash(this, in p, ComposeFlash);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(WiredGetAllVariableHolders value, in PacketWriter p)
     {
@@ -479,7 +476,7 @@ public sealed record WiredGetAllVariablesDiffs(IReadOnlyList<VariableHashEntry> 
     : IParserComposer<WiredGetAllVariablesDiffs>
 {
     public static WiredGetAllVariablesDiffs Parse(in PacketReader p) =>
-        ModernWireClients.ParseFlash(in p, ParseFlash);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static WiredGetAllVariablesDiffs ParseFlash(in PacketReader p)
     {
@@ -492,7 +489,7 @@ public sealed record WiredGetAllVariablesDiffs(IReadOnlyList<VariableHashEntry> 
     }
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.ComposeFlash(this, in p, ComposeFlash);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(WiredGetAllVariablesDiffs value, in PacketWriter p)
     {
@@ -511,7 +508,7 @@ public sealed record WiredGetAllVariablesDiffs(IReadOnlyList<VariableHashEntry> 
 public sealed record WiredGetAllVariablesHash() : IParserComposer<WiredGetAllVariablesHash>
 {
     public static WiredGetAllVariablesHash Parse(in PacketReader p) =>
-        ModernWireClients.ParseFlash(in p, ParseFlash);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static WiredGetAllVariablesHash ParseFlash(in PacketReader p)
     {
@@ -520,7 +517,7 @@ public sealed record WiredGetAllVariablesHash() : IParserComposer<WiredGetAllVar
     }
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.ComposeFlash(this, in p, ComposeFlash);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(WiredGetAllVariablesHash value, in PacketWriter p) { }
 }
@@ -529,13 +526,13 @@ public sealed record WiredGetUserPermanentVariables(int EntityType, int EntityId
     : IParserComposer<WiredGetUserPermanentVariables>
 {
     public static WiredGetUserPermanentVariables Parse(in PacketReader p) =>
-        ModernWireClients.ParseFlash(in p, ParseFlash);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static WiredGetUserPermanentVariables ParseFlash(in PacketReader p) =>
         new(p.ReadInt(), p.ReadInt());
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.ComposeFlash(this, in p, ComposeFlash);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(WiredGetUserPermanentVariables value, in PacketWriter p)
     {
@@ -550,13 +547,13 @@ public sealed record WiredGetVariableOwnersPage(
     : IParserComposer<WiredGetVariableOwnersPage>
 {
     public static WiredGetVariableOwnersPage Parse(in PacketReader p) =>
-        ModernWireClients.ParseFlash(in p, ParseFlash);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static WiredGetVariableOwnersPage ParseFlash(in PacketReader p) =>
         new(p.ReadString(), p.ReadInt(), p.ReadInt(), p.ReadInt(), p.ReadInt());
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.ComposeFlash(this, in p, ComposeFlash);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(WiredGetVariableOwnersPage value, in PacketWriter p)
     {
@@ -574,13 +571,13 @@ public sealed record WiredGetVariablesForObject(int Type, int ObjectId)
     : IParserComposer<WiredGetVariablesForObject>
 {
     public static WiredGetVariablesForObject Parse(in PacketReader p) =>
-        ModernWireClients.ParseFlash(in p, ParseFlash);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static WiredGetVariablesForObject ParseFlash(in PacketReader p) =>
         new(p.ReadInt(), p.ReadInt());
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.ComposeFlash(this, in p, ComposeFlash);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(WiredGetVariablesForObject value, in PacketWriter p)
     {
@@ -594,13 +591,13 @@ public sealed record WiredSetObjectVariableValue(
     : IParserComposer<WiredSetObjectVariableValue>
 {
     public static WiredSetObjectVariableValue Parse(in PacketReader p) =>
-        ModernWireClients.ParseFlash(in p, ParseFlash);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static WiredSetObjectVariableValue ParseFlash(in PacketReader p) =>
         new(p.ReadInt(), p.ReadInt(), p.ReadString(), p.ReadInt(), p.ReadInt());
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.ComposeFlash(this, in p, ComposeFlash);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(WiredSetObjectVariableValue value, in PacketWriter p)
     {
@@ -618,13 +615,13 @@ public sealed record WiredSetUserPermanentVariable(
     : IParserComposer<WiredSetUserPermanentVariable>
 {
     public static WiredSetUserPermanentVariable Parse(in PacketReader p) =>
-        ModernWireClients.ParseFlash(in p, ParseFlash);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static WiredSetUserPermanentVariable ParseFlash(in PacketReader p) =>
         new(p.ReadInt(), p.ReadInt(), p.ReadString(), p.ReadInt(), p.ReadInt());
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.ComposeFlash(this, in p, ComposeFlash);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(WiredSetUserPermanentVariable value, in PacketWriter p)
     {
@@ -677,10 +674,6 @@ internal static class WiredVariableMessagesWire
         ArgumentNullException.ThrowIfNull(value.VariableValues);
         foreach (KeyValuePair<string, int> variable in value.VariableValues)
             WiredWire.RequireString(variable.Key, nameof(value.VariableValues), in p);
-        if (value.Type == WiredVariableTarget.Furni)
-            WiredWire.RequireUnityCount(
-                (value.ConfiguredInWireds ?? []).Count,
-                nameof(value.ConfiguredInWireds));
     }
 
     private static void Validate(WiredVariableStorageParameter value, in PacketWriter p)

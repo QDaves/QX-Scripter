@@ -1,17 +1,9 @@
-﻿using Qx.Model.Messages.Incoming;
+using Qx.Model.Messages.Incoming;
 using Qx.Model.Polls;
 using Qx.Game.Application;
 
 namespace Qx.Scripting;
 
-/// <content>
-/// Polls — the questionnaires the hotel offers through a dialog. Available on both the Flash and
-/// the Unity client.
-/// <para>
-/// A poll runs in three steps: the server offers a poll, the client accepts it and receives the
-/// questions, then the client sends the answers. The server does not acknowledge the answers.
-/// </para>
-/// </content>
 public partial class ScriptGlobals
 {
     public PollOffer? LatestPollOffer => ReadPollState().Offer is { } offer
@@ -153,18 +145,6 @@ public partial class ScriptGlobals
             state.SessionGeneration);
     }
 
-    /// <summary>
-    /// Sends a prepared poll answer. Returns immediately; the server sends no acknowledgement.
-    /// </summary>
-    /// <param name="answer">The poll id and the question responses to send.</param>
-    /// <exception cref="ArgumentNullException"><paramref name="answer"/> is null.</exception>
-    /// <exception cref="InvalidDataException">
-    /// The session is Flash and the answer does not hold exactly one question response.
-    /// </exception>
-    /// <remarks>
-    /// The wire shape differs by client: the Flash message carries exactly one question response,
-    /// the Unity message carries an array of them.
-    /// </remarks>
     public void AnswerPoll(PollAnswer answer)
     {
         ArgumentNullException.ThrowIfNull(answer);

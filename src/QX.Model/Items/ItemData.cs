@@ -25,9 +25,7 @@ public abstract class ItemData : IParserComposer<ItemData>
     protected abstract void WriteData(in PacketWriter p);
 
     protected virtual void ReadFlashData(in PacketReader p) => ReadData(in p);
-    protected virtual void ReadUnityData(in PacketReader p) => ReadData(in p);
     protected virtual void WriteFlashData(in PacketWriter p) => WriteData(in p);
-    protected virtual void WriteUnityData(in PacketWriter p) => WriteData(in p);
 
     protected void ReadFlashRare(in PacketReader p)
     {
@@ -36,13 +34,6 @@ public abstract class ItemData : IParserComposer<ItemData>
             UniqueSerialNumber = p.ReadInt();
             UniqueSeriesSize = p.ReadInt();
         }
-    }
-
-    protected void ReadUnityRare(in PacketReader p)
-    {
-        ReadFlashRare(in p);
-        if (IsLimitedRare)
-            UniqueLimitedData = p.ReadString();
     }
 
     protected void WriteFlashRare(in PacketWriter p)
@@ -54,15 +45,8 @@ public abstract class ItemData : IParserComposer<ItemData>
         }
     }
 
-    protected void WriteUnityRare(in PacketWriter p)
-    {
-        WriteFlashRare(in p);
-        if (IsLimitedRare)
-            p.WriteString(UniqueLimitedData);
-    }
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(ItemData value, in PacketWriter p)
     {
@@ -70,29 +54,16 @@ public abstract class ItemData : IParserComposer<ItemData>
         value.WriteFlashData(in p);
     }
 
-    private static void ComposeUnity(ItemData value, in PacketWriter p)
-    {
-        value.WriteType(in p);
-        value.WriteUnityData(in p);
-    }
-
     private void WriteType(in PacketWriter p) =>
         p.WriteInt(((int)Type & 0xFF) | ((int)Flags << 8));
 
     public static ItemData Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static ItemData ParseFlash(in PacketReader p)
     {
         ItemData data = Create(in p);
         data.ReadFlashData(in p);
-        return data;
-    }
-
-    private static ItemData ParseUnity(in PacketReader p)
-    {
-        ItemData data = Create(in p);
-        data.ReadUnityData(in p);
         return data;
     }
 
@@ -130,24 +101,12 @@ public sealed class LegacyData() : ItemData(ItemDataType.Legacy)
         ReadFlashRare(in p);
     }
 
-    protected override void ReadUnityData(in PacketReader p)
-    {
-        ReadData(in p);
-        ReadUnityRare(in p);
-    }
-
     protected override void WriteData(in PacketWriter p) => p.WriteString(Value);
 
     protected override void WriteFlashData(in PacketWriter p)
     {
         WriteData(in p);
         WriteFlashRare(in p);
-    }
-
-    protected override void WriteUnityData(in PacketWriter p)
-    {
-        WriteData(in p);
-        WriteUnityRare(in p);
     }
 }
 
@@ -182,22 +141,10 @@ public sealed class MapData() : ItemData(ItemDataType.Map)
         ReadFlashRare(in p);
     }
 
-    protected override void ReadUnityData(in PacketReader p)
-    {
-        ReadData(in p);
-        ReadUnityRare(in p);
-    }
-
     protected override void WriteFlashData(in PacketWriter p)
     {
         WriteData(in p);
         WriteFlashRare(in p);
-    }
-
-    protected override void WriteUnityData(in PacketWriter p)
-    {
-        WriteData(in p);
-        WriteUnityRare(in p);
     }
 }
 
@@ -210,7 +157,6 @@ public sealed class StringArrayData() : ItemData(ItemDataType.StringArray)
         int count = p.Client switch
         {
             ClientType.Flash => p.ReadInt(),
-            ClientType.Unity => p.ReadLength(),
             _ => throw new UnsupportedClientException(p.Client)
         };
         count = InventoryWire.RequireCount(count, p.Available, sizeof(short), nameof(Values));
@@ -229,22 +175,10 @@ public sealed class StringArrayData() : ItemData(ItemDataType.StringArray)
         ReadFlashRare(in p);
     }
 
-    protected override void ReadUnityData(in PacketReader p)
-    {
-        ReadData(in p);
-        ReadUnityRare(in p);
-    }
-
     protected override void WriteFlashData(in PacketWriter p)
     {
         WriteData(in p);
         WriteFlashRare(in p);
-    }
-
-    protected override void WriteUnityData(in PacketWriter p)
-    {
-        WriteData(in p);
-        WriteUnityRare(in p);
     }
 }
 
@@ -270,22 +204,10 @@ public sealed class VoteResultData() : ItemData(ItemDataType.VoteResult)
         ReadFlashRare(in p);
     }
 
-    protected override void ReadUnityData(in PacketReader p)
-    {
-        ReadData(in p);
-        ReadUnityRare(in p);
-    }
-
     protected override void WriteFlashData(in PacketWriter p)
     {
         WriteData(in p);
         WriteFlashRare(in p);
-    }
-
-    protected override void WriteUnityData(in PacketWriter p)
-    {
-        WriteData(in p);
-        WriteUnityRare(in p);
     }
 }
 
@@ -294,9 +216,7 @@ public sealed class EmptyItemData() : ItemData(ItemDataType.Empty)
     protected override void ReadData(in PacketReader p) { }
     protected override void WriteData(in PacketWriter p) { }
     protected override void ReadFlashData(in PacketReader p) => ReadFlashRare(in p);
-    protected override void ReadUnityData(in PacketReader p) => ReadUnityRare(in p);
     protected override void WriteFlashData(in PacketWriter p) => WriteFlashRare(in p);
-    protected override void WriteUnityData(in PacketWriter p) => WriteUnityRare(in p);
 }
 
 public sealed class IntArrayData() : ItemData(ItemDataType.IntArray)
@@ -308,7 +228,6 @@ public sealed class IntArrayData() : ItemData(ItemDataType.IntArray)
         int count = p.Client switch
         {
             ClientType.Flash => p.ReadInt(),
-            ClientType.Unity => p.ReadLength(),
             _ => throw new UnsupportedClientException(p.Client)
         };
         count = InventoryWire.RequireCount(count, p.Available, sizeof(int), nameof(Values));
@@ -327,36 +246,13 @@ public sealed class IntArrayData() : ItemData(ItemDataType.IntArray)
         ReadFlashRare(in p);
     }
 
-    protected override void ReadUnityData(in PacketReader p)
-    {
-        ReadData(in p);
-        ReadUnityRare(in p);
-    }
-
     protected override void WriteFlashData(in PacketWriter p)
     {
         WriteData(in p);
         WriteFlashRare(in p);
     }
-
-    protected override void WriteUnityData(in PacketWriter p)
-    {
-        WriteData(in p);
-        WriteUnityRare(in p);
-    }
 }
 
-/// <summary>
-/// Score-table item data, stuff data format 6.
-/// </summary>
-/// <remarks>
-/// This is the one format that carries no limited-rare tail on Flash. Every other format's
-/// client-side class calls its base <c>initializeFromIncomingMessage</c>, which reads the serial
-/// number and series size when the rare bit is set; the score-table class does not, so the tail is
-/// absent even when the bit is set. Unity is left reading the tail because nothing establishes
-/// its behaviour either way - the IL2CPP method bodies are empty and the combination does not
-/// occur in observable traffic, since score furni are not limited rares.
-/// </remarks>
 public sealed class HighScoreData() : ItemData(ItemDataType.HighScore)
 {
     public int ScoreType { get; set; }
@@ -376,10 +272,6 @@ public sealed class HighScoreData() : ItemData(ItemDataType.HighScore)
                 count = p.ReadInt();
                 minimum_bytes = sizeof(int) * 2;
                 break;
-            case ClientType.Unity:
-                count = p.ReadLength();
-                minimum_bytes = sizeof(int) + sizeof(short);
-                break;
             default:
                 throw new UnsupportedClientException(p.Client);
         }
@@ -398,19 +290,7 @@ public sealed class HighScoreData() : ItemData(ItemDataType.HighScore)
 
     protected override void ReadFlashData(in PacketReader p) => ReadData(in p);
 
-    protected override void ReadUnityData(in PacketReader p)
-    {
-        ReadData(in p);
-        ReadUnityRare(in p);
-    }
-
     protected override void WriteFlashData(in PacketWriter p) => WriteData(in p);
-
-    protected override void WriteUnityData(in PacketWriter p)
-    {
-        WriteData(in p);
-        WriteUnityRare(in p);
-    }
 }
 
 public sealed class HighScore : IParserComposer<HighScore>
@@ -419,7 +299,7 @@ public sealed class HighScore : IParserComposer<HighScore>
     public List<string> Names { get; set; } = [];
 
     public static HighScore Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static HighScore ParseFlash(in PacketReader p)
     {
@@ -435,26 +315,10 @@ public sealed class HighScore : IParserComposer<HighScore>
         return new HighScore { Score = score, Names = [.. names] };
     }
 
-    private static HighScore ParseUnity(in PacketReader p)
-    {
-        int score = p.ReadInt();
-        int count = InventoryWire.RequireCount(
-            p.ReadLength(),
-            p.Available,
-            sizeof(short),
-            nameof(Names));
-        var names = new string[count];
-        for (int index = 0; index < names.Length; index++)
-            names[index] = p.ReadString();
-        return new HighScore { Score = score, Names = [.. names] };
-    }
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(HighScore value, in PacketWriter p) => value.ComposeScore(in p);
-
-    private static void ComposeUnity(HighScore value, in PacketWriter p) => value.ComposeScore(in p);
 
     private void ComposeScore(in PacketWriter p)
     {
@@ -488,21 +352,9 @@ public sealed class CrackableFurniData() : ItemData(ItemDataType.CrackableFurni)
         ReadFlashRare(in p);
     }
 
-    protected override void ReadUnityData(in PacketReader p)
-    {
-        ReadData(in p);
-        ReadUnityRare(in p);
-    }
-
     protected override void WriteFlashData(in PacketWriter p)
     {
         WriteData(in p);
         WriteFlashRare(in p);
-    }
-
-    protected override void WriteUnityData(in PacketWriter p)
-    {
-        WriteData(in p);
-        WriteUnityRare(in p);
     }
 }

@@ -265,7 +265,7 @@ public static class ApplicationJson
             return new()
             {
                 ["type"] = "string",
-                ["enum"] = new[] { "flash", "unity" }
+                ["enum"] = new[] { "flash" }
             };
         }
         if (effective.IsEnum)

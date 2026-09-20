@@ -230,7 +230,7 @@ public sealed class AchievementManager : GameStateManager
     public void RequestPointLimits() => Operations().RequestPointLimits();
 
     public bool IsFlashOnlyDataSupported =>
-        (Interceptor.Session?.Client ?? Interceptor.Messages.ActiveClient) is not ClientType.Unity;
+        true;
 
     public Task<IReadOnlyList<Achievement>> EnsureLoadedAsync(
         int timeoutMs = 10000,
@@ -765,29 +765,29 @@ public sealed class AchievementManager : GameStateManager
         switch (update.Kind)
         {
             case AchievementStateChangeKind.Snapshot:
-            {
-                var commit = (AchievementSnapshotCommit)update.Value!;
-                failure = Notify(
-                    ListChanged,
-                    () => Clone(commit.Items),
-                    update,
-                    failure);
-                return Notify(Changed, update, failure);
-            }
-            case AchievementStateChangeKind.Updated:
-            {
-                var commit = (AchievementDeltaCommit)update.Value!;
-                failure = Notify(Updated, () => Clone(commit.Current), update, failure);
-                if (commit.Previous is { } previous && commit.Current.Level > previous.Level)
                 {
+                    var commit = (AchievementSnapshotCommit)update.Value!;
                     failure = Notify(
-                        LevelUp,
-                        () => (Clone(previous), Clone(commit.Current)),
+                        ListChanged,
+                        () => Clone(commit.Items),
                         update,
                         failure);
+                    return Notify(Changed, update, failure);
                 }
-                return Notify(Changed, update, failure);
-            }
+            case AchievementStateChangeKind.Updated:
+                {
+                    var commit = (AchievementDeltaCommit)update.Value!;
+                    failure = Notify(Updated, () => Clone(commit.Current), update, failure);
+                    if (commit.Previous is { } previous && commit.Current.Level > previous.Level)
+                    {
+                        failure = Notify(
+                            LevelUp,
+                            () => (Clone(previous), Clone(commit.Current)),
+                            update,
+                            failure);
+                    }
+                    return Notify(Changed, update, failure);
+                }
             case AchievementStateChangeKind.Score:
                 failure = Notify(ScoreChanged, () => (int)update.Value!, update, failure);
                 return Notify(Changed, update, failure);

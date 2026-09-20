@@ -7,16 +7,13 @@ public sealed record OpenFlatConnection(Id RoomId, string Password, long EntryPo
     : IParserComposer<OpenFlatConnection>
 {
     public static OpenFlatConnection Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static OpenFlatConnection ParseFlash(in PacketReader p) =>
         new(p.ReadId(), p.ReadString(), p.ReadInt());
 
-    private static OpenFlatConnection ParseUnity(in PacketReader p) =>
-        new(p.ReadId(), p.ReadString(), p.ReadLong());
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(OpenFlatConnection value, in PacketWriter p)
     {
@@ -24,37 +21,21 @@ public sealed record OpenFlatConnection(Id RoomId, string Password, long EntryPo
         p.WriteString(value.Password);
         p.WriteInt(checked((int)value.EntryPoint));
     }
-
-    private static void ComposeUnity(OpenFlatConnection value, in PacketWriter p)
-    {
-        p.WriteId(value.RoomId);
-        p.WriteString(value.Password);
-        p.WriteLong(value.EntryPoint);
-    }
 }
 
 public sealed record AnswerDoorbellRequest(string UserName, bool Allow)
     : IParserComposer<AnswerDoorbellRequest>
 {
     public static AnswerDoorbellRequest Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static AnswerDoorbellRequest ParseFlash(in PacketReader p) =>
         new(p.ReadString(), p.ReadBool());
 
-    private static AnswerDoorbellRequest ParseUnity(in PacketReader p) =>
-        new(p.ReadString(), p.ReadBool());
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(AnswerDoorbellRequest value, in PacketWriter p)
-    {
-        p.WriteString(value.UserName);
-        p.WriteBool(value.Allow);
-    }
-
-    private static void ComposeUnity(AnswerDoorbellRequest value, in PacketWriter p)
     {
         p.WriteString(value.UserName);
         p.WriteBool(value.Allow);
@@ -65,21 +46,15 @@ public sealed record RateRoomRequest(int Rating)
     : IParserComposer<RateRoomRequest>
 {
     public static RateRoomRequest Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static RateRoomRequest ParseFlash(in PacketReader p) =>
         new(p.ReadInt());
 
-    private static RateRoomRequest ParseUnity(in PacketReader p) =>
-        new(p.ReadInt());
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(RateRoomRequest value, in PacketWriter p) =>
-        p.WriteInt(value.Rating);
-
-    private static void ComposeUnity(RateRoomRequest value, in PacketWriter p) =>
         p.WriteInt(value.Rating);
 }
 
@@ -87,27 +62,18 @@ public sealed record ToggleRoomStaffPickRequest(Id RoomId, bool CurrentlyPicked)
     : IParserComposer<ToggleRoomStaffPickRequest>
 {
     public static ToggleRoomStaffPickRequest Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static ToggleRoomStaffPickRequest ParseFlash(in PacketReader p) =>
         new(p.ReadInt(), p.ReadBool());
 
-    private static ToggleRoomStaffPickRequest ParseUnity(in PacketReader p) =>
-        new(p.ReadLong(), p.ReadBool());
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(ToggleRoomStaffPickRequest value, in PacketWriter p)
     {
         int room_id = checked((int)value.RoomId);
         p.WriteInt(room_id);
-        p.WriteBool(value.CurrentlyPicked);
-    }
-
-    private static void ComposeUnity(ToggleRoomStaffPickRequest value, in PacketWriter p)
-    {
-        p.WriteLong(value.RoomId);
         p.WriteBool(value.CurrentlyPicked);
     }
 }
@@ -116,71 +82,50 @@ public sealed record RespectUserRequest(Id UserId)
     : IParserComposer<RespectUserRequest>
 {
     public static RespectUserRequest Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static RespectUserRequest ParseFlash(in PacketReader p) =>
         new(p.ReadInt());
 
-    private static RespectUserRequest ParseUnity(in PacketReader p) =>
-        new(p.ReadLong());
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(RespectUserRequest value, in PacketWriter p) =>
         p.WriteInt(checked((int)value.UserId));
-
-    private static void ComposeUnity(RespectUserRequest value, in PacketWriter p) =>
-        p.WriteLong(value.UserId);
 }
 
 public sealed record RespectPetRequest(Id PetId)
     : IParserComposer<RespectPetRequest>
 {
     public static RespectPetRequest Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static RespectPetRequest ParseFlash(in PacketReader p) =>
         new(p.ReadInt());
 
-    private static RespectPetRequest ParseUnity(in PacketReader p) =>
-        new(p.ReadLong());
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(RespectPetRequest value, in PacketWriter p) =>
         p.WriteInt(checked((int)value.PetId));
-
-    private static void ComposeUnity(RespectPetRequest value, in PacketWriter p) =>
-        p.WriteLong(value.PetId);
 }
 
 public sealed record MountPetRequest(Id PetId, bool Mount)
     : IParserComposer<MountPetRequest>
 {
     public static MountPetRequest Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static MountPetRequest ParseFlash(in PacketReader p) =>
         new(p.ReadInt(), p.ReadBool());
 
-    private static MountPetRequest ParseUnity(in PacketReader p) =>
-        new(p.ReadLong(), p.ReadBool());
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(MountPetRequest value, in PacketWriter p)
     {
         int pet_id = checked((int)value.PetId);
         p.WriteInt(pet_id);
-        p.WriteBool(value.Mount);
-    }
-
-    private static void ComposeUnity(MountPetRequest value, in PacketWriter p)
-    {
-        p.WriteLong(value.PetId);
         p.WriteBool(value.Mount);
     }
 }
@@ -189,162 +134,115 @@ public sealed record RemovePetFromRoomRequest(Id PetId)
     : IParserComposer<RemovePetFromRoomRequest>
 {
     public static RemovePetFromRoomRequest Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static RemovePetFromRoomRequest ParseFlash(in PacketReader p) =>
         new(p.ReadInt());
 
-    private static RemovePetFromRoomRequest ParseUnity(in PacketReader p) =>
-        new(p.ReadLong());
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(RemovePetFromRoomRequest value, in PacketWriter p) =>
         p.WriteInt(checked((int)value.PetId));
-
-    private static void ComposeUnity(RemovePetFromRoomRequest value, in PacketWriter p) =>
-        p.WriteLong(value.PetId);
 }
 
 public sealed record GiveRoomRightsRequest(Id UserId)
     : IParserComposer<GiveRoomRightsRequest>
 {
     public static GiveRoomRightsRequest Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static GiveRoomRightsRequest ParseFlash(in PacketReader p) =>
         new(p.ReadInt());
 
-    private static GiveRoomRightsRequest ParseUnity(in PacketReader p) =>
-        new(p.ReadLong());
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(GiveRoomRightsRequest value, in PacketWriter p) =>
         p.WriteInt(checked((int)value.UserId));
-
-    private static void ComposeUnity(GiveRoomRightsRequest value, in PacketWriter p) =>
-        p.WriteLong(value.UserId);
 }
 
 public sealed record EnterOneWayDoorRequest(Id ItemId)
     : IParserComposer<EnterOneWayDoorRequest>
 {
     public static EnterOneWayDoorRequest Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static EnterOneWayDoorRequest ParseFlash(in PacketReader p) =>
         new(p.ReadInt());
 
-    private static EnterOneWayDoorRequest ParseUnity(in PacketReader p) =>
-        new(p.ReadLong());
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(EnterOneWayDoorRequest value, in PacketWriter p) =>
         p.WriteInt(checked((int)value.ItemId));
-
-    private static void ComposeUnity(EnterOneWayDoorRequest value, in PacketWriter p) =>
-        p.WriteLong(value.ItemId);
 }
 
 public sealed record ThrowDiceRequest(Id ItemId)
     : IParserComposer<ThrowDiceRequest>
 {
     public static ThrowDiceRequest Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static ThrowDiceRequest ParseFlash(in PacketReader p) =>
         new(p.ReadInt());
 
-    private static ThrowDiceRequest ParseUnity(in PacketReader p) =>
-        new(p.ReadLong());
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(ThrowDiceRequest value, in PacketWriter p) =>
         p.WriteInt(checked((int)value.ItemId));
-
-    private static void ComposeUnity(ThrowDiceRequest value, in PacketWriter p) =>
-        p.WriteLong(value.ItemId);
 }
 
 public sealed record DiceOffRequest(Id ItemId)
     : IParserComposer<DiceOffRequest>
 {
     public static DiceOffRequest Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static DiceOffRequest ParseFlash(in PacketReader p) =>
         new(p.ReadInt());
 
-    private static DiceOffRequest ParseUnity(in PacketReader p) =>
-        new(p.ReadLong());
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(DiceOffRequest value, in PacketWriter p) =>
         p.WriteInt(checked((int)value.ItemId));
-
-    private static void ComposeUnity(DiceOffRequest value, in PacketWriter p) =>
-        p.WriteLong(value.ItemId);
 }
 
 public sealed record RemoveWallItemRequest(Id ItemId)
     : IParserComposer<RemoveWallItemRequest>
 {
     public static RemoveWallItemRequest Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static RemoveWallItemRequest ParseFlash(in PacketReader p) =>
         new(p.ReadInt());
 
-    private static RemoveWallItemRequest ParseUnity(in PacketReader p) =>
-        new(p.ReadLong());
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(RemoveWallItemRequest value, in PacketWriter p) =>
         p.WriteInt(checked((int)value.ItemId));
-
-    private static void ComposeUnity(RemoveWallItemRequest value, in PacketWriter p) =>
-        p.WriteLong(value.ItemId);
 }
 
 public sealed record SetStickyDataRequest(Id ItemId, string Color, string Text)
     : IParserComposer<SetStickyDataRequest>
 {
     public static SetStickyDataRequest Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static SetStickyDataRequest ParseFlash(in PacketReader p) =>
         new(p.ReadInt(), p.ReadString(), p.ReadString());
 
-    private static SetStickyDataRequest ParseUnity(in PacketReader p) =>
-        new(p.ReadLong(), p.ReadString(), p.ReadString());
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(SetStickyDataRequest value, in PacketWriter p)
     {
         ValidateStrings(value, in p);
         int item_id = checked((int)value.ItemId);
         p.WriteInt(item_id);
-        p.WriteString(value.Color);
-        p.WriteString(value.Text);
-    }
-
-    private static void ComposeUnity(SetStickyDataRequest value, in PacketWriter p)
-    {
-        ValidateStrings(value, in p);
-        p.WriteLong(value.ItemId);
         p.WriteString(value.Color);
         p.WriteString(value.Text);
     }
@@ -371,13 +269,13 @@ public sealed record SetStickyDataRequest(Id ItemId, string Color, string Text)
 public sealed record GetStickyDataRequest(Id ItemId) : IParserComposer<GetStickyDataRequest>
 {
     public static GetStickyDataRequest Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseMessage, ParseMessage);
+        FlashWire.Parse(in p, ParseMessage);
 
     private static GetStickyDataRequest ParseMessage(in PacketReader p) =>
         new(RoomObjectReadWire.ReadRootId(in p, nameof(GetStickyDataRequest)));
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeMessage, ComposeMessage);
+        FlashWire.Compose(this, in p, ComposeMessage);
 
     private static void ComposeMessage(GetStickyDataRequest value, in PacketWriter p) =>
         RoomObjectReadWire.WriteRootId(value, value.ItemId, in p);
@@ -386,13 +284,13 @@ public sealed record GetStickyDataRequest(Id ItemId) : IParserComposer<GetSticky
 public sealed record GetPetInfoRequest(Id PetId) : IParserComposer<GetPetInfoRequest>
 {
     public static GetPetInfoRequest Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseMessage, ParseMessage);
+        FlashWire.Parse(in p, ParseMessage);
 
     private static GetPetInfoRequest ParseMessage(in PacketReader p) =>
         new(RoomObjectReadWire.ReadRootId(in p, nameof(GetPetInfoRequest)));
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeMessage, ComposeMessage);
+        FlashWire.Compose(this, in p, ComposeMessage);
 
     private static void ComposeMessage(GetPetInfoRequest value, in PacketWriter p) =>
         RoomObjectReadWire.WriteRootId(value, value.PetId, in p);
@@ -402,29 +300,19 @@ public sealed record PlacePostItRequest(Id ItemId, string WallLocation)
     : IParserComposer<PlacePostItRequest>
 {
     public static PlacePostItRequest Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static PlacePostItRequest ParseFlash(in PacketReader p) =>
         new(p.ReadInt(), p.ReadString());
 
-    private static PlacePostItRequest ParseUnity(in PacketReader p) =>
-        new(p.ReadLong(), p.ReadString());
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(PlacePostItRequest value, in PacketWriter p)
     {
         ValidateWallLocation(value.WallLocation, in p);
         int item_id = checked((int)value.ItemId);
         p.WriteInt(item_id);
-        p.WriteString(value.WallLocation);
-    }
-
-    private static void ComposeUnity(PlacePostItRequest value, in PacketWriter p)
-    {
-        ValidateWallLocation(value.WallLocation, in p);
-        p.WriteLong(value.ItemId);
         p.WriteString(value.WallLocation);
     }
 
@@ -448,31 +336,19 @@ public sealed record AddSpamWallPostItRequest(
     string Text) : IParserComposer<AddSpamWallPostItRequest>
 {
     public static AddSpamWallPostItRequest Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static AddSpamWallPostItRequest ParseFlash(in PacketReader p) =>
         new(p.ReadInt(), p.ReadString(), p.ReadString(), p.ReadString());
 
-    private static AddSpamWallPostItRequest ParseUnity(in PacketReader p) =>
-        new(p.ReadLong(), p.ReadString(), p.ReadString(), p.ReadString());
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(AddSpamWallPostItRequest value, in PacketWriter p)
     {
         ValidateStrings(value, in p);
         int item_id = checked((int)value.ItemId);
         p.WriteInt(item_id);
-        p.WriteString(value.WallLocation);
-        p.WriteString(value.Color);
-        p.WriteString(value.Text);
-    }
-
-    private static void ComposeUnity(AddSpamWallPostItRequest value, in PacketWriter p)
-    {
-        ValidateStrings(value, in p);
-        p.WriteLong(value.ItemId);
         p.WriteString(value.WallLocation);
         p.WriteString(value.Color);
         p.WriteString(value.Text);
@@ -502,24 +378,15 @@ public sealed record UseFloorItemRequest(Id ItemId, int State)
     : IParserComposer<UseFloorItemRequest>
 {
     public static UseFloorItemRequest Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static UseFloorItemRequest ParseFlash(in PacketReader p) =>
         new(p.ReadId(), p.ReadInt());
 
-    private static UseFloorItemRequest ParseUnity(in PacketReader p) =>
-        new(p.ReadId(), p.ReadInt());
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(UseFloorItemRequest value, in PacketWriter p)
-    {
-        p.WriteId(value.ItemId);
-        p.WriteInt(value.State);
-    }
-
-    private static void ComposeUnity(UseFloorItemRequest value, in PacketWriter p)
     {
         p.WriteId(value.ItemId);
         p.WriteInt(value.State);
@@ -530,31 +397,18 @@ public sealed record UseWallItemRequest(Id ItemId, int State)
     : IParserComposer<UseWallItemRequest>
 {
     public static UseWallItemRequest Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static UseWallItemRequest ParseFlash(in PacketReader p) =>
         new(p.ReadId(), p.ReadInt());
 
-    private static UseWallItemRequest ParseUnity(in PacketReader p) =>
-        new(p.ReadId(), 0);
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(UseWallItemRequest value, in PacketWriter p)
     {
         p.WriteId(value.ItemId);
         p.WriteInt(value.State);
-    }
-
-    private static void ComposeUnity(UseWallItemRequest value, in PacketWriter p)
-    {
-        if (value.State != 0)
-        {
-            throw new NotSupportedException(
-                "Unity wall-item use cannot represent a nonzero state.");
-        }
-        p.WriteId(value.ItemId);
     }
 }
 
@@ -596,7 +450,7 @@ public sealed record PlaceRoomItemRequest : IParserComposer<PlaceRoomItemRequest
         new(RoomItemPlacementKind.Wall, item_id, 0, 0, 0, wall_location);
 
     public static PlaceRoomItemRequest Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     public static PlaceRoomItemRequest ParseFlash(in PacketReader p)
     {
@@ -630,46 +484,8 @@ public sealed record PlaceRoomItemRequest : IParserComposer<PlaceRoomItemRequest
         return Floor(item_id, x, y, direction);
     }
 
-    public static PlaceRoomItemRequest ParseUnity(in PacketReader p)
-    {
-        if (p.Context?.Messages.TryGetIdentifier(p.Header, out Identifier identifier) is true)
-        {
-            if (identifier.Name.Equals("PlaceRoomItem", StringComparison.OrdinalIgnoreCase))
-                return ParseUnityFloor(in p);
-            if (identifier.Name.Equals("PlaceWallItem", StringComparison.OrdinalIgnoreCase))
-                return ParseUnityWall(in p);
-            throw new InvalidDataException(
-                $"Unity room-item placement cannot classify header {p.Header.Value} as a placement route.");
-        }
-
-        return p.Available switch
-        {
-            20 => ParseUnityFloor(in p),
-            27 => ParseUnityWall(in p),
-            _ => throw new InvalidDataException(
-                $"Unity room-item placement has unsupported payload size {p.Available}.")
-        };
-    }
-
-    private static PlaceRoomItemRequest ParseUnityFloor(in PacketReader p)
-    {
-        RoomPlacementWire.RequireSize(in p, 20, nameof(PlaceRoomItemRequest));
-        var result = Floor(p.ReadId(), p.ReadInt(), p.ReadInt(), p.ReadInt());
-        RoomPlacementWire.RequireEmpty(in p, nameof(PlaceRoomItemRequest));
-        return result;
-    }
-
-    private static PlaceRoomItemRequest ParseUnityWall(in PacketReader p)
-    {
-        RoomPlacementWire.RequireSize(in p, 27, nameof(PlaceRoomItemRequest));
-        Id item_id = p.ReadId();
-        WallLocation location = RoomPlacementWire.ReadUnityWallLocation(in p);
-        RoomPlacementWire.RequireEmpty(in p, nameof(PlaceRoomItemRequest));
-        return Wall(item_id, location);
-    }
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     public static void ComposeFlash(PlaceRoomItemRequest value, in PacketWriter p)
     {
@@ -687,29 +503,6 @@ public sealed record PlaceRoomItemRequest : IParserComposer<PlaceRoomItemRequest
         p.WriteString(payload);
     }
 
-    public static void ComposeUnity(PlaceRoomItemRequest value, in PacketWriter p)
-    {
-        Qx.Model.WallLocation wall_location = value.Kind switch
-        {
-            RoomItemPlacementKind.Floor => default,
-            RoomItemPlacementKind.Wall => RequireWallLocation(value),
-            _ => throw new InvalidDataException(
-                $"Unsupported room-item placement kind {value.Kind}.")
-        };
-        p.WriteId(value.ItemId);
-        switch (value.Kind)
-        {
-            case RoomItemPlacementKind.Floor:
-                p.WriteInt(value.X);
-                p.WriteInt(value.Y);
-                p.WriteInt(value.Direction);
-                break;
-            case RoomItemPlacementKind.Wall:
-                wall_location.Compose(in p);
-                break;
-        }
-    }
-
     private static WallLocation RequireWallLocation(PlaceRoomItemRequest value) =>
         RoomPlacementWire.RequireWallLocation(
             value.WallLocation ?? throw new InvalidDataException(
@@ -724,11 +517,9 @@ public sealed record MoveFloorItemRequest(Id ItemId, int X, int Y, int Direction
     : IParserComposer<MoveFloorItemRequest>
 {
     public static MoveFloorItemRequest Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static MoveFloorItemRequest ParseFlash(in PacketReader p) => ParseItem(in p, 16);
-
-    private static MoveFloorItemRequest ParseUnity(in PacketReader p) => ParseItem(in p, 20);
 
     private static MoveFloorItemRequest ParseItem(in PacketReader p, int size)
     {
@@ -743,17 +534,9 @@ public sealed record MoveFloorItemRequest(Id ItemId, int X, int Y, int Direction
     }
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(MoveFloorItemRequest value, in PacketWriter p)
-    {
-        p.WriteId(value.ItemId);
-        p.WriteInt(value.X);
-        p.WriteInt(value.Y);
-        p.WriteInt(value.Direction);
-    }
-
-    private static void ComposeUnity(MoveFloorItemRequest value, in PacketWriter p)
     {
         p.WriteId(value.ItemId);
         p.WriteInt(value.X);
@@ -766,7 +549,7 @@ public sealed record MoveWallItemRequest(Id ItemId, WallLocation Location)
     : IParserComposer<MoveWallItemRequest>
 {
     public static MoveWallItemRequest Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static MoveWallItemRequest ParseFlash(in PacketReader p)
     {
@@ -776,18 +559,8 @@ public sealed record MoveWallItemRequest(Id ItemId, WallLocation Location)
         return result;
     }
 
-    private static MoveWallItemRequest ParseUnity(in PacketReader p)
-    {
-        RoomPlacementWire.RequireSize(in p, 27, nameof(MoveWallItemRequest));
-        var result = new MoveWallItemRequest(
-            p.ReadId(),
-            RoomPlacementWire.ReadUnityWallLocation(in p));
-        RoomPlacementWire.RequireEmpty(in p, nameof(MoveWallItemRequest));
-        return result;
-    }
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(MoveWallItemRequest value, in PacketWriter p)
     {
@@ -799,22 +572,13 @@ public sealed record MoveWallItemRequest(Id ItemId, WallLocation Location)
         p.WriteId(value.ItemId);
         p.WriteString(payload);
     }
-
-    private static void ComposeUnity(MoveWallItemRequest value, in PacketWriter p)
-    {
-        WallLocation location = RoomPlacementWire.RequireWallLocation(
-            value.Location,
-            nameof(MoveWallItemRequest));
-        p.WriteId(value.ItemId);
-        location.Compose(in p);
-    }
 }
 
 public sealed record PickupRoomItemRequest(int Category, Id ItemId, bool Confirmed)
     : IParserComposer<PickupRoomItemRequest>
 {
     public static PickupRoomItemRequest Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static PickupRoomItemRequest ParseFlash(in PacketReader p)
     {
@@ -827,19 +591,8 @@ public sealed record PickupRoomItemRequest(int Category, Id ItemId, bool Confirm
         return result;
     }
 
-    private static PickupRoomItemRequest ParseUnity(in PacketReader p)
-    {
-        RoomPlacementWire.RequireSize(in p, 12, nameof(PickupRoomItemRequest));
-        var result = new PickupRoomItemRequest(
-            RoomPlacementWire.RequireCategory(p.ReadInt(), nameof(PickupRoomItemRequest)),
-            p.ReadId(),
-            false);
-        RoomPlacementWire.RequireEmpty(in p, nameof(PickupRoomItemRequest));
-        return result;
-    }
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(PickupRoomItemRequest value, in PacketWriter p)
     {
@@ -850,38 +603,19 @@ public sealed record PickupRoomItemRequest(int Category, Id ItemId, bool Confirm
         p.WriteId(value.ItemId);
         p.WriteBool(value.Confirmed);
     }
-
-    private static void ComposeUnity(PickupRoomItemRequest value, in PacketWriter p)
-    {
-        if (value.Confirmed)
-        {
-            throw new NotSupportedException(
-                "Unity room-item pickup cannot represent Flash confirmation.");
-        }
-        p.WriteInt(RoomPlacementWire.RequireCategory(
-            value.Category,
-            nameof(PickupRoomItemRequest)));
-        p.WriteId(value.ItemId);
-    }
 }
 
 public sealed record DropHandItemRequest : IParserComposer<DropHandItemRequest>
 {
     public static DropHandItemRequest Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static DropHandItemRequest ParseFlash(in PacketReader p) => new();
 
-    private static DropHandItemRequest ParseUnity(in PacketReader p) => new();
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(DropHandItemRequest value, in PacketWriter p)
-    {
-    }
-
-    private static void ComposeUnity(DropHandItemRequest value, in PacketWriter p)
     {
     }
 }
@@ -889,27 +623,22 @@ public sealed record DropHandItemRequest : IParserComposer<DropHandItemRequest>
 public sealed record PassHandItemRequest(Id RecipientId) : IParserComposer<PassHandItemRequest>
 {
     public static PassHandItemRequest Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static PassHandItemRequest ParseFlash(in PacketReader p) => new(p.ReadInt());
 
-    private static PassHandItemRequest ParseUnity(in PacketReader p) => new(p.ReadLong());
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(PassHandItemRequest value, in PacketWriter p) =>
         p.WriteInt(checked((int)value.RecipientId));
-
-    private static void ComposeUnity(PassHandItemRequest value, in PacketWriter p) =>
-        p.WriteLong(value.RecipientId);
 }
 
 public sealed record GetRoomBansRequest(Id RoomId)
     : IParserComposer<GetRoomBansRequest>
 {
     public static GetRoomBansRequest Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static GetRoomBansRequest ParseFlash(in PacketReader p)
     {
@@ -918,15 +647,8 @@ public sealed record GetRoomBansRequest(Id RoomId)
         return value;
     }
 
-    private static GetRoomBansRequest ParseUnity(in PacketReader p)
-    {
-        var value = new GetRoomBansRequest(p.ReadLong());
-        RoomModerationRequestWire.RequireEmpty(in p, nameof(GetRoomBansRequest));
-        return value;
-    }
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(GetRoomBansRequest value, in PacketWriter p)
     {
@@ -935,40 +657,29 @@ public sealed record GetRoomBansRequest(Id RoomId)
             nameof(RoomId));
         p.WriteInt(room_id);
     }
-
-    private static void ComposeUnity(GetRoomBansRequest value, in PacketWriter p)
-    {
-        p.WriteLong(value.RoomId);
-    }
 }
 
 public sealed record GetFlatControllersRequest(Id RoomId)
     : IParserComposer<GetFlatControllersRequest>
 {
     public static GetFlatControllersRequest Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static GetFlatControllersRequest ParseFlash(in PacketReader p) =>
         new(p.ReadInt());
 
-    private static GetFlatControllersRequest ParseUnity(in PacketReader p) =>
-        new(p.ReadLong());
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(GetFlatControllersRequest value, in PacketWriter p) =>
         p.WriteId(value.RoomId);
-
-    private static void ComposeUnity(GetFlatControllersRequest value, in PacketWriter p) =>
-        p.WriteLong(value.RoomId);
 }
 
 public sealed record MuteRoomUserRequest(Id UserId, Id RoomId, int Minutes)
     : IParserComposer<MuteRoomUserRequest>
 {
     public static MuteRoomUserRequest Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static MuteRoomUserRequest ParseFlash(in PacketReader p)
     {
@@ -977,15 +688,8 @@ public sealed record MuteRoomUserRequest(Id UserId, Id RoomId, int Minutes)
         return value;
     }
 
-    private static MuteRoomUserRequest ParseUnity(in PacketReader p)
-    {
-        var value = new MuteRoomUserRequest(p.ReadLong(), p.ReadLong(), p.ReadInt());
-        RoomModerationRequestWire.RequireEmpty(in p, nameof(MuteRoomUserRequest));
-        return value;
-    }
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(MuteRoomUserRequest value, in PacketWriter p)
     {
@@ -999,20 +703,13 @@ public sealed record MuteRoomUserRequest(Id UserId, Id RoomId, int Minutes)
         p.WriteInt(room_id);
         p.WriteInt(value.Minutes);
     }
-
-    private static void ComposeUnity(MuteRoomUserRequest value, in PacketWriter p)
-    {
-        p.WriteLong(value.UserId);
-        p.WriteLong(value.RoomId);
-        p.WriteInt(value.Minutes);
-    }
 }
 
 public sealed record KickRoomUserRequest(Id UserId)
     : IParserComposer<KickRoomUserRequest>
 {
     public static KickRoomUserRequest Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static KickRoomUserRequest ParseFlash(in PacketReader p)
     {
@@ -1021,15 +718,8 @@ public sealed record KickRoomUserRequest(Id UserId)
         return value;
     }
 
-    private static KickRoomUserRequest ParseUnity(in PacketReader p)
-    {
-        var value = new KickRoomUserRequest(p.ReadLong());
-        RoomModerationRequestWire.RequireEmpty(in p, nameof(KickRoomUserRequest));
-        return value;
-    }
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(KickRoomUserRequest value, in PacketWriter p)
     {
@@ -1038,18 +728,13 @@ public sealed record KickRoomUserRequest(Id UserId)
             nameof(UserId));
         p.WriteInt(user_id);
     }
-
-    private static void ComposeUnity(KickRoomUserRequest value, in PacketWriter p)
-    {
-        p.WriteLong(value.UserId);
-    }
 }
 
 public sealed record BanRoomUserRequest(Id UserId, Id RoomId, string Duration)
     : IParserComposer<BanRoomUserRequest>
 {
     public static BanRoomUserRequest Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static BanRoomUserRequest ParseFlash(in PacketReader p)
     {
@@ -1058,15 +743,8 @@ public sealed record BanRoomUserRequest(Id UserId, Id RoomId, string Duration)
         return value;
     }
 
-    private static BanRoomUserRequest ParseUnity(in PacketReader p)
-    {
-        var value = new BanRoomUserRequest(p.ReadLong(), p.ReadLong(), p.ReadString());
-        RoomModerationRequestWire.RequireEmpty(in p, nameof(BanRoomUserRequest));
-        return value;
-    }
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(BanRoomUserRequest value, in PacketWriter p)
     {
@@ -1081,21 +759,13 @@ public sealed record BanRoomUserRequest(Id UserId, Id RoomId, string Duration)
         p.WriteInt(room_id);
         p.WriteString(value.Duration);
     }
-
-    private static void ComposeUnity(BanRoomUserRequest value, in PacketWriter p)
-    {
-        RoomModerationRequestWire.RequireString(value.Duration, nameof(Duration), in p);
-        p.WriteLong(value.UserId);
-        p.WriteLong(value.RoomId);
-        p.WriteString(value.Duration);
-    }
 }
 
 public sealed record UnbanRoomUserRequest(Id UserId, Id RoomId)
     : IParserComposer<UnbanRoomUserRequest>
 {
     public static UnbanRoomUserRequest Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static UnbanRoomUserRequest ParseFlash(in PacketReader p)
     {
@@ -1104,15 +774,8 @@ public sealed record UnbanRoomUserRequest(Id UserId, Id RoomId)
         return value;
     }
 
-    private static UnbanRoomUserRequest ParseUnity(in PacketReader p)
-    {
-        var value = new UnbanRoomUserRequest(p.ReadLong(), p.ReadLong());
-        RoomModerationRequestWire.RequireEmpty(in p, nameof(UnbanRoomUserRequest));
-        return value;
-    }
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(UnbanRoomUserRequest value, in PacketWriter p)
     {
@@ -1124,12 +787,6 @@ public sealed record UnbanRoomUserRequest(Id UserId, Id RoomId)
             nameof(RoomId));
         p.WriteInt(user_id);
         p.WriteInt(room_id);
-    }
-
-    private static void ComposeUnity(UnbanRoomUserRequest value, in PacketWriter p)
-    {
-        p.WriteLong(value.UserId);
-        p.WriteLong(value.RoomId);
     }
 }
 
@@ -1165,21 +822,15 @@ public sealed record AvatarExpressionRequest(int Expression)
     : IParserComposer<AvatarExpressionRequest>
 {
     public static AvatarExpressionRequest Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static AvatarExpressionRequest ParseFlash(in PacketReader p) =>
         new(p.ReadInt());
 
-    private static AvatarExpressionRequest ParseUnity(in PacketReader p) =>
-        new(p.ReadInt());
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(AvatarExpressionRequest value, in PacketWriter p) =>
-        p.WriteInt(value.Expression);
-
-    private static void ComposeUnity(AvatarExpressionRequest value, in PacketWriter p) =>
         p.WriteInt(value.Expression);
 }
 
@@ -1187,21 +838,15 @@ public sealed record AvatarDanceRequest(int Style)
     : IParserComposer<AvatarDanceRequest>
 {
     public static AvatarDanceRequest Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static AvatarDanceRequest ParseFlash(in PacketReader p) =>
         new(p.ReadInt());
 
-    private static AvatarDanceRequest ParseUnity(in PacketReader p) =>
-        new(p.ReadInt());
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(AvatarDanceRequest value, in PacketWriter p) =>
-        p.WriteInt(value.Style);
-
-    private static void ComposeUnity(AvatarDanceRequest value, in PacketWriter p) =>
         p.WriteInt(value.Style);
 }
 
@@ -1209,21 +854,15 @@ public sealed record AvatarSignRequest(int Sign)
     : IParserComposer<AvatarSignRequest>
 {
     public static AvatarSignRequest Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static AvatarSignRequest ParseFlash(in PacketReader p) =>
         new(p.ReadInt());
 
-    private static AvatarSignRequest ParseUnity(in PacketReader p) =>
-        new(p.ReadInt());
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(AvatarSignRequest value, in PacketWriter p) =>
-        p.WriteInt(value.Sign);
-
-    private static void ComposeUnity(AvatarSignRequest value, in PacketWriter p) =>
         p.WriteInt(value.Sign);
 }
 
@@ -1231,21 +870,15 @@ public sealed record AvatarEffectSelectionRequest(int Effect)
     : IParserComposer<AvatarEffectSelectionRequest>
 {
     public static AvatarEffectSelectionRequest Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static AvatarEffectSelectionRequest ParseFlash(in PacketReader p) =>
         new(p.ReadInt());
 
-    private static AvatarEffectSelectionRequest ParseUnity(in PacketReader p) =>
-        new(p.ReadInt());
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(AvatarEffectSelectionRequest value, in PacketWriter p) =>
-        p.WriteInt(value.Effect);
-
-    private static void ComposeUnity(AvatarEffectSelectionRequest value, in PacketWriter p) =>
         p.WriteInt(value.Effect);
 }
 
@@ -1253,45 +886,30 @@ public sealed record AvatarPostureRequest(int Posture)
     : IParserComposer<AvatarPostureRequest>
 {
     public static AvatarPostureRequest Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static AvatarPostureRequest ParseFlash(in PacketReader p) =>
         new(p.ReadInt());
 
-    private static AvatarPostureRequest ParseUnity(in PacketReader p) =>
-        new(p.ReadInt());
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(AvatarPostureRequest value, in PacketWriter p) =>
-        p.WriteInt(value.Posture);
-
-    private static void ComposeUnity(AvatarPostureRequest value, in PacketWriter p) =>
         p.WriteInt(value.Posture);
 }
 
 public sealed record WalkRequest(int X, int Y) : IParserComposer<WalkRequest>
 {
     public static WalkRequest Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static WalkRequest ParseFlash(in PacketReader p) =>
         new(p.ReadInt(), p.ReadInt());
 
-    private static WalkRequest ParseUnity(in PacketReader p) =>
-        new(p.ReadInt(), p.ReadInt());
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(WalkRequest value, in PacketWriter p)
-    {
-        p.WriteInt(value.X);
-        p.WriteInt(value.Y);
-    }
-
-    private static void ComposeUnity(WalkRequest value, in PacketWriter p)
     {
         p.WriteInt(value.X);
         p.WriteInt(value.Y);
@@ -1301,24 +919,15 @@ public sealed record WalkRequest(int X, int Y) : IParserComposer<WalkRequest>
 public sealed record LookToRequest(int X, int Y) : IParserComposer<LookToRequest>
 {
     public static LookToRequest Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static LookToRequest ParseFlash(in PacketReader p) =>
         new(p.ReadInt(), p.ReadInt());
 
-    private static LookToRequest ParseUnity(in PacketReader p) =>
-        new(p.ReadInt(), p.ReadInt());
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(LookToRequest value, in PacketWriter p)
-    {
-        p.WriteInt(value.X);
-        p.WriteInt(value.Y);
-    }
-
-    private static void ComposeUnity(LookToRequest value, in PacketWriter p)
     {
         p.WriteInt(value.X);
         p.WriteInt(value.Y);
@@ -1329,25 +938,15 @@ public sealed record TalkRequest(string Text, int BubbleStyle, int TrackingId)
     : IParserComposer<TalkRequest>
 {
     public static TalkRequest Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static TalkRequest ParseFlash(in PacketReader p) =>
         new(p.ReadString(), p.ReadInt(), p.ReadInt());
 
-    private static TalkRequest ParseUnity(in PacketReader p) =>
-        new(p.ReadString(), p.ReadInt(), p.ReadInt());
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(TalkRequest value, in PacketWriter p)
-    {
-        p.WriteString(value.Text);
-        p.WriteInt(value.BubbleStyle);
-        p.WriteInt(value.TrackingId);
-    }
-
-    private static void ComposeUnity(TalkRequest value, in PacketWriter p)
     {
         p.WriteString(value.Text);
         p.WriteInt(value.BubbleStyle);
@@ -1359,24 +958,15 @@ public sealed record ShoutRequest(string Text, int BubbleStyle)
     : IParserComposer<ShoutRequest>
 {
     public static ShoutRequest Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static ShoutRequest ParseFlash(in PacketReader p) =>
         new(p.ReadString(), p.ReadInt());
 
-    private static ShoutRequest ParseUnity(in PacketReader p) =>
-        new(p.ReadString(), p.ReadInt());
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(ShoutRequest value, in PacketWriter p)
-    {
-        p.WriteString(value.Text);
-        p.WriteInt(value.BubbleStyle);
-    }
-
-    private static void ComposeUnity(ShoutRequest value, in PacketWriter p)
     {
         p.WriteString(value.Text);
         p.WriteInt(value.BubbleStyle);
@@ -1387,7 +977,7 @@ public sealed record WhisperRequest(string Recipient, string Text, int BubbleSty
     : IParserComposer<WhisperRequest>
 {
     public static WhisperRequest Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static WhisperRequest ParseFlash(in PacketReader p)
     {
@@ -1398,11 +988,8 @@ public sealed record WhisperRequest(string Recipient, string Text, int BubbleSty
         return new(combined[..separator], combined[(separator + 1)..], p.ReadInt());
     }
 
-    private static WhisperRequest ParseUnity(in PacketReader p) =>
-        new(p.ReadString(), p.ReadString(), p.ReadInt());
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(WhisperRequest value, in PacketWriter p)
     {
@@ -1411,15 +998,6 @@ public sealed record WhisperRequest(string Recipient, string Text, int BubbleSty
         string combined = $"{value.Recipient} {value.Text}";
         ValidateString(combined, nameof(Text), in p);
         p.WriteString(combined);
-        p.WriteInt(value.BubbleStyle);
-    }
-
-    private static void ComposeUnity(WhisperRequest value, in PacketWriter p)
-    {
-        ValidateString(value.Recipient, nameof(Recipient), in p);
-        ValidateString(value.Text, nameof(Text), in p);
-        p.WriteString(value.Recipient);
-        p.WriteString(value.Text);
         p.WriteInt(value.BubbleStyle);
     }
 
@@ -1439,20 +1017,14 @@ public sealed record WhisperRequest(string Recipient, string Text, int BubbleSty
 public sealed record StartTypingRequest : IParserComposer<StartTypingRequest>
 {
     public static StartTypingRequest Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static StartTypingRequest ParseFlash(in PacketReader p) => new();
 
-    private static StartTypingRequest ParseUnity(in PacketReader p) => new();
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(StartTypingRequest value, in PacketWriter p)
-    {
-    }
-
-    private static void ComposeUnity(StartTypingRequest value, in PacketWriter p)
     {
     }
 }
@@ -1460,20 +1032,14 @@ public sealed record StartTypingRequest : IParserComposer<StartTypingRequest>
 public sealed record CancelTypingRequest : IParserComposer<CancelTypingRequest>
 {
     public static CancelTypingRequest Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static CancelTypingRequest ParseFlash(in PacketReader p) => new();
 
-    private static CancelTypingRequest ParseUnity(in PacketReader p) => new();
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(CancelTypingRequest value, in PacketWriter p)
-    {
-    }
-
-    private static void ComposeUnity(CancelTypingRequest value, in PacketWriter p)
     {
     }
 }
@@ -1481,20 +1047,14 @@ public sealed record CancelTypingRequest : IParserComposer<CancelTypingRequest>
 public sealed record QuitRoomRequest : IParserComposer<QuitRoomRequest>
 {
     public static QuitRoomRequest Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static QuitRoomRequest ParseFlash(in PacketReader p) => new();
 
-    private static QuitRoomRequest ParseUnity(in PacketReader p) => new();
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(QuitRoomRequest value, in PacketWriter p)
-    {
-    }
-
-    private static void ComposeUnity(QuitRoomRequest value, in PacketWriter p)
     {
     }
 }
@@ -1503,16 +1063,13 @@ public sealed record GetGuestRoomRequest(Id RoomId, bool EnterRoom, bool RoomFor
     : IParserComposer<GetGuestRoomRequest>
 {
     public static GetGuestRoomRequest Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static GetGuestRoomRequest ParseFlash(in PacketReader p) =>
         new(p.ReadId(), p.ReadInt() != 0, p.ReadInt() != 0);
 
-    private static GetGuestRoomRequest ParseUnity(in PacketReader p) =>
-        new(p.ReadId(), p.ReadBool(), p.ReadBool());
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(GetGuestRoomRequest value, in PacketWriter p)
     {
@@ -1520,20 +1077,13 @@ public sealed record GetGuestRoomRequest(Id RoomId, bool EnterRoom, bool RoomFor
         p.WriteInt(value.EnterRoom ? 1 : 0);
         p.WriteInt(value.RoomForward ? 1 : 0);
     }
-
-    private static void ComposeUnity(GetGuestRoomRequest value, in PacketWriter p)
-    {
-        p.WriteId(value.RoomId);
-        p.WriteBool(value.EnterRoom);
-        p.WriteBool(value.RoomForward);
-    }
 }
 
 public sealed record GetRoomSettingsRequest(Id RoomId)
     : IParserComposer<GetRoomSettingsRequest>
 {
     public static GetRoomSettingsRequest Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static GetRoomSettingsRequest ParseFlash(in PacketReader p)
     {
@@ -1542,15 +1092,8 @@ public sealed record GetRoomSettingsRequest(Id RoomId)
         return value;
     }
 
-    private static GetRoomSettingsRequest ParseUnity(in PacketReader p)
-    {
-        var value = new GetRoomSettingsRequest(p.ReadLong());
-        RequireEmpty(in p);
-        return value;
-    }
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(GetRoomSettingsRequest value, in PacketWriter p)
     {
@@ -1558,21 +1101,12 @@ public sealed record GetRoomSettingsRequest(Id RoomId)
         p.WriteInt(room_id);
     }
 
-    private static void ComposeUnity(GetRoomSettingsRequest value, in PacketWriter p) =>
-        p.WriteLong(value.RoomId);
-
     private static void RequireEmpty(in PacketReader p)
     {
         if (p.Available != 0)
             throw new InvalidDataException(
                 $"{nameof(GetRoomSettingsRequest)} contains {p.Available} unexpected bytes.");
     }
-}
-
-internal enum UnityRoomSettingsSaveWireLayout
-{
-    Legacy,
-    Modern
 }
 
 public sealed record SaveRoomSettingsRequest : IParserComposer<SaveRoomSettingsRequest>
@@ -1618,7 +1152,7 @@ public sealed record SaveRoomSettingsRequest : IParserComposer<SaveRoomSettingsR
     }
 
     public static SaveRoomSettingsRequest Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnityUnresolved);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static SaveRoomSettingsRequest ParseFlash(in PacketReader p)
     {
@@ -1692,76 +1226,8 @@ public sealed record SaveRoomSettingsRequest : IParserComposer<SaveRoomSettingsR
         };
     }
 
-    private static SaveRoomSettingsRequest ParseUnityUnresolved(in PacketReader p) =>
-        throw new NotSupportedException(
-            "Unity room settings saves require a verified header schema projection.");
-
-    internal static SaveRoomSettingsRequest ParseUnity(
-        in PacketReader p,
-        UnityRoomSettingsSaveWireLayout layout)
-    {
-        if (layout is not UnityRoomSettingsSaveWireLayout.Legacy and
-            not UnityRoomSettingsSaveWireLayout.Modern)
-        {
-            throw new ArgumentOutOfRangeException(nameof(layout));
-        }
-
-        Id room_id = p.ReadLong();
-        string name = p.ReadString();
-        string description = p.ReadString();
-        RoomDoorMode door_mode = (RoomDoorMode)p.ReadInt();
-        string password = p.ReadString();
-        int category_id = p.ReadInt();
-        bool allow_pets = p.ReadBool();
-        RoomModerationPermission who_can_mute = (RoomModerationPermission)p.ReadInt();
-        RoomModerationPermission who_can_kick = (RoomModerationPermission)p.ReadInt();
-        RoomModerationPermission who_can_ban = (RoomModerationPermission)p.ReadInt();
-        int maximum_visitors = p.ReadInt();
-        RoomTradeMode trade_mode = RoomTradeMode.Disabled;
-        bool allow_food_consume = false;
-        bool allow_walk_through = false;
-        if (layout is UnityRoomSettingsSaveWireLayout.Modern)
-        {
-            trade_mode = (RoomTradeMode)p.ReadInt();
-            allow_food_consume = p.ReadInt() > 0;
-            allow_walk_through = p.ReadInt() > 0;
-        }
-
-        if (p.Available < 2)
-            throw new InvalidDataException($"{nameof(SaveRoomSettingsRequest)} has no NFT group count.");
-        int nft_group_count = unchecked((ushort)p.ReadShort());
-        if (p.Available != (long)nft_group_count * 8)
-        {
-            throw new InvalidDataException(
-                $"{nameof(SaveRoomSettingsRequest)} NFT group count does not match the remaining payload.");
-        }
-        var nft_group_ids = new Id[nft_group_count];
-        for (int i = 0; i < nft_group_ids.Length; i++)
-            nft_group_ids[i] = p.ReadLong();
-        RequireEmpty(in p);
-
-        return new SaveRoomSettingsRequest
-        {
-            RoomId = room_id,
-            Name = name,
-            Description = description,
-            DoorMode = door_mode,
-            Password = password,
-            CategoryId = category_id,
-            AllowPets = allow_pets,
-            WhoCanMute = who_can_mute,
-            WhoCanKick = who_can_kick,
-            WhoCanBan = who_can_ban,
-            MaximumVisitors = maximum_visitors,
-            TradeMode = trade_mode,
-            AllowFoodConsume = allow_food_consume,
-            AllowWalkThrough = allow_walk_through,
-            NftGroupIds = nft_group_ids
-        };
-    }
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnityUnresolved);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(SaveRoomSettingsRequest value, in PacketWriter p)
     {
@@ -1800,76 +1266,6 @@ public sealed record SaveRoomSettingsRequest : IParserComposer<SaveRoomSettingsR
         p.WriteBool(value.IdleAutokickEnabled);
         p.WriteInt(value.IdleAutokickTimeoutSeconds);
         p.WriteBool(value.MuteAllPets);
-    }
-
-    private static void ComposeUnityUnresolved(SaveRoomSettingsRequest value, in PacketWriter p) =>
-        throw new NotSupportedException(
-            "Unity room settings saves require a verified header schema projection.");
-
-    internal void ComposeUnity(in PacketWriter p, UnityRoomSettingsSaveWireLayout layout)
-    {
-        if (layout is not UnityRoomSettingsSaveWireLayout.Legacy and
-            not UnityRoomSettingsSaveWireLayout.Modern)
-        {
-            throw new ArgumentOutOfRangeException(nameof(layout));
-        }
-
-        string[] tags = [.. Tags];
-        Id[] nft_group_ids = [.. NftGroupIds];
-        RequireString(Name, nameof(Name), in p);
-        RequireString(Description, nameof(Description), in p);
-        RequireString(Password, nameof(Password), in p);
-        if (nft_group_ids.Length > ushort.MaxValue)
-            throw new ArgumentException("NftGroupIds exceeds the Unity wire count limit.", nameof(NftGroupIds));
-        RequireUnityRepresentability(tags, layout);
-
-        p.WriteLong(RoomId);
-        p.WriteString(Name);
-        p.WriteString(Description);
-        p.WriteInt((int)DoorMode);
-        p.WriteString(Password);
-        p.WriteInt(CategoryId);
-        p.WriteBool(AllowPets);
-        p.WriteInt((int)WhoCanMute);
-        p.WriteInt((int)WhoCanKick);
-        p.WriteInt((int)WhoCanBan);
-        p.WriteInt(MaximumVisitors);
-        if (layout is UnityRoomSettingsSaveWireLayout.Modern)
-        {
-            p.WriteInt((int)TradeMode);
-            p.WriteInt(AllowFoodConsume ? 1 : 0);
-            p.WriteInt(AllowWalkThrough ? 1 : 0);
-        }
-        p.WriteLength((Length)(ushort)nft_group_ids.Length);
-        foreach (Id nft_group_id in nft_group_ids)
-            p.WriteLong(nft_group_id);
-    }
-
-    private void RequireUnityRepresentability(
-        IReadOnlyList<string> tags,
-        UnityRoomSettingsSaveWireLayout layout)
-    {
-        if (tags.Count != 0 ||
-            HideWalls ||
-            WallThickness is not RoomThickness.Normal ||
-            FloorThickness is not RoomThickness.Normal ||
-            ChatFloodSensitivity is not RoomChatFloodSensitivity.Strict ||
-            LeaveOnDoorTile ||
-            IdleSleepEnabled ||
-            IdleSleepTimeoutSeconds != 0 ||
-            IdleAutokickEnabled ||
-            IdleAutokickTimeoutSeconds != 0 ||
-            MuteAllPets)
-        {
-            throw new NotSupportedException(
-                "Unity room settings saves cannot represent non-neutral Flash-only settings.");
-        }
-        if (layout is UnityRoomSettingsSaveWireLayout.Legacy &&
-            (TradeMode is not RoomTradeMode.Disabled || AllowFoodConsume || AllowWalkThrough))
-        {
-            throw new NotSupportedException(
-                "The legacy Unity room settings save layout cannot represent trade or consumption settings.");
-        }
     }
 
     private static IReadOnlyList<T> Freeze<T>(IReadOnlyList<T> values, string name)

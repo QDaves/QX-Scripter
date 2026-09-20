@@ -7,22 +7,6 @@ using ForumThreadData = Qx.Model.Forums.ForumThread;
 
 namespace Qx.Scripting;
 
-/// <content>
-/// Group forums: cached forum state plus the fire-and-forget requests and actions that drive it.
-/// <para>
-/// <b>Flash only.</b> Every forum reply model refuses to parse on a non-Flash session
-/// (<c>ForumProtocol.RequireFlash</c>), and the forum tracker registers all of its incoming
-/// handlers for the Flash client alone. On a Unity session most of the request methods below
-/// still compose — those messages do have a Unity wire layout — but no reply is ever accepted,
-/// so the cached state stays empty and no forum event fires.
-/// </para>
-/// <para>
-/// No request method here blocks or returns a value. Each sends one message and returns
-/// immediately; the answer surfaces later through the cached state and the forum events. To wait
-/// for a specific reply, subscribe first and then send the request.
-/// </para>
-/// <para>A forum is identified by the id of the group that owns it.</para>
-/// </content>
 public partial class ScriptGlobals
 {
     /// <summary>
@@ -343,68 +327,39 @@ public partial class ScriptGlobals
             ApplicationMemberIds.ForumThreadUpdate,
             new ForumThreadUpdateRequest(group_id, thread_id, is_sticky, is_locked));
 
-    /// <summary>Reports a thread to hotel moderation through the call-for-help flow.</summary>
-    /// <param name="group_id">The group that owns the forum.</param>
-    /// <param name="thread_id">The thread being reported.</param>
-    /// <param name="category_id">The help-tool report category id.</param>
-    /// <param name="report">The free-text description sent with the report.</param>
-    /// <param name="first_context">Extra context string; carried by the Flash message only.</param>
-    /// <param name="second_context">Extra context string; carried by the Flash message only.</param>
-    /// <exception cref="ArgumentNullException">Any of the string arguments is null.</exception>
-    /// <exception cref="NotSupportedException">
-    /// The session is Unity and a non-empty context string was supplied; the Unity report message
-    /// has no context fields.
-    /// </exception>
-    /// <remarks>
-    /// Reporting is the one forum action with a real Unity message: Flash sends
-    /// <c>CallForHelpFromForumThread</c>, Unity sends <c>ReportForumThread</c> without contexts.
-    /// </remarks>
     public void ReportForumThread(
-        Id group_id,
-        Id thread_id,
-        int category_id,
-        string report,
-        string first_context = "",
-        string second_context = "") =>
-        Application.Invoke<ForumThreadReportRequest, ForumDispatchResult>(
-            ApplicationMemberIds.ForumThreadReport,
-            new ForumThreadReportRequest(
-                group_id,
-                thread_id,
-                category_id,
-                report,
-                first_context,
-                second_context));
+    Id group_id,
+    Id thread_id,
+    int category_id,
+    string report,
+    string first_context = "",
+    string second_context = "") =>
+    Application.Invoke<ForumThreadReportRequest, ForumDispatchResult>(
+        ApplicationMemberIds.ForumThreadReport,
+        new ForumThreadReportRequest(
+            group_id,
+            thread_id,
+            category_id,
+            report,
+            first_context,
+            second_context));
 
-    /// <summary>Reports a single post to hotel moderation through the call-for-help flow.</summary>
-    /// <param name="group_id">The group that owns the forum.</param>
-    /// <param name="thread_id">The thread the post belongs to.</param>
-    /// <param name="message_id">The post being reported.</param>
-    /// <param name="category_id">The help-tool report category id.</param>
-    /// <param name="report">The free-text description sent with the report.</param>
-    /// <param name="first_context">Extra context string; carried by the Flash message only.</param>
-    /// <param name="second_context">Extra context string; carried by the Flash message only.</param>
-    /// <exception cref="ArgumentNullException">Any of the string arguments is null.</exception>
-    /// <exception cref="NotSupportedException">
-    /// The session is Unity and a non-empty context string was supplied; the Unity report message
-    /// has no context fields.
-    /// </exception>
     public void ReportForumMessage(
-        Id group_id,
-        Id thread_id,
-        Id message_id,
-        int category_id,
-        string report,
-        string first_context = "",
-        string second_context = "") =>
-        Application.Invoke<ForumMessageReportRequest, ForumDispatchResult>(
-            ApplicationMemberIds.ForumMessageReport,
-            new ForumMessageReportRequest(
-                group_id,
-                thread_id,
-                message_id,
-                category_id,
-                report,
-                first_context,
-                second_context));
+    Id group_id,
+    Id thread_id,
+    Id message_id,
+    int category_id,
+    string report,
+    string first_context = "",
+    string second_context = "") =>
+    Application.Invoke<ForumMessageReportRequest, ForumDispatchResult>(
+        ApplicationMemberIds.ForumMessageReport,
+        new ForumMessageReportRequest(
+            group_id,
+            thread_id,
+            message_id,
+            category_id,
+            report,
+            first_context,
+            second_context));
 }

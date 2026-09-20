@@ -3,6 +3,7 @@
 *.jpg binary
 *.png binary
 *.swf binary
+*.ttf binary
 *.zip binary
 src/QX.Protocol/Resources/messages.ini text eol=lf
 src/QX.Protocol/Msg.cs text eol=crlf

@@ -1,0 +1,178 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:b="using:Qx.Desktop.Behaviors"
+             xmlns:c="using:Qx.Desktop.Controls"
+             xmlns:v="using:Qx.Desktop.Views.Room"
+             xmlns:vm="using:Qx.Presentation.ViewModels.Room"
+             x:Class="Qx.Desktop.Views.Room.RoomUsersView"
+             x:DataType="vm:RoomUsersViewModel">
+  <Grid RowDefinitions="Auto,*">
+    <c:FilterBar BorderBrush="{DynamicResource QxBorderSubtleBrush}" BorderThickness="0,0,0,1">
+      <c:FilterBar.Search>
+        <c:SearchBox Width="280"
+                     Text="{Binding Filter}"
+                     PlaceholderText="Filter people in the room"
+                     AutomationProperties.Name="Filter people in the room" />
+      </c:FilterBar.Search>
+      <c:FilterBar.Filters>
+        <StackPanel Orientation="Horizontal" Spacing="16">
+          <CheckBox Content="Show bots" IsChecked="{Binding ShowBots}" />
+          <CheckBox Content="Show pets" IsChecked="{Binding ShowPets}" />
+        </StackPanel>
+      </c:FilterBar.Filters>
+    </c:FilterBar>
+
+    <c:StateHost Grid.Row="1" State="{Binding State}">
+      <DataGrid Name="Grid"
+                ItemsSource="{Binding Rows.Visible}"
+                b:ListBehaviors.Selection="{Binding Selection}"
+                b:ListBehaviors.ClearOnDismiss="True"
+                b:ListBehaviors.SortRefresh="{Binding SortRefresh}"
+                b:ListBehaviors.CopyCommand="{Binding CopySelectionCommand}"
+                SelectionMode="Extended"
+                HeadersVisibility="Column"
+                RowHeight="{StaticResource QxRowHeightLarge}"
+                IsReadOnly="True"
+                CanUserSortColumns="True"
+                CanUserResizeColumns="True"
+                CanUserReorderColumns="True"
+                ClipboardCopyMode="None"
+                AutomationProperties.Name="People in the room">
+        <DataGrid.ContextMenu>
+          <ContextMenu Opening="OnMenuOpening">
+            <MenuItem Header="Find in the room"
+                      Command="{Binding FindCommand}"
+                      ToolTip.Tip="Puts their own bubble over their head so you can see where they are">
+              <MenuItem.Icon>
+                <c:Icon Kind="Find" />
+              </MenuItem.Icon>
+            </MenuItem>
+            <MenuItem Header="Send a friend request" Command="{Binding AddFriendCommand}">
+              <MenuItem.Icon>
+                <c:Icon Kind="FriendAdd" />
+              </MenuItem.Icon>
+            </MenuItem>
+            <MenuItem Header="Trade" Command="{Binding TradeCommand}" ToolTip.Tip="{Binding TradeReason}" ToolTip.ShowOnDisabled="True">
+              <MenuItem.Icon>
+                <c:Icon Kind="Trade" />
+              </MenuItem.Icon>
+            </MenuItem>
+            <MenuItem Header="Open profile" Command="{Binding OpenProfileCommand}">
+              <MenuItem.Icon>
+                <c:Icon Kind="Profile" />
+              </MenuItem.Icon>
+            </MenuItem>
+            <Separator />
+            <MenuItem Header="Mimic" IsEnabled="{Binding CanMimic}">
+              <MenuItem.Icon>
+                <c:Icon Kind="Mimic" />
+              </MenuItem.Icon>
+              <MenuItem Header="Everything" Command="{Binding MimicCommand}" CommandParameter="all" />
+              <Separator />
+              <MenuItem Header="Look" Command="{Binding MimicCommand}" CommandParameter="figure" />
+              <MenuItem Header="Motto" Command="{Binding MimicCommand}" CommandParameter="motto" />
+              <MenuItem Header="Dance" Command="{Binding MimicCommand}" CommandParameter="dance" />
+              <MenuItem Header="Sign" Command="{Binding MimicCommand}" CommandParameter="sign" />
+              <MenuItem Header="Effect" Command="{Binding MimicCommand}" CommandParameter="effect" />
+              <MenuItem Header="Facing" Command="{Binding MimicCommand}" CommandParameter="direction" />
+              <MenuItem Header="Stand where they stand" Command="{Binding MimicCommand}" CommandParameter="walk" />
+            </MenuItem>
+            <MenuItem Header="Copy" IsEnabled="{Binding CanCopy}">
+              <MenuItem.Icon>
+                <c:Icon Kind="Copy" />
+              </MenuItem.Icon>
+              <MenuItem Header="Name" Command="{Binding CopyFieldCommand}" CommandParameter="name" />
+              <MenuItem Header="User id" Command="{Binding CopyFieldCommand}" CommandParameter="id" />
+              <MenuItem Header="Motto" Command="{Binding CopyFieldCommand}" CommandParameter="motto" />
+              <MenuItem Header="Figure string" Command="{Binding CopyFieldCommand}" CommandParameter="figure" />
+            </MenuItem>
+            <MenuItem Header="Moderate" IsEnabled="{Binding CanModerate}" ToolTip.Tip="{Binding ModerateReason}" ToolTip.ShowOnDisabled="True">
+              <MenuItem.Icon>
+                <c:Icon Kind="Moderate" />
+              </MenuItem.Icon>
+              <MenuItem Header="Mute">
+                <MenuItem Header="2 minutes" Command="{Binding MuteCommand}" CommandParameter="2" />
+                <MenuItem Header="5 minutes" Command="{Binding MuteCommand}" CommandParameter="5" />
+                <MenuItem Header="10 minutes" Command="{Binding MuteCommand}" CommandParameter="10" />
+                <MenuItem Header="30 minutes" Command="{Binding MuteCommand}" CommandParameter="30" />
+                <MenuItem Header="An hour" Command="{Binding MuteCommand}" CommandParameter="60" />
+                <MenuItem Header="A day" Command="{Binding MuteCommand}" CommandParameter="1440" />
+              </MenuItem>
+              <MenuItem Header="Unmute" Command="{Binding MuteCommand}" CommandParameter="0" />
+              <Separator />
+              <MenuItem Header="Kick" Classes="danger" Command="{Binding KickCommand}">
+                <MenuItem.Icon>
+                  <c:Icon Kind="Kick" />
+                </MenuItem.Icon>
+              </MenuItem>
+              <MenuItem Header="Ban" Classes="danger">
+                <MenuItem.Icon>
+                  <c:Icon Kind="Ban" />
+                </MenuItem.Icon>
+                <MenuItem Header="For an hour" Command="{Binding BanCommand}" CommandParameter="hour" />
+                <MenuItem Header="For a day" Command="{Binding BanCommand}" CommandParameter="day" />
+                <MenuItem Header="Permanently" Command="{Binding BanCommand}" CommandParameter="perm" />
+              </MenuItem>
+              <MenuItem Header="Bounce"
+                        Command="{Binding BounceCommand}"
+                        ToolTip.Tip="Ban and unban at once, which puts them out with no kick notice" />
+            </MenuItem>
+            <Separator />
+            <MenuItem Header="Add outfit to my wardrobe" Command="{Binding SaveOutfitCommand}">
+              <MenuItem.Icon>
+                <c:Icon Kind="Outfit" />
+              </MenuItem.Icon>
+            </MenuItem>
+          </ContextMenu>
+        </DataGrid.ContextMenu>
+        <DataGrid.Columns>
+          <c:DataGridGutterColumn x:DataType="vm:PersonRowViewModel" />
+          <DataGridTemplateColumn x:DataType="vm:PersonRowViewModel" Header="Name" Width="2*" SortMemberPath="Name">
+            <DataGridTemplateColumn.CellTemplate>
+              <DataTemplate x:DataType="vm:PersonRowViewModel">
+                <StackPanel Orientation="Horizontal" Spacing="10" Margin="12,0" VerticalAlignment="Center">
+                  <c:Avatar DisplayName="{Binding Name}"
+                            Image="{Binding Head}"
+                            Kind="{Binding Kind, Converter={x:Static v:RoomLook.PersonKind}}" />
+                  <TextBlock Text="{Binding Name}" Classes="strong" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                  <c:Chip Text="{Binding Tag}" IsVisible="{Binding HasTag}" VerticalAlignment="Center" />
+                  <c:Badge Tone="Neutral" Icon="Idle" Text="Idle" IsVisible="{Binding IsIdle}" VerticalAlignment="Center" />
+                  <c:Badge Tone="Info" Icon="Trade" Text="Trading" IsVisible="{Binding IsTrading}" VerticalAlignment="Center" />
+                </StackPanel>
+              </DataTemplate>
+            </DataGridTemplateColumn.CellTemplate>
+          </DataGridTemplateColumn>
+          <DataGridTemplateColumn x:DataType="vm:PersonRowViewModel" Header="Motto" Width="2*" SortMemberPath="Detail">
+            <DataGridTemplateColumn.CellTemplate>
+              <DataTemplate x:DataType="vm:PersonRowViewModel">
+                <TextBlock Text="{Binding Detail}" Classes="secondary" Margin="12,0" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+              </DataTemplate>
+            </DataGridTemplateColumn.CellTemplate>
+          </DataGridTemplateColumn>
+          <DataGridTemplateColumn x:DataType="vm:PersonRowViewModel" Header="Tile" Width="90" SortMemberPath="TileOrder">
+            <DataGridTemplateColumn.CellTemplate>
+              <DataTemplate x:DataType="vm:PersonRowViewModel">
+                <TextBlock Text="{Binding Position}" Classes="mono secondary" Margin="12,0" VerticalAlignment="Center" />
+              </DataTemplate>
+            </DataGridTemplateColumn.CellTemplate>
+          </DataGridTemplateColumn>
+          <DataGridTemplateColumn x:DataType="vm:PersonRowViewModel" Header="Index" Width="70" SortMemberPath="Index">
+            <DataGridTemplateColumn.CellTemplate>
+              <DataTemplate x:DataType="vm:PersonRowViewModel">
+                <TextBlock Text="{Binding Index}" Classes="mono secondary" Margin="12,0" VerticalAlignment="Center" />
+              </DataTemplate>
+            </DataGridTemplateColumn.CellTemplate>
+          </DataGridTemplateColumn>
+          <DataGridTemplateColumn x:DataType="vm:PersonRowViewModel" Header="Id" Width="*" SortMemberPath="UserId">
+            <DataGridTemplateColumn.CellTemplate>
+              <DataTemplate x:DataType="vm:PersonRowViewModel">
+                <TextBlock Text="{Binding IdText}" Classes="mono tertiary" Margin="12,0" VerticalAlignment="Center" />
+              </DataTemplate>
+            </DataGridTemplateColumn.CellTemplate>
+          </DataGridTemplateColumn>
+          <c:DataGridGutterColumn x:DataType="vm:PersonRowViewModel" />
+        </DataGrid.Columns>
+      </DataGrid>
+    </c:StateHost>
+  </Grid>
+</UserControl>

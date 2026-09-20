@@ -34,7 +34,7 @@ internal static class RoomPlacementApplicationDescriptors
             new(ApplicationStateKey.RoomActive, ApplicationStateEffectKind.Reads),
             new(ApplicationStateKey.InventoryFurniLoaded, ApplicationStateEffectKind.Reads)
         ],
-        [Send(MessageKeys.Room.Item.Place, "unityFloorItemPlacementSchema")],
+        [Send(MessageKeys.Room.Item.Place)],
         new(false, false, false, true));
 
     public static ApplicationDescriptor WallPlace { get; } = new(
@@ -62,7 +62,7 @@ internal static class RoomPlacementApplicationDescriptors
             new(ApplicationStateKey.RoomActive, ApplicationStateEffectKind.Reads),
             new(ApplicationStateKey.InventoryFurniLoaded, ApplicationStateEffectKind.Reads)
         ],
-        [Send(MessageKeys.Room.Item.Place, "unityWallItemPlacementSchema")],
+        [Send(MessageKeys.Room.Item.Place)],
         new(false, false, false, true));
 
     public static ApplicationDescriptor FloorMove { get; } = Move<RoomPlacementFloorMoveRequest>(
@@ -208,14 +208,8 @@ internal static class RoomPlacementApplicationDescriptors
     private static ApplicationParameterConstraints IdConstraint() =>
         new(Pattern: "^-?[1-9][0-9]*$");
 
-    private static ApplicationMessageRequirement Send(
-        MessageKey key,
-        string? schema_capability = null) =>
-        new(
-            key,
-            Direction.Out,
-            ApplicationMessageRole.Send,
-            SchemaCapability: schema_capability);
+    private static ApplicationMessageRequirement Send(MessageKey key) =>
+        new(key, Direction.Out, ApplicationMessageRole.Send);
 
     private static ApplicationMessageRequirement Observe(MessageKey key) =>
         new(key, Direction.In, ApplicationMessageRole.Observe);

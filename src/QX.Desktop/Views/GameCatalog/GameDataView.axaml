@@ -1,0 +1,57 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:c="using:Qx.Desktop.Controls"
+             xmlns:views="using:Qx.Desktop.Views.GameCatalog"
+             xmlns:vm="using:Qx.Presentation.ViewModels.GameCatalog"
+             x:Class="Qx.Desktop.Views.GameCatalog.GameDataView"
+             x:DataType="vm:GameDataViewModel">
+
+  <c:PageLayout Page="{Binding}"
+                CountText="{Binding CountText}"
+                Notices="{Binding Notices}"
+                Progress="{Binding Progress}">
+    <TabControl SelectedIndex="{Binding SelectedTabIndex, Mode=TwoWay}">
+      <TabControl.ItemsPanel>
+        <ItemsPanelTemplate>
+          <UniformGrid Rows="1" ColumnSpacing="4" />
+        </ItemsPanelTemplate>
+      </TabControl.ItemsPanel>
+      <TabItem>
+        <TabItem.Header>
+          <StackPanel Orientation="Horizontal" Spacing="6">
+            <c:Icon Kind="Furni" Size="{DynamicResource QxIconSizeSm}" />
+            <TextBlock Text="Furni" VerticalAlignment="Center" />
+          </StackPanel>
+        </TabItem.Header>
+        <views:GameDataFurniView DataContext="{Binding Furni}" />
+      </TabItem>
+      <TabItem>
+        <TabItem.Header>
+          <StackPanel Orientation="Horizontal" Spacing="6">
+            <c:Icon Kind="Text" Size="{DynamicResource QxIconSizeSm}" />
+            <TextBlock Text="Texts" VerticalAlignment="Center" />
+          </StackPanel>
+        </TabItem.Header>
+        <views:GameDataEntriesView DataContext="{Binding Texts}" />
+      </TabItem>
+      <TabItem>
+        <TabItem.Header>
+          <StackPanel Orientation="Horizontal" Spacing="6">
+            <c:Icon Kind="Variables" Size="{DynamicResource QxIconSizeSm}" />
+            <TextBlock Text="Variables" VerticalAlignment="Center" />
+          </StackPanel>
+        </TabItem.Header>
+        <views:GameDataEntriesView DataContext="{Binding Variables}" />
+      </TabItem>
+      <TabItem>
+        <TabItem.Header>
+          <StackPanel Orientation="Horizontal" Spacing="6">
+            <c:Icon Kind="Products" Size="{DynamicResource QxIconSizeSm}" />
+            <TextBlock Text="Products" VerticalAlignment="Center" />
+          </StackPanel>
+        </TabItem.Header>
+        <views:GameDataEntriesView DataContext="{Binding Products}" />
+      </TabItem>
+    </TabControl>
+  </c:PageLayout>
+</UserControl>

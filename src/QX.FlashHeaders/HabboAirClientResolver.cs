@@ -26,6 +26,8 @@ public sealed class HabboAirClientResolver
     const string ClientUrlsPath = "gamedata/clienturls";
     const string WindowsVersionProperty = "flash-windows-version";
     const string WindowsPathProperty = "flash-windows";
+    const string MacVersionProperty = "flash-osx-version";
+    const string MacPathProperty = "flash-osx";
     const string SwfFileName = "HabboAir.swf";
     const long MaximumArchiveBytes = 1_073_741_824;
     const long MaximumSwfBytes = 536_870_912;
@@ -42,10 +44,10 @@ public sealed class HabboAirClientResolver
     }
 
     public static string DefaultLauncherDataPath() =>
-        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Habbo Launcher");
+        Path.Combine(StoragePaths.ConfigurationHome(), "Habbo Launcher");
 
     public static string DefaultCachePath() =>
-        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "QX", "swf");
+        Path.Combine(StoragePaths.Cache, "swf");
 
     public async Task<HabboAirManifest> GetLatestManifestAsync(
         Uri? hotel = null,
@@ -109,14 +111,19 @@ public sealed class HabboAirClientResolver
             manifest.DownloadUrl);
     }
 
-    internal static HabboAirManifest ParseManifest(JsonElement json)
-    {
-        string? version = ReadRequiredString(json, WindowsVersionProperty);
-        string? path = ReadRequiredString(json, WindowsPathProperty);
-        if (!Uri.TryCreate(path, UriKind.Absolute, out Uri? download_uri) || download_uri.Scheme != Uri.UriSchemeHttps)
-            throw new InvalidDataException($"Manifest property '{WindowsPathProperty}' is not a valid HTTPS URL.");
+    internal static HabboAirManifest ParseManifest(JsonElement json) =>
+        ParseManifest(json, OperatingSystem.IsMacOS());
 
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) &&
+    internal static HabboAirManifest ParseManifest(JsonElement json, bool macos)
+    {
+        string version_property = macos ? MacVersionProperty : WindowsVersionProperty;
+        string path_property = macos ? MacPathProperty : WindowsPathProperty;
+        string version = ReadRequiredString(json, version_property);
+        string path = ReadRequiredString(json, path_property);
+        if (!Uri.TryCreate(path, UriKind.Absolute, out Uri? download_uri) || download_uri.Scheme != Uri.UriSchemeHttps)
+            throw new InvalidDataException($"Manifest property '{path_property}' is not a valid HTTPS URL.");
+
+        if (!macos && OperatingSystem.IsWindows() &&
             RuntimeInformation.OSArchitecture == Architecture.X64 &&
             ParseVersion(version) >= 143 &&
             download_uri.AbsolutePath.EndsWith("/HabboWin.zip", StringComparison.OrdinalIgnoreCase))
@@ -249,13 +256,17 @@ public sealed class HabboAirClientResolver
                 if (string.IsNullOrWhiteSpace(version) || string.IsNullOrWhiteSpace(root))
                     continue;
 
+                string? swf_path = InstalledSwf(root);
+                if (swf_path is null)
+                    continue;
+
                 long modified = installation.TryGetProperty("lastModified", out JsonElement last_modified) &&
                     last_modified.TryGetInt64(out long parsed_modified)
                     ? parsed_modified
                     : 0;
                 releases.Add(new InstalledRelease(
                     version,
-                    Path.Combine(root, SwfFileName),
+                    swf_path,
                     HabboAirSource.Launcher,
                     modified));
             }
@@ -290,8 +301,8 @@ public sealed class HabboAirClientResolver
 
         foreach (string directory in directories)
         {
-            string swf_path = Path.Combine(directory, SwfFileName);
-            if (!File.Exists(swf_path))
+            string? swf_path = InstalledSwf(directory);
+            if (swf_path is null)
                 continue;
 
             long modified;
@@ -305,6 +316,17 @@ public sealed class HabboAirClientResolver
             }
             yield return new InstalledRelease(Path.GetFileName(directory), swf_path, source, modified);
         }
+    }
+
+    static string? InstalledSwf(string root)
+    {
+        string[] paths =
+        [
+            Path.Combine(root, SwfFileName),
+            Path.Combine(root, "Contents", "Resources", SwfFileName),
+            Path.Combine(root, "Habbo.app", "Contents", "Resources", SwfFileName)
+        ];
+        return paths.FirstOrDefault(File.Exists);
     }
 
     static string ReadRequiredString(JsonElement json, string property)

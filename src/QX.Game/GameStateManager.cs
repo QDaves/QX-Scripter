@@ -14,9 +14,7 @@ public abstract class GameStateManager : IDisposable
     private delegate T PacketParser<T>(in PacketReader reader);
 
     private readonly object _lifecycle_sync = new();
-    private readonly object _profile_sync = new();
     private readonly List<IDisposable> _subscriptions = [];
-    private Task _profile_callbacks = Task.CompletedTask;
     private CallbackGeneration? _callbacks;
     private CallbackGeneration? _closing_callbacks;
     private OperationGeneration? _operations;
@@ -97,9 +95,8 @@ public abstract class GameStateManager : IDisposable
             interceptor.Intercept(contract.Key, intercept =>
                 InvokeCallback(
                     generation,
-                    state_generation => ParseOrDefer(
+                    state_generation => PublishMessage(
                         contract.Key.Value,
-                        generation,
                         state_generation,
                         intercept.Packet,
                         handler,
@@ -129,9 +126,8 @@ public abstract class GameStateManager : IDisposable
                 {
                     if (intercept.Packet.Client != client)
                         return;
-                    ParseOrDefer(
+                    PublishMessage(
                         contract.Key.Value,
-                        generation,
                         state_generation,
                         intercept.Packet,
                         handler,
@@ -150,9 +146,8 @@ public abstract class GameStateManager : IDisposable
             interceptor.Intercept(key, intercept =>
                 InvokeCallback(
                     generation,
-                    state_generation => ParseOrDefer<T>(
+                    state_generation => PublishMessage<T>(
                         key.Value,
-                        generation,
                         state_generation,
                         intercept.Packet,
                         handler))));
@@ -178,9 +173,8 @@ public abstract class GameStateManager : IDisposable
                 {
                     if (intercept.Packet.Client != client)
                         return;
-                    ParseOrDefer<T>(
+                    PublishMessage<T>(
                         key.Value,
-                        generation,
                         state_generation,
                         intercept.Packet,
                         handler);
@@ -223,9 +217,8 @@ public abstract class GameStateManager : IDisposable
                     {
                         return;
                     }
-                    ParseOrDefer<T>(
+                    PublishMessage<T>(
                         name,
-                        generation,
                         state_generation,
                         intercept.Packet,
                         handler);
@@ -261,9 +254,8 @@ public abstract class GameStateManager : IDisposable
             interceptor.Intercept(identifier, intercept =>
                 InvokeCallback(
                     generation,
-                    state_generation => ParseOrDefer<T>(
+                    state_generation => PublishMessage<T>(
                         name,
-                        generation,
                         state_generation,
                         intercept.Packet,
                         (message, _) => handler(message)))));
@@ -310,14 +302,6 @@ public abstract class GameStateManager : IDisposable
                 interceptor.Messages,
                 interceptor.Messages.GetWireProfile(client));
             PacketWriter writer = packet.Writer();
-            if (client is ClientType.Unity)
-            {
-                if (!interceptor.Messages.TryGetOutgoingSchemas(client, header, out IReadOnlyList<OutgoingMessageSchema> schemas))
-                    throw new NotSupportedException($"Unity request '{RouteName(key, name)}' requires a verified wire schema.");
-                if (!OutgoingSchemaWriter.TryWrite(in writer, schemas, values))
-                    throw new NotSupportedException($"Unity request '{RouteName(key, name)}' contains an unsupported verified wire type.");
-            }
-            else
             {
                 writer.WriteValues(values);
             }
@@ -420,7 +404,6 @@ public abstract class GameStateManager : IDisposable
             message,
             (in PacketWriter writer) => contract.Compose(message, in writer),
             contract,
-            false,
             null,
             default,
             null);
@@ -435,9 +418,8 @@ public abstract class GameStateManager : IDisposable
             interceptor.Intercept(contract.Key, intercept =>
                 InvokeCallback(
                     generation,
-                    state_generation => ParseOrDefer(
+                    state_generation => PublishMessage(
                         contract.Key.Value,
-                        generation,
                         state_generation,
                         intercept.Packet,
                         handler,
@@ -461,7 +443,6 @@ public abstract class GameStateManager : IDisposable
             message,
             (in PacketWriter writer) => contract.Compose(message, in writer),
             contract,
-            false,
             expected_session,
             cancellation_token,
             dispatch_guard);
@@ -476,9 +457,8 @@ public abstract class GameStateManager : IDisposable
             interceptor.Intercept(contract.Key, intercept =>
                 InvokeCallback(
                     generation,
-                    state_generation => ParseOrDefer(
+                    state_generation => PublishMessage(
                         contract.Key.Value,
-                        generation,
                         state_generation,
                         intercept.Packet,
                         (message, _) => handler(message),
@@ -494,7 +474,6 @@ public abstract class GameStateManager : IDisposable
             message,
             (in PacketWriter writer) => message.Compose(in writer),
             null,
-            true,
             null,
             default,
             null);
@@ -506,7 +485,6 @@ public abstract class GameStateManager : IDisposable
         IComposer message,
         PacketComposer compose,
         IMessageContract? contract,
-        bool require_unity_schema,
         Session? required_session,
         CancellationToken cancellation_token,
         Action? dispatch_guard)
@@ -524,58 +502,9 @@ public abstract class GameStateManager : IDisposable
                 throw new InvalidOperationException("The hotel session changed before dispatch.");
             expected_session = required_session ?? expected_session;
             ClientType client = ResolveClient(interceptor, expected_session);
-            Packet packet;
-            if (contract?.AllowsSchemaSelectedHeader(client) is true)
-            {
-                packet = ComposeSchemaSelectedPacket(
-                    interceptor.Messages,
-                    client,
-                    key,
-                    name,
-                    message,
-                    compose,
-                    contract,
-                    cancellation_token);
-            }
-            else
-            {
-                if (!TryGetHeader(interceptor.Messages, Direction.Out, key, name, out Header header))
-                    throw new InvalidOperationException($"Unknown outgoing message '{RouteName(key, name)}'.");
-
-                IReadOnlyList<OutgoingMessageSchema>? schemas = null;
-                if (client is ClientType.Unity)
-                {
-                    bool has_schema = interceptor.Messages.TryGetOutgoingSchemas(
-                        ClientType.Unity,
-                        header,
-                        out schemas);
-                    if (!has_schema && require_unity_schema)
-                    {
-                        throw new NotSupportedException(
-                            $"Unity request '{RouteName(key, name)}' requires a verified wire schema.");
-                    }
-                    if (!has_schema)
-                        schemas = null;
-                }
-
-                packet = ComposePacket(
-                    interceptor.Messages,
-                    client,
-                    header,
-                    compose);
-                if (schemas is not null && !MatchesSchema(
-                        interceptor.Messages,
-                        header,
-                        key,
-                        name,
-                        message,
-                        packet,
-                        schemas))
-                {
-                    packet.Dispose();
-                    throw new NotSupportedException($"Unity request '{RouteName(key, name)}' does not match its verified wire schema.");
-                }
-            }
+            if (!TryGetHeader(interceptor.Messages, Direction.Out, key, name, out Header header))
+                throw new InvalidOperationException($"Unknown outgoing message '{RouteName(key, name)}'.");
+            Packet packet = ComposePacket(interceptor.Messages, client, header, compose);
             using (packet)
             {
                 cancellation_token.ThrowIfCancellationRequested();
@@ -585,88 +514,6 @@ public abstract class GameStateManager : IDisposable
         finally
         {
             operations.Leave();
-        }
-    }
-
-    private static Packet ComposeSchemaSelectedPacket(
-        MessageManager messages,
-        ClientType client,
-        MessageKey key,
-        string? name,
-        IComposer message,
-        PacketComposer compose,
-        IMessageContract contract,
-        CancellationToken cancellation_token)
-    {
-        if (key.IsEmpty ||
-            !messages.TryGetHeaders(client, key, out IReadOnlyList<Header> headers))
-        {
-            throw new InvalidOperationException(
-                $"Unknown outgoing message '{RouteName(key, name)}'.");
-        }
-
-        Packet? selected = null;
-        try
-        {
-            foreach (Header header in headers.Distinct())
-            {
-                cancellation_token.ThrowIfCancellationRequested();
-                if (header.Direction is not Direction.Out)
-                    continue;
-                MessageDialectCapability capability = contract.Capability(client, messages, header);
-                if (!capability.Available ||
-                    !messages.TryGetOutgoingSchemas(
-                        client,
-                        header,
-                        out IReadOnlyList<OutgoingMessageSchema> schemas) ||
-                    schemas.Count == 0)
-                {
-                    continue;
-                }
-
-                Packet candidate;
-                try
-                {
-                    candidate = ComposePacket(messages, client, header, compose);
-                }
-                catch (Exception error) when (error is InvalidDataException or NotSupportedException)
-                {
-                    continue;
-                }
-
-                bool matches;
-                try
-                {
-                    matches = MatchesSchema(messages, header, key, name, message, candidate, schemas);
-                }
-                catch
-                {
-                    candidate.Dispose();
-                    throw;
-                }
-                if (!matches)
-                {
-                    candidate.Dispose();
-                    continue;
-                }
-                if (selected is not null)
-                {
-                    candidate.Dispose();
-                    throw new NotSupportedException(
-                        $"Request '{RouteName(key, name)}' matches more than one verified outgoing header.");
-                }
-                selected = candidate;
-            }
-
-            cancellation_token.ThrowIfCancellationRequested();
-            Packet result = selected ?? throw new NotSupportedException(
-                $"Request '{RouteName(key, name)}' has no uniquely matching verified outgoing header.");
-            selected = null;
-            return result;
-        }
-        finally
-        {
-            selected?.Dispose();
         }
     }
 
@@ -693,25 +540,6 @@ public abstract class GameStateManager : IDisposable
         }
     }
 
-    private static bool MatchesSchema(
-        MessageManager messages,
-        Header header,
-        MessageKey key,
-        string? name,
-        IComposer message,
-        Packet packet,
-        IReadOnlyList<OutgoingMessageSchema> schemas)
-    {
-        string resolved_name = ResolveName(messages, header, key, name);
-        return UnityComplexComposerMatcher.RequiresExactMatch(resolved_name, message)
-            ? UnityComplexComposerMatcher.TryMatch(
-                resolved_name,
-                message,
-                packet,
-                schemas)
-            : OutgoingSchemaMatcher.TryMatch(packet, schemas, out _);
-    }
-
     private static bool TryGetHeader(
         MessageManager messages,
         Direction direction,
@@ -724,16 +552,6 @@ public abstract class GameStateManager : IDisposable
             : messages.TryGetHeader(key, out header);
         return found && header.Direction == direction;
     }
-
-    private static string ResolveName(
-        MessageManager messages,
-        Header header,
-        MessageKey key,
-        string? name) =>
-        name ??
-        (messages.TryGetIdentifier(header, out Identifier identifier)
-            ? identifier.Name
-            : key.Value);
 
     private static string RouteName(MessageKey key, string? name) => name ?? key.Value;
 
@@ -816,94 +634,18 @@ public abstract class GameStateManager : IDisposable
         return message;
     }
 
-    private void ParseOrDefer<T>(
+    private void PublishMessage<T>(
         string name,
-        long attachment_generation,
         long state_generation,
         Packet packet,
         Action<T, long> handler,
         PacketParser<T>? parser = null) where T : IParserComposer<T>
     {
-        try
-        {
-            handler(
-                parser is null
-                    ? Parse<T>(name, packet)
-                    : Parse(name, packet, parser),
-                state_generation);
-        }
-        catch (WireProfilePendingException) when (packet.Client is ClientType.Unity)
-        {
-            QueueProfileCallback(
-                name,
-                attachment_generation,
-                state_generation,
-                packet,
-                (deferred, generation) => handler(
-                    parser is null
-                        ? Parse<T>(name, deferred)
-                        : Parse(name, deferred, parser),
-                    generation));
-        }
-    }
-
-    private void QueueProfileCallback(
-        string name,
-        long attachment_generation,
-        long state_generation,
-        Packet packet,
-        Action<Packet, long> callback)
-    {
-        Packet deferred = packet.Copy();
-        lock (_profile_sync)
-        {
-            _profile_callbacks = ReplayProfileCallbackAsync(
-                _profile_callbacks,
-                name,
-                attachment_generation,
-                state_generation,
-                deferred,
-                callback);
-        }
-    }
-
-    private async Task ReplayProfileCallbackAsync(
-        Task previous,
-        string name,
-        long attachment_generation,
-        long state_generation,
-        Packet packet,
-        Action<Packet, long> callback)
-    {
-        try
-        {
-            try
-            {
-                await previous.ConfigureAwait(false);
-            }
-            catch
-            {
-            }
-
-            IInterceptor interceptor = Interceptor;
-            await interceptor.WaitForCatalogBuildAsync().ConfigureAwait(false);
-            packet.Context = new ParserContext(
-                interceptor.Messages,
-                interceptor.Messages.GetWireProfile(packet.Client));
-            InvokeCallback(attachment_generation, current_generation =>
-            {
-                if (current_generation == state_generation)
-                    callback(packet, current_generation);
-            });
-        }
-        catch (Exception error)
-        {
-            Diag.Error($"Deferred handler for '{name}' failed: {error}", "game");
-        }
-        finally
-        {
-            packet.Dispose();
-        }
+        handler(
+            parser is null
+                ? Parse<T>(name, packet)
+                : Parse(name, packet, parser),
+            state_generation);
     }
 
     private static void EnsureEmpty(string name, IPacket packet)

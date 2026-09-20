@@ -15,21 +15,19 @@ internal static class AchievementBadgeWire
 
     public static void RequireSupportedClient(ClientType client)
     {
-        if (client is not (ClientType.Flash or ClientType.Unity))
+        if (client is not (ClientType.Flash))
             throw new UnsupportedClientException(client);
     }
 
     public static int CountWidth(ClientType client) => client switch
     {
         ClientType.Flash => sizeof(int),
-        ClientType.Unity => sizeof(short),
         _ => throw new UnsupportedClientException(client)
     };
 
     public static int UserIdWidth(ClientType client) => client switch
     {
         ClientType.Flash => sizeof(int),
-        ClientType.Unity => sizeof(long),
         _ => throw new UnsupportedClientException(client)
     };
 
@@ -45,7 +43,6 @@ internal static class AchievementBadgeWire
         int count = p.Client switch
         {
             ClientType.Flash => p.ReadInt(),
-            ClientType.Unity => unchecked((ushort)p.ReadShort()),
             _ => throw new UnsupportedClientException(p.Client)
         };
         RequireCount(count, name);
@@ -130,7 +127,6 @@ internal static class AchievementBadgeWire
         return p.Client switch
         {
             ClientType.Flash => p.ReadInt(),
-            ClientType.Unity => p.ReadLong(),
             _ => throw new UnsupportedClientException(p.Client)
         };
     }
@@ -138,30 +134,19 @@ internal static class AchievementBadgeWire
     public static void RequireUserId(Id value, ClientType client)
     {
         RequireSupportedClient(client);
-        if (client is ClientType.Flash)
-            _ = checked((int)(long)value);
+        _ = checked((int)(long)value);
     }
 
     public static void WriteUserId(Id value, in PacketWriter p)
     {
-        if (p.Client is ClientType.Flash)
-            p.WriteInt(checked((int)(long)value));
-        else if (p.Client is ClientType.Unity)
-            p.WriteLong(value);
-        else
-            throw new UnsupportedClientException(p.Client);
+        p.WriteInt(checked((int)(long)value));
     }
 
     public static int RequireBadgeId(Id value) => checked((int)(long)value);
 
     public static void WriteCount(int count, in PacketWriter p)
     {
-        if (p.Client is ClientType.Flash)
-            p.WriteInt(count);
-        else if (p.Client is ClientType.Unity)
-            p.WriteShort(unchecked((short)count));
-        else
-            throw new UnsupportedClientException(p.Client);
+        p.WriteInt(count);
     }
 
     public static AchievementBadgeStringBudget NewStringBudget() =>

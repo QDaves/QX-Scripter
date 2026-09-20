@@ -1,0 +1,101 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:c="using:Qx.Desktop.Controls"
+             xmlns:ed="using:Qx.Desktop.Editor"
+             xmlns:local="using:Qx.Desktop.Views.Editor"
+             xmlns:vm="using:Qx.Presentation.ViewModels.Editor"
+             x:Class="Qx.Desktop.Views.Editor.WorkspaceView"
+             x:DataType="vm:WorkspaceViewModel">
+
+  <Panel Background="{DynamicResource QxSurfaceBaseBrush}">
+
+    <c:EmptyState Icon="Script"
+                  Title="No open scripts"
+                  Description="Open one from the script library, or start a new script."
+                  IsVisible="{Binding !HasDocuments}" />
+
+    <Grid Name="Layout" IsVisible="{Binding HasDocuments}">
+      <Grid.RowDefinitions>
+        <RowDefinition Height="Auto" />
+        <RowDefinition Height="*" />
+        <RowDefinition Height="Auto" />
+        <RowDefinition Height="Auto" />
+      </Grid.RowDefinitions>
+
+      <Border Grid.Row="0"
+              Height="{DynamicResource QxToolbarHeight}"
+              Padding="16,0,12,0"
+              BorderBrush="{DynamicResource QxBorderSubtleBrush}"
+              BorderThickness="0,0,0,1">
+        <Grid ColumnDefinitions="*,Auto">
+          <Grid Grid.Column="0" ColumnDefinitions="Auto,*" Margin="0,0,16,0" VerticalAlignment="Center">
+            <c:Icon Kind="Code" Size="18" Classes="tertiary" Margin="0,0,8,0" IsVisible="{Binding !IsPanelView}" />
+            <TextBlock Grid.Column="1" Name="ToolbarTitle" Classes="heading primary"
+                       Text="{Binding ToolbarTitle}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
+          </Grid>
+          <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+            <c:SegmentedControl Name="ViewToggle">
+              <ListBoxItem ToolTip.Tip="Code" AutomationProperties.Name="Code">
+                <c:Segment Icon="Code" IconSize="20" />
+              </ListBoxItem>
+              <ListBoxItem Name="PanelSegment" IsEnabled="{Binding CanUsePanelView}" ToolTip.Tip="{Binding PanelTip}" AutomationProperties.Name="UI">
+                <c:Segment Icon="PanelView" IconSize="20" />
+              </ListBoxItem>
+            </c:SegmentedControl>
+            <ToggleButton Classes="subtle small"
+                          IsChecked="{Binding IsApiBrowserOpen}"
+                          Command="{Binding ToggleApiBrowserCommand}"
+                          ToolTip.Tip="Script API library (F2)"
+                          AutomationProperties.Name="Script API library">
+              <StackPanel Orientation="Horizontal" Spacing="6">
+                <c:Icon Kind="ApiLibrary" Size="14" />
+                <TextBlock Text="API" />
+                <c:Kbd Text="F2" />
+              </StackPanel>
+            </ToggleButton>
+            <StackPanel Orientation="Horizontal" Spacing="8">
+              <Rectangle Classes="divider-vertical" />
+              <c:RunButton Name="RunControl" State="{Binding RunPhase, Converter={StaticResource QxRunState}}"
+                           RunCommand="{Binding ToggleRunCommand}"
+                           StopCommand="{Binding StopActiveCommand}" />
+            </StackPanel>
+          </StackPanel>
+        </Grid>
+      </Border>
+
+      <Grid Name="Body" Grid.Row="1">
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition Width="*" />
+          <ColumnDefinition Width="Auto" />
+          <ColumnDefinition Width="Auto" />
+        </Grid.ColumnDefinitions>
+        <Panel Grid.Column="0">
+          <ed:EditorSurface Name="Surface" Document="{Binding Active}" IsVisible="{Binding !IsPanelView}" />
+          <ContentControl Name="PanelHost" Content="{Binding PanelSurface}" IsVisible="{Binding IsPanelView}" />
+        </Panel>
+        <GridSplitter Name="ApiSplitter"
+                      Grid.Column="1"
+                      Width="5"
+                      Background="Transparent"
+                      ResizeDirection="Columns"
+                      IsVisible="{Binding IsApiBrowserOpen}" />
+        <Border Grid.Column="2"
+                BorderBrush="{DynamicResource QxBorderSubtleBrush}"
+                BorderThickness="1,0,0,0"
+                IsVisible="{Binding IsApiBrowserOpen}">
+          <ContentControl Name="ApiHost" Content="{Binding ApiBrowser}" />
+        </Border>
+      </Grid>
+
+      <GridSplitter Name="ConsoleSplitter"
+                    Grid.Row="2"
+                    Height="5"
+                    Background="Transparent"
+                    ResizeDirection="Rows" />
+
+      <local:OutputConsoleView Name="OutputConsole" Grid.Row="3" DataContext="{Binding Console}" />
+
+    </Grid>
+  </Panel>
+
+</UserControl>

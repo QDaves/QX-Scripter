@@ -6,11 +6,9 @@ public sealed record CatalogIndexRequest(string CatalogType)
     : IParserComposer<CatalogIndexRequest>
 {
     public static CatalogIndexRequest Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static CatalogIndexRequest ParseFlash(in PacketReader p) => ParseRequest(in p);
-
-    private static CatalogIndexRequest ParseUnity(in PacketReader p) => ParseRequest(in p);
 
     private static CatalogIndexRequest ParseRequest(in PacketReader p)
     {
@@ -20,12 +18,9 @@ public sealed record CatalogIndexRequest(string CatalogType)
     }
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(CatalogIndexRequest value, in PacketWriter p) =>
-        ComposeRequest(value, in p);
-
-    private static void ComposeUnity(CatalogIndexRequest value, in PacketWriter p) =>
         ComposeRequest(value, in p);
 
     private static void ComposeRequest(CatalogIndexRequest value, in PacketWriter p)
@@ -41,11 +36,9 @@ public sealed record CatalogPageRequest(
     string CatalogType) : IParserComposer<CatalogPageRequest>
 {
     public static CatalogPageRequest Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static CatalogPageRequest ParseFlash(in PacketReader p) => ParseRequest(in p);
-
-    private static CatalogPageRequest ParseUnity(in PacketReader p) => ParseRequest(in p);
 
     private static CatalogPageRequest ParseRequest(in PacketReader p)
     {
@@ -55,12 +48,9 @@ public sealed record CatalogPageRequest(
     }
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(CatalogPageRequest value, in PacketWriter p) =>
-        ComposeRequest(value, in p);
-
-    private static void ComposeUnity(CatalogPageRequest value, in PacketWriter p) =>
         ComposeRequest(value, in p);
 
     private static void ComposeRequest(CatalogPageRequest value, in PacketWriter p)

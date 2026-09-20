@@ -13,7 +13,7 @@ public sealed record ProfileGroup(
     bool HasForum) : IParserComposer<ProfileGroup>
 {
     public static ProfileGroup Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static ProfileGroup ParseFlash(in PacketReader p) =>
         new(
@@ -26,23 +26,12 @@ public sealed record ProfileGroup(
             p.ReadInt(),
             p.ReadBool());
 
-    private static ProfileGroup ParseUnity(in PacketReader p) =>
-        new(
-            p.ReadLong(),
-            p.ReadString(),
-            p.ReadString(),
-            p.ReadString(),
-            p.ReadString(),
-            p.ReadBool(),
-            p.ReadLong(),
-            p.ReadBool());
-
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(ProfileGroup value, in PacketWriter p)
     {
-        Validate(value, true, in p);
+        Validate(value, in p);
         p.WriteInt(PeopleWire.RequireFlashId(value.Id, nameof(Id)));
         p.WriteString(value.Name);
         p.WriteString(value.BadgeCode);
@@ -53,23 +42,9 @@ public sealed record ProfileGroup(
         p.WriteBool(value.HasForum);
     }
 
-    private static void ComposeUnity(ProfileGroup value, in PacketWriter p)
-    {
-        Validate(value, false, in p);
-        p.WriteLong(value.Id);
-        p.WriteString(value.Name);
-        p.WriteString(value.BadgeCode);
-        p.WriteString(value.PrimaryColor);
-        p.WriteString(value.SecondaryColor);
-        p.WriteBool(value.IsFavourite);
-        p.WriteLong(value.OwnerId);
-        p.WriteBool(value.HasForum);
-    }
-
-    internal static void Validate(ProfileGroup value, bool flash, in PacketWriter p)
+    internal static void Validate(ProfileGroup value, in PacketWriter p)
     {
         ArgumentNullException.ThrowIfNull(value);
-        if (flash)
         {
             _ = PeopleWire.RequireFlashId(value.Id, nameof(Id));
             _ = PeopleWire.RequireFlashId(value.OwnerId, nameof(OwnerId));
@@ -83,47 +58,10 @@ public sealed record ProfileGroup(
 
 public readonly record struct BadgeRarity(byte RarityId, int Count);
 
-public readonly record struct ProfileOldName(Id Id, string Name) : IParserComposer<ProfileOldName>
-{
-    public static ProfileOldName Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
-
-    private static ProfileOldName ParseFlash(in PacketReader p) =>
-        new(p.ReadInt(), p.ReadString());
-
-    private static ProfileOldName ParseUnity(in PacketReader p) =>
-        new(p.ReadLong(), p.ReadString());
-
-    public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
-
-    private static void ComposeFlash(ProfileOldName value, in PacketWriter p)
-    {
-        Validate(value, true, in p);
-        p.WriteInt(PeopleWire.RequireFlashId(value.Id, nameof(Id)));
-        p.WriteString(value.Name);
-    }
-
-    private static void ComposeUnity(ProfileOldName value, in PacketWriter p)
-    {
-        Validate(value, false, in p);
-        p.WriteLong(value.Id);
-        p.WriteString(value.Name);
-    }
-
-    internal static void Validate(ProfileOldName value, bool flash, in PacketWriter p)
-    {
-        if (flash)
-            _ = PeopleWire.RequireFlashId(value.Id, nameof(Id));
-        PeopleWire.RequireString(value.Name, nameof(Name), in p);
-    }
-}
-
 public sealed class UserProfile : IParserComposer<UserProfile>
 {
     private IReadOnlyList<ProfileGroup> _groups = Array.AsReadOnly(Array.Empty<ProfileGroup>());
     private IReadOnlyList<BadgeRarity> _badge_rarities = Array.AsReadOnly(Array.Empty<BadgeRarity>());
-    private IReadOnlyList<ProfileOldName> _old_names = Array.AsReadOnly(Array.Empty<ProfileOldName>());
 
     public Id Id { get; set; }
     public string Name { get; set; } = string.Empty;
@@ -160,23 +98,16 @@ public sealed class UserProfile : IParserComposer<UserProfile>
     }
 
     public int TotalBadgesRank { get; set; }
-    public string NameColor { get; set; } = string.Empty;
-
-    public IReadOnlyList<ProfileOldName> OldNames
-    {
-        get => _old_names;
-        set => _old_names = PeopleWire.FreezeValues(value, nameof(OldNames));
-    }
 
     public bool IsOnline => OnlineStatus > 0;
     public TimeSpan LastAccess => TimeSpan.FromSeconds(LastAccessSeconds);
 
     public static UserProfile Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static UserProfile ParseFlash(in PacketReader p)
     {
-        UserProfile value = ParseCommon(in p, false);
+        UserProfile value = ParseCommon(in p);
         value.FriendCount = p.ReadInt();
         value.IsFriend = p.ReadBool();
         value.IsFriendRequestSent = p.ReadBool();
@@ -216,49 +147,10 @@ public sealed class UserProfile : IParserComposer<UserProfile>
         return value;
     }
 
-    private static UserProfile ParseUnity(in PacketReader p)
-    {
-        UserProfile value = ParseCommon(in p, true);
-        value.FriendCount = -1;
-        value.IsFriend = p.ReadBool();
-        value.IsFriendRequestSent = p.ReadBool();
-        value.OnlineStatus = p.ReadBool() ? 1 : 0;
-
-        int group_count = PeopleWire.ReadUnityCount(
-            in p,
-            PeopleWire.UnityGroupMinimumBytes,
-            nameof(Groups));
-        var groups = new ProfileGroup[group_count];
-        for (int index = 0; index < groups.Length; index++)
-            groups[index] = p.Parse<ProfileGroup>();
-        value.Groups = groups;
-
-        value.LastAccessSeconds = p.ReadInt();
-        value.OpenProfileWindow = p.ReadBool();
-        value.IsHidden = p.ReadBool();
-        value.Level = p.ReadInt();
-        value.SubscriptionLevel = p.ReadInt();
-        value.StarGems = p.ReadInt();
-        value.AllowFriendRequests = p.ReadBool();
-        value.HasFriendRequestsPending = p.ReadBool();
-        value.NameColor = p.ReadString();
-
-        int old_name_count = PeopleWire.ReadUnityCount(
-            in p,
-            PeopleWire.UnityOldNameMinimumBytes,
-            nameof(OldNames));
-        var old_names = new ProfileOldName[old_name_count];
-        for (int index = 0; index < old_names.Length; index++)
-            old_names[index] = p.Parse<ProfileOldName>();
-        value.OldNames = old_names;
-        PeopleWire.RequireEmpty(in p, nameof(UserProfile));
-        return value;
-    }
-
-    private static UserProfile ParseCommon(in PacketReader p, bool unity) =>
+    private static UserProfile ParseCommon(in PacketReader p) =>
         new()
         {
-            Id = unity ? p.ReadLong() : p.ReadInt(),
+            Id = p.ReadInt(),
             Name = p.ReadString(),
             Figure = p.ReadString(),
             Motto = p.ReadString(),
@@ -267,11 +159,11 @@ public sealed class UserProfile : IParserComposer<UserProfile>
         };
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(UserProfile value, in PacketWriter p)
     {
-        UserProfile prepared = Prepare(value, true, in p);
+        UserProfile prepared = Prepare(value, in p);
         p.WriteInt(PeopleWire.RequireFlashId(prepared.Id, nameof(Id)));
         ComposeCommon(prepared, in p);
         p.WriteInt(prepared.FriendCount);
@@ -300,31 +192,6 @@ public sealed class UserProfile : IParserComposer<UserProfile>
         p.WriteInt(prepared.TotalBadgesRank);
     }
 
-    private static void ComposeUnity(UserProfile value, in PacketWriter p)
-    {
-        UserProfile prepared = Prepare(value, false, in p);
-        p.WriteLong(prepared.Id);
-        ComposeCommon(prepared, in p);
-        p.WriteBool(prepared.IsFriend);
-        p.WriteBool(prepared.IsFriendRequestSent);
-        p.WriteBool(prepared.IsOnline);
-        PeopleWire.WriteUnityCount(prepared.Groups.Count, in p);
-        foreach (ProfileGroup group in prepared.Groups)
-            p.Compose(group);
-        p.WriteInt(prepared.LastAccessSeconds);
-        p.WriteBool(prepared.OpenProfileWindow);
-        p.WriteBool(prepared.IsHidden);
-        p.WriteInt(prepared.Level);
-        p.WriteInt(prepared.SubscriptionLevel);
-        p.WriteInt(prepared.StarGems);
-        p.WriteBool(prepared.AllowFriendRequests);
-        p.WriteBool(prepared.HasFriendRequestsPending);
-        p.WriteString(prepared.NameColor);
-        PeopleWire.WriteUnityCount(prepared.OldNames.Count, in p);
-        foreach (ProfileOldName old_name in prepared.OldNames)
-            p.Compose(old_name);
-    }
-
     private static void ComposeCommon(UserProfile value, in PacketWriter p)
     {
         p.WriteString(value.Name);
@@ -334,7 +201,7 @@ public sealed class UserProfile : IParserComposer<UserProfile>
         p.WriteInt(value.AchievementScore);
     }
 
-    private static UserProfile Prepare(UserProfile value, bool flash, in PacketWriter p)
+    private static UserProfile Prepare(UserProfile value, in PacketWriter p)
     {
         ArgumentNullException.ThrowIfNull(value);
         var prepared = new UserProfile
@@ -361,9 +228,7 @@ public sealed class UserProfile : IParserComposer<UserProfile>
             TotalBadges = value.TotalBadges,
             AchievementLevel = value.AchievementLevel,
             BadgeRarities = value.BadgeRarities,
-            TotalBadgesRank = value.TotalBadgesRank,
-            NameColor = value.NameColor,
-            OldNames = value.OldNames
+            TotalBadgesRank = value.TotalBadgesRank
         };
 
         PeopleWire.RequireString(prepared.Name, nameof(Name), in p);
@@ -371,37 +236,14 @@ public sealed class UserProfile : IParserComposer<UserProfile>
         PeopleWire.RequireString(prepared.Motto, nameof(Motto), in p);
         PeopleWire.RequireString(prepared.Created, nameof(Created), in p);
 
-        if (flash)
         {
             _ = PeopleWire.RequireFlashId(prepared.Id, nameof(Id));
             if ((uint)prepared.OnlineStatus > byte.MaxValue)
                 throw new InvalidDataException("OnlineStatus exceeds the Flash wire byte range.");
-            if (prepared.NameColor is not "" || prepared.OldNames.Count != 0)
-                throw new InvalidDataException("Flash UserProfile cannot contain Unity-only fields.");
-        }
-        else
-        {
-            if (prepared.FriendCount != -1 ||
-                prepared.OnlineStatus is not (0 or 1) ||
-                prepared.TotalBadges != 0 ||
-                prepared.AchievementLevel != 0 ||
-                prepared.BadgeRarities.Count != 0 ||
-                prepared.TotalBadgesRank != 0)
-            {
-                throw new InvalidDataException("Unity UserProfile cannot contain Flash-only fields.");
-            }
-            PeopleWire.RequireUnityCount(prepared.Groups.Count, nameof(Groups));
-            PeopleWire.RequireUnityCount(prepared.OldNames.Count, nameof(OldNames));
-            PeopleWire.RequireString(prepared.NameColor, nameof(NameColor), in p);
         }
 
         foreach (ProfileGroup group in prepared.Groups)
-            ProfileGroup.Validate(group, flash, in p);
-        if (!flash)
-        {
-            foreach (ProfileOldName old_name in prepared.OldNames)
-                ProfileOldName.Validate(old_name, false, in p);
-        }
+            ProfileGroup.Validate(group, in p);
         return prepared;
     }
 }
@@ -410,13 +252,8 @@ internal static class PeopleWire
 {
     internal const int FlashRelationshipEntryMinimumBytes =
         sizeof(int) + sizeof(int) + sizeof(int) + sizeof(short) + sizeof(short);
-    internal const int UnityRelationshipEntryMinimumBytes =
-        sizeof(int) + sizeof(int) + sizeof(long) + sizeof(short) + sizeof(short);
     internal const int FlashGroupMinimumBytes =
         sizeof(int) + 4 * sizeof(short) + sizeof(byte) + sizeof(int) + sizeof(byte);
-    internal const int UnityGroupMinimumBytes =
-        sizeof(long) + 4 * sizeof(short) + sizeof(byte) + sizeof(long) + sizeof(byte);
-    internal const int UnityOldNameMinimumBytes = sizeof(long) + sizeof(short);
     internal const int BadgeRarityMinimumBytes = sizeof(byte) + sizeof(int);
     internal const int SelectedBadgeMinimumBytes = sizeof(int) + sizeof(short);
 
@@ -426,23 +263,6 @@ internal static class PeopleWire
         string name,
         int trailing_bytes = 0) =>
         RequireCount(p.ReadInt(), p.Available - trailing_bytes, minimum_bytes, name);
-
-    internal static int ReadUnityCount(
-        in PacketReader p,
-        int minimum_bytes,
-        string name,
-        int trailing_bytes = 0) =>
-        RequireCount(
-            unchecked((ushort)p.ReadShort()),
-            p.Available - trailing_bytes,
-            minimum_bytes,
-            name);
-
-    internal static void RequireUnityCount(int count, string name)
-    {
-        if ((uint)count > ushort.MaxValue)
-            throw new InvalidDataException($"{name} count {count} exceeds the Unity wire limit.");
-    }
 
     internal static int RequireFlashId(Id value, string name)
     {
@@ -467,12 +287,6 @@ internal static class PeopleWire
     {
         if (p.Available != 0)
             throw new InvalidDataException($"{name} contains {p.Available} unexpected bytes.");
-    }
-
-    internal static void WriteUnityCount(int count, in PacketWriter p)
-    {
-        RequireUnityCount(count, nameof(count));
-        p.WriteShort(unchecked((short)(ushort)count));
     }
 
     internal static IReadOnlyList<T> FreezeReferences<T>(IReadOnlyList<T> values, string name)

@@ -60,11 +60,9 @@ public sealed record Habbicon(
         State is HabbiconState.Locked && (PriceCredits > 0 || PriceActivityPoints > 0);
 
     public static Habbicon Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static Habbicon ParseFlash(in PacketReader p) => ParseMessage(in p);
-
-    private static Habbicon ParseUnity(in PacketReader p) => ParseMessage(in p);
 
     private static Habbicon ParseMessage(in PacketReader p)
     {
@@ -75,11 +73,9 @@ public sealed record Habbicon(
     }
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(Habbicon value, in PacketWriter p) => ComposeMessage(value, in p);
-
-    private static void ComposeUnity(Habbicon value, in PacketWriter p) => ComposeMessage(value, in p);
 
     private static void ComposeMessage(Habbicon value, in PacketWriter p)
     {
@@ -208,11 +204,9 @@ public sealed record HabbiconCollection(
         RewardHabbiconId > 0 && RewardState is HabbiconState.Claimable;
 
     public static HabbiconCollection Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static HabbiconCollection ParseFlash(in PacketReader p) => ParseMessage(in p);
-
-    private static HabbiconCollection ParseUnity(in PacketReader p) => ParseMessage(in p);
 
     private static HabbiconCollection ParseMessage(in PacketReader p)
     {
@@ -223,12 +217,9 @@ public sealed record HabbiconCollection(
     }
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(HabbiconCollection value, in PacketWriter p) =>
-        ComposeMessage(value, in p);
-
-    private static void ComposeUnity(HabbiconCollection value, in PacketWriter p) =>
         ComposeMessage(value, in p);
 
     private static void ComposeMessage(HabbiconCollection value, in PacketWriter p)
@@ -369,11 +360,9 @@ public sealed record UserHabbicons(
     public bool RecentHabbiconIdsPresent { get; init; } = true;
 
     public static UserHabbicons Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static UserHabbicons ParseFlash(in PacketReader p) => ParseMessage(in p, false);
-
-    private static UserHabbicons ParseUnity(in PacketReader p) => ParseMessage(in p, true);
 
     private static UserHabbicons ParseMessage(in PacketReader p, bool allow_missing_recents)
     {
@@ -408,13 +397,10 @@ public sealed record UserHabbicons(
     }
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(UserHabbicons value, in PacketWriter p) =>
         ComposeMessage(value, in p, false);
-
-    private static void ComposeUnity(UserHabbicons value, in PacketWriter p) =>
-        ComposeMessage(value, in p, true);
 
     private static void ComposeMessage(
         UserHabbicons value,
@@ -451,11 +437,9 @@ public sealed record UserHabbiconState(int HabbiconId, HabbiconState State)
     : IParserComposer<UserHabbiconState>
 {
     public static UserHabbiconState Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static UserHabbiconState ParseFlash(in PacketReader p) => ParseMessage(in p);
-
-    private static UserHabbiconState ParseUnity(in PacketReader p) => ParseMessage(in p);
 
     private static UserHabbiconState ParseMessage(in PacketReader p)
     {
@@ -465,12 +449,9 @@ public sealed record UserHabbiconState(int HabbiconId, HabbiconState State)
     }
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(UserHabbiconState value, in PacketWriter p) =>
-        WriteWire(value, in p);
-
-    private static void ComposeUnity(UserHabbiconState value, in PacketWriter p) =>
         WriteWire(value, in p);
 
     internal static UserHabbiconState ParseWire(in PacketReader p, int trailing_bytes)
@@ -498,11 +479,9 @@ public sealed record UserHabbiconStatusChanged(int HabbiconId, HabbiconState Sta
     : IParserComposer<UserHabbiconStatusChanged>
 {
     public static UserHabbiconStatusChanged Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static UserHabbiconStatusChanged ParseFlash(in PacketReader p) => ParseMessage(in p);
-
-    private static UserHabbiconStatusChanged ParseUnity(in PacketReader p) => ParseMessage(in p);
 
     private static UserHabbiconStatusChanged ParseMessage(in PacketReader p)
     {
@@ -517,12 +496,9 @@ public sealed record UserHabbiconStatusChanged(int HabbiconId, HabbiconState Sta
     }
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(UserHabbiconStatusChanged value, in PacketWriter p) =>
-        ComposeMessage(value, in p);
-
-    private static void ComposeUnity(UserHabbiconStatusChanged value, in PacketWriter p) =>
         ComposeMessage(value, in p);
 
     private static void ComposeMessage(UserHabbiconStatusChanged value, in PacketWriter p)
@@ -548,11 +524,9 @@ public sealed record HabbiconShopData(IReadOnlyList<HabbiconCollection> Collecti
     }
 
     public static HabbiconShopData Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static HabbiconShopData ParseFlash(in PacketReader p) => ParseMessage(in p);
-
-    private static HabbiconShopData ParseUnity(in PacketReader p) => ParseMessage(in p);
 
     private static HabbiconShopData ParseMessage(in PacketReader p)
     {
@@ -570,12 +544,9 @@ public sealed record HabbiconShopData(IReadOnlyList<HabbiconCollection> Collecti
     }
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(HabbiconShopData value, in PacketWriter p) =>
-        ComposeMessage(value, in p);
-
-    private static void ComposeUnity(HabbiconShopData value, in PacketWriter p) =>
         ComposeMessage(value, in p);
 
     private static void ComposeMessage(HabbiconShopData value, in PacketWriter p)
@@ -614,11 +585,9 @@ public sealed record HabbiconInfo(Habbicon Habbicon) : IParserComposer<HabbiconI
     }
 
     public static HabbiconInfo Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static HabbiconInfo ParseFlash(in PacketReader p) => ParseMessage(in p);
-
-    private static HabbiconInfo ParseUnity(in PacketReader p) => ParseMessage(in p);
 
     private static HabbiconInfo ParseMessage(in PacketReader p)
     {
@@ -629,11 +598,9 @@ public sealed record HabbiconInfo(Habbicon Habbicon) : IParserComposer<HabbiconI
     }
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(HabbiconInfo value, in PacketWriter p) => ComposeMessage(value, in p);
-
-    private static void ComposeUnity(HabbiconInfo value, in PacketWriter p) => ComposeMessage(value, in p);
 
     private static void ComposeMessage(HabbiconInfo value, in PacketWriter p)
     {
@@ -651,11 +618,9 @@ public sealed record RoomUseHabbicon(int RoomIndex, int HabbiconId)
     : IParserComposer<RoomUseHabbicon>
 {
     public static RoomUseHabbicon Parse(in PacketReader p) =>
-        ModernWireClients.Parse(in p, ParseFlash, ParseUnity);
+        FlashWire.Parse(in p, ParseFlash);
 
     private static RoomUseHabbicon ParseFlash(in PacketReader p) => ParseMessage(in p);
-
-    private static RoomUseHabbicon ParseUnity(in PacketReader p) => ParseMessage(in p);
 
     private static RoomUseHabbicon ParseMessage(in PacketReader p)
     {
@@ -670,12 +635,9 @@ public sealed record RoomUseHabbicon(int RoomIndex, int HabbiconId)
     }
 
     public void Compose(in PacketWriter p) =>
-        ModernWireClients.Compose(this, in p, ComposeFlash, ComposeUnity);
+        FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(RoomUseHabbicon value, in PacketWriter p) =>
-        ComposeMessage(value, in p);
-
-    private static void ComposeUnity(RoomUseHabbicon value, in PacketWriter p) =>
         ComposeMessage(value, in p);
 
     private static void ComposeMessage(RoomUseHabbicon value, in PacketWriter p)

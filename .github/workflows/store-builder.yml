@@ -1,0 +1,58 @@
+name: storebuilder
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+  DOTNET_NOLOGO: "1"
+  NUGET_PACKAGES: ${{ github.workspace }}/.nuget/packages
+
+jobs:
+  store:
+    name: Build extension.zip
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68
+        with:
+          global-json-file: global.json
+          cache: true
+          cache-dependency-path: "**/packages.lock.json"
+
+      - name: Restore solution
+        run: dotnet restore QX.slnx --locked-mode --disable-build-servers
+
+      - name: Package for the G-ExtensionStore
+        shell: pwsh
+        run: ./tools/pack-store.ps1
+
+      - name: Upload store package
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: QX-Scripter-store
+          path: |
+            artifacts/store/extension.zip
+            artifacts/store/extension.json
+            artifacts/store/icon.png
+          if-no-files-found: error
+          retention-days: 14

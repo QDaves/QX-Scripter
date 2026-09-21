@@ -86,13 +86,18 @@ public sealed partial class SessionRules : IDisposable
         PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase,
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonSerializable(typeof(Document))]
+    [JsonSerializable(typeof(Dictionary<string, string>))]
     private sealed partial class JsonContext : JsonSerializerContext;
+
+    private const int WrongPasswordErrorCode = -100002;
 
     private readonly IInterceptor _interceptor;
     private readonly IApplicationRuntime _application;
     private readonly Func<bool> _shift_pressed;
     private readonly string _path;
+    private readonly string _passwords_path;
     private readonly List<IDisposable> _bindings = [];
+    private string? _password_room;
     private Timer? _idle;
     private bool _let_friends_in;
     private bool _click_excludes_friends = true;
@@ -122,8 +127,10 @@ public sealed partial class SessionRules : IDisposable
         _application = application ?? throw new ArgumentNullException(nameof(application));
         ArgumentException.ThrowIfNullOrWhiteSpace(path);
         _path = Path.GetFullPath(path);
+        _passwords_path = Path.Combine(Path.GetDirectoryName(_path)!, "passwords.json");
         _shift_pressed = shift_pressed ?? (() => false);
         Load();
+        LoadPasswords();
         Game = game ?? throw new ArgumentNullException(nameof(game));
         RequestFriends();
     }
@@ -574,20 +581,36 @@ public sealed partial class SessionRules : IDisposable
             if (!RememberPasswords)
                 return;
 
+            string key = PasswordKey(entry.RoomId);
             if (entry.Password.Length > 0)
             {
-                _passwords[(long)entry.RoomId] = entry.Password;
+                _password_room = key;
+                if (_passwords.TryGetValue(key, out string? known) && known == entry.Password)
+                    return;
+                _passwords[key] = entry.Password;
+                SavePasswords();
                 return;
             }
-            if (!_passwords.TryGetValue((long)entry.RoomId, out string? password))
+            if (!_passwords.TryGetValue(key, out string? password))
                 return;
 
+            _password_room = key;
             var packet = new Packet(intercept.Packet.Header, intercept.Packet.Client)
             {
                 Context = intercept.Packet.Context
             };
             packet.Writer().Compose(entry with { Password = password });
             intercept.Packet = packet;
+        });
+
+        In(MessageContracts.Errors.Generic, error =>
+        {
+            if (error.ErrorCode != WrongPasswordErrorCode || _password_room is not { } key)
+                return;
+
+            _password_room = null;
+            if (_passwords.Remove(key))
+                SavePasswords();
         });
 
         In(MessageContracts.Room.Occupants.Action.Expression, action =>
@@ -700,8 +723,47 @@ public sealed partial class SessionRules : IDisposable
     /// <summary>Who was clicked last, so a second click on the same person can be told apart.</summary>
     private Id _lastClicked;
 
-    /// <summary>Room passwords, kept for as long as the session lasts and never written down.</summary>
-    private readonly Dictionary<long, string> _passwords = [];
+    /// <summary>Room passwords by hotel and room, kept next to the rules so they survive a restart.</summary>
+    private readonly Dictionary<string, string> _passwords = new(StringComparer.Ordinal);
+
+    private string PasswordKey(Id room_id)
+    {
+        string host = _interceptor.Session?.Host.Trim().ToLowerInvariant() ?? "";
+        return $"{host}/{(long)room_id}";
+    }
+
+    private void LoadPasswords()
+    {
+        try
+        {
+            if (!File.Exists(_passwords_path))
+                return;
+
+            if (JsonSerializer.Deserialize(File.ReadAllText(_passwords_path), JsonContext.Default.DictionaryStringString) is not { } saved)
+                return;
+
+            foreach ((string key, string password) in saved)
+            {
+                if (password.Length > 0)
+                    _passwords[key] = password;
+            }
+        }
+        catch
+        {
+        }
+    }
+
+    private void SavePasswords()
+    {
+        try
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(_passwords_path)!);
+            File.WriteAllText(_passwords_path, JsonSerializer.Serialize(_passwords, JsonContext.Default.DictionaryStringString));
+        }
+        catch
+        {
+        }
+    }
 
     /// <summary>
     /// Runs something that touches the wire, and swallows what goes wrong.

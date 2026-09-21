@@ -139,7 +139,7 @@ public sealed class GeneralViewModel : PageViewModel
                 changed),
             Rule(
                 "Remember room passwords",
-                "Kept for this session only, and never written to disk",
+                "Saved per hotel and room, and sent again the next time you enter",
                 static rules => rules.RememberPasswords,
                 static (rules, on) => rules.RememberPasswords = on,
                 changed),

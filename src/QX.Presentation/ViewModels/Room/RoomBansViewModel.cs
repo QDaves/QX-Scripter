@@ -1,5 +1,6 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Qx.Diagnostics;
 using Qx.Game.Application;
 using Qx.Model;
 using Qx.Presentation.Collections;
@@ -115,13 +116,12 @@ public sealed partial class RoomBansViewModel : ViewModelBase
         }
         catch (Exception error) when (error is not OutOfMemoryException)
         {
-            _context.Fail("Could not read the ban list", error);
+            Diag.Warn($"Could not read the ban list: {error.Message}", "ui");
             Describe();
             return;
         }
         if (!_snapshot.Identity.HasRights)
         {
-            _context.Notices.Show(NoticeSeverity.Info, "The hotel only shares the ban list with people who have rights in this room.");
             Describe();
             return;
         }
@@ -140,7 +140,7 @@ public sealed partial class RoomBansViewModel : ViewModelBase
         }
         catch (Exception error) when (error is not OutOfMemoryException)
         {
-            _context.Fail("Could not read the ban list", error);
+            Diag.Warn($"Could not read the ban list: {error.Message}", "ui");
         }
         finally
         {

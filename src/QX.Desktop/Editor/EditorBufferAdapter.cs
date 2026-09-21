@@ -25,12 +25,22 @@ public sealed class EditorBufferAdapter : IScriptTextBuffer, IDisposable
         ArgumentNullException.ThrowIfNull(text);
         if (_editor.Document is not { } document)
             return;
+        string current = document.Text;
+        int shared = Math.Min(current.Length, text.Length);
+        int prefix = 0;
+        while (prefix < shared && current[prefix] == text[prefix])
+            prefix++;
+        int suffix = 0;
+        while (suffix < shared - prefix && current[current.Length - 1 - suffix] == text[text.Length - 1 - suffix])
+            suffix++;
+        int removed = current.Length - prefix - suffix;
+        string inserted = text.Substring(prefix, text.Length - prefix - suffix);
+        if (removed == 0 && inserted.Length == 0)
+            return;
         _replacing = true;
         try
         {
-            document.BeginUpdate();
-            document.Replace(0, document.TextLength, text);
-            document.EndUpdate();
+            document.Replace(prefix, removed, inserted);
         }
         finally
         {

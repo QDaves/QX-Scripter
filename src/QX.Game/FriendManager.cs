@@ -11,6 +11,7 @@ namespace Qx.Game;
 public sealed class FriendManager : GameStateManager
 {
     private static readonly TimeSpan request_lease = TimeSpan.FromSeconds(30);
+    private static readonly TimeSpan init_cooldown = TimeSpan.FromSeconds(30);
     private readonly object _sync = new();
     private readonly object _publication_sync = new();
     private readonly TimeProvider _time_provider;
@@ -35,6 +36,7 @@ public sealed class FriendManager : GameStateManager
     private long? _retired_request_epoch;
     private long _fragment_request_epoch;
     private long _request_epoch;
+    private long? _last_init_answer;
     private long _generation;
     private long _revision;
 
@@ -442,7 +444,7 @@ public sealed class FriendManager : GameStateManager
         bool request_friends = false;
         lock (_sync)
         {
-            if (_is_loaded && !force_refresh)
+            if (_is_loaded && (!force_refresh || HotelStillCoolingDown()))
                 return _friends.Values.ToArray();
             if (_recovery_pending)
                 throw RecoveryError();
@@ -582,6 +584,7 @@ public sealed class FriendManager : GameStateManager
         {
             BeginGeneration(-1, TakeRequestEpoch());
             _discard_until_zero = false;
+            _last_init_answer = _time_provider.GetTimestamp();
             if (_load_operation is { } active)
                 active.Touch();
             _user_limit = init.UserLimit;
@@ -840,6 +843,9 @@ public sealed class FriendManager : GameStateManager
         return published;
     }
 
+    private bool HotelStillCoolingDown() =>
+        _last_init_answer is { } answered && _time_provider.GetElapsedTime(answered) < init_cooldown;
+
     private long CurrentRequestEpoch() => _load_operation?.Epoch ?? 0;
 
     private long TakeRequestEpoch()
@@ -931,6 +937,7 @@ public sealed class FriendManager : GameStateManager
                 _retired_request_epoch = null;
                 _fragment_request_epoch = 0;
                 _recovery_pending = false;
+                _last_init_answer = null;
                 _generation++;
                 _revision++;
 

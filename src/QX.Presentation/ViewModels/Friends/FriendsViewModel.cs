@@ -177,7 +177,8 @@ public sealed partial class FriendsViewModel : PageViewModel
     protected override async Task OnActivatedAsync(CancellationToken cancellation_token)
     {
         await RefreshAsync(cancellation_token);
-        await AskAsync(null, cancellation_token);
+        if (!_loaded)
+            await AskAsync(null, cancellation_token);
     }
 
     partial void OnSearchTextChanged(string value) => _search.Trigger();

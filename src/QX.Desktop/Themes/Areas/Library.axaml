@@ -9,6 +9,7 @@
   <x:Double x:Key="Library.TileHeight">72</x:Double>
   <x:Double x:Key="Library.TilePitchWidth">232</x:Double>
   <x:Double x:Key="Library.TilePitchHeight">80</x:Double>
+  <x:Double x:Key="Library.GroupPitchHeight">52</x:Double>
   <Thickness x:Key="Library.RowMargin">12,0</Thickness>
   <Thickness x:Key="Library.GroupMargin">12,16,12,4</Thickness>
   <Thickness x:Key="Library.RowPadding">12,0</Thickness>
@@ -39,6 +40,26 @@
     <Setter Property="Width" Value="{StaticResource Library.TileWidth}" />
     <Setter Property="Height" Value="{StaticResource Library.TileHeight}" />
     <Setter Property="Padding" Value="{StaticResource Library.TilePadding}" />
+    <Style Selector="^.group">
+      <Setter Property="Width" Value="NaN" />
+      <Setter Property="Height" Value="NaN" />
+      <Setter Property="MinHeight" Value="{StaticResource Library.GroupHeight}" />
+      <Setter Property="Margin" Value="{StaticResource Library.GroupMargin}" />
+      <Setter Property="Padding" Value="{StaticResource Library.RowPadding}" />
+      <Setter Property="BorderBrush" Value="Transparent" />
+      <Setter Property="VerticalContentAlignment" Value="Center" />
+      <Style Selector="^:pointerover">
+        <Setter Property="Background" Value="{DynamicResource QxFillSubtleBrush}" />
+        <Setter Property="BorderBrush" Value="Transparent" />
+      </Style>
+      <Style Selector="^:selected">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderBrush" Value="Transparent" />
+      </Style>
+      <Style Selector="^:selected:pointerover">
+        <Setter Property="Background" Value="{DynamicResource QxFillSubtleBrush}" />
+      </Style>
+    </Style>
   </ControlTheme>
 
   <ItemsPanelTemplate x:Key="Library.ListPanel">
@@ -46,10 +67,56 @@
   </ItemsPanelTemplate>
 
   <ItemsPanelTemplate x:Key="Library.TilePanel">
-    <c:UniformTilePanel ItemWidth="{StaticResource Library.TilePitchWidth}" ItemHeight="{StaticResource Library.TilePitchHeight}" />
+    <c:UniformTilePanel ItemWidth="{StaticResource Library.TilePitchWidth}" ItemHeight="{StaticResource Library.TilePitchHeight}" HeaderHeight="{StaticResource Library.GroupPitchHeight}" />
   </ItemsPanelTemplate>
 
-  <DataTemplate x:Key="Library.TileTemplate" x:DataType="vm:LibraryScriptRow">
+  <DataTemplate x:Key="Library.GroupTemplate" DataType="vm:LibraryGroupRow" x:DataType="vm:LibraryGroupRow">
+
+    <Grid ColumnDefinitions="Auto,Auto,Auto,*"
+
+          Background="Transparent"
+
+          AutomationProperties.Name="{Binding Name}">
+
+      <c:Icon Grid.Column="0"
+
+              Kind="{Binding FoldIcon}"
+
+              Size="14"
+
+              Classes="tertiary"
+
+              Margin="0,0,8,0"
+
+              VerticalAlignment="Center" />
+
+      <TextBlock Grid.Column="1"
+
+                 Text="{Binding Name}"
+
+                 Classes="small"
+
+                 FontWeight="SemiBold"
+
+                 MaxWidth="320"
+
+                 VerticalAlignment="Center"
+
+                 TextTrimming="CharacterEllipsis"
+
+                 Foreground="{DynamicResource QxTextSecondaryBrush}"
+
+                 ToolTip.Tip="{Binding Name}" />
+
+      <c:CountBadge Grid.Column="2" Margin="8,0,0,0" Text="{Binding CountText}" />
+
+      <Rectangle Grid.Column="3" Classes="rule" Margin="12,0,0,0" VerticalAlignment="Center" />
+
+    </Grid>
+
+  </DataTemplate>
+
+  <DataTemplate x:Key="Library.TileTemplate" DataType="vm:LibraryScriptRow" x:DataType="vm:LibraryScriptRow">
     <Grid RowDefinitions="Auto,*" ToolTip.Tip="{Binding DetailTooltip}">
       <StackPanel Orientation="Horizontal" Spacing="8">
         <c:Icon Kind="Script" Size="14" Classes="tertiary" VerticalAlignment="Center" />
@@ -74,6 +141,15 @@
                 MaxWidth="100" />
       </Grid>
     </Grid>
+  </DataTemplate>
+
+  <DataTemplate x:Key="Library.GridTemplate" x:DataType="vm:LibraryRow">
+    <ContentControl Content="{Binding}" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch">
+      <ContentControl.DataTemplates>
+        <StaticResource ResourceKey="Library.GroupTemplate" />
+        <StaticResource ResourceKey="Library.TileTemplate" />
+      </ContentControl.DataTemplates>
+    </ContentControl>
   </DataTemplate>
 
 </ResourceDictionary>

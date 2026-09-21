@@ -514,6 +514,18 @@ public sealed class FriendManager : GameStateManager
                 TimeSpan.FromMilliseconds(timeout_milliseconds),
                 cancellation_token).ConfigureAwait(false);
         }
+        catch (TimeoutException)
+        {
+            lock (_sync)
+            {
+                if (ReferenceEquals(_load_operation, operation) && operation.Waiters == 1 && !operation.HasResponse)
+                {
+                    _load_operation = null;
+                    RetireRequest(operation.Epoch);
+                }
+            }
+            throw;
+        }
         finally
         {
             lock (_sync)

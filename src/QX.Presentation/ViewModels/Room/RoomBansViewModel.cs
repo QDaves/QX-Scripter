@@ -83,7 +83,7 @@ public sealed partial class RoomBansViewModel : ViewModelBase
 
     public void Visit()
     {
-        if (!_snapshot.IsInRoom || _loading || IsLoaded || _asked_generation == _snapshot.Identity.Generation)
+        if (!_snapshot.IsInRoom || !_snapshot.Identity.HasRights || _loading || IsLoaded || _asked_generation == _snapshot.Identity.Generation)
             return;
         _asked_generation = _snapshot.Identity.Generation;
         LoadCommand.Execute(null);
@@ -116,6 +116,12 @@ public sealed partial class RoomBansViewModel : ViewModelBase
         catch (Exception error) when (error is not OutOfMemoryException)
         {
             _context.Fail("Could not read the ban list", error);
+            Describe();
+            return;
+        }
+        if (!_snapshot.Identity.HasRights)
+        {
+            _context.Notices.Show(NoticeSeverity.Info, "The hotel only shares the ban list with people who have rights in this room.");
             Describe();
             return;
         }

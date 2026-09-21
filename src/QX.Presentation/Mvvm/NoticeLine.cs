@@ -6,7 +6,7 @@ namespace Qx.Presentation.Mvvm;
 
 public sealed partial class NoticeLine : ObservableObject, IDisposable
 {
-    public static readonly TimeSpan TransientLifetime = TimeSpan.FromSeconds(6);
+    public static readonly TimeSpan Lifetime = TimeSpan.FromSeconds(3);
 
     readonly TimeProvider _time;
     readonly Debouncer _expiry;
@@ -14,7 +14,7 @@ public sealed partial class NoticeLine : ObservableObject, IDisposable
     public NoticeLine(IUiDispatcher dispatcher, TimeProvider time)
     {
         _time = time ?? throw new ArgumentNullException(nameof(time));
-        _expiry = new Debouncer(dispatcher, time, TransientLifetime, Clear);
+        _expiry = new Debouncer(dispatcher, time, Lifetime, Clear);
     }
 
     [ObservableProperty]
@@ -27,10 +27,7 @@ public sealed partial class NoticeLine : ObservableObject, IDisposable
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(text);
         Current = new Notice(severity, text, _time.GetUtcNow());
-        if (severity is NoticeSeverity.Info or NoticeSeverity.Success)
-            _expiry.Trigger();
-        else
-            _expiry.Cancel();
+        _expiry.Trigger();
     }
 
     [RelayCommand]

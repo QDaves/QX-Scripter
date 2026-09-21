@@ -244,6 +244,7 @@ internal sealed class NavigatorApplication : IApplicationFeature
         return Search(
             MessageContracts.Navigator.Search.View,
             new NavigatorViewSearchRequest(request.SearchCode, request.Filter),
+            MessageContracts.Navigator.Search.Result,
             request.TimeoutMilliseconds,
             session,
             result =>
@@ -309,6 +310,7 @@ internal sealed class NavigatorApplication : IApplicationFeature
         return Search(
             MessageContracts.Navigator.Search.Popular,
             new NavigatorTagSearchRequest(request.Tag, request.AdIndex),
+            MessageContracts.Navigator.Search.LegacyResult,
             request.TimeoutMilliseconds,
             session,
             null,
@@ -330,6 +332,7 @@ internal sealed class NavigatorApplication : IApplicationFeature
         return Search(
             contract,
             new NavigatorAdSearchRequest(request.AdIndex),
+            MessageContracts.Navigator.Search.LegacyResult,
             request.TimeoutMilliseconds,
             session,
             null,
@@ -454,22 +457,6 @@ internal sealed class NavigatorApplication : IApplicationFeature
         changed.Dispose();
         search_received.Dispose();
     }
-
-    private async ValueTask<NavigatorSearchSnapshot> Search<TRequest>(
-        MessageContract<TRequest> request_contract,
-        TRequest request,
-        int timeout_milliseconds,
-        Session session,
-        Func<NavigatorSearchResult, bool>? match,
-        CancellationToken cancellation_token)
-        where TRequest : IParserComposer<TRequest> => await Search(
-            request_contract,
-            request,
-            MessageContracts.Navigator.Search.Result,
-            timeout_milliseconds,
-            session,
-            match,
-            cancellation_token).ConfigureAwait(false);
 
     private async ValueTask<NavigatorSearchSnapshot> Search<TRequest>(
         MessageContract<TRequest> request_contract,

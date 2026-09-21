@@ -42,7 +42,7 @@
     <Setter Property="FontSize" Value="{DynamicResource QxFontSizeBody}" />
     <Setter Property="FontWeight" Value="Medium" />
     <Setter Property="Padding" Value="8,0" />
-    <Setter Property="MinHeight" Value="{DynamicResource QxTabStripHeight}" />
+    <Setter Property="MinHeight" Value="{DynamicResource QxSectionTabHeight}" />
     <Setter Property="VerticalContentAlignment" Value="Center" />
     <Setter Property="ClipToBounds" Value="False" />
     <Setter Property="Template">
@@ -114,7 +114,7 @@
     <Setter Property="FontSize" Value="{DynamicResource QxFontSizeBody}" />
     <Setter Property="FontWeight" Value="Medium" />
     <Setter Property="Padding" Value="8,0" />
-    <Setter Property="MinHeight" Value="{DynamicResource QxTabStripHeight}" />
+    <Setter Property="MinHeight" Value="{DynamicResource QxSectionTabHeight}" />
     <Setter Property="ClipToBounds" Value="False" />
     <Setter Property="Template">
       <ControlTemplate>

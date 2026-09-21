@@ -16,7 +16,7 @@
     <Style Selector="ListBox.scripts.grid">
       <Setter Property="ItemContainerTheme" Value="{StaticResource Library.TileItem}" />
       <Setter Property="ItemsPanel" Value="{StaticResource Library.TilePanel}" />
-      <Setter Property="ItemTemplate" Value="{StaticResource Library.TileTemplate}" />
+      <Setter Property="ItemTemplate" Value="{StaticResource Library.GridTemplate}" />
       <Setter Property="Padding" Value="{StaticResource Library.GridPadding}" />
     </Style>
     <Style Selector="ListBoxItem:pointerover :is(Panel).hover-actions,
@@ -155,29 +155,7 @@
       </ListBox.KeyBindings>
       <ListBox.DataTemplates>
 
-        <DataTemplate DataType="vm:LibraryGroupRow" x:DataType="vm:LibraryGroupRow">
-          <Grid ColumnDefinitions="Auto,Auto,Auto,*"
-                Background="Transparent"
-                AutomationProperties.Name="{Binding Name}">
-            <c:Icon Grid.Column="0"
-                    Kind="{Binding FoldIcon}"
-                    Size="14"
-                    Classes="tertiary"
-                    Margin="0,0,8,0"
-                    VerticalAlignment="Center" />
-            <TextBlock Grid.Column="1"
-                       Text="{Binding Name}"
-                       Classes="small"
-                       FontWeight="SemiBold"
-                       MaxWidth="320"
-                       VerticalAlignment="Center"
-                       TextTrimming="CharacterEllipsis"
-                       Foreground="{DynamicResource QxTextSecondaryBrush}"
-                       ToolTip.Tip="{Binding Name}" />
-            <c:CountBadge Grid.Column="2" Margin="8,0,0,0" Text="{Binding CountText}" />
-            <Rectangle Grid.Column="3" Classes="rule" Margin="12,0,0,0" VerticalAlignment="Center" />
-          </Grid>
-        </DataTemplate>
+        <StaticResource ResourceKey="Library.GroupTemplate" />
 
         <DataTemplate DataType="vm:LibraryScriptRow" x:DataType="vm:LibraryScriptRow">
           <Grid ColumnDefinitions="28,*,200,160,96"

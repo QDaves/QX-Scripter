@@ -10,7 +10,7 @@ namespace Qx.Presentation.Services.Notifications;
 public sealed class NotificationService : INotificationService, IDisposable
 {
     public const int Capacity = 4;
-    public static readonly TimeSpan Lifetime = TimeSpan.FromSeconds(6);
+    public static readonly TimeSpan Lifetime = TimeSpan.FromSeconds(3);
 
     readonly ToastQueue<Toast> _queue;
     readonly IDialogService _dialogs;

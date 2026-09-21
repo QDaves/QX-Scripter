@@ -266,6 +266,7 @@
   <x:Double x:Key="QxTitleBarHeight">40</x:Double>
   <x:Double x:Key="QxRailWidth">48</x:Double>
   <x:Double x:Key="QxTabStripHeight">36</x:Double>
+  <x:Double x:Key="QxSectionTabHeight">40</x:Double>
   <x:Double x:Key="QxToolbarHeight">40</x:Double>
   <x:Double x:Key="QxStatusBarHeight">26</x:Double>
   <x:Double x:Key="QxConsoleHeaderHeight">36</x:Double>

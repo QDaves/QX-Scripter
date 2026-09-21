@@ -411,7 +411,7 @@ public sealed partial class LibraryViewModel : PageViewModel
     List<LibraryRow> Flatten(List<LibraryScriptRow> visible, bool searching)
     {
         var next = new List<LibraryRow>(visible.Count + 4);
-        bool grouped = !IsGrid && visible.Any(row => row.HasCategory);
+        bool grouped = visible.Any(row => row.HasCategory);
         foreach (LibraryScriptRow row in visible)
             row.ShowCategory = !grouped && row.HasCategory;
         if (!grouped)

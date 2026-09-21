@@ -1,5 +1,6 @@
 using System.Globalization;
 using CommunityToolkit.Mvvm.ComponentModel;
+using Qx.Presentation.Mvvm;
 using Qx.Presentation.Services.Library;
 using Qx.Presentation.Services.Status;
 using Qx.Presentation.Visuals;
@@ -20,7 +21,7 @@ public abstract class LibraryRow : ObservableObject
 {
 }
 
-public sealed partial class LibraryGroupRow : LibraryRow
+public sealed partial class LibraryGroupRow : LibraryRow, ISectionHeader
 {
     public LibraryGroupRow(string name, bool invented)
     {

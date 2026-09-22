@@ -2,7 +2,8 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:cc="clr-namespace:AvaloniaEdit.CodeCompletion;assembly=AvaloniaEdit"
         xmlns:editing="clr-namespace:AvaloniaEdit.Editing;assembly=AvaloniaEdit"
-        xmlns:ae="clr-namespace:AvaloniaEdit;assembly=AvaloniaEdit">
+        xmlns:ae="clr-namespace:AvaloniaEdit;assembly=AvaloniaEdit"
+        xmlns:search="clr-namespace:AvaloniaEdit.Search;assembly=AvaloniaEdit">
 
   <Style Selector="ae|TextEditor.script">
     <Setter Property="Background" Value="{DynamicResource QxEditorBackgroundBrush}" />
@@ -16,6 +17,20 @@
   <Style Selector="ae|TextEditor.script editing|TextArea">
     <Setter Property="SelectionBrush" Value="{DynamicResource QxEditorSelectionBrush}" />
     <Setter Property="SelectionForeground" Value="{x:Null}" />
+  </Style>
+
+  <Style Selector="search|SearchPanel">
+    <Setter Property="Margin" Value="0,12,18,0" />
+    <Setter Property="Background" Value="{DynamicResource QxSurfaceOverlayBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource QxBorderOverlayBrush}" />
+    <Setter Property="Foreground" Value="{DynamicResource QxTextPrimaryBrush}" />
+  </Style>
+
+  <Style Selector="search|SearchPanel /template/ Border">
+    <Setter Property="CornerRadius" Value="{DynamicResource QxRadiusMd}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="Background" Value="{DynamicResource QxSurfaceOverlayBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource QxBorderOverlayBrush}" />
   </Style>
 
   <Style Selector="cc|CompletionList">

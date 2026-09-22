@@ -33,6 +33,27 @@
     <Setter Property="BorderBrush" Value="{DynamicResource QxBorderOverlayBrush}" />
   </Style>
 
+  <Style Selector="cc|OverloadViewer">
+    <Setter Property="Background" Value="{DynamicResource QxSurfaceOverlayBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource QxBorderOverlayBrush}" />
+    <Setter Property="Foreground" Value="{DynamicResource QxTextPrimaryBrush}" />
+  </Style>
+
+  <Style Selector="cc|OverloadViewer /template/ Button">
+    <Setter Property="MinWidth" Value="0" />
+    <Setter Property="MinHeight" Value="0" />
+    <Setter Property="Width" Value="18" />
+    <Setter Property="Height" Value="18" />
+    <Setter Property="Padding" Value="5" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="ClipToBounds" Value="True" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+  </Style>
+
+  <Style Selector="cc|OverloadViewer /template/ TextBlock">
+    <Setter Property="VerticalAlignment" Value="Center" />
+  </Style>
+
   <Style Selector="cc|CompletionList">
     <Setter Property="Template">
       <ControlTemplate>

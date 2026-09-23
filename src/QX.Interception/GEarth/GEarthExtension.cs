@@ -21,6 +21,7 @@ public class GEarthExtension : IInterceptor, IDisposable
     private NetworkStream? _stream;
     private SessionCatalogLease _session_catalog_lease;
     private int _connected_port;
+    private int _activations;
     private bool _disposed;
 
     public GEarthExtension(GEarthOptions options, MessageManager? messages = null)
@@ -43,6 +44,7 @@ public class GEarthExtension : IInterceptor, IDisposable
     public Session? Session { get; private set; }
     public bool IsConnected => Session is not null;
     public bool IsInterceptorConnected { get; private set; }
+    public int Activations => Volatile.Read(ref _activations);
     public int ConnectedPort => Volatile.Read(ref _connected_port);
 
     public event Action<Session>? Connected;
@@ -302,6 +304,7 @@ public class GEarthExtension : IInterceptor, IDisposable
                 HandleIntercept(body.Span);
                 return Task.CompletedTask;
             case GControl.Outgoing.OnDoubleClick:
+                Interlocked.Increment(ref _activations);
                 Activated?.Invoke();
                 return Task.CompletedTask;
             default:

@@ -25,6 +25,7 @@ public sealed class GameGateway : IGameGateway, IAlwaysOn, IDisposable
         _runtime.Extension.Disconnected += OnDisconnected;
         _runtime.Extension.InterceptorConnected += OnInterceptorChanged;
         _runtime.Extension.InterceptorDisconnected += OnInterceptorChanged;
+        _session.Raise();
     }
 
     public GameState Game => _runtime.Game;

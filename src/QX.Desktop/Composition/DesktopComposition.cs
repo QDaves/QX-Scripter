@@ -65,7 +65,8 @@ public sealed class DesktopComposition : IDisposable
         services.AddSingleton(options.Time);
         services.AddSingleton(diagnostics);
         services.AddSingleton<IApplicationLog>(diagnostics);
-        services.AddSingleton<AppLifetime>();
+        var lifetime = new AppLifetime();
+        services.AddSingleton(_ => lifetime);
         AddDesktopPlatform(services, options);
         IKeyboardState keyboard = KeyboardStateFor(options);
         services.AddSingleton(keyboard);
@@ -74,6 +75,7 @@ public sealed class DesktopComposition : IDisposable
         var runtime = new DesktopRuntime(launch, paths, options.Runtime, options.McpPort, editor, keyboard);
         services.AddSingleton(runtime);
         diagnostics.AttachRuntime(runtime);
+        runtime.StartAsync(lifetime.Token).Observe("host");
         services.AddQxPresentation();
         services.AddQxAreas();
         ServiceProvider provider = services.BuildServiceProvider(new ServiceProviderOptions { ValidateOnBuild = true, ValidateScopes = true });
@@ -221,6 +223,7 @@ public sealed class DesktopComposition : IDisposable
             host.HideForHost();
         else
             host.RestoreState();
+        _services.GetRequiredService<HostedLifecyclePolicy>().MarkShellReady();
         _services.GetRequiredService<ShellStartup>().RunAsync(_services.GetRequiredService<AppLifetime>().Token).Observe("app");
     }
 }

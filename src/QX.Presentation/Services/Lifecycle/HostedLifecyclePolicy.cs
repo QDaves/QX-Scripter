@@ -16,6 +16,7 @@ public sealed class HostedLifecyclePolicy : IAlwaysOn, IDisposable
     readonly IUiDispatcher _dispatcher;
     readonly TimeProvider _time;
     ITimer? _watchdog;
+    int _ready;
 
     public HostedLifecyclePolicy(DesktopRuntime runtime, IShellWindow shell, ShellCloseCoordinator close, IUiDispatcher dispatcher, TimeProvider time)
     {
@@ -27,6 +28,12 @@ public sealed class HostedLifecyclePolicy : IAlwaysOn, IDisposable
         GEarthExtension extension = runtime.Extension;
         extension.Activated += OnActivated;
         extension.InterceptorDisconnected += OnInterceptorDisconnected;
+    }
+
+    public void MarkShellReady()
+    {
+        if (Interlocked.Exchange(ref _ready, 1) == 0 && _runtime.Extension.Activations > 0)
+            _dispatcher.Post(_shell.ShowAndActivate);
     }
 
     public void StartWatchdog()
@@ -42,7 +49,11 @@ public sealed class HostedLifecyclePolicy : IAlwaysOn, IDisposable
         _watchdog?.Dispose();
     }
 
-    void OnActivated() => _dispatcher.Post(_shell.ShowAndActivate);
+    void OnActivated()
+    {
+        if (Volatile.Read(ref _ready) != 0)
+            _dispatcher.Post(_shell.ShowAndActivate);
+    }
 
     void OnInterceptorDisconnected()
     {

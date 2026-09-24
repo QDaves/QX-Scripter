@@ -2049,7 +2049,8 @@ internal sealed class WiredApplication : IApplicationFeature
                 throw new ArgumentOutOfRangeException(nameof(object_id));
             return;
         }
-        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(object_id);
+        if (target is WiredTarget.User)
+            ArgumentOutOfRangeException.ThrowIfNegative(object_id);
     }
 
     private static bool MatchesObject(

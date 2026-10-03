@@ -16,7 +16,7 @@ public interface IOutfitStore
 
     bool Rename(SavedOutfit outfit, string name);
 
-    Task FlushAsync(CancellationToken cancellation_token);
+    Task FlushAsync(CancellationToken cancellationToken);
 
     bool FlushNow(TimeSpan budget);
 }

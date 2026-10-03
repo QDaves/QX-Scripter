@@ -57,13 +57,13 @@ public sealed class ScriptRunRegistry : IScriptRunRegistry, IDisposable
         return stopped;
     }
 
-    public async Task WhenAllStoppedAsync(CancellationToken cancellation_token)
+    public async Task WhenAllStoppedAsync(CancellationToken cancellationToken)
     {
         var pending = new List<Task>();
         foreach (ScriptDocument document in _workspace.Documents)
             pending.Add(document.Run.Completion);
-        pending.Add(_scripts.WhenAllStoppedAsync(cancellation_token));
-        await Task.WhenAll(pending).WaitAsync(cancellation_token);
+        pending.Add(_scripts.WhenAllStoppedAsync(cancellationToken));
+        await Task.WhenAll(pending).WaitAsync(cancellationToken);
     }
 
     public void Dispose()

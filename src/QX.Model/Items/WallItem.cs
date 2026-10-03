@@ -33,7 +33,6 @@ public sealed class WallItem : Furni, IParserComposer<WallItem>
 
     /// <summary>Reads a wall item from a packet.</summary>
     /// <param name="p">The packet to read from.</param>
-    /// <exception cref="UnsupportedClientException">Thrown when the packet is not from the Flash client.</exception>
     /// <exception cref="InvalidDataException">Thrown when the item identifier is not a valid integer.</exception>
     /// <exception cref="FormatException">Thrown when the wall location string is not valid.</exception>
     public static WallItem Parse(in PacketReader p) =>
@@ -59,7 +58,6 @@ public sealed class WallItem : Furni, IParserComposer<WallItem>
 
     /// <summary>Writes the wall item to a packet.</summary>
     /// <param name="p">The packet to write to.</param>
-    /// <exception cref="UnsupportedClientException">Thrown when the packet is not for the Flash client.</exception>
     public void Compose(in PacketWriter p) =>
         FlashWire.Compose(this, in p, ComposeFlash);
 

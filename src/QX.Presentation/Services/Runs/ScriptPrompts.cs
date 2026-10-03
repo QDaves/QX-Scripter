@@ -8,11 +8,11 @@ namespace Qx.Presentation.Services.Runs;
 
 public interface IScriptPrompts
 {
-    Task<bool> ConfirmAsync(ScriptDocument document, long run_epoch, string title, string message, CancellationToken run_token);
+    Task<bool> ConfirmAsync(ScriptDocument document, long runEpoch, string title, string message, CancellationToken runToken);
 
-    Task<string?> PromptAsync(ScriptDocument document, long run_epoch, string title, string initial, CancellationToken run_token);
+    Task<string?> PromptAsync(ScriptDocument document, long runEpoch, string title, string initial, CancellationToken runToken);
 
-    Task DownloadAsync(ScriptDocument document, long run_epoch, string file_name, string content, CancellationToken run_token);
+    Task DownloadAsync(ScriptDocument document, long runEpoch, string fileName, string content, CancellationToken runToken);
 
     void CloseAll();
 }
@@ -31,37 +31,37 @@ public sealed class ScriptPrompts : IScriptPrompts, IDisposable
         _dispatcher = dispatcher ?? throw new ArgumentNullException(nameof(dispatcher));
     }
 
-    public Task<bool> ConfirmAsync(ScriptDocument document, long run_epoch, string title, string message, CancellationToken run_token)
+    public Task<bool> ConfirmAsync(ScriptDocument document, long runEpoch, string title, string message, CancellationToken runToken)
     {
         ArgumentNullException.ThrowIfNull(document);
         return AskAsync(
             document,
-            run_epoch,
+            runEpoch,
             nothing: false,
             "Confirmation failed: ",
             token => _dialogs.ConfirmAsync(title, message, "Yes", DialogTone.Neutral, document.Name, token),
-            run_token);
+            runToken);
     }
 
-    public Task<string?> PromptAsync(ScriptDocument document, long run_epoch, string title, string initial, CancellationToken run_token)
+    public Task<string?> PromptAsync(ScriptDocument document, long runEpoch, string title, string initial, CancellationToken runToken)
     {
         ArgumentNullException.ThrowIfNull(document);
         return AskAsync<string?>(
             document,
-            run_epoch,
+            runEpoch,
             nothing: null,
             "Prompt failed: ",
             token => _dialogs.PromptAsync(new PromptRequest(title, initial, "OK", "Your answer", Caption: document.Name), token),
-            run_token);
+            runToken);
     }
 
-    public async Task DownloadAsync(ScriptDocument document, long run_epoch, string file_name, string content, CancellationToken run_token)
+    public async Task DownloadAsync(ScriptDocument document, long runEpoch, string fileName, string content, CancellationToken runToken)
     {
         ArgumentNullException.ThrowIfNull(document);
-        if (!CanAsk(document, run_epoch, run_token))
+        if (!CanAsk(document, runEpoch, runToken))
             return;
-        using var asked = CancellationTokenSource.CreateLinkedTokenSource(run_token, _closing.Token);
-        FilePickResult result = await _files.SaveTextAsync(file_name, content, asked.Token);
+        using var asked = CancellationTokenSource.CreateLinkedTokenSource(runToken, _closing.Token);
+        FilePickResult result = await _files.SaveTextAsync(fileName, content, asked.Token);
         if (result.Failure is { } failure)
             Report(document, "Download failed: " + failure);
     }

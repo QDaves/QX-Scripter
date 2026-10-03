@@ -1,5 +1,5 @@
 using System.Text.Json.Serialization;
-using Qx.Scripting;
+using Qx.Scripting.Hosting;
 
 namespace Qx.Presentation.Services.Library;
 
@@ -63,7 +63,7 @@ public interface IScriptLibrary
 
     void RecordRunFinished(string name, ScriptRunState outcome);
 
-    Task FlushAsync(CancellationToken cancellation_token);
+    Task FlushAsync(CancellationToken cancellationToken);
 
     bool FlushNow(TimeSpan budget);
 }

@@ -46,7 +46,11 @@ public sealed class RoomVisitorLog
     private readonly object _sync = new();
     private readonly Dictionary<string, RoomVisitor> _visitors = new(StringComparer.OrdinalIgnoreCase);
     private RoomManager? _room;
-    private Func<string?>? _ownName;
+    private Func<string?>? _own_name;
+
+    internal RoomVisitorLog()
+    {
+    }
 
     /// <summary>Occurs when a visitor enters or leaves the room, or when the log is cleared.</summary>
     public event Action? Changed;
@@ -71,16 +75,12 @@ public sealed class RoomVisitorLog
         get { lock (_sync) return _visitors.Count; }
     }
 
-    /// <summary>Starts recording the users who enter and leave the specified room.</summary>
-    /// <remarks>Called once, when the game state is set up. The log is cleared each time the room is left.</remarks>
-    /// <param name="room">The room manager to watch.</param>
-    /// <param name="ownName">A function that returns the user's own name, used to record the user's own entry time while the room loads.</param>
-    public void Watch(RoomManager room, Func<string?> ownName)
+    internal void Watch(RoomManager room, Func<string?> own_name)
     {
         ArgumentNullException.ThrowIfNull(room);
 
         _room = room;
-        _ownName = ownName;
+        _own_name = own_name;
 
         room.AvatarsAdded += Arrived;
         room.AvatarRemoved += Departed;
@@ -107,7 +107,7 @@ public sealed class RoomVisitorLog
         // arriving, so only the moment we came in is ours to record; theirs is left unknown rather
         // than stamped with a time that would be a lie.
         bool loading = _room is { State: not RoomSessionState.Ready };
-        string? own = _ownName?.Invoke();
+        string? own = _own_name?.Invoke();
         bool changed = false;
 
         lock (_sync)

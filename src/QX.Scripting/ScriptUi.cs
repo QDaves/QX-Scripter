@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.Globalization;
+using Qx.Scripting.Hosting;
 
 namespace Qx.Scripting;
 
@@ -9,21 +10,26 @@ namespace Qx.Scripting;
 /// <remarks>
 /// <para>
 /// It holds the values a user entered and the ways of writing back to the panel while the script
-/// runs.
+/// runs. The host that shows the panel attaches to it through <see cref="ScriptUiHost"/>.
 /// </para>
 /// <para>
 /// Outside panel mode every getter returns its fallback, <see cref="Clicked"/> is always
-/// <see langword="false"/>, and the writers do nothing. A script can therefore use it
-/// unconditionally and still run from the editor.
+/// <see langword="false"/>, the writers do nothing and no handler is called. A script can
+/// therefore use it unconditionally and still run from the editor.
 /// </para>
 /// </remarks>
 public sealed class ScriptUi
 {
     readonly ConcurrentDictionary<string, string> _values = new(StringComparer.OrdinalIgnoreCase);
-    private readonly Dictionary<string, List<Func<Task>>> _handlers =
-        new(StringComparer.OrdinalIgnoreCase);
-    private readonly object _handler_sync = new();
-    string? _clicked;
+    private readonly Func<Action<string>, Action<string>> _guard;
+
+    internal ScriptUi(Func<Action<string>, Action<string>> guard)
+    {
+        _guard = guard;
+        Host = new ScriptUiHost(this);
+    }
+
+    internal ScriptUiHost Host { get; }
 
     /// <summary>
     /// Registers a handler that runs when a panel button is pressed.
@@ -52,12 +58,7 @@ public sealed class ScriptUi
     {
         ArgumentException.ThrowIfNullOrEmpty(button);
         ArgumentNullException.ThrowIfNull(handler);
-        lock (_handler_sync)
-        {
-            if (!_handlers.TryGetValue(button, out List<Func<Task>>? list))
-                _handlers[button] = list = [];
-            list.Add(handler);
-        }
+        Host.AddClick(button, handler);
     }
 
     /// <inheritdoc cref="OnClick(string, Func{Task})"/>
@@ -71,106 +72,54 @@ public sealed class ScriptUi
         });
     }
 
-    /// <summary>Gets whether any button has a handler, which is what keeps a panel script alive.</summary>
-    public bool HasClickHandlers
+    /// <summary>
+    /// Registers a handler that runs when the user changes the value of a panel control.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// The handler receives the new value as text. It runs for edits the user makes on the panel,
+    /// not for values the script stores with <see cref="Set"/>.
+    /// </para>
+    /// <para>
+    /// Like a click handler, it keeps a panel script running after its last statement. Handlers
+    /// never run on the panel's thread. They start one at a time, in the order the edits were made,
+    /// each once the one before has returned, so an async handler lets the next one start at its
+    /// first <c>await</c>. An exception a handler throws is reported as a script error, which stops
+    /// the run in the QX host, as it does for the <c>On...</c> events of the globals.
+    /// </para>
+    /// <para>
+    /// Registering the same control twice adds a second handler rather than replacing the first. A
+    /// handler cannot be removed.
+    /// </para>
+    /// </remarks>
+    /// <param name="name">The control's name, as the directive declared it, matched case-insensitively.</param>
+    /// <param name="handler">The handler to call with the new value.</param>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="name"/> is <see langword="null"/> or empty.</exception>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="handler"/> is <see langword="null"/>.</exception>
+    public void OnChange(string name, Action<string> handler)
     {
-        get
-        {
-            lock (_handler_sync)
-                return _handlers.Count > 0;
-        }
-    }
-
-    /// <summary>Gets a copy of the names of the buttons that have a handler.</summary>
-    public IReadOnlyCollection<string> HandledButtons
-    {
-        get
-        {
-            lock (_handler_sync)
-                return _handlers.Keys.ToArray();
-        }
+        ArgumentException.ThrowIfNullOrEmpty(name);
+        ArgumentNullException.ThrowIfNull(handler);
+        Host.AddChange(name, _guard(handler));
     }
 
     /// <summary>
-    /// Runs the handlers registered for a button.
+    /// Registers a handler that runs when the user changes the value of a panel control, without
+    /// passing it the value.
     /// </summary>
     /// <remarks>
-    /// The host calls it when the button is pressed; scripts do not. It also records the button as
-    /// the one <see cref="ClickedButton"/> reports. Every handler is started, and one that throws
-    /// before returning a task gives a faulted task instead of stopping the others.
+    /// It behaves as <see cref="OnChange(string, Action{string})"/> does; the handler reads the value
+    /// itself when it needs it.
     /// </remarks>
-    /// <param name="button">The button's name.</param>
-    /// <returns>
-    /// A task that completes when every handler has finished, or <see langword="null"/> when the
-    /// button has none, which lets the host tell "nothing happened" from "something started".
-    /// </returns>
-    /// <exception cref="ArgumentNullException">Thrown when <paramref name="button"/> is <see langword="null"/>.</exception>
-    public Task? Invoke(string button)
+    /// <param name="name">The control's name, as the directive declared it, matched case-insensitively.</param>
+    /// <param name="handler">The handler to call.</param>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="name"/> is <see langword="null"/> or empty.</exception>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="handler"/> is <see langword="null"/>.</exception>
+    public void OnChange(string name, Action handler)
     {
-        ArgumentNullException.ThrowIfNull(button);
-
-        Func<Task>[] handlers;
-        lock (_handler_sync)
-        {
-            if (!_handlers.TryGetValue(button, out List<Func<Task>>? list) || list.Count == 0)
-                return null;
-            handlers = list.ToArray();
-        }
-
-        Volatile.Write(ref _clicked, button);
-
-        // Each handler is started inside its own try and a synchronous throw is turned into a
-        // faulted task. Handing the delegates straight to Task.WhenAll ran them lazily inside this
-        // frame, so a handler that threw before returning a task threw out of Invoke: the host had
-        // no task to attach its error reporting to, the exception surfaced in a click callback with
-        // nothing to catch it, and the handlers after it never ran at all. An Action handler always
-        // takes that path, because its wrapper runs the body before returning.
-        var running = new Task[handlers.Length];
-        for (int i = 0; i < handlers.Length; i++)
-        {
-            try
-            {
-                running[i] = handlers[i]() ?? Task.CompletedTask;
-            }
-            catch (Exception error)
-            {
-                running[i] = Task.FromException(error);
-            }
-        }
-        return Task.WhenAll(running);
+        ArgumentNullException.ThrowIfNull(handler);
+        OnChange(name, _ => handler());
     }
-
-    /// <summary>Occurs when the script writes a line to an output box.</summary>
-    /// <remarks>The arguments are the box name and the text.</remarks>
-    public event Action<string, string>? Logged;
-
-    /// <summary>Occurs when the script offers a file for download.</summary>
-    /// <remarks>The arguments are the suggested file name and the contents.</remarks>
-    public event Action<string, string>? Downloaded;
-
-    /// <summary>Occurs when the script empties an output box or a table.</summary>
-    /// <remarks>The argument is the name of the box or table.</remarks>
-    public event Action<string>? Cleared;
-
-    /// <summary>Occurs when the script changes a control's value.</summary>
-    /// <remarks>The arguments are the control name and the new value.</remarks>
-    public event Action<string, string>? Changed;
-
-    /// <summary>Occurs when the script moves a progress bar.</summary>
-    /// <remarks>The arguments are the bar name and the fraction done, between 0 and 1.</remarks>
-    public event Action<string, double>? ProgressChanged;
-
-    /// <summary>Occurs when the script replaces a status line.</summary>
-    /// <remarks>The arguments are the line name and the new text.</remarks>
-    public event Action<string, string>? StatusChanged;
-
-    /// <summary>Occurs when the script enables or disables a control.</summary>
-    /// <remarks>The arguments are the control name and whether it is enabled.</remarks>
-    public event Action<string, bool>? EnabledChanged;
-
-    /// <summary>Occurs when the script shows or hides a control.</summary>
-    /// <remarks>The arguments are the control name and whether it is shown.</remarks>
-    public event Action<string, bool>? VisibilityChanged;
 
     /// <summary>
     /// Changes a control's value, both for later reads and on screen.
@@ -183,13 +132,8 @@ public sealed class ScriptUi
         ArgumentNullException.ThrowIfNull(name);
         string stored = value ?? "";
         _values[name] = stored;
-        Changed?.Invoke(name, stored);
+        Host.RaiseChanged(name, stored);
     }
-
-    /// <summary>Records which button started this run.</summary>
-    /// <remarks>Called by the host, not by scripts.</remarks>
-    /// <param name="button">The button's name, or <see langword="null"/> when the run was not started by one.</param>
-    public void SetClicked(string? button) => Volatile.Write(ref _clicked, button);
 
     /// <summary>Gets whether a named button started this run.</summary>
     /// <remarks>
@@ -198,11 +142,11 @@ public sealed class ScriptUi
     /// </remarks>
     /// <param name="button">The button's name.</param>
     public bool Clicked(string button) =>
-        string.Equals(Volatile.Read(ref _clicked), button, StringComparison.OrdinalIgnoreCase);
+        string.Equals(Host.ClickedButton, button, StringComparison.OrdinalIgnoreCase);
 
     /// <summary>Gets the name of the button that started this run, or <see langword="null"/>.</summary>
     /// <remarks>Once handlers are registered, it is the last button whose handlers ran.</remarks>
-    public string? ClickedButton => Volatile.Read(ref _clicked);
+    public string? ClickedButton => Host.ClickedButton;
 
     /// <summary>Gets a text value, or the fallback when it is missing or empty.</summary>
     /// <remarks>
@@ -271,7 +215,7 @@ public sealed class ScriptUi
     public void Log(string box, object? text)
     {
         ArgumentNullException.ThrowIfNull(box);
-        Logged?.Invoke(box, text?.ToString() ?? "");
+        Host.RaiseLogged(box, text?.ToString() ?? "");
     }
 
     /// <summary>Empties an output box or a table.</summary>
@@ -283,7 +227,7 @@ public sealed class ScriptUi
     public void Clear(string box)
     {
         ArgumentNullException.ThrowIfNull(box);
-        Cleared?.Invoke(box);
+        Host.RaiseCleared(box);
     }
 
     /// <summary>
@@ -300,7 +244,7 @@ public sealed class ScriptUi
     {
         ArgumentNullException.ThrowIfNull(name);
         double clamped = double.IsNaN(value) ? 0 : Math.Clamp(value, 0, 1);
-        ProgressChanged?.Invoke(name, clamped);
+        Host.RaiseProgressChanged(name, clamped);
     }
 
     /// <summary>Moves a progress bar by a count rather than a fraction.</summary>
@@ -318,7 +262,7 @@ public sealed class ScriptUi
     public void Status(string name, object? text)
     {
         ArgumentNullException.ThrowIfNull(name);
-        StatusChanged?.Invoke(name, text?.ToString() ?? "");
+        Host.RaiseStatusChanged(name, text?.ToString() ?? "");
     }
 
     /// <summary>Enables or disables a control.</summary>
@@ -328,7 +272,7 @@ public sealed class ScriptUi
     public void Enable(string name, bool enabled = true)
     {
         ArgumentNullException.ThrowIfNull(name);
-        EnabledChanged?.Invoke(name, enabled);
+        Host.RaiseEnabledChanged(name, enabled);
     }
 
     /// <summary>Shows or hides a control.</summary>
@@ -341,44 +285,13 @@ public sealed class ScriptUi
     public void Show(string name, bool visible = true)
     {
         ArgumentNullException.ThrowIfNull(name);
-        VisibilityChanged?.Invoke(name, visible);
+        Host.RaiseVisibilityChanged(name, visible);
     }
 
     /// <summary>Offers a file for the user to save.</summary>
     /// <param name="fileName">The suggested name.</param>
     /// <param name="content">The contents.</param>
-    public void Download(string fileName, string content) => Downloaded?.Invoke(fileName, content);
-
-    /// <summary>Occurs when the script appends a row to a table.</summary>
-    /// <remarks>The arguments are the table name and the cells, left to right.</remarks>
-    public event Action<string, IReadOnlyList<string>>? RowAdded;
-
-    /// <summary>Occurs when the script replaces every row of a table.</summary>
-    /// <remarks>The arguments are the table name and the rows, top to bottom.</remarks>
-    public event Action<string, IReadOnlyList<IReadOnlyList<string>>>? RowsSet;
-
-    /// <summary>Occurs when the script wants a short message shown.</summary>
-    /// <remarks>The arguments are the text and whether it reports a problem.</remarks>
-    public event Action<string, bool>? Toasted;
-
-    /// <summary>Occurs when the script marks a button as working, or done.</summary>
-    /// <remarks>The arguments are the button name and whether it is working.</remarks>
-    public event Action<string, bool>? BusyChanged;
-
-    /// <summary>Occurs when the script asks the user to confirm something.</summary>
-    /// <remarks>
-    /// The arguments are the title and the message, and the handler returns the answer. Without a
-    /// handler <see cref="Confirm"/> answers <see langword="false"/> at once.
-    /// </remarks>
-    public event Func<string, string, Task<bool>>? ConfirmRequested;
-
-    /// <summary>Occurs when the script asks the user for a value.</summary>
-    /// <remarks>
-    /// The arguments are the title and the initial text, and the handler returns the answer or
-    /// <see langword="null"/>. Without a handler <see cref="Prompt"/> answers
-    /// <see langword="null"/> at once.
-    /// </remarks>
-    public event Func<string, string, Task<string?>>? PromptRequested;
+    public void Download(string fileName, string content) => Host.RaiseDownloaded(fileName, content);
 
     /// <summary>
     /// Appends a row to a table.
@@ -395,7 +308,7 @@ public sealed class ScriptUi
     {
         ArgumentException.ThrowIfNullOrEmpty(table);
         ArgumentNullException.ThrowIfNull(cells);
-        RowAdded?.Invoke(table, Cells(cells));
+        Host.RaiseRowAdded(table, Cells(cells));
     }
 
     /// <summary>
@@ -414,7 +327,7 @@ public sealed class ScriptUi
     {
         ArgumentException.ThrowIfNullOrEmpty(table);
         ArgumentNullException.ThrowIfNull(rows);
-        RowsSet?.Invoke(table, [.. rows.Select(row => Cells(row ?? []))]);
+        Host.RaiseRowsSet(table, [.. rows.Select(row => Cells(row ?? []))]);
     }
 
     static string[] Cells(object?[] cells) => [.. cells.Select(cell => cell?.ToString() ?? "")];
@@ -432,7 +345,7 @@ public sealed class ScriptUi
     public void Toast(string text, bool problem = false)
     {
         ArgumentNullException.ThrowIfNull(text);
-        Toasted?.Invoke(text, problem);
+        Host.RaiseToasted(text, problem);
     }
 
     /// <summary>
@@ -449,7 +362,7 @@ public sealed class ScriptUi
     public void Busy(string button, bool busy = true)
     {
         ArgumentException.ThrowIfNullOrEmpty(button);
-        BusyChanged?.Invoke(button, busy);
+        Host.RaiseBusyChanged(button, busy);
     }
 
     /// <summary>
@@ -471,7 +384,7 @@ public sealed class ScriptUi
     {
         ArgumentNullException.ThrowIfNull(title);
         ArgumentNullException.ThrowIfNull(message);
-        return ConfirmRequested?.Invoke(title, message) ?? Task.FromResult(false);
+        return Host.Confirm?.Invoke(title, message) ?? Task.FromResult(false);
     }
 
     /// <summary>
@@ -493,6 +406,8 @@ public sealed class ScriptUi
     {
         ArgumentNullException.ThrowIfNull(title);
         ArgumentNullException.ThrowIfNull(initial);
-        return PromptRequested?.Invoke(title, initial) ?? Task.FromResult<string?>(null);
+        return Host.Prompt?.Invoke(title, initial) ?? Task.FromResult<string?>(null);
     }
+
+    internal void Store(string name, string value) => _values[name] = value;
 }

@@ -59,7 +59,6 @@ public sealed record RoomStaffPickRequest(Id RoomId, bool Pick = true);
 /// <see cref="ApplicationMemberIds.RoomStaffPickSet"/>. Messages for the current room are only sent while the
 /// room generation is unchanged, and the hotel's response is not awaited.
 /// </remarks>
-/// <param name="Client">The client type of the hotel session.</param>
 /// <param name="RoomId">
 /// The id of the current room, or <see langword="null"/> when no room is loaded. For a staff pick, the requested room id.
 /// </param>
@@ -68,7 +67,6 @@ public sealed record RoomStaffPickRequest(Id RoomId, bool Pick = true);
 /// <param name="ServerConfirmed">Whether the hotel confirmed the action, which is always <see langword="false"/>.</param>
 /// <param name="DispatchedAtUtc">The time the message was sent.</param>
 public sealed record RoomControlDispatchResult(
-    ClientType Client,
     Id? RoomId,
     long RoomGeneration,
     bool Dispatched,

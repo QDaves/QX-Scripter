@@ -41,10 +41,10 @@ public sealed class BadgeQuery : QueryCollection<OwnedBadge>
     /// Badges whose native id does not fit in a 32-bit integer are dropped. Use
     /// <see cref="ByNativeId(IEnumerable{Id})"/> to match those.
     /// </remarks>
-    /// <param name="badge_ids">The badge ids to keep.</param>
+    /// <param name="badgeIds">The badge ids to keep.</param>
     /// <returns>A new query with the matching badges.</returns>
-    public BadgeQuery ById(params int[] badge_ids) =>
-        ById((IEnumerable<int>)badge_ids);
+    public BadgeQuery ById(params int[] badgeIds) =>
+        ById((IEnumerable<int>)badgeIds);
 
     /// <summary>
     /// Filters the badges to those with any of the specified 32-bit badge ids.
@@ -53,11 +53,11 @@ public sealed class BadgeQuery : QueryCollection<OwnedBadge>
     /// Badges whose native id does not fit in a 32-bit integer are dropped. Use
     /// <see cref="ByNativeId(IEnumerable{Id})"/> to match those.
     /// </remarks>
-    /// <param name="badge_ids">The badge ids to keep.</param>
+    /// <param name="badgeIds">The badge ids to keep.</param>
     /// <returns>A new query with the matching badges.</returns>
-    public BadgeQuery ById(IEnumerable<int> badge_ids)
+    public BadgeQuery ById(IEnumerable<int> badgeIds)
     {
-        HashSet<int> values = QueryValues.Set(badge_ids);
+        HashSet<int> values = QueryValues.Set(badgeIds);
         return Where(badge =>
             (long)badge.NativeBadgeId is >= int.MinValue and <= int.MaxValue &&
             values.Contains(badge.BadgeId));
@@ -66,19 +66,19 @@ public sealed class BadgeQuery : QueryCollection<OwnedBadge>
     /// <summary>
     /// Filters the badges to those with any of the specified native badge ids.
     /// </summary>
-    /// <param name="badge_ids">The native badge ids to keep, compared with <see cref="OwnedBadge.NativeBadgeId"/>.</param>
+    /// <param name="badgeIds">The native badge ids to keep, compared with <see cref="OwnedBadge.NativeBadgeId"/>.</param>
     /// <returns>A new query with the matching badges.</returns>
-    public BadgeQuery ByNativeId(params Id[] badge_ids) =>
-        ByNativeId((IEnumerable<Id>)badge_ids);
+    public BadgeQuery ByNativeId(params Id[] badgeIds) =>
+        ByNativeId((IEnumerable<Id>)badgeIds);
 
     /// <summary>
     /// Filters the badges to those with any of the specified native badge ids.
     /// </summary>
-    /// <param name="badge_ids">The native badge ids to keep, compared with <see cref="OwnedBadge.NativeBadgeId"/>.</param>
+    /// <param name="badgeIds">The native badge ids to keep, compared with <see cref="OwnedBadge.NativeBadgeId"/>.</param>
     /// <returns>A new query with the matching badges.</returns>
-    public BadgeQuery ByNativeId(IEnumerable<Id> badge_ids)
+    public BadgeQuery ByNativeId(IEnumerable<Id> badgeIds)
     {
-        HashSet<Id> values = QueryValues.Set(badge_ids);
+        HashSet<Id> values = QueryValues.Set(badgeIds);
         return Where(badge => values.Contains(badge.NativeBadgeId));
     }
 
@@ -148,10 +148,10 @@ public sealed class BadgeQuery : QueryCollection<OwnedBadge>
     /// <remarks>
     /// Badges without rarity data are dropped.
     /// </remarks>
-    /// <param name="rarity_ids">The rarity ids to keep, compared with <see cref="OwnedBadge.RarityId"/>.</param>
+    /// <param name="rarityIds">The rarity ids to keep, compared with <see cref="OwnedBadge.RarityId"/>.</param>
     /// <returns>A new query with the matching badges.</returns>
-    public BadgeQuery OfRarity(params int[] rarity_ids) =>
-        OfRarity((IEnumerable<int>)rarity_ids);
+    public BadgeQuery OfRarity(params int[] rarityIds) =>
+        OfRarity((IEnumerable<int>)rarityIds);
 
     /// <summary>
     /// Filters the badges to those with any of the specified rarity ids.
@@ -159,11 +159,11 @@ public sealed class BadgeQuery : QueryCollection<OwnedBadge>
     /// <remarks>
     /// Badges without rarity data are dropped.
     /// </remarks>
-    /// <param name="rarity_ids">The rarity ids to keep, compared with <see cref="OwnedBadge.RarityId"/>.</param>
+    /// <param name="rarityIds">The rarity ids to keep, compared with <see cref="OwnedBadge.RarityId"/>.</param>
     /// <returns>A new query with the matching badges.</returns>
-    public BadgeQuery OfRarity(IEnumerable<int> rarity_ids)
+    public BadgeQuery OfRarity(IEnumerable<int> rarityIds)
     {
-        HashSet<int> values = QueryValues.Set(rarity_ids);
+        HashSet<int> values = QueryValues.Set(rarityIds);
         return Where(badge => badge.HasRarityData && values.Contains(badge.RarityId));
     }
 
@@ -316,10 +316,10 @@ public sealed class SelectedBadgeQuery : QueryCollection<SelectedBadge>
     /// <remarks>
     /// Badges without rarity data are dropped.
     /// </remarks>
-    /// <param name="rarity_ids">The rarity ids to keep, compared with <see cref="SelectedBadge.RarityId"/>.</param>
+    /// <param name="rarityIds">The rarity ids to keep, compared with <see cref="SelectedBadge.RarityId"/>.</param>
     /// <returns>A new query with the matching badges.</returns>
-    public SelectedBadgeQuery OfRarity(params int[] rarity_ids) =>
-        OfRarity((IEnumerable<int>)rarity_ids);
+    public SelectedBadgeQuery OfRarity(params int[] rarityIds) =>
+        OfRarity((IEnumerable<int>)rarityIds);
 
     /// <summary>
     /// Filters the badges to those with any of the specified rarity ids.
@@ -327,11 +327,11 @@ public sealed class SelectedBadgeQuery : QueryCollection<SelectedBadge>
     /// <remarks>
     /// Badges without rarity data are dropped.
     /// </remarks>
-    /// <param name="rarity_ids">The rarity ids to keep, compared with <see cref="SelectedBadge.RarityId"/>.</param>
+    /// <param name="rarityIds">The rarity ids to keep, compared with <see cref="SelectedBadge.RarityId"/>.</param>
     /// <returns>A new query with the matching badges.</returns>
-    public SelectedBadgeQuery OfRarity(IEnumerable<int> rarity_ids)
+    public SelectedBadgeQuery OfRarity(IEnumerable<int> rarityIds)
     {
-        HashSet<int> values = QueryValues.Set(rarity_ids);
+        HashSet<int> values = QueryValues.Set(rarityIds);
         return Where(badge => badge.HasRarityData && values.Contains(badge.RarityId));
     }
 

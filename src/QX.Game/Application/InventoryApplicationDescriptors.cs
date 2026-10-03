@@ -18,14 +18,14 @@ internal static class InventoryApplicationDescriptors
         typeof(InventoryStateRequest),
         typeof(InventoryStateView),
         [],
-        state_effects:
+        stateEffects:
         [
             new(ApplicationStateKey.InventoryFurniLoaded, ApplicationStateEffectKind.Reads),
             new(ApplicationStateKey.InventoryPetsLoaded, ApplicationStateEffectKind.Reads)
         ],
         messages: StateMessages(),
-        tool_hints: new(true, false, true, false),
-        invocation_scope: ApplicationInvocationScope.Persistent);
+        toolHints: new(true, false, true, false),
+        invocationScope: ApplicationInvocationScope.Persistent);
 
     public static ApplicationDescriptor FurniList { get; } = new(
         ApplicationMemberIds.InventoryFurniList,
@@ -36,11 +36,11 @@ internal static class InventoryApplicationDescriptors
         typeof(InventoryFurniPageRequest),
         typeof(InventoryFurniPage),
         FurniPageParameters(),
-        state_effects:
+        stateEffects:
         [new(ApplicationStateKey.InventoryFurniLoaded, ApplicationStateEffectKind.Reads)],
         messages: FurniMessages(),
-        tool_hints: new(true, false, true, false),
-        invocation_scope: ApplicationInvocationScope.Persistent);
+        toolHints: new(true, false, true, false),
+        invocationScope: ApplicationInvocationScope.Persistent);
 
     public static ApplicationDescriptor FurniRefresh { get; } = new(
         ApplicationMemberIds.InventoryFurniRefresh,
@@ -54,8 +54,8 @@ internal static class InventoryApplicationDescriptors
         [ApplicationStateKey.HotelConnected],
         [new(ApplicationStateKey.InventoryFurniLoaded, ApplicationStateEffectKind.Changes)],
         [
-            new(MessageKeys.Inventory.Furni.Request, Direction.Out, ApplicationMessageRole.Send),
-            new(MessageKeys.Inventory.Furni.Snapshot, Direction.In, ApplicationMessageRole.Observe)
+            new(MessageKeys.Inventory.Furni.Request, MessageDirection.Out, ApplicationMessageRole.Send),
+            new(MessageKeys.Inventory.Furni.Snapshot, MessageDirection.In, ApplicationMessageRole.Observe)
         ],
         new(true, false, true, true));
 
@@ -68,11 +68,11 @@ internal static class InventoryApplicationDescriptors
         typeof(InventoryPetPageRequest),
         typeof(InventoryPetPage),
         PetPageParameters(),
-        state_effects:
+        stateEffects:
         [new(ApplicationStateKey.InventoryPetsLoaded, ApplicationStateEffectKind.Reads)],
         messages: PetMessages(),
-        tool_hints: new(true, false, true, false),
-        invocation_scope: ApplicationInvocationScope.Persistent);
+        toolHints: new(true, false, true, false),
+        invocationScope: ApplicationInvocationScope.Persistent);
 
     public static ApplicationDescriptor PetsRefresh { get; } = new(
         ApplicationMemberIds.InventoryPetsRefresh,
@@ -91,8 +91,8 @@ internal static class InventoryApplicationDescriptors
         [ApplicationStateKey.HotelConnected],
         [new(ApplicationStateKey.InventoryPetsLoaded, ApplicationStateEffectKind.Changes)],
         [
-            new(MessageKeys.Inventory.Pets.Request, Direction.Out, ApplicationMessageRole.Send),
-            new(MessageKeys.Inventory.Pets.Snapshot, Direction.In, ApplicationMessageRole.Observe)
+            new(MessageKeys.Inventory.Pets.Request, MessageDirection.Out, ApplicationMessageRole.Send),
+            new(MessageKeys.Inventory.Pets.Snapshot, MessageDirection.In, ApplicationMessageRole.Observe)
         ],
         new(true, false, true, true));
 
@@ -110,10 +110,10 @@ internal static class InventoryApplicationDescriptors
         [
             new(
                 MessageKeys.Inventory.AvatarEffects.ActivationRequest,
-                Direction.Out,
+                MessageDirection.Out,
                 ApplicationMessageRole.Send)
         ],
-        tool_hints: new(false, true, false, true));
+        toolHints: new(false, true, false, true));
 
     public static ApplicationDescriptor FurniChanged { get; } = new(
         ApplicationMemberIds.InventoryFurniChanged,
@@ -123,7 +123,7 @@ internal static class InventoryApplicationDescriptors
         event_exposure,
         null,
         typeof(InventoryFurniChanged),
-        state_effects:
+        stateEffects:
         [new(ApplicationStateKey.InventoryFurniLoaded, ApplicationStateEffectKind.Changes)],
         messages: FurniMessages());
 
@@ -135,7 +135,7 @@ internal static class InventoryApplicationDescriptors
         event_exposure,
         null,
         typeof(InventoryPetChanged),
-        state_effects:
+        stateEffects:
         [new(ApplicationStateKey.InventoryPetsLoaded, ApplicationStateEffectKind.Changes)],
         messages: PetMessages());
 
@@ -177,7 +177,7 @@ internal static class InventoryApplicationDescriptors
     ];
 
     private static ApplicationMessageRequirement Observe(MessageKey key, bool required = true) =>
-        new(key, Direction.In, ApplicationMessageRole.Observe, required);
+        new(key, MessageDirection.In, ApplicationMessageRole.Observe, required);
 
     private static ApplicationParameterDescriptor OptionalId(string name, string description) =>
         new(name, typeof(Id?), false, null, description, new(Pattern: "^[1-9][0-9]*$"));

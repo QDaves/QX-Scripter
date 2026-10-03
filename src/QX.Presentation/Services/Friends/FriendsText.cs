@@ -22,10 +22,10 @@ public static class FriendsText
         };
     }
 
-    public static string LastSeen(bool is_online, long minutes) => is_online ? Online : Ago(minutes);
+    public static string LastSeen(bool isOnline, long minutes) => isOnline ? Online : Ago(minutes);
 
-    public static long LastSeenOrder(bool is_online, long minutes) =>
-        is_online ? SeenNow : minutes <= 0 ? NeverSeen : minutes;
+    public static long LastSeenOrder(bool isOnline, long minutes) =>
+        isOnline ? SeenNow : minutes <= 0 ? NeverSeen : minutes;
 
     public static string Summary(int total, int online) =>
         $"{total:N0} {(total == 1 ? "friend" : "friends")}, {online:N0} online";

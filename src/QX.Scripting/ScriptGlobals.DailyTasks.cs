@@ -11,7 +11,6 @@ public partial class ScriptGlobals
     /// Gets the daily task manager, which tracks the hotel's short repeatable goals, their progress
     /// and their rewards.
     /// </summary>
-    /// <remarks>Flash only. <see cref="DailyTaskManager.IsSupported"/> reports whether it applies.</remarks>
     public DailyTaskManager DailyTasks => Game.DailyTasks;
 
     /// <summary>
@@ -73,7 +72,7 @@ public partial class ScriptGlobals
         DailyTask[] claimable = snapshot.Tasks.Where(task => task.IsClaimable).ToArray();
         foreach (DailyTask task in claimable)
         {
-            DailyTaskClaimDispatchReceipt receipt = await Application
+            DailyTaskClaimDispatchReceipt receipt = await _application
                 .InvokeAsync<DailyTaskClaimActionRequest, DailyTaskClaimDispatchReceipt>(
                     ApplicationMemberIds.DailyTasksClaim,
                     new DailyTaskClaimActionRequest(
@@ -106,53 +105,45 @@ public partial class ScriptGlobals
     public bool RefreshDailyTasks() => Game.DailyTasks.Request();
 
     /// <summary>Registers a handler that runs whenever a daily task's progress or status changes.</summary>
-    /// <remarks>
-    /// No handle is returned, so the handler stays registered until the script stops.
-    /// </remarks>
     /// <param name="handler">The handler to call with the task as it now stands.</param>
+    /// <returns>A handle that removes the handler when disposed.</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="handler"/> is <see langword="null"/>.</exception>
-    public void OnDailyTaskUpdated(Action<DailyTask> handler)
-    {
-        _ = Subscribe(
+    public IDisposable OnDailyTaskUpdated(Action<DailyTask> handler)
+        => Subscribe(
             handler,
             value => Game.DailyTasks.TaskUpdated += value,
             value => Game.DailyTasks.TaskUpdated -= value);
-    }
 
     /// <summary>Registers a handler that runs whenever a daily task becomes completed and claimable.</summary>
     /// <remarks>
-    /// It runs after the <see cref="OnDailyTaskUpdated"/> handlers for the same update. No handle
-    /// is returned, so the handler stays registered until the script stops.
+    /// It runs after the <see cref="OnDailyTaskUpdated"/> handlers for the same update.
     /// </remarks>
     /// <param name="handler">The handler to call with the finished task.</param>
+    /// <returns>A handle that removes the handler when disposed.</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="handler"/> is <see langword="null"/>.</exception>
-    public void OnDailyTaskCompleted(Action<DailyTask> handler)
-    {
-        _ = Subscribe(
+    public IDisposable OnDailyTaskCompleted(Action<DailyTask> handler)
+        => Subscribe(
             handler,
             value => Game.DailyTasks.TaskCompleted += value,
             value => Game.DailyTasks.TaskCompleted -= value);
-    }
 
     /// <summary>Registers a handler that runs whenever a daily task's reward is claimed.</summary>
     /// <remarks>
-    /// It runs after the <see cref="OnDailyTaskUpdated"/> handlers for the same update. No handle
-    /// is returned, so the handler stays registered until the script stops.
+    /// It runs after the <see cref="OnDailyTaskUpdated"/> handlers for the same update.
     /// </remarks>
     /// <param name="handler">The handler to call with the claimed task.</param>
+    /// <returns>A handle that removes the handler when disposed.</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="handler"/> is <see langword="null"/>.</exception>
-    public void OnDailyTaskClaimed(Action<DailyTask> handler)
-    {
-        _ = Subscribe(
+    public IDisposable OnDailyTaskClaimed(Action<DailyTask> handler)
+        => Subscribe(
             handler,
             value => Game.DailyTasks.TaskClaimed += value,
             value => Game.DailyTasks.TaskClaimed -= value);
-    }
 
     private async Task<DailyTaskReadSnapshot> ReadDailyTaskSnapshot(int timeout_ms)
     {
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(timeout_ms, "timeoutMs");
-        DailyTaskStateView state = await Application
+        DailyTaskStateView state = await _application
             .InvokeAsync<DailyTaskStateRequest, DailyTaskStateView>(
                 ApplicationMemberIds.DailyTasksState,
                 new DailyTaskStateRequest(),
@@ -163,7 +154,7 @@ public partial class ScriptGlobals
         DailyTaskPage first_page;
         if (state.Summary.Loaded)
         {
-            first_page = await Application
+            first_page = await _application
                 .InvokeAsync<DailyTaskPageRequest, DailyTaskPage>(
                     ApplicationMemberIds.DailyTasksEntriesList,
                     new DailyTaskPageRequest(
@@ -175,7 +166,7 @@ public partial class ScriptGlobals
         }
         else
         {
-            DailyTaskRefreshResult refreshed = await Application
+            DailyTaskRefreshResult refreshed = await _application
                 .InvokeAsync<DailyTaskRefreshRequest, DailyTaskRefreshResult>(
                     ApplicationMemberIds.DailyTasksRefresh,
                     new DailyTaskRefreshRequest(
@@ -194,7 +185,7 @@ public partial class ScriptGlobals
         AddDailyTasks(page, tasks);
         while (page.NextOffset is int offset)
         {
-            page = await Application
+            page = await _application
                 .InvokeAsync<DailyTaskPageRequest, DailyTaskPage>(
                     ApplicationMemberIds.DailyTasksEntriesList,
                     new DailyTaskPageRequest(offset, 500, first_page.SnapshotRevision),
@@ -272,7 +263,6 @@ public partial class ScriptGlobals
     private static void ValidateDailyTaskState(DailyTaskStateView state)
     {
         if (!state.Connected ||
-            state.Client is not ClientType.Flash ||
             state.SessionGeneration <= 0 ||
             state.SnapshotRevision <= 0 ||
             state.Summary.Total < 0 ||
@@ -289,7 +279,6 @@ public partial class ScriptGlobals
         DailyTaskPage page)
     {
         if (page.Connected != state.Connected ||
-            page.Client != state.Client ||
             page.SessionGeneration != state.SessionGeneration ||
             page.StateRevision != state.Revision ||
             page.TasksRevision != state.TasksRevision ||
@@ -311,7 +300,6 @@ public partial class ScriptGlobals
             refreshed.MessagesDispatched != 1 ||
             refreshed.SessionGeneration != expected_session_generation ||
             !page.Connected ||
-            page.Client != refreshed.Client ||
             page.SessionGeneration != refreshed.SessionGeneration ||
             page.StateRevision != refreshed.StateRevision ||
             page.TasksRevision != refreshed.TasksRevision ||
@@ -332,10 +320,8 @@ public partial class ScriptGlobals
         int? expected_next = consumed < page.Total ? consumed : null;
         if (first_page.SnapshotRevision <= 0 ||
             !first_page.Connected ||
-            first_page.Client is not ClientType.Flash ||
             !first_page.Summary.Loaded ||
             page.Connected != first_page.Connected ||
-            page.Client != first_page.Client ||
             page.SessionGeneration != first_page.SessionGeneration ||
             page.StateRevision != first_page.StateRevision ||
             page.TasksRevision != first_page.TasksRevision ||

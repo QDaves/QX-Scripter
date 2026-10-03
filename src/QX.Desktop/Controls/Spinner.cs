@@ -40,7 +40,7 @@ public sealed class Spinner : Control
         set => SetValue(ForegroundProperty, value);
     }
 
-    protected override Size MeasureOverride(Size available_size) => new(Size, Size);
+    protected override Size MeasureOverride(Size availableSize) => new(Size, Size);
 
     public override void Render(DrawingContext context)
     {

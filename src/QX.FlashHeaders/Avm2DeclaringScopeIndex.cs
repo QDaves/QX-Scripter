@@ -269,12 +269,12 @@ public sealed class Avm2DeclaringScopeIndex
     }
 
     public static Avm2DeclaringScopeIndex Create(
-        Avm2MethodBindingIndex method_bindings)
+        Avm2MethodBindingIndex methodBindings)
     {
-        ArgumentNullException.ThrowIfNull(method_bindings);
+        ArgumentNullException.ThrowIfNull(methodBindings);
         return new Avm2DeclaringScopeIndex(
-            method_bindings.Abcs,
-            method_bindings);
+            methodBindings.Abcs,
+            methodBindings);
     }
 
     public Avm2DeclaringScopeResolution Resolve(
@@ -318,14 +318,14 @@ public sealed class Avm2DeclaringScopeIndex
 
     public Avm2DataFlowAnalysis Analyze(
         ASMethodBody body,
-        Avm2MethodAnalysis method_analysis,
+        Avm2MethodAnalysis methodAnalysis,
         Avm2MethodBinding? binding = null)
     {
         ArgumentNullException.ThrowIfNull(body);
-        ArgumentNullException.ThrowIfNull(method_analysis);
+        ArgumentNullException.ThrowIfNull(methodAnalysis);
         ValidateMethodAnalysis(
             body,
-            method_analysis);
+            methodAnalysis);
         Avm2DataFlowScopeContext? context;
         Avm2MethodBinding? analysis_binding;
         lock (sync)
@@ -340,7 +340,7 @@ public sealed class Avm2DeclaringScopeIndex
         Avm2DataFlowAnalysis flow =
             Avm2DataFlowAnalyzer.Analyze(
             body,
-            method_analysis,
+            methodAnalysis,
             analysis_binding,
             null,
             context,

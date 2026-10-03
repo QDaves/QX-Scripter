@@ -117,11 +117,11 @@ public sealed partial class BugReportViewModel : PageViewModel
     [ObservableProperty]
     public partial bool FocusSummary { get; set; }
 
-    protected override async Task OnActivatedAsync(CancellationToken cancellation_token)
+    protected override async Task OnActivatedAsync(CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(Summary))
             FocusSummary = true;
-        await ReadAsync(cancellation_token);
+        await ReadAsync(cancellationToken);
     }
 
     [RelayCommand(CanExecute = nameof(CanReload))]

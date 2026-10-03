@@ -139,11 +139,6 @@ public sealed class DailyTaskManager : GameStateManager
     /// <exception cref="InvalidOperationException">Thrown when the application runtime is not active.</exception>
     public void Claim(long taskId) => Operations().Claim(taskId);
 
-    /// <summary>Gets whether the connected client supports daily tasks.</summary>
-    /// <remarks>Only the Flash client supports daily tasks.</remarks>
-    public bool IsSupported =>
-        (Interceptor.Session?.Client ?? Interceptor.Messages.ActiveClient) is ClientType.Flash;
-
     /// <summary>Gets the task list, requesting it from the server if it has not been received in this session.</summary>
     /// <param name="timeoutMs">The time to wait for the task list, in milliseconds.</param>
     /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>

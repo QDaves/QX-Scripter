@@ -2,7 +2,7 @@ namespace Qx.Interception.GEarth;
 
 /// <summary>Contains the headers of the G-Earth extension control protocol.</summary>
 /// <remarks>The nested class names follow G-Earth's point of view.</remarks>
-public static class GControl
+internal static class GControl
 {
     /// <summary>Contains the headers of control frames an extension sends to G-Earth.</summary>
     public static class Incoming

@@ -9,8 +9,7 @@ public partial class ScriptGlobals
     /// Requests one page of a group's members from the server.
     /// </summary>
     /// <remarks>
-    /// The page size is decided by the server. The reply also reaches the game client, and pages
-    /// are only accepted from the Flash client.
+    /// The page size is decided by the server. The reply also reaches the game client.
     /// </remarks>
     /// <param name="groupId">The id of the group.</param>
     /// <param name="pageIndex">The zero-based page index.</param>
@@ -128,8 +127,7 @@ public partial class ScriptGlobals
         if (page.GroupId != groupId ||
             page.PageIndex != pageIndex ||
             !string.Equals(page.UserNameFilter, userNameFilter, StringComparison.Ordinal) ||
-            (page.Client is ClientType.Flash && page.SearchType != searchType) ||
-            page.Client is not (ClientType.Flash))
+            page.SearchType != searchType)
         {
             throw new InvalidDataException("Guild member pagination returned an unrelated page.");
         }
@@ -145,8 +143,7 @@ public partial class ScriptGlobals
             throw new InvalidDataException("Guild member pagination returned invalid page metadata.");
         }
         if (first is not null &&
-            (page.Client != first.Client ||
-             page.SessionGeneration != first.SessionGeneration ||
+            (page.SessionGeneration != first.SessionGeneration ||
              page.TotalEntries != first.TotalEntries ||
              page.PageSize != first.PageSize ||
              TotalPages(page) != TotalPages(first) ||
@@ -205,7 +202,7 @@ public partial class ScriptGlobals
         string userNameFilter,
         GuildMemberSearchType searchType,
         int timeoutMs,
-        long? expectedSessionGeneration) => Application
+        long? expectedSessionGeneration) => _application
         .InvokeAsync<GroupMembersPageRequest, GroupMembersPage>(
             ApplicationMemberIds.GroupsMembersPage,
             new GroupMembersPageRequest(

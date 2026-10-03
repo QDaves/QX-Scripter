@@ -18,10 +18,10 @@ internal static class QuestApplicationDescriptors
         typeof(QuestStateRequest),
         typeof(QuestStateView),
         [SnapshotRevisionParameter(false)],
-        state_effects: [ReadEffect()],
+        stateEffects: [ReadEffect()],
         messages: ObservedMessages(),
-        tool_hints: QueryHints(),
-        invocation_scope: ApplicationInvocationScope.Persistent);
+        toolHints: QueryHints(),
+        invocationScope: ApplicationInvocationScope.Persistent);
 
     public static ApplicationDescriptor Entries { get; } = new(
         ApplicationMemberIds.QuestsEntriesList,
@@ -32,15 +32,15 @@ internal static class QuestApplicationDescriptors
         typeof(QuestEntryPageRequest),
         typeof(QuestEntryPage),
         PageParameters(),
-        state_effects: [ReadEffect()],
+        stateEffects: [ReadEffect()],
         messages: ObservedMessages(),
-        tool_hints: QueryHints(),
-        invocation_scope: ApplicationInvocationScope.Persistent);
+        toolHints: QueryHints(),
+        invocationScope: ApplicationInvocationScope.Persistent);
 
     public static ApplicationDescriptor AvailableRefresh { get; } = new(
         ApplicationMemberIds.QuestsAvailableRefresh,
         "Refresh available quests",
-        "Shares one trusted available-quest request after earlier passive requests drain and returns the first correlated full snapshot; the response carries no request identifier.",
+        "Reloads the available quests from the server. Shares one trusted available-quest request after earlier passive requests drain and returns the first correlated full snapshot; the response carries no request identifier.",
         ApplicationMemberKind.Operation,
         ApplicationExposure.All,
         typeof(QuestAvailableRefreshRequest),
@@ -57,7 +57,7 @@ internal static class QuestApplicationDescriptors
     public static ApplicationDescriptor SeasonalRefresh { get; } = new(
         ApplicationMemberIds.QuestsSeasonalRefresh,
         "Refresh seasonal quests",
-        "Shares one trusted seasonal-quest request after earlier passive requests drain and returns the first correlated full snapshot; the response carries no request identifier.",
+        "Reloads the seasonal quests from the server. Shares one trusted seasonal-quest request after earlier passive requests drain and returns the first correlated full snapshot; the response carries no request identifier.",
         ApplicationMemberKind.Operation,
         ApplicationExposure.All,
         typeof(QuestSeasonalRefreshRequest),
@@ -74,7 +74,7 @@ internal static class QuestApplicationDescriptors
     public static ApplicationDescriptor DailyRefresh { get; } = new(
         ApplicationMemberIds.QuestsDailyRefresh,
         "Refresh daily quest",
-        "Queues daily requests by their pool and index because the response carries no request identifier; identical requests share one flight.",
+        "Requests a daily quest from the server. Queues daily requests by their pool and index because the response carries no request identifier; identical requests share one flight.",
         ApplicationMemberKind.Operation,
         ApplicationExposure.All,
         typeof(QuestDailyRefreshRequest),
@@ -135,9 +135,9 @@ internal static class QuestApplicationDescriptors
         event_exposure,
         null,
         typeof(QuestChanged),
-        state_effects: [ChangeEffect()],
+        stateEffects: [ChangeEffect()],
         messages: ObservedMessages(),
-        invocation_scope: ApplicationInvocationScope.Persistent);
+        invocationScope: ApplicationInvocationScope.Persistent);
 
     private static ApplicationDescriptor SelectionAction(
         string id,
@@ -227,7 +227,7 @@ internal static class QuestApplicationDescriptors
             typeof(long),
             true,
             null,
-            "Quest identifier projected to the active client's native outgoing width."),
+            "Quest identifier, sent as a 32-bit integer."),
         SessionGenerationParameter()
     ];
 
@@ -277,10 +277,10 @@ internal static class QuestApplicationDescriptors
     ];
 
     private static ApplicationMessageRequirement Send(MessageKey key) =>
-        new(key, Direction.Out, ApplicationMessageRole.Send);
+        new(key, MessageDirection.Out, ApplicationMessageRole.Send);
 
     private static ApplicationMessageRequirement Observe(MessageKey key) =>
-        new(key, Direction.In, ApplicationMessageRole.Observe);
+        new(key, MessageDirection.In, ApplicationMessageRole.Observe);
 
     private static ApplicationStateEffect ReadEffect() =>
         new(ApplicationStateKey.Quests, ApplicationStateEffectKind.Reads);
@@ -290,7 +290,7 @@ internal static class QuestApplicationDescriptors
 
     private static ApplicationToolHints QueryHints() => new(true, false, true, false);
 
-    private static ApplicationToolHints RefreshHints() => new(false, false, true, true);
+    private static ApplicationToolHints RefreshHints() => new(true, false, true, true);
 
     private static ApplicationToolHints ActionHints(bool destructive) =>
         new(false, destructive, false, true);

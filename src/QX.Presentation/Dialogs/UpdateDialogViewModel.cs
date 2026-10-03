@@ -1,8 +1,8 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Qx.Presentation.Platform;
+using Qx.Presentation.Services.Updates;
 using Qx.Presentation.Visuals;
-using Qx.Updates;
 
 namespace Qx.Presentation.Dialogs;
 
@@ -11,9 +11,9 @@ public sealed partial class UpdateDialogViewModel : DialogViewModel<bool>
     readonly GitHubRelease _release;
     readonly ILauncherService _launcher;
 
-    public UpdateDialogViewModel(string installed_version, GitHubRelease release, ILauncherService launcher)
+    public UpdateDialogViewModel(string installedVersion, GitHubRelease release, ILauncherService launcher)
     {
-        InstalledVersion = installed_version ?? throw new ArgumentNullException(nameof(installed_version));
+        InstalledVersion = installedVersion ?? throw new ArgumentNullException(nameof(installedVersion));
         _release = release ?? throw new ArgumentNullException(nameof(release));
         _launcher = launcher ?? throw new ArgumentNullException(nameof(launcher));
     }

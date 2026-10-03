@@ -87,7 +87,7 @@ public sealed record RoomSettingsSaveRequest(
 /// When saving, every enum value must be a defined member, every string is limited to 65535 UTF-8 bytes
 /// and each list holds at most 500 entries.
 /// </remarks>
-/// <param name="RoomId">The id of the room. Must be positive and, on the Flash client, fit in a 32-bit integer.</param>
+/// <param name="RoomId">The id of the room. Must be positive and fit in a 32-bit integer.</param>
 /// <param name="Name">The room name.</param>
 /// <param name="Description">The room description.</param>
 /// <param name="DoorMode">Who may enter the room.</param>
@@ -174,10 +174,6 @@ public sealed record RoomSettingsMetadata(
 /// <paramref name="Loaded"/> is <see langword="false"/> until the settings are loaded again.
 /// </remarks>
 /// <param name="Connected">Whether the settings state belongs to the active hotel session.</param>
-/// <param name="Client">
-/// The client type of the hotel session, or <see langword="null"/> when <paramref name="Connected"/> is
-/// <see langword="false"/>.
-/// </param>
 /// <param name="SessionGeneration">The generation of the hotel session, increased each time the session changes.</param>
 /// <param name="StateRevision">The room settings state revision, increased by every committed change.</param>
 /// <param name="RoomId">The id of the room that was read.</param>
@@ -199,7 +195,6 @@ public sealed record RoomSettingsMetadata(
 /// <param name="Metadata">The read-only metadata, or <see langword="null"/> when <paramref name="Loaded"/> is <see langword="false"/>.</param>
 public sealed record RoomSettingsStateView(
     bool Connected,
-    ClientType? Client,
     long SessionGeneration,
     long StateRevision,
     Id RoomId,
@@ -216,7 +211,6 @@ public sealed record RoomSettingsStateView(
 /// <remarks>
 /// Returned by <see cref="ApplicationMemberIds.RoomSettingsSave"/>.
 /// </remarks>
-/// <param name="Client">The client type of the hotel session.</param>
 /// <param name="SavedAtUtc">The time the receipt was created after the confirmation was received.</param>
 /// <param name="SessionGeneration">The generation of the hotel session the save ran in.</param>
 /// <param name="StateRevision">The room settings state revision after the confirmation was committed.</param>
@@ -228,7 +222,6 @@ public sealed record RoomSettingsStateView(
 /// <param name="OperationRevision">The operation revision of the room's cache entry after the confirmation.</param>
 /// <param name="SnapshotRevision">The snapshot revision of the room's cache entry after the confirmation.</param>
 public sealed record RoomSettingsSaveReceipt(
-    ClientType Client,
     DateTimeOffset SavedAtUtc,
     long SessionGeneration,
     long StateRevision,
@@ -257,21 +250,21 @@ public sealed class RoomSettingsRejectedException : InvalidOperationException
     /// Initializes a new instance of the <see cref="RoomSettingsRejectedException"/> class.
     /// </summary>
     /// <param name="operation">The operation the hotel rejected.</param>
-    /// <param name="room_id">The id of the room.</param>
-    /// <param name="error_code">The error code sent by the hotel.</param>
+    /// <param name="roomId">The id of the room.</param>
+    /// <param name="errorCode">The error code sent by the hotel.</param>
     /// <param name="info">The error text sent by the hotel, or <see langword="null"/> when none was sent.</param>
     public RoomSettingsRejectedException(
         RoomSettingsOperationKind operation,
-        Id room_id,
-        int error_code,
+        Id roomId,
+        int errorCode,
         string? info = null)
         : base(info is { Length: > 0 }
-            ? $"Room settings {operation.ToString().ToLowerInvariant()} failed for room {room_id} with error {error_code}: {info}"
-            : $"Room settings {operation.ToString().ToLowerInvariant()} failed for room {room_id} with error {error_code}.")
+            ? $"Room settings {operation.ToString().ToLowerInvariant()} failed for room {roomId} with error {errorCode}: {info}"
+            : $"Room settings {operation.ToString().ToLowerInvariant()} failed for room {roomId} with error {errorCode}.")
     {
         Operation = operation;
-        RoomId = room_id;
-        ErrorCode = error_code;
+        RoomId = roomId;
+        ErrorCode = errorCode;
         Info = info;
     }
 
@@ -315,7 +308,7 @@ public enum RoomSettingsChangeKind
 /// </remarks>
 /// <param name="Kind">The kind of change.</param>
 /// <param name="ChangedAtUtc">The time the change was published.</param>
-/// <param name="Client">The client type of the hotel session, or <see langword="null"/> when no session is active.</param>
+/// <param name="Connected">Whether a hotel session is active.</param>
 /// <param name="SessionGeneration">The generation of the hotel session, increased each time the session changes.</param>
 /// <param name="StateRevision">The room settings state revision after the change.</param>
 /// <param name="RoomId">
@@ -334,7 +327,7 @@ public enum RoomSettingsChangeKind
 public sealed record RoomSettingsChanged(
     RoomSettingsChangeKind Kind,
     DateTimeOffset ChangedAtUtc,
-    ClientType? Client,
+    bool Connected,
     long SessionGeneration,
     long StateRevision,
     Id RoomId,

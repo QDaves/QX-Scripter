@@ -36,7 +36,6 @@ internal sealed partial class EarningApplication
         bool connected = Connected(state);
         return new EarningStateView(
             connected,
-            connected ? state.Session!.Client : null,
             state.SessionGeneration,
             state.Revision,
             state.StatusRevision,
@@ -57,7 +56,6 @@ internal sealed partial class EarningApplication
         bool connected = Connected(state);
         return new EarningEntryPage(
             connected,
-            connected ? state.Session!.Client : null,
             state.SessionGeneration,
             state.Revision,
             state.StatusRevision,

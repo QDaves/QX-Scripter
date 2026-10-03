@@ -4,7 +4,7 @@ namespace Qx.Model.Figures;
 /// Specifies the gender partition used by figure data.
 /// </summary>
 /// <remarks>
-/// A figure string never carries a gender; the clients always receive it as a separate value next to the figure.
+/// A figure string never carries a gender; the client always receives it as a separate value next to the figure.
 /// </remarks>
 public enum FigureGender
 {

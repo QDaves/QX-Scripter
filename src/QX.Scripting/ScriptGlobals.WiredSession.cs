@@ -39,7 +39,7 @@ public partial class ScriptGlobals
         int chestLimit = 5,
         int itemOffset = 0,
         int itemLimit = 20) =>
-        Application.Invoke<WiredStateRequest, WiredStateView>(
+        _application.Invoke<WiredStateRequest, WiredStateView>(
             ApplicationMemberIds.WiredState,
             new WiredStateRequest(chestOffset, chestLimit, itemOffset, itemLimit),
             Ct);

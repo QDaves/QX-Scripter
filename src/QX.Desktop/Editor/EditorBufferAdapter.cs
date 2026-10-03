@@ -48,14 +48,14 @@ public sealed class EditorBufferAdapter : IScriptTextBuffer, IDisposable
         }
     }
 
-    public void Insert(string text, int caret_offset)
+    public void Insert(string text, int caretOffset)
     {
         ArgumentNullException.ThrowIfNull(text);
         if (_editor.Document is not { } document)
             return;
         int start = Math.Clamp(_editor.CaretOffset, 0, document.TextLength);
         document.Insert(start, text);
-        _editor.CaretOffset = Math.Clamp(start + caret_offset, 0, document.TextLength);
+        _editor.CaretOffset = Math.Clamp(start + caretOffset, 0, document.TextLength);
     }
 
     public bool GoTo(int line, int column)

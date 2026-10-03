@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Qx.Messages;
 using Qx.Model;
 using Qx.Protocol;
@@ -107,7 +108,7 @@ internal static class RoomPlacementApplicationDescriptors
         event_exposure,
         null,
         typeof(RoomPlacementChanged),
-        state_effects:
+        stateEffects:
         [
             new(ApplicationStateKey.RoomActive, ApplicationStateEffectKind.Changes),
             new(ApplicationStateKey.RoomActive, ApplicationStateEffectKind.Invalidates)
@@ -132,7 +133,7 @@ internal static class RoomPlacementApplicationDescriptors
         typeof(RoomPlacementPickupConfirmation),
         messages: [Observe(MessageKeys.Room.Item.PickupConfirmation)]);
 
-    private static ApplicationDescriptor Move<TRequest>(
+    private static ApplicationDescriptor Move<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TRequest>(
         string id,
         string title,
         string description,
@@ -209,8 +210,8 @@ internal static class RoomPlacementApplicationDescriptors
         new(Pattern: "^-?[1-9][0-9]*$");
 
     private static ApplicationMessageRequirement Send(MessageKey key) =>
-        new(key, Direction.Out, ApplicationMessageRole.Send);
+        new(key, MessageDirection.Out, ApplicationMessageRole.Send);
 
     private static ApplicationMessageRequirement Observe(MessageKey key) =>
-        new(key, Direction.In, ApplicationMessageRole.Observe);
+        new(key, MessageDirection.In, ApplicationMessageRole.Observe);
 }

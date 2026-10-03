@@ -5,8 +5,6 @@ public interface IPacket : IDisposable
 {
     /// <summary>Gets or sets the message header.</summary>
     Header Header { get; set; }
-    /// <summary>Gets the client type the packet belongs to.</summary>
-    ClientType Client { get; }
     /// <summary>Gets the parser context, or <see langword="null"/> when none is attached.</summary>
     IParserContext? Context { get; }
     /// <summary>Gets the buffer that holds the packet body.</summary>
@@ -40,8 +38,8 @@ public interface IPacket : IDisposable
     /// <returns>The bytes that were read.</returns>
     ReadOnlySpan<byte> ReadSpan(int n);
     /// <summary>Writes bytes at the current position, overwriting existing bytes, and advances past them.</summary>
-    /// <param name="bytes">The bytes to write.</param>
-    void WriteSpan(ReadOnlySpan<byte> bytes);
+    /// <param name="span">The bytes to write.</param>
+    void WriteSpan(ReadOnlySpan<byte> span);
 
     /// <summary>Empties the packet body and resets the position to 0.</summary>
     void Clear();

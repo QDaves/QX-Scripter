@@ -31,7 +31,7 @@ public sealed class PanicKey : IDisposable
 
     public string? Unavailable { get; private set; }
 
-    public async Task RegisterAsync(CancellationToken cancellation_token)
+    public async Task RegisterAsync(CancellationToken cancellationToken)
     {
         if (_registration is not null)
             return;
@@ -41,7 +41,7 @@ public sealed class PanicKey : IDisposable
             Diag.Info($"The panic key {Gesture} is not available on this system; stop scripts from the tab or the status bar.", "hotkey");
             return;
         }
-        _registration = await _hotkeys.TryRegisterAsync(Chord, Pressed, cancellation_token);
+        _registration = await _hotkeys.TryRegisterAsync(Chord, Pressed, cancellationToken);
         Unavailable = _registration is null ? "in use by another program or QX window" : null;
         if (_registration is null)
             Diag.Warn($"Panic key {Gesture} is already registered by another program or another QX window; stop this window's scripts from the tab or the status bar.", "hotkey");

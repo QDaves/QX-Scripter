@@ -36,7 +36,6 @@ internal sealed partial class DailyTaskApplication
         bool connected = Connected(state);
         return new DailyTaskStateView(
             connected,
-            connected ? state.Session!.Client : null,
             state.SessionGeneration,
             state.Revision,
             state.TasksRevision,
@@ -57,7 +56,6 @@ internal sealed partial class DailyTaskApplication
         bool connected = Connected(state);
         return new DailyTaskPage(
             connected,
-            connected ? state.Session!.Client : null,
             state.SessionGeneration,
             state.Revision,
             state.TasksRevision,

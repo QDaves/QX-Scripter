@@ -1,6 +1,6 @@
 using Qx.Interception;
+using Qx.Model;
 using Qx.Model.Messages.Incoming;
-using Qx.Model.Quests;
 
 namespace Qx.Game.Application;
 
@@ -284,7 +284,7 @@ internal sealed partial class QuestApplication : IApplicationFeature, IQuestOper
         var value = new QuestChanged(
             kind,
             time_provider.GetUtcNow(),
-            update.State.Session?.Client,
+            update.State.Session is not null,
             update.State.SessionGeneration,
             update.State.Revision,
             source_revision,

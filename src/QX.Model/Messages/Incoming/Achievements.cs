@@ -572,10 +572,10 @@ public sealed record BadgePointLimits : IParserComposer<BadgePointLimits>
         Array.AsReadOnly(Array.Empty<BadgePointLimit>());
 
     /// <summary>Initializes a new instance of the <see cref="BadgePointLimits"/> record.</summary>
-    /// <param name="Limits">The point limits, copied into a read only list.</param>
-    public BadgePointLimits(IReadOnlyList<BadgePointLimit> Limits)
+    /// <param name="limits">The point limits, copied into a read only list.</param>
+    public BadgePointLimits(IReadOnlyList<BadgePointLimit> limits)
     {
-        this.Limits = Limits;
+        Limits = limits;
     }
 
     /// <summary>Gets the point limit of each achievement level, as a read only copy.</summary>
@@ -586,10 +586,10 @@ public sealed record BadgePointLimits : IParserComposer<BadgePointLimits>
     }
 
     /// <summary>Deconstructs the message into its limits.</summary>
-    /// <param name="Limits">The point limit of each achievement level.</param>
-    public void Deconstruct(out IReadOnlyList<BadgePointLimit> Limits)
+    /// <param name="limits">The point limit of each achievement level.</param>
+    public void Deconstruct(out IReadOnlyList<BadgePointLimit> limits)
     {
-        Limits = this.Limits;
+        limits = Limits;
     }
 
     /// <summary>Gets the point limit for one badge, or <see langword="null"/> when none was sent.</summary>
@@ -616,7 +616,7 @@ public sealed record BadgePointLimits : IParserComposer<BadgePointLimits>
 
     private static BadgePointLimits ParseLimits(in PacketReader p)
     {
-        int count_width = AchievementBadgeWire.CountWidth(p.Client);
+        int count_width = AchievementBadgeWire.CountWidth;
         int group_minimum_bytes = checked(
             AchievementBadgeWire.StringPrefixBytes + count_width);
         int groups = AchievementBadgeWire.ReadCount(
@@ -727,12 +727,12 @@ public sealed record Achievements : IParserComposer<Achievements>
         Array.AsReadOnly(Array.Empty<Achievement>());
 
     /// <summary>Initializes a new instance of the <see cref="Achievements"/> record.</summary>
-    /// <param name="Items">The achievements, copied into a read only list.</param>
-    /// <param name="DefaultCategory">The category the client opens first.</param>
-    public Achievements(IReadOnlyList<Achievement> Items, string DefaultCategory)
+    /// <param name="items">The achievements, copied into a read only list.</param>
+    /// <param name="defaultCategory">The category the client opens first.</param>
+    public Achievements(IReadOnlyList<Achievement> items, string defaultCategory)
     {
-        this.Items = Items;
-        this.DefaultCategory = DefaultCategory;
+        Items = items;
+        DefaultCategory = defaultCategory;
     }
 
     /// <summary>Gets the achievements, as a read only copy.</summary>
@@ -746,14 +746,14 @@ public sealed record Achievements : IParserComposer<Achievements>
     public string DefaultCategory { get; init; }
 
     /// <summary>Deconstructs the message into its parts.</summary>
-    /// <param name="Items">The achievements.</param>
-    /// <param name="DefaultCategory">The category the client opens first.</param>
+    /// <param name="items">The achievements.</param>
+    /// <param name="defaultCategory">The category the client opens first.</param>
     public void Deconstruct(
-        out IReadOnlyList<Achievement> Items,
-        out string DefaultCategory)
+        out IReadOnlyList<Achievement> items,
+        out string defaultCategory)
     {
-        Items = this.Items;
-        DefaultCategory = this.DefaultCategory;
+        items = Items;
+        defaultCategory = DefaultCategory;
     }
 
     /// <summary>Parses the message from a packet.</summary>

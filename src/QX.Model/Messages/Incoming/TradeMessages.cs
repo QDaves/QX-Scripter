@@ -22,10 +22,10 @@ public sealed record TradeOffers(TradeOffer First, TradeOffer Second) : IParserC
     }
 
     /// <summary>Gets the offer of the specified participant.</summary>
-    /// <param name="user_id">The user ID of the participant.</param>
+    /// <param name="userId">The user ID of the participant.</param>
     /// <returns>The participant's offer, or <see langword="null"/> when neither offer belongs to the user.</returns>
-    public TradeOffer? OfferOf(Id user_id) =>
-        First.UserId == user_id ? First : Second.UserId == user_id ? Second : null;
+    public TradeOffer? OfferOf(Id userId) =>
+        First.UserId == userId ? First : Second.UserId == userId ? Second : null;
 
     /// <summary>Composes the message into a packet.</summary>
     /// <param name="p">The packet writer.</param>
@@ -295,31 +295,31 @@ public sealed record TradeNftAsset : IParserComposer<TradeNftAsset>
     private IReadOnlyList<int> _figure_set_ids = Array.Empty<int>();
 
     /// <summary>Initializes a new instance of the <see cref="TradeNftAsset"/> class.</summary>
-    /// <param name="asset_id">The ID of the asset.</param>
-    /// <param name="product_type_id">The product type ID of the asset.</param>
-    /// <param name="item_type_id">The item type ID of the asset.</param>
+    /// <param name="assetId">The ID of the asset.</param>
+    /// <param name="productTypeId">The product type ID of the asset.</param>
+    /// <param name="itemTypeId">The item type ID of the asset.</param>
     /// <param name="score">The score of the asset.</param>
-    /// <param name="pet_figure_string">The pet figure string of the asset.</param>
-    /// <param name="figure_set_ids">The figure set IDs of the asset.</param>
-    /// <param name="product_code">The product code of the asset.</param>
+    /// <param name="petFigureString">The pet figure string of the asset.</param>
+    /// <param name="figureSetIds">The figure set IDs of the asset.</param>
+    /// <param name="productCode">The product code of the asset.</param>
     /// <param name="rarity">The rarity of the asset.</param>
     public TradeNftAsset(
-        long asset_id,
-        short product_type_id,
-        string item_type_id,
+        long assetId,
+        short productTypeId,
+        string itemTypeId,
         int score,
-        string pet_figure_string,
-        IReadOnlyList<int> figure_set_ids,
-        string product_code,
+        string petFigureString,
+        IReadOnlyList<int> figureSetIds,
+        string productCode,
         string rarity)
     {
-        AssetId = asset_id;
-        ProductTypeId = product_type_id;
-        ItemTypeId = item_type_id;
+        AssetId = assetId;
+        ProductTypeId = productTypeId;
+        ItemTypeId = itemTypeId;
         Score = score;
-        PetFigureString = pet_figure_string;
-        FigureSetIds = figure_set_ids;
-        ProductCode = product_code;
+        PetFigureString = petFigureString;
+        FigureSetIds = figureSetIds;
+        ProductCode = productCode;
         Rarity = rarity;
     }
 
@@ -431,14 +431,14 @@ public sealed record TradeNftAssets : IParserComposer<TradeNftAssets>
     private IReadOnlyList<TradeNftAsset> _other_assets = Array.Empty<TradeNftAsset>();
 
     /// <summary>Initializes a new instance of the <see cref="TradeNftAssets"/> class.</summary>
-    /// <param name="own_assets">The NFT assets offered by the user.</param>
-    /// <param name="other_assets">The NFT assets offered by the other participant.</param>
+    /// <param name="ownAssets">The NFT assets offered by the user.</param>
+    /// <param name="otherAssets">The NFT assets offered by the other participant.</param>
     public TradeNftAssets(
-        IReadOnlyList<TradeNftAsset> own_assets,
-        IReadOnlyList<TradeNftAsset> other_assets)
+        IReadOnlyList<TradeNftAsset> ownAssets,
+        IReadOnlyList<TradeNftAsset> otherAssets)
     {
-        OwnAssets = own_assets;
-        OtherAssets = other_assets;
+        OwnAssets = ownAssets;
+        OtherAssets = otherAssets;
     }
 
     /// <summary>Gets the NFT assets offered by the user.</summary>

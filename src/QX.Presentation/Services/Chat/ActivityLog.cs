@@ -40,14 +40,14 @@ public sealed class ActivityLog : IAlwaysOn, IDisposable
 
     public IReadOnlyList<ActivityEntry> Entries => _entries;
 
-    public static string EnteredText(string? room_name, string? owner_name)
+    public static string EnteredText(string? roomName, string? ownerName)
     {
-        string room = string.IsNullOrEmpty(room_name) ? "room" : room_name;
-        return string.IsNullOrEmpty(owner_name) ? $"Entered {room}" : $"Entered {room} · owned by {owner_name}";
+        string room = string.IsNullOrEmpty(roomName) ? "room" : roomName;
+        return string.IsNullOrEmpty(ownerName) ? $"Entered {room}" : $"Entered {room} · owned by {ownerName}";
     }
 
-    public void Enter(long room_generation, long room_id, string? room_name, string? owner_name, DateTimeOffset at) =>
-        Add(new ActivityEntry(++_sequence, at, ActivityKind.Entered, EnteredText(room_name, owner_name), room_generation, room_id));
+    public void Enter(long roomGeneration, long roomId, string? roomName, string? ownerName, DateTimeOffset at) =>
+        Add(new ActivityEntry(++_sequence, at, ActivityKind.Entered, EnteredText(roomName, ownerName), roomGeneration, roomId));
 
     public void Arrive(string name, DateTimeOffset at) =>
         Add(new ActivityEntry(++_sequence, at, ActivityKind.Arrived, $"{name} came in", 0, 0));
@@ -55,14 +55,14 @@ public sealed class ActivityLog : IAlwaysOn, IDisposable
     public void Leave(string name, DateTimeOffset at) =>
         Add(new ActivityEntry(++_sequence, at, ActivityKind.Left, $"{name} left", 0, 0));
 
-    public void ApplyRoomData(long room_generation, long room_id, string? room_name, string? owner_name)
+    public void ApplyRoomData(long roomGeneration, long roomId, string? roomName, string? ownerName)
     {
         for (int index = _entries.Count - 1; index >= 0; index--)
         {
             ActivityEntry entry = _entries[index];
-            if (entry.Kind != ActivityKind.Entered || entry.RoomGeneration != room_generation || entry.RoomId != room_id)
+            if (entry.Kind != ActivityKind.Entered || entry.RoomGeneration != roomGeneration || entry.RoomId != roomId)
                 continue;
-            ActivityEntry corrected = entry with { Text = EnteredText(room_name, owner_name) };
+            ActivityEntry corrected = entry with { Text = EnteredText(roomName, ownerName) };
             _entries[index] = corrected;
             Changed?.Invoke(corrected);
             return;

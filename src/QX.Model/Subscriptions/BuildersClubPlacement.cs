@@ -1,4 +1,4 @@
-namespace Qx.Model.Subscriptions;
+namespace Qx.Model;
 
 /// <summary>Represents where a Builders Club furni is to be placed.</summary>
 /// <remarks>

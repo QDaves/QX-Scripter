@@ -47,7 +47,6 @@ internal sealed partial class LeaderboardApplication
         var route = new LeaderboardRoute(scope, weekly);
         return new LeaderboardStateView(
             connected,
-            connected ? state.Session!.Client : null,
             state.SessionGeneration,
             state.Revision,
             state.BoardsRevision,
@@ -78,7 +77,6 @@ internal sealed partial class LeaderboardApplication
         bool connected = Connected(state);
         return new LeaderboardEntryPage(
             connected,
-            connected ? state.Session!.Client : null,
             state.SessionGeneration,
             state.Revision,
             state.BoardsRevision,

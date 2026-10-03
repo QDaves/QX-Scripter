@@ -1,3 +1,4 @@
+using Qx.Model;
 using Qx.Model.Messages.Incoming;
 
 namespace Qx.Game;
@@ -45,18 +46,43 @@ public sealed record RoomAccessTransition(
     Id? CurrentRoomId,
     RoomConnectionFailure? Failure);
 
-/// <summary>Represents the user's ownership, rights and spectator state in the current room.</summary>
+/// <summary>
+/// Represents what the user may do in the current room: ownership, rights and spectator state,
+/// together with the room's mute state and moderation levels.
+/// </summary>
+/// <remarks>
+/// The mute and moderation members come from the room details of the guest room result and stay
+/// <see langword="null"/> until those details arrive.
+/// </remarks>
 /// <param name="IsOwner">Whether the user owns the room.</param>
-/// <param name="RightsLevel">The user's rights level, or <see langword="null"/> when the server has not sent it.</param>
-/// <param name="RightsKnown">Whether the user's rights are known, which is the case for the owner or once a rights level has arrived.</param>
+/// <param name="RightsLevel">
+/// The user's rights level, or <see langword="null"/> when the server has not sent it. The client's
+/// scale is 0 not a controller, 1 room controller (rights), 2 group member, 3 group admin, 4 room
+/// owner, 5 moderator.
+/// </param>
+/// <param name="RightsKnown">
+/// Whether the user's rights are known, which is the case for the owner or once a rights level has
+/// arrived. While this is <see langword="false"/>, a <paramref name="HasRights"/> of
+/// <see langword="false"/> only means "not confirmed yet".
+/// </param>
 /// <param name="HasRights">Whether the user owns the room or has a rights level above 0.</param>
 /// <param name="IsSpectating">Whether the user is spectating, or <see langword="null"/> when the server has not said.</param>
+/// <param name="IsRoomMuted">Whether the room is muted for everyone, or <see langword="null"/> before the room details arrive.</param>
+/// <param name="CanMute">Whether the user may mute others in the room, or <see langword="null"/> before the room details arrive.</param>
+/// <param name="WhoCanMute">Who may mute other users, or <see langword="null"/> before the room details arrive.</param>
+/// <param name="WhoCanKick">Who may kick other users, or <see langword="null"/> before the room details arrive.</param>
+/// <param name="WhoCanBan">Who may ban other users, or <see langword="null"/> before the room details arrive.</param>
 public sealed record RoomAuthorityState(
     bool IsOwner,
     int? RightsLevel,
     bool RightsKnown,
     bool HasRights,
-    bool? IsSpectating);
+    bool? IsSpectating,
+    bool? IsRoomMuted,
+    bool? CanMute,
+    RoomModerationPermission? WhoCanMute,
+    RoomModerationPermission? WhoCanKick,
+    RoomModerationPermission? WhoCanBan);
 
 /// <summary>Specifies what ended a room session.</summary>
 public enum RoomExitSource

@@ -56,7 +56,6 @@ internal sealed class RoomLifecycleApplication : IApplicationFeature
             session,
             cancellation_token);
         return ValueTask.FromResult(new RoomLifecycleDispatchResult(
-            session.Client,
             request.RoomId,
             generation,
             true,
@@ -80,7 +79,6 @@ internal sealed class RoomLifecycleApplication : IApplicationFeature
         });
         game.RoomActions.Leave(session, room.Generation, cancellation_token);
         return ValueTask.FromResult(new RoomLifecycleDispatchResult(
-            session.Client,
             room.RoomId,
             room.Generation,
             true,
@@ -106,10 +104,10 @@ internal sealed class RoomLifecycleApplication : IApplicationFeature
         [
             new ApplicationMessageRequirement(
                 MessageKeys.Room.Access.OpenRequest,
-                Direction.Out,
+                MessageDirection.Out,
                 ApplicationMessageRole.Send)
         ],
-        tool_hints: new(false, true, false, true));
+        toolHints: new(false, true, false, true));
 
     private static ApplicationDescriptor LeaveDescriptor() => new(
         ApplicationMemberIds.RoomLeave,
@@ -125,8 +123,8 @@ internal sealed class RoomLifecycleApplication : IApplicationFeature
         [
             new ApplicationMessageRequirement(
                 MessageKeys.Room.Lifecycle.Quit,
-                Direction.Out,
+                MessageDirection.Out,
                 ApplicationMessageRole.Send)
         ],
-        tool_hints: new(false, true, false, true));
+        toolHints: new(false, true, false, true));
 }

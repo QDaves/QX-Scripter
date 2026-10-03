@@ -10,10 +10,10 @@ public sealed class InterceptFailureLog(int limit = 200)
 
     public bool Saturated { get; private set; }
 
-    public bool ShouldReport(Header packet_header, Exception error)
+    public bool ShouldReport(Header packetHeader, Exception error)
     {
         ArgumentNullException.ThrowIfNull(error);
-        string key = $"{packet_header.Direction}:{packet_header.Value}:{error.GetType().FullName}:{error.Message}";
+        string key = $"{packetHeader.Direction}:{packetHeader.Value}:{error.GetType().FullName}:{error.Message}";
         lock (_gate)
         {
             if (_seen.Count >= limit)
@@ -25,23 +25,23 @@ public sealed class InterceptFailureLog(int limit = 200)
         }
     }
 
-    public static string Describe(Header packet_header, IMessageManager? messages)
+    public static string Describe(Header packetHeader, IMessageManager? messages)
     {
         try
         {
-            if (messages is not null && messages.TryGetIdentifier(packet_header, out Identifier identifier))
-                return $"{identifier.ToString(true)} ({packet_header.Value})";
+            if (messages is not null && messages.TryGetIdentifier(packetHeader, out Identifier identifier))
+                return $"{identifier.ToString(true)} ({packetHeader.Value})";
         }
         catch (Exception error) when (error is not OutOfMemoryException)
         {
         }
-        string direction = packet_header.Direction switch
+        string direction = packetHeader.Direction switch
         {
-            Qx.Direction.In => "in",
-            Qx.Direction.Out => "out",
+            MessageDirection.In => "in",
+            MessageDirection.Out => "out",
             _ => "unknown"
         };
-        return $"{direction} header {packet_header.Value}";
+        return $"{direction} header {packetHeader.Value}";
     }
 
     public static string Format(string described, Exception error)

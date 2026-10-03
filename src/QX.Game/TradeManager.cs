@@ -131,10 +131,10 @@ internal sealed class TradeManager : GameStateManager
         OnIncoming(MessageContracts.Trade.Completed, ApplyCompleted);
         OnIncoming(MessageContracts.Trade.Closed, ApplyClosed);
         OnIncoming(MessageContracts.Trade.OpenFailed, ApplyOpenFailure);
-        OnIncoming(ClientType.Flash, MessageContracts.Trade.NftOffers, ApplyNftOffers);
-        OnIncoming(ClientType.Flash, MessageContracts.Trade.NftInventory, ApplyNftInventory);
-        OnIncoming(ClientType.Flash, MessageContracts.Trade.SilverUpdated, ApplySilver);
-        OnIncoming(ClientType.Flash, MessageContracts.Trade.SilverFee, ApplySilverFee);
+        OnIncoming(MessageContracts.Trade.NftOffers, ApplyNftOffers);
+        OnIncoming(MessageContracts.Trade.NftInventory, ApplyNftInventory);
+        OnIncoming(MessageContracts.Trade.SilverUpdated, ApplySilver);
+        OnIncoming(MessageContracts.Trade.SilverFee, ApplySilverFee);
     }
 
     protected override void Reset() =>

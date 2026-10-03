@@ -67,7 +67,6 @@ public sealed record AchievementApplicationItem(
 /// <summary>Represents the achievement state read from one snapshot.</summary>
 /// <remarks>Returned by the <c>achievements.state</c> query.</remarks>
 /// <param name="Connected">Whether the snapshot belongs to the active hotel session.</param>
-/// <param name="Client">The client type of the hotel session, or <see langword="null"/> when <paramref name="Connected"/> is <see langword="false"/>.</param>
 /// <param name="SessionGeneration">The generation of the hotel session the snapshot belongs to.</param>
 /// <param name="Revision">The achievement state revision, which increases with every change.</param>
 /// <param name="ListRevision">The revision of the achievement list, which increases when the list is received, updated or cleared.</param>
@@ -78,13 +77,12 @@ public sealed record AchievementApplicationItem(
 /// <param name="SnapshotRevision">The revision of the retained snapshot the view was read from.</param>
 /// <param name="List">The summary of the achievement list.</param>
 /// <param name="ScoreLoaded">Whether the achievement score has been received in the current session.</param>
-/// <param name="Score">The achievement score, or <see langword="null"/> when it has not been received. Only the Flash client receives the score.</param>
+/// <param name="Score">The achievement score, or <see langword="null"/> when it has not been received.</param>
 /// <param name="PointLimitsLoaded">Whether the badge point limits have been received in the current session.</param>
 /// <param name="PointLimitCount">The number of badge point limits in the snapshot.</param>
 /// <param name="NewCodeCount">The number of achievement codes marked as new.</param>
 public sealed record AchievementStateView(
     bool Connected,
-    ClientType? Client,
     long SessionGeneration,
     long Revision,
     long ListRevision,
@@ -113,7 +111,6 @@ public sealed record AchievementPageRequest(
 /// <summary>Represents a page of achievements read from one snapshot.</summary>
 /// <remarks>Returned by the <c>achievements.list</c> query.</remarks>
 /// <param name="Connected">Whether the snapshot belongs to the active hotel session.</param>
-/// <param name="Client">The client type of the hotel session, or <see langword="null"/> when <paramref name="Connected"/> is <see langword="false"/>.</param>
 /// <param name="SessionGeneration">The generation of the hotel session the snapshot belongs to.</param>
 /// <param name="StateRevision">The achievement state revision, which increases with every change.</param>
 /// <param name="ListRevision">The revision of the achievement list, which increases when the list is received, updated or cleared.</param>
@@ -129,7 +126,6 @@ public sealed record AchievementPageRequest(
 /// <param name="Achievements">The achievements in the page, in the order the server sent them.</param>
 public sealed record AchievementPage(
     bool Connected,
-    ClientType? Client,
     long SessionGeneration,
     long StateRevision,
     long ListRevision,
@@ -171,7 +167,6 @@ public sealed record AchievementPointLimitPageRequest(
 /// achievement code, then level, then badge code.
 /// </remarks>
 /// <param name="Connected">Whether the snapshot belongs to the active hotel session.</param>
-/// <param name="Client">The client type of the hotel session, or <see langword="null"/> when <paramref name="Connected"/> is <see langword="false"/>.</param>
 /// <param name="SessionGeneration">The generation of the hotel session the snapshot belongs to.</param>
 /// <param name="StateRevision">The achievement state revision, which increases with every change.</param>
 /// <param name="PointLimitsRevision">The revision of the badge point limits, which increases when they are received or cleared.</param>
@@ -183,7 +178,6 @@ public sealed record AchievementPointLimitPageRequest(
 /// <param name="Limits">The point limits in the page.</param>
 public sealed record AchievementPointLimitPage(
     bool Connected,
-    ClientType? Client,
     long SessionGeneration,
     long StateRevision,
     long PointLimitsRevision,
@@ -210,7 +204,6 @@ public sealed record AchievementRefreshRequest(
 
 /// <summary>Represents the result of an achievement list refresh.</summary>
 /// <remarks>Returned by the <c>achievements.refresh</c> operation.</remarks>
-/// <param name="Client">The client type of the hotel session.</param>
 /// <param name="RefreshedAtUtc">The UTC time the result was created.</param>
 /// <param name="ObservedAtUtc">The UTC time the new achievement list was observed.</param>
 /// <param name="SessionGeneration">The generation of the hotel session the refresh ran in.</param>
@@ -221,7 +214,6 @@ public sealed record AchievementRefreshRequest(
 /// <param name="MessagesDispatched">The number of request messages the call sent, 0 when it joined a request already in progress.</param>
 /// <param name="FirstPage">The first page of achievements from the refreshed snapshot.</param>
 public sealed record AchievementRefreshResult(
-    ClientType Client,
     DateTimeOffset RefreshedAtUtc,
     DateTimeOffset ObservedAtUtc,
     long SessionGeneration,
@@ -248,7 +240,6 @@ public sealed record AchievementPointLimitsRefreshRequest(
 
 /// <summary>Represents the result of a badge point limit refresh.</summary>
 /// <remarks>Returned by the <c>achievements.point_limits.refresh</c> operation.</remarks>
-/// <param name="Client">The client type of the hotel session.</param>
 /// <param name="RefreshedAtUtc">The UTC time the result was created.</param>
 /// <param name="ObservedAtUtc">The UTC time the new point limits were observed.</param>
 /// <param name="SessionGeneration">The generation of the hotel session the refresh ran in.</param>
@@ -258,7 +249,6 @@ public sealed record AchievementPointLimitsRefreshRequest(
 /// <param name="MessagesDispatched">The number of request messages the call sent, 0 when it joined a request already in progress.</param>
 /// <param name="FirstPage">The first page of point limits from the refreshed snapshot.</param>
 public sealed record AchievementPointLimitsRefreshResult(
-    ClientType Client,
     DateTimeOffset RefreshedAtUtc,
     DateTimeOffset ObservedAtUtc,
     long SessionGeneration,
@@ -289,7 +279,7 @@ public enum AchievementChangeKind
 /// <remarks>Published by the <c>achievements.changed</c> event.</remarks>
 /// <param name="Kind">The kind of change.</param>
 /// <param name="ChangedAtUtc">The UTC time the change was published.</param>
-/// <param name="Client">The client type of the hotel session, or <see langword="null"/> when there is no session.</param>
+/// <param name="Connected">Whether a hotel session is active.</param>
 /// <param name="SessionGeneration">The generation of the hotel session the change belongs to.</param>
 /// <param name="Revision">The achievement state revision after the change.</param>
 /// <param name="SourceRevision">The revision of the part that changed: the list revision for <see cref="AchievementChangeKind.Snapshot"/> and <see cref="AchievementChangeKind.Updated"/>, the score, point limit or new code revision for those kinds, and <paramref name="Revision"/> for <see cref="AchievementChangeKind.Reset"/>.</param>
@@ -305,7 +295,7 @@ public enum AchievementChangeKind
 public sealed record AchievementChanged(
     AchievementChangeKind Kind,
     DateTimeOffset ChangedAtUtc,
-    ClientType? Client,
+    bool Connected,
     long SessionGeneration,
     long Revision,
     long SourceRevision,
@@ -363,7 +353,6 @@ public sealed record BadgeInventorySummary(
 /// <summary>Represents the badge state read from one snapshot.</summary>
 /// <remarks>Returned by the <c>badges.state</c> query.</remarks>
 /// <param name="Connected">Whether the snapshot belongs to the active hotel session.</param>
-/// <param name="Client">The client type of the hotel session, or <see langword="null"/> when <paramref name="Connected"/> is <see langword="false"/>.</param>
 /// <param name="SessionGeneration">The generation of the hotel session the snapshot belongs to.</param>
 /// <param name="Revision">The badge state revision, which increases with every change.</param>
 /// <param name="InventoryRevision">The revision of the owned badges and their load state.</param>
@@ -373,7 +362,6 @@ public sealed record BadgeInventorySummary(
 /// <param name="Inventory">The summary of the badge inventory.</param>
 public sealed record BadgeStateView(
     bool Connected,
-    ClientType? Client,
     long SessionGeneration,
     long Revision,
     long InventoryRevision,
@@ -398,7 +386,6 @@ public sealed record OwnedBadgePageRequest(
 /// fragments, followed by badges received during the session.
 /// </remarks>
 /// <param name="Connected">Whether the snapshot belongs to the active hotel session.</param>
-/// <param name="Client">The client type of the hotel session, or <see langword="null"/> when <paramref name="Connected"/> is <see langword="false"/>.</param>
 /// <param name="SessionGeneration">The generation of the hotel session the snapshot belongs to.</param>
 /// <param name="StateRevision">The badge state revision, which increases with every change.</param>
 /// <param name="InventoryRevision">The revision of the owned badges and their load state.</param>
@@ -411,7 +398,6 @@ public sealed record OwnedBadgePageRequest(
 /// <param name="Badges">The owned badges in the page.</param>
 public sealed record OwnedBadgePage(
     bool Connected,
-    ClientType? Client,
     long SessionGeneration,
     long StateRevision,
     long InventoryRevision,
@@ -445,7 +431,6 @@ public sealed record BadgeSelectedSetPageRequest(
 /// <summary>Represents a page of the selected badge sets received in the session, read from one snapshot.</summary>
 /// <remarks>Returned by the <c>badges.selected_sets.list</c> query. The sets are ordered by user id.</remarks>
 /// <param name="Connected">Whether the snapshot belongs to the active hotel session.</param>
-/// <param name="Client">The client type of the hotel session, or <see langword="null"/> when <paramref name="Connected"/> is <see langword="false"/>.</param>
 /// <param name="SessionGeneration">The generation of the hotel session the snapshot belongs to.</param>
 /// <param name="StateRevision">The badge state revision, which increases with every change.</param>
 /// <param name="SelectedRevision">The revision of the selected badge sets, which increases each time a user's selected badges are received.</param>
@@ -456,7 +441,6 @@ public sealed record BadgeSelectedSetPageRequest(
 /// <param name="Sets">The selected badge sets in the page.</param>
 public sealed record BadgeSelectedSetPage(
     bool Connected,
-    ClientType? Client,
     long SessionGeneration,
     long StateRevision,
     long SelectedRevision,
@@ -497,7 +481,6 @@ public sealed record BadgeSelectedPageRequest(
 /// server sent them.
 /// </remarks>
 /// <param name="Connected">Whether the snapshot belongs to the active hotel session.</param>
-/// <param name="Client">The client type of the hotel session, or <see langword="null"/> when <paramref name="Connected"/> is <see langword="false"/>.</param>
 /// <param name="SessionGeneration">The generation of the hotel session the snapshot belongs to.</param>
 /// <param name="StateRevision">The badge state revision, which increases with every change.</param>
 /// <param name="SelectedRevision">The revision of the selected badge sets, which increases each time a user's selected badges are received.</param>
@@ -510,7 +493,6 @@ public sealed record BadgeSelectedPageRequest(
 /// <param name="Badges">The selected badges in the page.</param>
 public sealed record BadgeSelectedPage(
     bool Connected,
-    ClientType? Client,
     long SessionGeneration,
     long StateRevision,
     long SelectedRevision,
@@ -539,7 +521,6 @@ public sealed record BadgeRefreshRequest(
 
 /// <summary>Represents the result of a badge inventory refresh.</summary>
 /// <remarks>Returned by the <c>badges.refresh</c> operation.</remarks>
-/// <param name="Client">The client type of the hotel session.</param>
 /// <param name="RefreshedAtUtc">The UTC time the result was created.</param>
 /// <param name="ObservedAtUtc">The UTC time the complete badge inventory was observed.</param>
 /// <param name="SessionGeneration">The generation of the hotel session the refresh ran in.</param>
@@ -550,7 +531,6 @@ public sealed record BadgeRefreshRequest(
 /// <param name="MessagesDispatched">The number of request messages the call sent, 0 when it joined a request already in progress.</param>
 /// <param name="FirstPage">The first page of owned badges from the refreshed snapshot.</param>
 public sealed record BadgeRefreshResult(
-    ClientType Client,
     DateTimeOffset RefreshedAtUtc,
     DateTimeOffset ObservedAtUtc,
     long SessionGeneration,
@@ -589,7 +569,7 @@ public enum BadgeChangeKind
 /// </remarks>
 /// <param name="Kind">The kind of change.</param>
 /// <param name="ChangedAtUtc">The UTC time the change was published.</param>
-/// <param name="Client">The client type of the hotel session, or <see langword="null"/> when there is no session.</param>
+/// <param name="Connected">Whether a hotel session is active.</param>
 /// <param name="SessionGeneration">The generation of the hotel session the change belongs to.</param>
 /// <param name="Revision">The badge state revision after the change.</param>
 /// <param name="SourceRevision">The selected badge set revision for <see cref="BadgeChangeKind.Selected"/>, otherwise the inventory revision.</param>
@@ -603,7 +583,7 @@ public enum BadgeChangeKind
 public sealed record BadgeChanged(
     BadgeChangeKind Kind,
     DateTimeOffset ChangedAtUtc,
-    ClientType? Client,
+    bool Connected,
     long SessionGeneration,
     long Revision,
     long SourceRevision,

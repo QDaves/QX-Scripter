@@ -10,24 +10,24 @@ public sealed class AppPaths : IAppPaths
     {
     }
 
-    public AppPaths(string config_root, string local_root, string temp_root)
+    public AppPaths(string configRoot, string localRoot, string tempRoot)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(config_root);
-        ArgumentException.ThrowIfNullOrWhiteSpace(local_root);
-        ArgumentException.ThrowIfNullOrWhiteSpace(temp_root);
-        ConfigRoot = config_root;
-        ScriptsDirectory = Path.Combine(config_root, "scripts");
-        SettingsFile = Path.Combine(config_root, "settings.json");
-        LibraryFile = Path.Combine(config_root, "library.json");
-        DraftsFile = Path.Combine(config_root, "drafts.json");
-        WardrobeFile = Path.Combine(config_root, "wardrobe.json");
-        RulesFile = Path.Combine(config_root, "rules.json");
-        McpConfigFile = Path.Combine(config_root, "mcp.json");
-        LogsDirectory = Path.Combine(config_root, "logs");
+        ArgumentException.ThrowIfNullOrWhiteSpace(configRoot);
+        ArgumentException.ThrowIfNullOrWhiteSpace(localRoot);
+        ArgumentException.ThrowIfNullOrWhiteSpace(tempRoot);
+        ConfigRoot = configRoot;
+        ScriptsDirectory = Path.Combine(configRoot, "scripts");
+        SettingsFile = Path.Combine(configRoot, "settings.json");
+        LibraryFile = Path.Combine(configRoot, "library.json");
+        DraftsFile = Path.Combine(configRoot, "drafts.json");
+        WardrobeFile = Path.Combine(configRoot, "wardrobe.json");
+        RulesFile = Path.Combine(configRoot, "rules.json");
+        McpConfigFile = Path.Combine(configRoot, "mcp.json");
+        LogsDirectory = Path.Combine(configRoot, "logs");
         LogFile = Path.Combine(LogsDirectory, "qx.log");
-        CrashLogFile = OperatingSystem.IsLinux() ? Path.Combine(LogsDirectory, "qx_crash.log") : Path.Combine(temp_root, "qx_crash.log");
-        ImageCacheDirectory = Path.Combine(config_root, "imagecache");
-        HeaderCatalogCache = Path.Combine(local_root, "header-catalogs");
+        CrashLogFile = OperatingSystem.IsLinux() ? Path.Combine(LogsDirectory, "qx_crash.log") : Path.Combine(tempRoot, "qx_crash.log");
+        ImageCacheDirectory = Path.Combine(configRoot, "imagecache");
+        HeaderCatalogCache = Path.Combine(localRoot, "header-catalogs");
     }
 
     public string ConfigRoot { get; }

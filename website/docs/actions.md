@@ -46,7 +46,7 @@ LeaveRoom();
 | `ClickFurni(item)` | Clicks an item the way the client does, for example walking up to a teleporter. |
 | `UseFloorItem(id, state)`, `UseWallItem(id, state)` | Uses an item by id. |
 | `ClickFloorItem(id)`, `ClickWallItem(id)` | Clicks an item by id. |
-| `PlaceFloorItem(itemId, x, y, direction)` | Places an item from the inventory. |
+| `PlaceFloorItem(item, location, direction)`, `PlaceWallItem(item, location)` | Places an item from the inventory. |
 | `MoveFloorItem(id, x, y, direction)` | Moves or rotates a placed item. |
 | `PickupFurni(item)` | Picks an item up into the inventory. |
 
@@ -59,9 +59,13 @@ if (dice is not null)
 ## People
 
 ```csharp
-Respect(user);
-AddFriend("somebody");
-OpenTrade(user);
+var user = GetUser("somebody");
+if (user is not null)
+{
+    RespectUser(user);
+    AddFriend(user);
+    OpenTrade(user);
+}
 ```
 
 With rights in the room: `Kick(userId)`, `Mute(userId, minutes)`, `Ban(userId)`,

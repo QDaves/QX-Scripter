@@ -3,6 +3,7 @@ using Qx.Game.Application;
 using Qx.Messages;
 using Qx.Model;
 using Qx.Protocol;
+using Qx.Scripting.Hosting;
 
 namespace Qx.Scripting;
 
@@ -14,27 +15,28 @@ namespace Qx.Scripting;
 /// Indexing it is the shorthand behind <c>Out["Move"]</c> and <c>In["Chat"]</c>.
 /// </para>
 /// <para>
-/// Resolution goes through the catalog loaded for the active session, so the same name can map
-/// to different header values on different hotels or client builds. Never hard-code a header
-/// number; look it up here, or use the constants on <see cref="Msg"/>.
+/// Resolution goes through the session catalog, or the host's default catalog until a session
+/// catalog is bound, so the same name can map to different header values on different hotels or
+/// client builds. Never hard-code a header number; look it up here, or use the constants on
+/// <see cref="Msg"/>.
 /// </para>
 /// </remarks>
-/// <param name="messages">The message manager that resolves names against the active catalog.</param>
+/// <param name="messages">The message resolver that resolves names against the active catalog.</param>
 /// <param name="direction">The direction of the messages to resolve.</param>
-public sealed class HeaderIndex(MessageManager messages, Direction direction)
+public sealed class HeaderIndex(IMessageResolver messages, MessageDirection direction)
 {
     /// <summary>
-    /// Gets the header the given message name resolves to on the active client.
+    /// Gets the header the given message name resolves to in the active catalog.
     /// </summary>
     /// <param name="name">The message name as spelled in the catalog.</param>
     /// <exception cref="InvalidOperationException">
-    /// Thrown when the name is not in the catalog for this direction and client. Unlike an intercept
-    /// registration, which binds nothing and stays silent, a lookup failure is always thrown.
+    /// Thrown when the name is not in the catalog for this direction. Unlike an intercept
+    /// registration, which binds nothing without throwing, a lookup failure is always thrown.
     /// </exception>
     public Header this[string name] =>
-        messages.TryGetHeader(new Identifier(ClientType.None, direction, name), out Header header)
+        messages.TryGetHeader(new Identifier(direction, name), out Header header)
             ? header
-            : throw new InvalidOperationException($"Unknown {(direction == Direction.Out ? "outgoing" : "incoming")} message '{name}'.");
+            : throw new InvalidOperationException($"Unknown {(direction == MessageDirection.Out ? "outgoing" : "incoming")} message '{name}'.");
 }
 
 public partial class ScriptGlobals
@@ -43,33 +45,37 @@ public partial class ScriptGlobals
     private HeaderIndex? _in;
 
     private WalletStateView ReadWalletState(int? point_type = null, int point_limit = 1) =>
-        Application.Invoke<WalletStateRequest, WalletStateView>(
+        _application.Invoke<WalletStateRequest, WalletStateView>(
             ApplicationMemberIds.WalletState,
             new WalletStateRequest(PointLimit: point_limit, PointType: point_type),
             Ct);
 
-    private int ReadWalletPoint(int type) => WalletPoint(ReadWalletState(type), type);
+    private int? ReadWalletPoint(int type) => WalletPoint(ReadWalletState(type), type);
 
-    private static int WalletPoint(WalletStateView state, int type)
+    private int RequireWalletPoint(int type) => RequireWalletPoint(ReadWalletState(type), type);
+
+    private static int? WalletPoint(WalletStateView state, int type)
     {
         WalletPointBalance? point = state.ActivityPoints.Points.FirstOrDefault(
             candidate => candidate.Type == type);
         if (point is not null)
             return point.Amount;
-        return state.PointsLoaded
-            ? 0
-            : throw new InvalidOperationException($"Activity point type {type} has not been loaded.");
+        return state.PointsLoaded ? 0 : null;
     }
+
+    private static int RequireWalletPoint(WalletStateView state, int type) =>
+        WalletPoint(state, type) ??
+        throw new InvalidOperationException($"Activity point type {type} has not been loaded.");
 
     /// <summary>
     /// Gets the header lookup for outgoing (client to server) messages, for example <c>Out["Move"]</c>.
     /// </summary>
-    public HeaderIndex Out => _out ??= new HeaderIndex(Ext.Messages, Direction.Out);
+    public HeaderIndex Out => _out ??= new HeaderIndex(_interceptor.Messages, MessageDirection.Out);
 
     /// <summary>
     /// Gets the header lookup for incoming (server to client) messages, for example <c>In["Chat"]</c>.
     /// </summary>
-    public HeaderIndex In => _in ??= new HeaderIndex(Ext.Messages, Direction.In);
+    public HeaderIndex In => _in ??= new HeaderIndex(_interceptor.Messages, MessageDirection.In);
 
     /// <summary>
     /// Gets whether the local user's own account data has been received.
@@ -97,19 +103,19 @@ public partial class ScriptGlobals
     public Id UserId => Profile.Identity?.Id ?? -1;
 
     /// <summary>Gets the local user's name, or an empty string before the identity has been received.</summary>
-    public string UserName => Self?.Name ?? "";
+    public string UserName => SelfProfile?.Name ?? "";
 
     /// <summary>Gets the local user's figure string, or an empty string before the identity has been received.</summary>
-    public string UserFigure => Self?.Figure ?? "";
+    public string UserFigure => SelfProfile?.Figure ?? "";
 
     /// <summary>Gets the local user's motto, or an empty string before the identity has been received.</summary>
-    public string UserMotto => Self?.Motto ?? "";
+    public string UserMotto => SelfProfile?.Motto ?? "";
 
     /// <summary>
     /// Gets the local user's gender, or <see cref="Gender.Unisex"/> when the identity has not been
     /// received.
     /// </summary>
-    public Gender UserGender => Self?.Gender ?? Gender.Unisex;
+    public Gender UserGender => SelfProfile?.Gender ?? Gender.Unisex;
 
     /// <summary>
     /// Gets the game server host the session is connected to, for example <c>"game-de.habbo.com"</c>.
@@ -141,35 +147,75 @@ public partial class ScriptGlobals
     /// <summary>
     /// Gets the diamond balance (activity point type 5).
     /// </summary>
-    /// <exception cref="InvalidOperationException">
-    /// Thrown when no diamond balance has been reported and the activity point snapshot has not been loaded.
-    /// </exception>
-    public int Diamonds => ReadWalletPoint(WalletPointTypes.Diamonds);
+    /// <remarks>
+    /// Reads 0 until a diamond balance or the activity point balances have been seen, so check
+    /// <see cref="IsPointsLoaded"/> before trusting a zero.
+    /// </remarks>
+    public int Diamonds => ReadWalletPoint(WalletPointTypes.Diamonds) ?? 0;
 
     /// <summary>
     /// Gets the ducket balance (activity point type 0).
     /// </summary>
-    /// <exception cref="InvalidOperationException">
-    /// Thrown when no ducket balance has been reported and the activity point snapshot has not been loaded.
-    /// </exception>
-    public int Duckets => ReadWalletPoint(WalletPointTypes.Duckets);
+    /// <remarks>
+    /// Reads 0 until a ducket balance or the activity point balances have been seen, so check
+    /// <see cref="IsPointsLoaded"/> before trusting a zero.
+    /// </remarks>
+    public int Duckets => ReadWalletPoint(WalletPointTypes.Duckets) ?? 0;
 
     /// <summary>
     /// Gets the balance of an activity point currency.
     /// </summary>
     /// <remarks>
-    /// A currency that is missing from a loaded activity point snapshot reads 0.
+    /// A currency that is missing from the loaded activity point balances reads 0. Until a balance
+    /// for <paramref name="type"/> or the activity point balances have been seen it also reads 0,
+    /// so check <see cref="IsPointsLoaded"/> before trusting a zero.
     /// </remarks>
     /// <param name="type">
     /// The currency type id: 0 for duckets, 5 for diamonds; hotels define further ids for
     /// seasonal currencies.
     /// </param>
-    /// <returns>The reported balance.</returns>
-    /// <exception cref="InvalidOperationException">
-    /// Thrown when no balance for <paramref name="type"/> has been reported and the activity point snapshot
-    /// has not been loaded.
-    /// </exception>
-    public int Points(int type) => ReadWalletPoint(type);
+    /// <returns>The reported balance, or 0.</returns>
+    public int Points(int type) => ReadWalletPoint(type) ?? 0;
+
+    /// <summary>
+    /// Gets every activity point currency the local user holds, keyed by currency type id.
+    /// </summary>
+    /// <remarks>
+    /// Every read builds a new read-only dictionary from the complete wallet state.
+    /// </remarks>
+    /// <exception cref="InvalidOperationException">Thrown when no activity points have been observed yet.</exception>
+    public IReadOnlyDictionary<int, int> UserPoints
+    {
+        get
+        {
+            WalletStateView state = ReadWalletState(point_limit: 500);
+            if (!state.PointsLoaded)
+                throw new InvalidOperationException("The user's activity points have not been loaded.");
+            state = WalletApplicationPages.Complete(_application, state, cancellationToken: Ct);
+            return new System.Collections.ObjectModel.ReadOnlyDictionary<int, int>(
+                state.ActivityPoints.Points.ToDictionary(
+                    point => point.Type,
+                    point => point.Amount));
+        }
+    }
+
+    /// <summary>
+    /// Registers a handler that runs whenever the wallet changes.
+    /// </summary>
+    /// <remarks>
+    /// It runs when a credit balance or the full activity point balances are received, when one
+    /// activity point balance changes, and when the balances are cleared as a session ends or
+    /// starts. <see cref="WalletChanged.Kind"/> tells these apart.
+    /// </remarks>
+    /// <param name="handler">
+    /// The handler to call with the change, which carries the credit balance and, for a single
+    /// activity point update, the currency type, its new balance and the change.
+    /// </param>
+    /// <returns>A handle that removes the handler when disposed.</returns>
+    public IDisposable OnWalletChanged(Action<WalletChanged> handler) =>
+        Track(_application.Subscribe(
+            ApplicationMemberIds.WalletChanged,
+            Guarded(handler)));
 
     /// <summary>
     /// Gets whether the script is still allowed to run.
@@ -223,9 +269,9 @@ public partial class ScriptGlobals
     /// <exception cref="InvalidOperationException">Thrown when no connection is active, or the session changed before the packet could be sent.</exception>
     public void Send(Header header, params object[] values)
     {
-        using var packet = new Packet(header, CurrentClient);
+        using Packet packet = _interceptor.Messages.CreatePacket(header);
         packet.Writer().WriteValues(values);
-        Ext.Send(packet);
+        _interceptor.Send(packet);
     }
 
     /// <summary>
@@ -326,12 +372,13 @@ public partial class ScriptGlobals
     public Task Wait() => Task.Delay(Timeout.Infinite, Ct);
 
     /// <summary>
-    /// Asynchronously waits for the given number of milliseconds.
+    /// Gets a non-negative pseudo-random integer from the shared thread-safe generator.
     /// </summary>
-    /// <remarks>Same as <see cref="Delay(int)"/>.</remarks>
-    /// <param name="milliseconds">The time to wait, in milliseconds.</param>
-    /// <exception cref="OperationCanceledException">Thrown when the script was stopped while waiting.</exception>
-    public Task DelayAsync(int milliseconds) => Task.Delay(milliseconds, Ct);
+    /// <remarks>
+    /// Not suitable for anything security-sensitive.
+    /// </remarks>
+    /// <returns>A random value from 0 up to but not including <see cref="int.MaxValue"/>.</returns>
+    public int Rand() => Random.Shared.Next();
 
     /// <summary>
     /// Gets a random integer in the half-open range <c>[min, max)</c>.
@@ -348,6 +395,16 @@ public partial class ScriptGlobals
 
     /// <summary>Gets a random double in the half-open range <c>[0, 1)</c>.</summary>
     public double RandDouble() => Random.Shared.NextDouble();
+
+    /// <summary>Fills a buffer with pseudo-random bytes.</summary>
+    /// <remarks>The bytes are not cryptographically secure.</remarks>
+    /// <param name="buffer">The buffer to fill; every byte is overwritten.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="buffer"/> is <see langword="null"/>.</exception>
+    public void Rand(byte[] buffer)
+    {
+        ArgumentNullException.ThrowIfNull(buffer);
+        Random.Shared.NextBytes(buffer);
+    }
 
     /// <summary>
     /// Gets a random element of the sequence.

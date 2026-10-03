@@ -156,33 +156,33 @@ public sealed class LeaderboardManager : GameStateManager
         OnConnected(BindSession);
         BindRoute(
             new LeaderboardRoute(LeaderboardScope.Total, false),
-            MessageContracts.Leaderboards.TotalRequest,
-            MessageContracts.Leaderboards.TotalSnapshot,
+            MessageContracts.Leaderboards.Total.Request,
+            MessageContracts.Leaderboards.Total.Snapshot,
             message => (message.Board, null, null));
         BindRoute(
             new LeaderboardRoute(LeaderboardScope.Friends, false),
-            MessageContracts.Leaderboards.FriendsRequest,
-            MessageContracts.Leaderboards.FriendsSnapshot,
+            MessageContracts.Leaderboards.Friends.Request,
+            MessageContracts.Leaderboards.Friends.Snapshot,
             message => (message.Board, null, null));
         BindRoute(
             new LeaderboardRoute(LeaderboardScope.Groups, false),
-            MessageContracts.Leaderboards.GroupsRequest,
-            MessageContracts.Leaderboards.GroupsSnapshot,
+            MessageContracts.Leaderboards.Groups.Request,
+            MessageContracts.Leaderboards.Groups.Snapshot,
             message => (message.Board, null, message.FavouriteGroupId));
         BindRoute(
             new LeaderboardRoute(LeaderboardScope.Total, true),
-            MessageContracts.Leaderboards.WeeklyTotalRequest,
-            MessageContracts.Leaderboards.WeeklyTotalSnapshot,
+            MessageContracts.Leaderboards.WeeklyTotal.Request,
+            MessageContracts.Leaderboards.WeeklyTotal.Snapshot,
             message => (message.Board, message.Period, null));
         BindRoute(
             new LeaderboardRoute(LeaderboardScope.Friends, true),
-            MessageContracts.Leaderboards.WeeklyFriendsRequest,
-            MessageContracts.Leaderboards.WeeklyFriendsSnapshot,
+            MessageContracts.Leaderboards.WeeklyFriends.Request,
+            MessageContracts.Leaderboards.WeeklyFriends.Snapshot,
             message => (message.Board, message.Period, null));
         BindRoute(
             new LeaderboardRoute(LeaderboardScope.Groups, true),
-            MessageContracts.Leaderboards.WeeklyGroupsRequest,
-            MessageContracts.Leaderboards.WeeklyGroupsSnapshot,
+            MessageContracts.Leaderboards.WeeklyGroups.Request,
+            MessageContracts.Leaderboards.WeeklyGroups.Snapshot,
             message => (message.Board, message.Period, message.FavouriteGroupId));
     }
 

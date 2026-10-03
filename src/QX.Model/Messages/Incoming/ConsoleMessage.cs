@@ -166,15 +166,10 @@ public sealed record ConsoleMessage(
             !TrySkipInt(p.Span, ref pos))
             return false;
 
-        int id_size = p.Client switch
-        {
-            ClientType.Flash => sizeof(int),
-            _ => 0
-        };
-        if (id_size == 0 || pos > p.Length - id_size)
+        if (pos > p.Length - sizeof(int))
             return false;
 
-        pos += id_size;
+        pos += sizeof(int);
         return TrySkipString(p.Span, ref pos) &&
                TrySkipString(p.Span, ref pos) &&
                pos == p.Length;

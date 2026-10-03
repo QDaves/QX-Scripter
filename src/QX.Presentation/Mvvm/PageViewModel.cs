@@ -57,7 +57,7 @@ public abstract partial class PageViewModel : ViewModelBase
         OnDeactivated();
     }
 
-    protected virtual Task OnActivatedAsync(CancellationToken cancellation_token) => Task.CompletedTask;
+    protected virtual Task OnActivatedAsync(CancellationToken cancellationToken) => Task.CompletedTask;
 
     protected virtual void OnDeactivated()
     {

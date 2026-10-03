@@ -38,15 +38,15 @@ public readonly record struct FigurePartType
     public static readonly FigurePartType ChestPrint = new("cp");
     /// <summary>The miscellaneous part type, code <c>mc</c>.</summary>
     public static readonly FigurePartType Misc = new("mc");
-    /// <summary>The right miscellaneous part type, code <c>mcr</c>, declared only by the Flash client.</summary>
+    /// <summary>The right miscellaneous part type, code <c>mcr</c>.</summary>
     public static readonly FigurePartType MiscRight = new("mcr");
-    /// <summary>The left miscellaneous part type, code <c>mcl</c>, declared only by the Flash client.</summary>
+    /// <summary>The left miscellaneous part type, code <c>mcl</c>.</summary>
     public static readonly FigurePartType MiscLeft = new("mcl");
     /// <summary>The pet part type, code <c>pt</c>.</summary>
     public static readonly FigurePartType Pet = new("pt");
-    /// <summary>The right pet part type, code <c>ptr</c>, declared only by the Flash client.</summary>
+    /// <summary>The right pet part type, code <c>ptr</c>.</summary>
     public static readonly FigurePartType PetRight = new("ptr");
-    /// <summary>The left pet part type, code <c>ptl</c>, declared only by the Flash client.</summary>
+    /// <summary>The left pet part type, code <c>ptl</c>.</summary>
     public static readonly FigurePartType PetLeft = new("ptl");
     /// <summary>The left hand item part type, code <c>li</c>.</summary>
     public static readonly FigurePartType LeftItem = new("li");
@@ -95,12 +95,9 @@ public readonly record struct FigurePartType
         EyeAccessory, HeadAccessory, HeadEquipment, CoatChest, ChestPrint, Pet, Misc
     ];
 
-    private static readonly FigurePartType[] _flashOnly = [MiscRight, MiscLeft, PetRight, PetLeft];
-
     private static readonly Dictionary<string, string> _nameByCode = build_name_by_code();
     private static readonly Dictionary<string, FigurePartType> _byName = build_by_name();
     private static readonly HashSet<string> _figureSetCodes = [.. _figureSets.Select(type => type.Value)];
-    private static readonly HashSet<string> _flashOnlyCodes = [.. _flashOnly.Select(type => type.Value)];
 
     /// <summary>Gets every part type declared by the Flash client, in client declaration order.</summary>
     public static IReadOnlyList<FigurePartType> All { get; } = Array.AsReadOnly(_all);
@@ -109,9 +106,6 @@ public readonly record struct FigurePartType
     /// Gets the part types the avatar editor treats as selectable figure sets, in client order.
     /// </summary>
     public static IReadOnlyList<FigurePartType> FigureSets { get; } = Array.AsReadOnly(_figureSets);
-
-    /// <summary>Gets the part types that only the Flash client declares.</summary>
-    public static IReadOnlyList<FigurePartType> FlashOnly { get; } = Array.AsReadOnly(_flashOnly);
 
     /// <summary>Gets the serialized wire code, such as <c>hr</c>.</summary>
     /// <remarks>The value is <see langword="null"/> for a default instance.</remarks>
@@ -128,14 +122,11 @@ public readonly record struct FigurePartType
         ? name
         : Value ?? string.Empty;
 
-    /// <summary>Gets whether the wire code is one of the part types declared by the clients.</summary>
+    /// <summary>Gets whether the wire code is one of the part types declared by the client.</summary>
     public bool IsKnown => Value is not null && _nameByCode.ContainsKey(Value);
 
     /// <summary>Gets whether the avatar editor exposes the part type as a selectable figure set.</summary>
     public bool IsEditorSet => Value is not null && _figureSetCodes.Contains(Value);
-
-    /// <summary>Gets whether only the Flash client declares the part type.</summary>
-    public bool IsFlashOnly => Value is not null && _flashOnlyCodes.Contains(Value);
 
     /// <summary>Initializes a new instance of the <see cref="FigurePartType"/> struct from a wire code.</summary>
     /// <param name="value">The wire code, such as <c>hr</c>.</param>

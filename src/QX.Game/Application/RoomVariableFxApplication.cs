@@ -82,13 +82,13 @@ internal sealed class RoomVariableFxApplication : IApplicationFeature
         typeof(RoomVariableFxStateRequest),
         typeof(RoomVariableFxState),
         [
-            new("user_index", typeof(int), false, null, "Only the values of the avatar with this room index."),
-            new("furni_id", typeof(Id), false, null, "Only the values of the furni with this item id."),
+            new("user_index", typeof(int?), false, null, "Only the values of the avatar with this room index."),
+            new("furni_id", typeof(Id?), false, null, "Only the values of the furni with this item id."),
             new("variable", typeof(string), false, null, "Only the values of the variable with this id or drawn with this icon.")
         ],
         messages: Messages(),
-        tool_hints: new(true, false, true, false),
-        invocation_scope: ApplicationInvocationScope.Persistent);
+        toolHints: new(true, false, true, false),
+        invocationScope: ApplicationInvocationScope.Persistent);
 
     private static ApplicationDescriptor ChangedDescriptor() => new(
         ApplicationMemberIds.RoomVariableFxChanged,
@@ -102,9 +102,9 @@ internal sealed class RoomVariableFxApplication : IApplicationFeature
 
     private static ApplicationMessageRequirement[] Messages() =>
     [
-        new(MessageKeys.Wired.VariableFx.Configs, Direction.In, ApplicationMessageRole.Observe),
-        new(MessageKeys.Wired.VariableFx.ConfigsRemoved, Direction.In, ApplicationMessageRole.Observe),
-        new(MessageKeys.Wired.VariableFx.Statuses, Direction.In, ApplicationMessageRole.Observe),
-        new(MessageKeys.Wired.VariableFx.StatusesRemoved, Direction.In, ApplicationMessageRole.Observe)
+        new(MessageKeys.Wired.VariableFx.Configs, MessageDirection.In, ApplicationMessageRole.Observe),
+        new(MessageKeys.Wired.VariableFx.ConfigsRemoved, MessageDirection.In, ApplicationMessageRole.Observe),
+        new(MessageKeys.Wired.VariableFx.Statuses, MessageDirection.In, ApplicationMessageRole.Observe),
+        new(MessageKeys.Wired.VariableFx.StatusesRemoved, MessageDirection.In, ApplicationMessageRole.Observe)
     ];
 }

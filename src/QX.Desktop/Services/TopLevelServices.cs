@@ -8,7 +8,7 @@ namespace Qx.Desktop.Services;
 
 sealed class AvaloniaClipboardService(TopLevelAccessor top_levels) : IClipboardService
 {
-    public async Task<bool> TrySetTextAsync(string text, CancellationToken cancellation_token = default)
+    public async Task<bool> TrySetTextAsync(string text, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(text);
         if (top_levels.Current?.Clipboard is not { } clipboard)
@@ -18,7 +18,7 @@ sealed class AvaloniaClipboardService(TopLevelAccessor top_levels) : IClipboardS
         }
         try
         {
-            cancellation_token.ThrowIfCancellationRequested();
+            cancellationToken.ThrowIfCancellationRequested();
             await clipboard.SetTextAsync(text);
             return true;
         }
@@ -36,7 +36,7 @@ sealed class AvaloniaClipboardService(TopLevelAccessor top_levels) : IClipboardS
 
 sealed class AvaloniaLauncherService(TopLevelAccessor top_levels) : ILauncherService
 {
-    public async Task<bool> OpenUriAsync(Uri uri, CancellationToken cancellation_token = default)
+    public async Task<bool> OpenUriAsync(Uri uri, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(uri);
         if (!uri.IsAbsoluteUri || (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps))
@@ -48,7 +48,7 @@ sealed class AvaloniaLauncherService(TopLevelAccessor top_levels) : ILauncherSer
             return false;
         try
         {
-            cancellation_token.ThrowIfCancellationRequested();
+            cancellationToken.ThrowIfCancellationRequested();
             return await launcher.LaunchUriAsync(uri);
         }
         catch (OperationCanceledException)
@@ -62,14 +62,14 @@ sealed class AvaloniaLauncherService(TopLevelAccessor top_levels) : ILauncherSer
         }
     }
 
-    public async Task<bool> OpenFolderAsync(string path, CancellationToken cancellation_token = default)
+    public async Task<bool> OpenFolderAsync(string path, CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(path);
         if (top_levels.Current?.Launcher is not { } launcher)
             return false;
         try
         {
-            cancellation_token.ThrowIfCancellationRequested();
+            cancellationToken.ThrowIfCancellationRequested();
             Directory.CreateDirectory(path);
             return await launcher.LaunchDirectoryInfoAsync(new DirectoryInfo(path));
         }
@@ -92,14 +92,14 @@ sealed class AvaloniaFilePickerService(TopLevelAccessor top_levels) : IFilePicke
         Patterns = ["*.csx", "*.cs"]
     };
 
-    public async Task<FilePickResult> PickFileAsync(string title, CancellationToken cancellation_token = default)
+    public async Task<FilePickResult> PickFileAsync(string title, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(title);
         if (top_levels.Current?.StorageProvider is not { } storage)
             return new FilePickResult(null, false, "The file picker is not available here.");
         try
         {
-            cancellation_token.ThrowIfCancellationRequested();
+            cancellationToken.ThrowIfCancellationRequested();
             IReadOnlyList<IStorageFile> picked = await storage.OpenFilePickerAsync(new FilePickerOpenOptions
             {
                 Title = title,
@@ -122,26 +122,26 @@ sealed class AvaloniaFilePickerService(TopLevelAccessor top_levels) : IFilePicke
         }
     }
 
-    public async Task<FilePickResult> SaveTextAsync(string suggested_name, string content, CancellationToken cancellation_token = default)
+    public async Task<FilePickResult> SaveTextAsync(string suggestedName, string content, CancellationToken cancellationToken = default)
     {
-        ArgumentNullException.ThrowIfNull(suggested_name);
+        ArgumentNullException.ThrowIfNull(suggestedName);
         ArgumentNullException.ThrowIfNull(content);
         if (top_levels.Current?.StorageProvider is not { } storage)
             return new FilePickResult(null, false, "The file picker is not available here.");
         try
         {
-            cancellation_token.ThrowIfCancellationRequested();
+            cancellationToken.ThrowIfCancellationRequested();
             IStorageFile? target = await storage.SaveFilePickerAsync(new FilePickerSaveOptions
             {
                 Title = "Save",
-                SuggestedFileName = suggested_name
+                SuggestedFileName = suggestedName
             });
             if (target is null)
                 return new FilePickResult(null, true, null);
             await using Stream stream = await target.OpenWriteAsync();
             stream.SetLength(0);
             await using var writer = new StreamWriter(stream, new System.Text.UTF8Encoding(false));
-            await writer.WriteAsync(content.AsMemory(), cancellation_token);
+            await writer.WriteAsync(content.AsMemory(), cancellationToken);
             return new FilePickResult(target.TryGetLocalPath(), false, null);
         }
         catch (OperationCanceledException)

@@ -393,13 +393,13 @@ public static class Avm2ExceptionArchiveProjection
         };
 
     public static AbcExceptionNormalizationArchiveRecord Create(
-        int abc_index,
-        int method_index,
+        int abcIndex,
+        int methodIndex,
         Avm2ExceptionNormalization normalization) =>
         new()
         {
-            AbcIndex = abc_index,
-            MethodIndex = method_index,
+            AbcIndex = abcIndex,
+            MethodIndex = methodIndex,
             ExceptionIndex = normalization.ExceptionIndex,
             RawFrom = normalization.RawFrom,
             RawTo = normalization.RawTo,

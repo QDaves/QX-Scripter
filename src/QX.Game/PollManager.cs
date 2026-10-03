@@ -1,8 +1,8 @@
 using System.Runtime.ExceptionServices;
 using Qx.Game.Protocol;
 using Qx.Interception;
+using Qx.Model;
 using Qx.Model.Messages.Incoming;
-using Qx.Model.Polls;
 
 namespace Qx.Game;
 

@@ -38,30 +38,30 @@ public sealed record RoomEntryResult(
 /// <summary>
 /// Thrown when a room entry does not complete within its timeout.
 /// </summary>
-/// <param name="room_id">The id of the room the entry was for.</param>
-/// <param name="timeout_ms">The timeout that elapsed, in milliseconds.</param>
-public sealed class RoomEntryTimeoutException(Id room_id, int timeout_ms)
-    : TimeoutException($"Room entry for '{room_id}' timed out after {timeout_ms} ms.")
+/// <param name="roomId">The id of the room the entry was for.</param>
+/// <param name="timeoutMs">The timeout that elapsed, in milliseconds.</param>
+public sealed class RoomEntryTimeoutException(Id roomId, int timeoutMs)
+    : TimeoutException($"Room entry for '{roomId}' timed out after {timeoutMs} ms.")
 {
     /// <summary>Gets the id of the room the entry was for.</summary>
-    public Id RoomId { get; } = room_id;
+    public Id RoomId { get; } = roomId;
     /// <summary>Gets the timeout that elapsed, in milliseconds.</summary>
-    public int TimeoutMs { get; } = timeout_ms;
+    public int TimeoutMs { get; } = timeoutMs;
 }
 
 /// <summary>
 /// Thrown when a room entry is replaced by a newer entry request.
 /// </summary>
-/// <param name="room_id">The id of the room the replaced entry was for.</param>
-/// <param name="replacement_room_id">The id of the room the newer entry is for.</param>
-public sealed class RoomEntryReplacedException(Id room_id, Id replacement_room_id)
+/// <param name="roomId">The id of the room the replaced entry was for.</param>
+/// <param name="replacementRoomId">The id of the room the newer entry is for.</param>
+public sealed class RoomEntryReplacedException(Id roomId, Id replacementRoomId)
     : InvalidOperationException(
-        $"Room entry for '{room_id}' was replaced by a request for '{replacement_room_id}'.")
+        $"Room entry for '{roomId}' was replaced by a request for '{replacementRoomId}'.")
 {
     /// <summary>Gets the id of the room the replaced entry was for.</summary>
-    public Id RoomId { get; } = room_id;
+    public Id RoomId { get; } = roomId;
     /// <summary>Gets the id of the room the newer entry is for.</summary>
-    public Id ReplacementRoomId { get; } = replacement_room_id;
+    public Id ReplacementRoomId { get; } = replacementRoomId;
 }
 
 /// <summary>
@@ -105,42 +105,42 @@ public sealed class RoomEntryCoordinator : IDisposable
     }
 
     /// <summary>Sends a room entry request and waits for the entry result.</summary>
-    /// <param name="room_id">The id of the room to enter.</param>
+    /// <param name="roomId">The id of the room to enter.</param>
     /// <param name="send">The action that sends the entry request, called once while the attempt is registered.</param>
-    /// <param name="timeout_ms">The time to wait for the result, in milliseconds.</param>
-    /// <param name="cancellation_token">The token to monitor for cancellation requests.</param>
+    /// <param name="timeoutMs">The time to wait for the result, in milliseconds.</param>
+    /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
     /// <returns>A task that completes with the entry result.</returns>
     /// <remarks>
     /// A pending attempt started earlier fails with <see cref="RoomEntryReplacedException"/>. The
-    /// attempt succeeds once the room with <paramref name="room_id"/> is entered and ready.
+    /// attempt succeeds once the room with <paramref name="roomId"/> is entered and ready.
     /// </remarks>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="send"/> is <see langword="null"/>.</exception>
-    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="room_id"/> or <paramref name="timeout_ms"/> is zero or negative.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="roomId"/> or <paramref name="timeoutMs"/> is zero or negative.</exception>
     /// <exception cref="ObjectDisposedException">Thrown when the coordinator is disposed.</exception>
     /// <exception cref="RoomEntryTimeoutException">Thrown when no result arrives within the timeout.</exception>
     /// <exception cref="RoomEntryReplacedException">Thrown when a newer entry request replaces the attempt.</exception>
-    /// <exception cref="OperationCanceledException">Thrown when <paramref name="cancellation_token"/> is canceled.</exception>
+    /// <exception cref="OperationCanceledException">Thrown when <paramref name="cancellationToken"/> is canceled.</exception>
     public Task<RoomEntryResult> EnsureAsync(
-        Id room_id,
+        Id roomId,
         Action send,
-        int timeout_ms = 10000,
-        CancellationToken cancellation_token = default)
+        int timeoutMs = 10000,
+        CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(send);
-        ArgumentOutOfRangeException.ThrowIfLessThanOrEqual((long)room_id, 0);
-        ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(timeout_ms, 0);
-        cancellation_token.ThrowIfCancellationRequested();
+        ArgumentOutOfRangeException.ThrowIfLessThanOrEqual((long)roomId, 0);
+        ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(timeoutMs, 0);
+        cancellationToken.ThrowIfCancellationRequested();
 
-        var attempt = new RoomEntryAttempt(room_id);
+        var attempt = new RoomEntryAttempt(roomId);
         lock (_sync)
         {
             ObjectDisposedException.ThrowIf(_disposed, this);
-            cancellation_token.ThrowIfCancellationRequested();
+            cancellationToken.ThrowIfCancellationRequested();
 
             RoomEntryAttempt? previous = _active;
             _active = attempt;
             previous?.Completion.TrySetException(
-                new RoomEntryReplacedException(previous.RoomId, room_id));
+                new RoomEntryReplacedException(previous.RoomId, roomId));
 
             try
             {
@@ -154,7 +154,7 @@ public sealed class RoomEntryCoordinator : IDisposable
             }
         }
 
-        return AwaitResult(attempt, timeout_ms, cancellation_token);
+        return AwaitResult(attempt, timeoutMs, cancellationToken);
     }
 
     private async Task<RoomEntryResult> AwaitResult(
@@ -283,7 +283,9 @@ public sealed class RoomEntryCoordinator : IDisposable
     }
 
     /// <summary>Stops tracking room events and fails the pending entry attempt with <see cref="ObjectDisposedException"/>.</summary>
-    public void Dispose()
+    void IDisposable.Dispose() => Close();
+
+    internal void Close()
     {
         lock (_sync)
         {

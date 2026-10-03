@@ -12,16 +12,6 @@ namespace Qx.Scripting;
 
 public partial class ScriptGlobals
 {
-    /// <summary>
-    /// Plays an avatar expression.
-    /// </summary>
-    /// <remarks>Alias of <see cref="Expression"/>.</remarks>
-    /// <param name="type">
-    /// The expression: 0 clears the expression, 1 wave, 2 blow a kiss, 3 laugh, 4 cry, 5 go
-    /// idle, 6 jump, 7 thumbs up.
-    /// </param>
-    public void Action(int type) => Expression(type);
-
     /// <summary>Blows a kiss.</summary>
     /// <remarks>Equivalent to <c>Expression(2)</c>.</remarks>
     public void Kiss() => Expression(2);
@@ -50,12 +40,6 @@ public partial class ScriptGlobals
     /// <remarks>Equivalent to <c>Expression(0)</c>.</remarks>
     public void Unidle() => Expression(0);
 
-    /// <summary>Walks to the given tile.</summary>
-    /// <remarks>Alias of <see cref="Walk(int,int)"/>.</remarks>
-    /// <param name="x">The target tile's X coordinate.</param>
-    /// <param name="y">The target tile's Y coordinate.</param>
-    public void Move(int x, int y) => Walk(x, y);
-
     /// <summary>
     /// Changes the local user's motto.
     /// </summary>
@@ -69,7 +53,7 @@ public partial class ScriptGlobals
     /// Thrown when <paramref name="motto"/> is longer than 65535 bytes in UTF-8.
     /// </exception>
     public void SetMotto(string motto) =>
-        Application.Invoke<ProfileMottoSetRequest, ProfileDispatchResult>(
+        _application.Invoke<ProfileMottoSetRequest, ProfileDispatchResult>(
             ApplicationMemberIds.ProfileMottoSet,
             new ProfileMottoSetRequest(motto),
             Ct);
@@ -84,10 +68,20 @@ public partial class ScriptGlobals
     /// <param name="name">The exact user name.</param>
     /// <exception cref="ArgumentException">Thrown when <paramref name="name"/> is <see langword="null"/>, empty or whitespace.</exception>
     public void AddFriend(string name) =>
-        Application.Invoke<FriendRequestSendRequest, FriendOperationResult>(
+        _application.Invoke<FriendRequestSendRequest, FriendOperationResult>(
             ApplicationMemberIds.FriendRequestSend,
             new FriendRequestSendRequest(name),
             Ct);
+
+    /// <summary>Sends a friend request to a user in the room.</summary>
+    /// <param name="user">The target user; only its name is used.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="user"/> is <see langword="null"/>.</exception>
+    /// <exception cref="ArgumentException">Thrown when the user's name is empty or whitespace.</exception>
+    public void AddFriend(User user)
+    {
+        ArgumentNullException.ThrowIfNull(user);
+        AddFriend(user.Name);
+    }
 
     /// <summary>
     /// Asks the server to move the local user into the room a friend is currently in.
@@ -97,7 +91,7 @@ public partial class ScriptGlobals
     /// </remarks>
     /// <param name="userId">The friend's user id.</param>
     public void FollowFriend(Id userId) =>
-        Application.Invoke<FriendFollowRequest, FriendOperationResult>(
+        _application.Invoke<FriendFollowRequest, FriendOperationResult>(
             ApplicationMemberIds.FriendFollow,
             new FriendFollowRequest(userId),
             Ct);
@@ -111,7 +105,7 @@ public partial class ScriptGlobals
     /// </remarks>
     /// <param name="groupId">The group id.</param>
     public void JoinGroup(Id groupId) =>
-        Application.Invoke<GroupJoinRequest, GroupMembershipDispatchResult>(
+        _application.Invoke<GroupJoinRequest, GroupMembershipDispatchResult>(
             ApplicationMemberIds.GroupMembershipJoin,
             new GroupJoinRequest(groupId),
             Ct);
@@ -119,14 +113,29 @@ public partial class ScriptGlobals
     /// <summary>
     /// Sends a private message to a friend through the messenger.
     /// </summary>
+    /// <remarks>
+    /// Messages from friends arrive through <see cref="OnPrivateMessage(Action{NewConsoleMessage})"/>, and a
+    /// message that cannot be delivered is reported through <see cref="OnPrivateMessageFailed"/>.
+    /// </remarks>
     /// <param name="userId">The friend's user id.</param>
     /// <param name="message">The message text.</param>
     /// <exception cref="ArgumentException">Thrown when <paramref name="message"/> is <see langword="null"/>, empty or whitespace.</exception>
-    public void SendMessage(Id userId, string message) =>
-    Application.Invoke<FriendMessageSendRequest, FriendOperationResult>(
-        ApplicationMemberIds.FriendMessageSend,
-        new FriendMessageSendRequest(userId, message),
-        Ct);
+    public void SendPrivateMessage(Id userId, string message) =>
+        _application.Invoke<FriendMessageSendRequest, FriendOperationResult>(
+            ApplicationMemberIds.FriendMessageSend,
+            new FriendMessageSendRequest(userId, message),
+            Ct);
+
+    /// <summary>Sends a private message to a friend through the messenger.</summary>
+    /// <param name="friend">The recipient; only its id is used.</param>
+    /// <param name="message">The message text.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="friend"/> is <see langword="null"/>.</exception>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="message"/> is <see langword="null"/>, empty or whitespace.</exception>
+    public void SendPrivateMessage(Friend friend, string message)
+    {
+        ArgumentNullException.ThrowIfNull(friend);
+        SendPrivateMessage(friend.Id, message);
+    }
 
     /// <summary>
     /// Changes the local user's look.
@@ -142,10 +151,22 @@ public partial class ScriptGlobals
     /// whitespace.
     /// </exception>
     public void UpdateFigure(string gender, string figure) =>
-    Application.Invoke<ProfileFigureSetRequest, ProfileDispatchResult>(
+    _application.Invoke<ProfileFigureSetRequest, ProfileDispatchResult>(
         ApplicationMemberIds.ProfileFigureSet,
         new ProfileFigureSetRequest(gender, figure),
         Ct);
+
+    /// <summary>Changes the local user's look.</summary>
+    /// <remarks>
+    /// The gender is sent as the single letter code the wire uses, as
+    /// <see cref="UpdateFigure(string, string)"/> takes it.
+    /// </remarks>
+    /// <param name="gender">The avatar's gender.</param>
+    /// <param name="figure">The figure string.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="figure"/> is <see langword="null"/>.</exception>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="figure"/> is empty or whitespace.</exception>
+    public void UpdateFigure(Gender gender, string figure) =>
+        UpdateFigure(gender.ToClientString(), figure);
 
     /// <summary>
     /// Shows the typing indicator above the local avatar.
@@ -154,14 +175,14 @@ public partial class ScriptGlobals
     /// The indicator does not clear on its own; pair it with <see cref="CancelTyping"/>.
     /// </remarks>
     public void StartTyping() =>
-        Application.Invoke<RoomAvatarTypingRequest, RoomAvatarDispatchResult>(
+        _application.Invoke<RoomAvatarTypingRequest, RoomAvatarDispatchResult>(
             ApplicationMemberIds.RoomAvatarTyping,
             new RoomAvatarTypingRequest(true),
             Ct);
 
     /// <summary>Hides the typing indicator above the local avatar.</summary>
     public void CancelTyping() =>
-        Application.Invoke<RoomAvatarTypingRequest, RoomAvatarDispatchResult>(
+        _application.Invoke<RoomAvatarTypingRequest, RoomAvatarDispatchResult>(
             ApplicationMemberIds.RoomAvatarTyping,
             new RoomAvatarTypingRequest(false),
             Ct);
@@ -170,11 +191,21 @@ public partial class ScriptGlobals
     /// Accepts a pending friend request.
     /// </summary>
     /// <param name="userId">The requester's user id, as carried by <see cref="OnFriendRequest"/>.</param>
-    public void AcceptFriendRequest(Id userId) =>
-        Application.Invoke<FriendRequestIdsRequest, FriendOperationResult>(
+    public void AcceptFriendRequest(Id userId) => AcceptFriendRequests([userId]);
+
+    /// <summary>Accepts several pending friend requests in one message.</summary>
+    /// <remarks>Duplicate ids are collapsed.</remarks>
+    /// <param name="userIds">The requesters' user ids.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="userIds"/> is <see langword="null"/>.</exception>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="userIds"/> is empty.</exception>
+    public void AcceptFriendRequests(IEnumerable<Id> userIds)
+    {
+        ArgumentNullException.ThrowIfNull(userIds);
+        _application.Invoke<FriendRequestIdsRequest, FriendOperationResult>(
             ApplicationMemberIds.FriendRequestAccept,
-            new FriendRequestIdsRequest([userId]),
+            new FriendRequestIdsRequest(userIds.ToArray()),
             Ct);
+    }
 
     /// <summary>Declines one pending friend request.</summary>
     /// <param name="userId">The requester's user id.</param>
@@ -191,7 +222,7 @@ public partial class ScriptGlobals
     {
         ArgumentNullException.ThrowIfNull(userIds);
         Id[] ids = userIds.Distinct().ToArray();
-        Application.Invoke<FriendRequestDeclineRequest, FriendOperationResult>(
+        _application.Invoke<FriendRequestDeclineRequest, FriendOperationResult>(
             ApplicationMemberIds.FriendRequestDecline,
             new FriendRequestDeclineRequest(ids),
             Ct);
@@ -205,7 +236,7 @@ public partial class ScriptGlobals
     /// known in advance.
     /// </remarks>
     public void DeclineAllFriendRequests() =>
-        Application.Invoke<FriendRequestsDeclineAllRequest, FriendOperationResult>(
+        _application.Invoke<FriendRequestsDeclineAllRequest, FriendOperationResult>(
             ApplicationMemberIds.FriendRequestsDeclineAll,
             new FriendRequestsDeclineAllRequest(),
             Ct);
@@ -218,7 +249,7 @@ public partial class ScriptGlobals
     /// </remarks>
     /// <param name="userId">The target user's account id, not their room index.</param>
     public void Kick(Id userId) =>
-        Application.Invoke<RoomModerationTargetRequest, RoomModerationDispatchResult>(
+        _application.Invoke<RoomModerationTargetRequest, RoomModerationDispatchResult>(
             ApplicationMemberIds.RoomModerationKick,
             new RoomModerationTargetRequest(userId),
             Ct);
@@ -233,7 +264,7 @@ public partial class ScriptGlobals
     /// <param name="minutes">The mute duration in minutes, from 0 to 1440.</param>
     /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="minutes"/> is below 0 or above 1440.</exception>
     public void Mute(Id userId, int minutes) =>
-        Application.Invoke<RoomModerationMuteRequest, RoomModerationDispatchResult>(
+        _application.Invoke<RoomModerationMuteRequest, RoomModerationDispatchResult>(
             ApplicationMemberIds.RoomModerationMute,
             new RoomModerationMuteRequest(userId, minutes),
             Ct);
@@ -245,26 +276,13 @@ public partial class ScriptGlobals
     /// It requires ownership or rights, subject to the room's "who can ban" setting.
     /// </remarks>
     /// <param name="userId">The target user's account id.</param>
-    /// <param name="duration">
-    /// The ban duration: <c>"RWUAM_BAN_USER_HOUR"</c> for one hour, <c>"RWUAM_BAN_USER_DAY"</c>
-    /// for one day or <c>"RWUAM_BAN_USER_PERM"</c> for a permanent ban. The default
-    /// <c>"Room_Session"</c> is sent as a one hour ban.
-    /// </param>
-    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="duration"/> is not one of the listed values.</exception>
-    public void Ban(Id userId, string duration = "Room_Session")
-    {
-        BanLength length = duration switch
-        {
-            "Room_Session" or "RWUAM_BAN_USER_HOUR" => BanLength.Hour,
-            "RWUAM_BAN_USER_DAY" => BanLength.Day,
-            "RWUAM_BAN_USER_PERM" => BanLength.Permanent,
-            _ => throw new ArgumentOutOfRangeException(nameof(duration), duration, "Unknown room-ban duration.")
-        };
-        Application.Invoke<RoomModerationBanRequest, RoomModerationDispatchResult>(
+    /// <param name="length">How long the ban lasts: an hour, a day or permanently.</param>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="length"/> is not a defined value.</exception>
+    public void Ban(Id userId, BanLength length = BanLength.Hour) =>
+        _application.Invoke<RoomModerationBanRequest, RoomModerationDispatchResult>(
             ApplicationMemberIds.RoomModerationBan,
             new RoomModerationBanRequest(userId, length),
             Ct);
-    }
 
     /// <summary>
     /// Grants room rights to a user who is in the current room.
@@ -272,7 +290,7 @@ public partial class ScriptGlobals
     /// <remarks>The local user must own the room.</remarks>
     /// <param name="userId">The target user's account id.</param>
     public void GiveRights(Id userId) =>
-        Application.Invoke<RoomRightsGrantRequest, RoomPeopleDispatchResult>(
+        _application.Invoke<RoomRightsGrantRequest, RoomPeopleDispatchResult>(
             ApplicationMemberIds.RoomPeopleRightsGrant,
             new RoomRightsGrantRequest(userId),
             Ct);
@@ -293,7 +311,7 @@ public partial class ScriptGlobals
     /// <param name="name">The waiting user's name, as reported by the doorbell event.</param>
     /// <param name="allow"><see langword="true"/> to let them in; <see langword="false"/> to refuse.</param>
     public void LetIn(string name, bool allow = true) =>
-        Application.Invoke<RoomDoorbellAnswerRequest, RoomControlDispatchResult>(
+        _application.Invoke<RoomDoorbellAnswerRequest, RoomControlDispatchResult>(
             ApplicationMemberIds.RoomDoorbellAnswer,
             new RoomDoorbellAnswerRequest(name, allow),
             Ct);
@@ -301,10 +319,19 @@ public partial class ScriptGlobals
     /// <summary>Removes a user from the friend list.</summary>
     /// <param name="userId">The friend's user id.</param>
     public void RemoveFriend(Id userId) =>
-        Application.Invoke<FriendsRemoveRequest, FriendOperationResult>(
+        _application.Invoke<FriendsRemoveRequest, FriendOperationResult>(
             ApplicationMemberIds.FriendsRemove,
             new FriendsRemoveRequest([userId]),
             Ct);
+
+    /// <summary>Removes a friend from the friend list.</summary>
+    /// <param name="friend">The friend to remove; only its id is used.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="friend"/> is <see langword="null"/>.</exception>
+    public void RemoveFriend(Friend friend)
+    {
+        ArgumentNullException.ThrowIfNull(friend);
+        RemoveFriend(friend.Id);
+    }
 
     /// <summary>
     /// Gives a pet in the current room a respect.
@@ -315,10 +342,19 @@ public partial class ScriptGlobals
     /// </remarks>
     /// <param name="petId">The pet's id.</param>
     public void RespectPet(Id petId) =>
-        Application.Invoke<RoomPetRespectRequest, RoomPeopleDispatchResult>(
+        _application.Invoke<RoomPetRespectRequest, RoomPeopleDispatchResult>(
             ApplicationMemberIds.RoomPetRespect,
             new RoomPetRespectRequest(petId),
             Ct);
+
+    /// <summary>Gives a pet in the current room a respect, which is what raises its happiness.</summary>
+    /// <param name="pet">The pet; only its id is used.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="pet"/> is <see langword="null"/>.</exception>
+    public void RespectPet(Pet pet)
+    {
+        ArgumentNullException.ThrowIfNull(pet);
+        RespectPet(pet.Id);
+    }
 
     /// <summary>
     /// Adds a user to the ignore list by account id.
@@ -326,7 +362,7 @@ public partial class ScriptGlobals
     /// <param name="userId">The target user's account id.</param>
     public void Ignore(Id userId)
     {
-        Application.Invoke<ProfileUserRequest, ProfileDispatchResult>(
+        _application.Invoke<ProfileUserRequest, ProfileDispatchResult>(
             ApplicationMemberIds.ProfileIgnoreAddById,
             new ProfileUserRequest(userId),
             Ct);
@@ -352,6 +388,15 @@ public partial class ScriptGlobals
         Ignore(ResolveUserId(name));
     }
 
+    /// <summary>Adds a user in the room to the ignore list.</summary>
+    /// <param name="user">The user; only its id is used.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="user"/> is <see langword="null"/>.</exception>
+    public void Ignore(User user)
+    {
+        ArgumentNullException.ThrowIfNull(user);
+        Ignore(user.Id);
+    }
+
     /// <summary>
     /// Removes a user from the ignore list by account id.
     /// </summary>
@@ -359,7 +404,7 @@ public partial class ScriptGlobals
     public void Unignore(Id userId)
     {
         string identity = ((long)userId).ToString(System.Globalization.CultureInfo.InvariantCulture);
-        Application.Invoke<ProfileIgnoreRemoveRequest, ProfileDispatchResult>(
+        _application.Invoke<ProfileIgnoreRemoveRequest, ProfileDispatchResult>(
             ApplicationMemberIds.ProfileIgnoreRemove,
             new ProfileIgnoreRemoveRequest(ProfileIdentityKind.Id, identity),
             Ct);
@@ -384,13 +429,22 @@ public partial class ScriptGlobals
         Unignore(ResolveUserId(name));
     }
 
+    /// <summary>Removes a user in the room from the ignore list.</summary>
+    /// <param name="user">The user; only its id is used.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="user"/> is <see langword="null"/>.</exception>
+    public void Unignore(User user)
+    {
+        ArgumentNullException.ThrowIfNull(user);
+        Unignore(user.Id);
+    }
+
     /// <summary>
     /// Mounts or dismounts a rideable pet in the current room.
     /// </summary>
     /// <param name="petId">The pet's id.</param>
     /// <param name="mount"><see langword="true"/> to get on; <see langword="false"/> to get off.</param>
     public void MountPet(Id petId, bool mount = true) =>
-        Application.Invoke<RoomPetMountRequest, RoomPeopleDispatchResult>(
+        _application.Invoke<RoomPetMountRequest, RoomPeopleDispatchResult>(
             ApplicationMemberIds.RoomPetMountSet,
             new RoomPetMountRequest(petId, mount),
             Ct);
@@ -399,6 +453,22 @@ public partial class ScriptGlobals
     /// <remarks>Equivalent to <c>MountPet(petId, false)</c>.</remarks>
     /// <param name="petId">The pet's id.</param>
     public void DismountPet(Id petId) => MountPet(petId, false);
+
+    /// <summary>Mounts or dismounts a rideable pet in the current room.</summary>
+    /// <param name="pet">The pet; only its id is used.</param>
+    /// <param name="mount"><see langword="true"/> to get on; <see langword="false"/> to get off.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="pet"/> is <see langword="null"/>.</exception>
+    public void MountPet(Pet pet, bool mount = true)
+    {
+        ArgumentNullException.ThrowIfNull(pet);
+        MountPet(pet.Id, mount);
+    }
+
+    /// <summary>Dismounts a pet in the current room.</summary>
+    /// <remarks>Equivalent to <c>MountPet(pet, false)</c>.</remarks>
+    /// <param name="pet">The pet; only its id is used.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="pet"/> is <see langword="null"/>.</exception>
+    public void DismountPet(Pet pet) => MountPet(pet, false);
 
     /// <summary>
     /// Removes a member from a group.
@@ -411,10 +481,24 @@ public partial class ScriptGlobals
     /// <see langword="false"/>.
     /// </param>
     public void KickGroupMember(Id groupId, Id userId, bool blockRejoin = false) =>
-        Application.Invoke<GroupMemberKickRequest, GroupMembershipDispatchResult>(
+        _application.Invoke<GroupMemberKickRequest, GroupMembershipDispatchResult>(
             ApplicationMemberIds.GroupMembershipKick,
             new GroupMemberKickRequest(groupId, userId, blockRejoin),
             Ct);
+
+    /// <summary>
+    /// Leaves a group.
+    /// </summary>
+    /// <remarks>
+    /// There is no dedicated message for leaving: the client kicks the local user out of the
+    /// group, so the call forwards to <see cref="KickGroupMember"/> with the own account id.
+    /// </remarks>
+    /// <param name="groupId">The id of the group to leave.</param>
+    /// <exception cref="InvalidOperationException">Thrown when the user's data has not been received yet.</exception>
+    public void LeaveGroup(Id groupId) =>
+        KickGroupMember(
+            groupId,
+            Profile.Identity?.Id ?? throw new InvalidOperationException("The user's data has not been loaded."));
 
     /// <summary>
     /// Approves a pending membership request.
@@ -423,7 +507,7 @@ public partial class ScriptGlobals
     /// <param name="groupId">The group id.</param>
     /// <param name="userId">The applicant's user id.</param>
     public void ApproveGroupMember(Id groupId, Id userId) =>
-        Application.Invoke<GroupMemberRequest, GroupMembershipDispatchResult>(
+        _application.Invoke<GroupMemberRequest, GroupMembershipDispatchResult>(
             ApplicationMemberIds.GroupMembershipApprove,
             new GroupMemberRequest(groupId, userId),
             Ct);
@@ -435,7 +519,7 @@ public partial class ScriptGlobals
     /// <param name="groupId">The group id.</param>
     /// <param name="userId">The applicant's user id.</param>
     public void RejectGroupMember(Id groupId, Id userId) =>
-        Application.Invoke<GroupMemberRequest, GroupMembershipDispatchResult>(
+        _application.Invoke<GroupMemberRequest, GroupMembershipDispatchResult>(
             ApplicationMemberIds.GroupMembershipReject,
             new GroupMemberRequest(groupId, userId),
             Ct);
@@ -446,7 +530,7 @@ public partial class ScriptGlobals
     /// <remarks>The account must be a member.</remarks>
     /// <param name="groupId">The group id.</param>
     public void SetFavouriteGroup(Id groupId) =>
-        Application.Invoke<ProfileFavoriteGroupRequest, ProfileDispatchResult>(
+        _application.Invoke<ProfileFavoriteGroupRequest, ProfileDispatchResult>(
             ApplicationMemberIds.ProfileFavoriteGroupSelect,
             new ProfileFavoriteGroupRequest(groupId),
             Ct);
@@ -454,7 +538,7 @@ public partial class ScriptGlobals
     /// <summary>Clears the favorite group, hiding its badge again.</summary>
     /// <param name="groupId">The group id currently marked as favorite.</param>
     public void UnsetFavouriteGroup(Id groupId) =>
-        Application.Invoke<ProfileFavoriteGroupRequest, ProfileDispatchResult>(
+        _application.Invoke<ProfileFavoriteGroupRequest, ProfileDispatchResult>(
             ApplicationMemberIds.ProfileFavoriteGroupDeselect,
             new ProfileFavoriteGroupRequest(groupId),
             Ct);
@@ -479,12 +563,47 @@ public partial class ScriptGlobals
     /// with <paramref name="itemId"/>.
     /// </exception>
     public void PlaceFloorItem(Id itemId, int x, int y, int direction = 0) =>
-        Application.Invoke<RoomPlacementFloorPlaceRequest, RoomPlacementDispatchReceipt>(
+        _application.Invoke<RoomPlacementFloorPlaceRequest, RoomPlacementDispatchReceipt>(
             ApplicationMemberIds.RoomPlacementFloorPlace,
             new RoomPlacementFloorPlaceRequest(
                 itemId,
                 new RoomPlacementFloorPosition(x, y, direction)),
             Ct);
+
+    /// <summary>Places a floor item from the inventory at a tile, as <see cref="PlaceFloorItem(Id, int, int, int)"/> does.</summary>
+    /// <param name="itemId">The inventory item id, not a room item id.</param>
+    /// <param name="location">The target tile.</param>
+    /// <param name="direction">The rotation, in eighths of a turn (0 to 7).</param>
+    /// <exception cref="ArgumentOutOfRangeException">
+    /// Thrown when <paramref name="itemId"/> is 0, a coordinate is negative, or <paramref name="direction"/> is
+    /// outside 0 to 7.
+    /// </exception>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when no room is ready, the furni inventory is not loaded and current, or it holds no floor item
+    /// with <paramref name="itemId"/>.
+    /// </exception>
+    public void PlaceFloorItem(Id itemId, Point location, int direction = 0) =>
+        PlaceFloorItem(itemId, location.X, location.Y, direction);
+
+    /// <summary>Places a floor item from the inventory at a tile.</summary>
+    /// <param name="item">The inventory item to place; it must be a floor item.</param>
+    /// <param name="location">The target tile.</param>
+    /// <param name="direction">The rotation, in eighths of a turn (0 to 7).</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="item"/> is <see langword="null"/>.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">
+    /// Thrown when a coordinate is negative or <paramref name="direction"/> is outside 0 to 7.
+    /// </exception>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when the inventory item is not a floor item, no room is ready, or the furni inventory is not
+    /// loaded and current or does not hold the item.
+    /// </exception>
+    public void PlaceFloorItem(InventoryItem item, Point location, int direction = 0)
+    {
+        ArgumentNullException.ThrowIfNull(item);
+        if (!item.IsFloorItem)
+            throw new InvalidOperationException("The inventory item is not a floor item.");
+        PlaceFloorItem(item.ItemId, location, direction);
+    }
 
     /// <summary>
     /// Places a wall item from the inventory onto a wall.
@@ -504,10 +623,38 @@ public partial class ScriptGlobals
     /// with <paramref name="itemId"/>.
     /// </exception>
     public void PlaceWallItem(Id itemId, string wallLocation) =>
-        Application.Invoke<RoomPlacementWallPlaceRequest, RoomPlacementDispatchReceipt>(
+        PlaceWallItem(itemId, WallLocation.ParseString(wallLocation));
+
+    /// <summary>Places a wall item from the inventory at a wall position.</summary>
+    /// <param name="itemId">The inventory item id.</param>
+    /// <param name="location">The wall position.</param>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="location"/> names neither the left nor the right wall.</exception>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when no room is ready, the furni inventory is not loaded and current, or it holds no wall item
+    /// with <paramref name="itemId"/>.
+    /// </exception>
+    public void PlaceWallItem(Id itemId, WallLocation location) =>
+        _application.Invoke<RoomPlacementWallPlaceRequest, RoomPlacementDispatchReceipt>(
             ApplicationMemberIds.RoomPlacementWallPlace,
-            new RoomPlacementWallPlaceRequest(itemId, PlacementWallPosition(wallLocation)),
+            new RoomPlacementWallPlaceRequest(itemId, PlacementWallPosition(location)),
             Ct);
+
+    /// <summary>Places a wall item from the inventory at a wall position.</summary>
+    /// <param name="item">The inventory item to place; it must be a wall item.</param>
+    /// <param name="location">The wall position.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="item"/> is <see langword="null"/>.</exception>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="location"/> names neither the left nor the right wall.</exception>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when the inventory item is not a wall item, no room is ready, or the furni inventory is not
+    /// loaded and current or does not hold the item.
+    /// </exception>
+    public void PlaceWallItem(InventoryItem item, WallLocation location)
+    {
+        ArgumentNullException.ThrowIfNull(item);
+        if (!item.IsWallItem)
+            throw new InvalidOperationException("The inventory item is not a wall item.");
+        PlaceWallItem(item.ItemId, location);
+    }
 
     /// <summary>
     /// Moves a wall item that is already hanging in the room to a new wall position.
@@ -518,38 +665,80 @@ public partial class ScriptGlobals
     /// <exception cref="FormatException">Thrown when <paramref name="wallLocation"/> is not a valid wall position.</exception>
     /// <exception cref="InvalidOperationException">Thrown when no room is ready, or the wall item is not in it.</exception>
     public void MoveWallItem(Id itemId, string wallLocation) =>
-        Application.Invoke<RoomPlacementWallMoveRequest, RoomPlacementDispatchReceipt>(
+        MoveWallItem(itemId, WallLocation.ParseString(wallLocation));
+
+    /// <summary>Moves a wall item that is already hanging in the room to a new wall position.</summary>
+    /// <remarks>It requires room rights.</remarks>
+    /// <param name="itemId">The item's room id.</param>
+    /// <param name="location">The new wall position.</param>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="location"/> names neither the left nor the right wall.</exception>
+    /// <exception cref="InvalidOperationException">Thrown when no room is ready, or the wall item is not in it.</exception>
+    public void MoveWallItem(Id itemId, WallLocation location) =>
+        _application.Invoke<RoomPlacementWallMoveRequest, RoomPlacementDispatchReceipt>(
             ApplicationMemberIds.RoomPlacementWallMove,
-            new RoomPlacementWallMoveRequest(itemId, PlacementWallPosition(wallLocation)),
+            new RoomPlacementWallMoveRequest(itemId, PlacementWallPosition(location)),
             Ct);
 
     /// <summary>
     /// Places a sticky note (post-it) from the inventory onto a wall, with no text.
     /// </summary>
+    /// <remarks>
+    /// A wall position written as text converts to <see cref="WallLocation"/>, in the
+    /// <c>":w=x,y l=x,y direction"</c> notation.
+    /// </remarks>
     /// <param name="itemId">The inventory item id of the sticky pad.</param>
-    /// <param name="wallLocation">The wall position, in the <c>":w=x,y l=x,y direction"</c> notation.</param>
-    /// <exception cref="ArgumentNullException">Thrown when <paramref name="wallLocation"/> is <see langword="null"/>.</exception>
-    public void PlacePostIt(Id itemId, string wallLocation) =>
-        Application.Invoke<RoomPostItPlaceRequest, RoomItemDispatchResult>(
+    /// <param name="location">The wall position.</param>
+    public void PlaceSticky(Id itemId, WallLocation location) =>
+        _application.Invoke<RoomPostItPlaceRequest, RoomItemDispatchResult>(
             ApplicationMemberIds.RoomItemPostItPlace,
-            new RoomPostItPlaceRequest(itemId, wallLocation),
+            new RoomPostItPlaceRequest(itemId, location.ToString()),
             Ct);
+
+    /// <summary>Places a blank sticky note from the inventory onto a wall.</summary>
+    /// <param name="item">The inventory item; it must be in the sticky note category (5).</param>
+    /// <param name="location">The wall position.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="item"/> is <see langword="null"/>.</exception>
+    /// <exception cref="InvalidOperationException">Thrown when the inventory item is not a sticky note.</exception>
+    public void PlaceSticky(InventoryItem item, WallLocation location)
+    {
+        ArgumentNullException.ThrowIfNull(item);
+        if (item.Category != 5)
+            throw new InvalidOperationException("The inventory item is not a sticky note.");
+        PlaceSticky(item.ItemId, location);
+    }
 
     /// <summary>
     /// Places a sticky note on a wall together with its color and initial text.
     /// </summary>
+    /// <remarks>
+    /// It sends the Flash <c>AddSpamWallPostIt</c> message, which the client uses for a sticky pole.
+    /// </remarks>
     /// <param name="itemId">The inventory item id of the sticky pad.</param>
-    /// <param name="wallLocation">The wall position, in the <c>":w=x,y l=x,y direction"</c> notation.</param>
+    /// <param name="location">The wall position.</param>
     /// <param name="color">The note color as a hexadecimal string, for example <c>"FFFF33"</c>.</param>
     /// <param name="text">The note text.</param>
     /// <exception cref="ArgumentNullException">
-    /// Thrown when <paramref name="wallLocation"/>, <paramref name="color"/> or <paramref name="text"/> is <see langword="null"/>.
+    /// Thrown when <paramref name="color"/> or <paramref name="text"/> is <see langword="null"/>.
     /// </exception>
-    public void AddPostIt(Id itemId, string wallLocation, string color, string text) =>
-        Application.Invoke<RoomPostItAddRequest, RoomItemDispatchResult>(
+    public void PlaceStickyWithPole(Id itemId, WallLocation location, string color, string text) =>
+        _application.Invoke<RoomPostItAddRequest, RoomItemDispatchResult>(
             ApplicationMemberIds.RoomItemPostItAdd,
-            new RoomPostItAddRequest(itemId, wallLocation, color, text),
+            new RoomPostItAddRequest(itemId, location.ToString(), color, text),
             Ct);
+
+    /// <summary>Places a sticky note from the inventory together with its color and initial text.</summary>
+    /// <param name="item">The inventory item; only its item id is used.</param>
+    /// <param name="location">The wall position.</param>
+    /// <param name="color">The note color as a hexadecimal string, for example <c>"FFFF33"</c>.</param>
+    /// <param name="text">The note text.</param>
+    /// <exception cref="ArgumentNullException">
+    /// Thrown when <paramref name="item"/>, <paramref name="color"/> or <paramref name="text"/> is <see langword="null"/>.
+    /// </exception>
+    public void PlaceStickyWithPole(InventoryItem item, WallLocation location, string color, string text)
+    {
+        ArgumentNullException.ThrowIfNull(item);
+        PlaceStickyWithPole(item.ItemId, location, color, text);
+    }
 
     /// <summary>Moves a wall item to a new wall position.</summary>
     /// <remarks>
@@ -558,19 +747,39 @@ public partial class ScriptGlobals
     /// </remarks>
     /// <param name="item">The placed wall item.</param>
     /// <param name="wallLocation">The new wall position, in the <c>":w=x,y l=x,y direction"</c> notation.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="item"/> is <see langword="null"/>.</exception>
     /// <exception cref="FormatException">Thrown when <paramref name="wallLocation"/> is not a valid wall position.</exception>
     /// <exception cref="InvalidOperationException">
     /// Thrown when no room is ready, the wall item is not in it, or it is no longer at the location
     /// <paramref name="item"/> holds.
     /// </exception>
     public void MoveWallItem(WallItem item, string wallLocation) =>
-        Application.Invoke<RoomPlacementWallMoveRequest, RoomPlacementDispatchReceipt>(
+        MoveWallItem(item, WallLocation.ParseString(wallLocation));
+
+    /// <summary>Moves a wall item to a new wall position.</summary>
+    /// <remarks>
+    /// Unlike <see cref="MoveWallItem(Id, WallLocation)"/>, the item's current location is sent along
+    /// and checked, so the move fails if the item has been moved in the meantime.
+    /// </remarks>
+    /// <param name="item">The placed wall item.</param>
+    /// <param name="location">The new wall position.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="item"/> is <see langword="null"/>.</exception>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="location"/> names neither the left nor the right wall.</exception>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when no room is ready, the wall item is not in it, or it is no longer at the location
+    /// <paramref name="item"/> holds.
+    /// </exception>
+    public void MoveWallItem(WallItem item, WallLocation location)
+    {
+        ArgumentNullException.ThrowIfNull(item);
+        _application.Invoke<RoomPlacementWallMoveRequest, RoomPlacementDispatchReceipt>(
             ApplicationMemberIds.RoomPlacementWallMove,
             new RoomPlacementWallMoveRequest(
                 item.Id,
-                PlacementWallPosition(wallLocation),
+                PlacementWallPosition(location),
                 PlacementWallPosition(item.Location)),
             Ct);
+    }
 
     /// <summary>
     /// Rotates a placed floor item without moving it.
@@ -587,7 +796,7 @@ public partial class ScriptGlobals
     /// <paramref name="item"/> holds.
     /// </exception>
     public void RotateFloorItem(FloorItem item, int direction) =>
-        Application.Invoke<RoomPlacementFloorMoveRequest, RoomPlacementDispatchReceipt>(
+        _application.Invoke<RoomPlacementFloorMoveRequest, RoomPlacementDispatchReceipt>(
             ApplicationMemberIds.RoomPlacementFloorMove,
             new RoomPlacementFloorMoveRequest(
                 item.Id,
@@ -621,17 +830,48 @@ public partial class ScriptGlobals
     public void PickupFurni(WallItem item, bool confirmed = false) =>
         SendPickup(1, item.Id, confirmed);
 
+    /// <summary>
+    /// Picks a room item up into the inventory, picking the floor or wall message from the item's
+    /// runtime type.
+    /// </summary>
+    /// <remarks>It requires room rights or ownership of the item.</remarks>
+    /// <param name="item">The item to pick up.</param>
+    /// <param name="confirmed">
+    /// <see langword="true"/> to acknowledge the hotel's remove confirmation prompt; otherwise,
+    /// <see langword="false"/>.
+    /// </param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="item"/> is <see langword="null"/>.</exception>
+    /// <exception cref="ArgumentException">Thrown when the item is neither a floor nor a wall item.</exception>
+    /// <exception cref="InvalidOperationException">Thrown when no room is ready, or the item is not in it.</exception>
+    public void PickupFurni(Furni item, bool confirmed = false)
+    {
+        ArgumentNullException.ThrowIfNull(item);
+        if (item is FloorItem floor_item)
+            PickupFurni(floor_item, confirmed);
+        else if (item is WallItem wall_item)
+            PickupFurni(wall_item, confirmed);
+        else
+            throw new ArgumentException("Unsupported furniture type.", nameof(item));
+    }
+
+    /// <summary>Picks a floor item up into the inventory, by id.</summary>
+    /// <param name="itemId">The floor item's room id.</param>
+    /// <exception cref="InvalidOperationException">Thrown when no room is ready, or the item is not in it.</exception>
+    public void PickupFloorItem(Id itemId) => SendPickup(2, itemId, false);
+
+    /// <summary>Picks a wall item up into the inventory, by id.</summary>
+    /// <param name="itemId">The wall item's room id.</param>
+    /// <exception cref="InvalidOperationException">Thrown when no room is ready, or the item is not in it.</exception>
+    public void PickupWallItem(Id itemId) => SendPickup(1, itemId, false);
+
     private void SendPickup(int category, Id itemId, bool confirmed) =>
-        Application.Invoke<RoomPlacementPickupRequest, RoomPlacementDispatchReceipt>(
+        _application.Invoke<RoomPlacementPickupRequest, RoomPlacementDispatchReceipt>(
             ApplicationMemberIds.RoomPlacementPickup,
             new RoomPlacementPickupRequest(
                 itemId,
                 category == 2 ? RoomPlacementItemKind.Floor : RoomPlacementItemKind.Wall,
                 confirmed),
             Ct);
-
-    private static RoomPlacementWallPosition PlacementWallPosition(string value) =>
-        PlacementWallPosition(WallLocation.ParseString(value));
 
     private static RoomPlacementWallPosition PlacementWallPosition(WallLocation value) =>
         new(
@@ -650,7 +890,7 @@ public partial class ScriptGlobals
     /// </remarks>
     /// <param name="offerId">The marketplace offer id from a search result.</param>
     public void BuyMarketplaceOffer(Id offerId) =>
-        Application.Invoke<MarketplaceBuySendRequest, MarketplaceDispatchResult>(
+        _application.Invoke<MarketplaceBuySendRequest, MarketplaceDispatchResult>(
             ApplicationMemberIds.MarketplaceOfferBuySend,
             new MarketplaceBuySendRequest(offerId),
             Ct);
@@ -659,9 +899,9 @@ public partial class ScriptGlobals
     /// Withdraws one of the local user's own marketplace offers, returning the item to the
     /// inventory.
     /// </summary>
-    /// <param name="offerId">The offer id from <see cref="GetMyMarketplaceOffers(int)"/>.</param>
+    /// <param name="offerId">The offer id from <see cref="GetMyMarketplaceOffers"/>.</param>
     public void CancelMarketplaceOffer(Id offerId) =>
-        Application.Invoke<MarketplaceCancelSendRequest, MarketplaceDispatchResult>(
+        _application.Invoke<MarketplaceCancelSendRequest, MarketplaceDispatchResult>(
             ApplicationMemberIds.MarketplaceOfferCancelSend,
             new MarketplaceCancelSendRequest(offerId),
             Ct);
@@ -669,8 +909,15 @@ public partial class ScriptGlobals
     /// <summary>
     /// Collects the credits earned from sold marketplace offers into the wallet.
     /// </summary>
+    /// <remarks>
+    /// It sends the request and returns; the new balance arrives as a currency update.
+    /// </remarks>
+    /// <exception cref="InvalidOperationException">Thrown when there is no hotel session.</exception>
     public void RedeemMarketplaceCredits() =>
-        CollectMarketplaceEarnings();
+        _application.Invoke<MarketplaceCommandRequest, MarketplaceDispatchResult>(
+            ApplicationMemberIds.MarketplaceCreditsRedeem,
+            new MarketplaceCommandRequest(),
+            Ct);
 
     /// <summary>
     /// Activates an avatar effect that is owned but not yet started, which begins consuming its
@@ -681,7 +928,7 @@ public partial class ScriptGlobals
     /// </remarks>
     /// <param name="effectId">The effect id; <see cref="EffectName"/> resolves it to a name.</param>
     public void ActivateEffect(int effectId) =>
-        Application.Invoke<InventoryAvatarEffectRequest, InventoryDispatchResult>(
+        _application.Invoke<InventoryAvatarEffectRequest, InventoryDispatchResult>(
             ApplicationMemberIds.InventoryAvatarEffectActivate,
             new InventoryAvatarEffectRequest(effectId),
             Ct);
@@ -691,7 +938,7 @@ public partial class ScriptGlobals
     /// </summary>
     /// <param name="effectId">The effect id, or -1 to wear none.</param>
     public void EnableEffect(int effectId) =>
-        Application.Invoke<RoomAvatarEffectRequest, RoomAvatarDispatchResult>(
+        _application.Invoke<RoomAvatarEffectRequest, RoomAvatarDispatchResult>(
             ApplicationMemberIds.RoomAvatarEffect,
             new RoomAvatarEffectRequest(effectId),
             Ct);
@@ -716,7 +963,7 @@ public partial class ScriptGlobals
     /// whitespace.
     /// </exception>
     public void SaveOutfit(int slot, string figure, string gender) =>
-        Application.Invoke<ProfileOutfitSaveRequest, ProfileDispatchResult>(
+        _application.Invoke<ProfileOutfitSaveRequest, ProfileDispatchResult>(
             ApplicationMemberIds.ProfileWardrobeOutfitSave,
             new ProfileOutfitSaveRequest(slot, figure, gender),
             Ct);
@@ -730,7 +977,7 @@ public partial class ScriptGlobals
     /// </remarks>
     /// <param name="itemId">The dice's room item id.</param>
     public void ThrowDice(Id itemId) =>
-        Application.Invoke<RoomDiceRequest, RoomItemDispatchResult>(
+        _application.Invoke<RoomDiceRequest, RoomItemDispatchResult>(
             ApplicationMemberIds.RoomItemDiceThrow,
             new RoomDiceRequest(itemId),
             Ct);
@@ -740,7 +987,7 @@ public partial class ScriptGlobals
     /// </summary>
     /// <param name="itemId">The dice's room item id.</param>
     public void DiceOff(Id itemId) =>
-        Application.Invoke<RoomDiceRequest, RoomItemDispatchResult>(
+        _application.Invoke<RoomDiceRequest, RoomItemDispatchResult>(
             ApplicationMemberIds.RoomItemDiceClear,
             new RoomDiceRequest(itemId),
             Ct);
@@ -750,7 +997,7 @@ public partial class ScriptGlobals
     /// </summary>
     /// <remarks>
     /// Nothing is returned; the new room shows up in the navigator's own rooms view, which
-    /// <see cref="GetUserRooms"/> reads.
+    /// <see cref="GetMyRooms"/> reads.
     /// </remarks>
     /// <param name="name">The room name.</param>
     /// <param name="description">The room description.</param>
@@ -759,7 +1006,7 @@ public partial class ScriptGlobals
     /// <param name="maxVisitors">The visitor cap; the server clamps it to the values it allows.</param>
     /// <param name="tradeMode">The trading policy: 0 disabled, 1 rights holders only, 2 everyone.</param>
     public void CreateRoom(string name, string description, string model, int category, int maxVisitors, int tradeMode = 0) =>
-        Application.Invoke<NavigatorRoomCreateInput, NavigatorRoomOperationResult>(
+        _application.Invoke<NavigatorRoomCreateInput, NavigatorRoomOperationResult>(
             ApplicationMemberIds.NavigatorRoomCreate,
             new NavigatorRoomCreateInput(name, description, model, category, maxVisitors, tradeMode),
             Ct);
@@ -771,7 +1018,7 @@ public partial class ScriptGlobals
     /// <remarks>There is no confirmation step.</remarks>
     /// <param name="roomId">The room id.</param>
     public void DeleteRoom(Id roomId) =>
-        Application.Invoke<NavigatorRoomDeleteInput, NavigatorRoomOperationResult>(
+        _application.Invoke<NavigatorRoomDeleteInput, NavigatorRoomOperationResult>(
             ApplicationMemberIds.NavigatorRoomDelete,
             new NavigatorRoomDeleteInput(roomId),
             Ct);
@@ -781,7 +1028,7 @@ public partial class ScriptGlobals
     /// </summary>
     /// <param name="roomId">The room id, or 0 to clear the home room.</param>
     public void SetHomeRoom(Id roomId) =>
-        Application.Invoke<NavigatorHomeRoomSetInput, NavigatorRoomOperationResult>(
+        _application.Invoke<NavigatorHomeRoomSetInput, NavigatorRoomOperationResult>(
             ApplicationMemberIds.NavigatorHomeRoomSet,
             new NavigatorHomeRoomSetInput(roomId),
             Ct);
@@ -795,7 +1042,7 @@ public partial class ScriptGlobals
     /// <param name="roomId">The room id.</param>
     /// <param name="pick"><see langword="true"/> to pick; <see langword="false"/> to unpick.</param>
     public void ToggleStaffPick(Id roomId, bool pick = true) =>
-        Application.Invoke<RoomStaffPickRequest, RoomControlDispatchResult>(
+        _application.Invoke<RoomStaffPickRequest, RoomControlDispatchResult>(
             ApplicationMemberIds.RoomStaffPickSet,
             new RoomStaffPickRequest(roomId, pick),
             Ct);
@@ -808,7 +1055,7 @@ public partial class ScriptGlobals
     /// </remarks>
     /// <param name="rating">The signed rating value. The current client uses 1 for a positive rating.</param>
     public void RateRoom(int rating) =>
-        Application.Invoke<RoomRatingRequest, RoomControlDispatchResult>(
+        _application.Invoke<RoomRatingRequest, RoomControlDispatchResult>(
             ApplicationMemberIds.RoomRatingSubmit,
             new RoomRatingRequest(rating),
             Ct);
@@ -819,7 +1066,7 @@ public partial class ScriptGlobals
     /// <remarks>It requires ownership of the pet or room rights.</remarks>
     /// <param name="petId">The pet's id.</param>
     public void RemovePet(Id petId) =>
-        Application.Invoke<RoomPetRemoveRequest, RoomPeopleDispatchResult>(
+        _application.Invoke<RoomPetRemoveRequest, RoomPeopleDispatchResult>(
             ApplicationMemberIds.RoomPetRemove,
             new RoomPetRemoveRequest(petId),
             Ct);
@@ -830,37 +1077,14 @@ public partial class ScriptGlobals
     /// <remarks>It requires ownership of the bot or room rights.</remarks>
     /// <param name="botId">The bot's id.</param>
     public void RemoveBot(Id botId) =>
-        Application.Invoke<RoomBotRemoveRequest, RoomPeopleDispatchResult>(
+        _application.Invoke<RoomBotRemoveRequest, RoomPeopleDispatchResult>(
             ApplicationMemberIds.RoomBotRemove,
             new RoomBotRemoveRequest(botId),
             Ct);
 
-    /// <summary>
-    /// Saves the settings of a room and waits for the server to acknowledge them.
-    /// </summary>
-    /// <remarks>
-    /// Read the current values with <see cref="GetRoomSettings"/>, change them and pass them back.
-    /// Unlike most actions, the call blocks until the server confirms or rejects the save, for
-    /// at most 10000 milliseconds.
-    /// </remarks>
-    /// <param name="settings">The complete room settings to save; its room id selects the room.</param>
-    /// <param name="password">The room password, used when the door mode requires one; otherwise empty.</param>
-    /// <exception cref="ArgumentNullException">Thrown when <paramref name="settings"/> or <paramref name="password"/> is <see langword="null"/>.</exception>
-    /// <exception cref="Qx.Game.Application.RoomSettingsRejectedException">Thrown when the server rejected the settings.</exception>
-    /// <exception cref="Qx.Game.RequestTimeoutException">Thrown when the server did not answer within 10000 milliseconds.</exception>
-    public void SaveRoomSettings(RoomSettings settings, string password = "")
-    {
-        ArgumentNullException.ThrowIfNull(settings);
-        Application.Invoke<RoomSettingsSaveRequest, RoomSettingsSaveReceipt>(
-            ApplicationMemberIds.RoomSettingsSave,
-            new RoomSettingsSaveRequest(ToApplicationRoomSettings(settings), password),
-            Ct);
-    }
-
-
     private Id ResolveUserId(string name)
     {
-        User? user = FindUser(name);
+        User? user = GetUser(name);
         if (user is not null)
             return user.Id;
         Friend? friend = FindFriend(name);
@@ -869,91 +1093,15 @@ public partial class ScriptGlobals
         throw new InvalidOperationException($"Cannot resolve user '{name}' to an identifier for this client layout.");
     }
 
-    /// <summary>
-    /// Buys an offer from the catalog.
-    /// </summary>
-    /// <remarks>
-    /// Nothing is returned; failures such as insufficient credits or a stale offer are reported
-    /// by the client's own purchase error message, not here.
-    /// </remarks>
-    /// <param name="pageId">The catalog page id, from <see cref="GetCatalogIndex"/>.</param>
-    /// <param name="offerId">The offer id on that page, from <see cref="GetCatalogPage"/>.</param>
-    /// <param name="extraData">
-    /// The purchase parameter the offer expects: a color index, a pet name and color, a
-    /// badge code, and so on. Empty for offers that take none.
-    /// </param>
-    /// <param name="amount">The number of items to buy in one purchase.</param>
-    /// <exception cref="ArgumentNullException">Thrown when <paramref name="extraData"/> is <see langword="null"/>.</exception>
-    /// <exception cref="ArgumentOutOfRangeException">
-    /// Thrown when <paramref name="offerId"/> is negative, <paramref name="amount"/> is below 1, or
-    /// <paramref name="extraData"/> is longer than 65535 bytes in UTF-8.
-    /// </exception>
-    public void PurchaseFromCatalog(int pageId, int offerId, string extraData = "", int amount = 1) =>
-        Application.Invoke<CatalogPurchaseSendRequest, CatalogPurchaseDispatchReceipt>(
-            ApplicationMemberIds.CatalogPurchaseSend,
-            new CatalogPurchaseSendRequest(pageId, offerId, extraData, amount),
-            Ct);
-
-    /// <summary>
-    /// Buys a catalog offer as a gift for another user.
-    /// </summary>
-    /// <remarks>
-    /// Nothing is returned; the server reports the outcome through its own messages.
-    /// </remarks>
-    /// <param name="pageId">The catalog page id.</param>
-    /// <param name="offerId">The offer id on that page.</param>
-    /// <param name="extraData">The purchase parameter the offer expects, or empty for offers that take none.</param>
-    /// <param name="receiverName">The name of the user who receives the gift.</param>
-    /// <param name="giftMessage">The message shown with the gift.</param>
-    /// <param name="spriteId">The sprite id of the gift wrapping.</param>
-    /// <param name="boxType">The gift box type.</param>
-    /// <param name="ribbonType">The gift ribbon type.</param>
-    /// <param name="showPurchaserName">
-    /// <see langword="true"/> to show the buyer's name to the receiver; otherwise,
-    /// <see langword="false"/>.
-    /// </param>
-    /// <param name="amount">
-    /// The quantity, which must be at least 1. The gift message has no quantity field, so one
-    /// gift is bought regardless.
-    /// </param>
-    /// <exception cref="ArgumentNullException">
-    /// Thrown when <paramref name="extraData"/>, <paramref name="receiverName"/> or
-    /// <paramref name="giftMessage"/> is <see langword="null"/>.
-    /// </exception>
-    /// <exception cref="ArgumentOutOfRangeException">
-    /// Thrown when <paramref name="amount"/> is below 1, or a string argument is longer than 65535 bytes in
-    /// UTF-8.
-    /// </exception>
-    public void PurchaseFromCatalogAsGift(
-    int pageId, int offerId, string extraData, string receiverName, string giftMessage,
-    int spriteId, int boxType, int ribbonType, bool showPurchaserName = false, int amount = 1)
-    {
-        ArgumentOutOfRangeException.ThrowIfLessThan(amount, 1);
-        Application.Invoke<GiftPurchaseRequest, GiftPurchaseDispatchReceipt>(
-            ApplicationMemberIds.GiftsPurchase,
-            new GiftPurchaseRequest(
-                pageId,
-                offerId,
-                extraData,
-                receiverName,
-                giftMessage,
-                spriteId,
-                boxType,
-                ribbonType,
-                showPurchaserName,
-                amount),
-            Ct);
-    }
-
     private void SendIds(string name, params Id[] ids)
     {
 
-        using Packet packet = NewPacket(Direction.Out, name);
+        using Packet packet = NewPacket(MessageDirection.Out, name);
         PacketWriter writer = packet.Writer();
         writer.WriteLength((Length)ids.Length);
         foreach (Id id in ids)
             writer.WriteId(id);
-        Ext.Send(packet);
+        _interceptor.Send(packet);
     }
 
     /// <summary>
@@ -961,25 +1109,33 @@ public partial class ScriptGlobals
     /// </summary>
     /// <remarks>
     /// The bubble is a whisper injected into the game client. Nothing is sent to the server and
-    /// nobody else sees it.
+    /// nobody else sees it. While the local avatar is not in a room the client shows nothing.
     /// </remarks>
     /// <param name="message">The bubble text.</param>
     /// <param name="bubble">The chat bubble style id; 30 is the neutral gray bubble.</param>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="message"/> is <see langword="null"/>.</exception>
-    public void ShowBubble(string message, int bubble = 30) => ShowBubble(message, Me?.Index ?? -1, bubble);
+    public void ShowBubble(string message, int bubble = 30) => ShowBubble(SelfAvatar?.Index ?? -1, message, bubble);
 
     /// <summary>
-    /// Shows a local only chat bubble above a specific avatar.
+    /// Shows a chat bubble above an avatar in the room on the local screen only.
     /// </summary>
-    /// <remarks>Nothing is sent to the server.</remarks>
+    /// <remarks>
+    /// The bubble is a whisper injected into the game client. Nothing is sent to the server and
+    /// nobody else sees it.
+    /// </remarks>
+    /// <param name="avatar">The user, pet or bot the bubble appears above.</param>
     /// <param name="message">The bubble text.</param>
-    /// <param name="index">
-    /// The room index of the avatar the bubble appears above; -1 when the own avatar is
-    /// unknown, in which case the client shows nothing.
-    /// </param>
-    /// <param name="bubble">The chat bubble style id.</param>
-    /// <exception cref="ArgumentNullException">Thrown when <paramref name="message"/> is <see langword="null"/>.</exception>
-    public void ShowBubble(string message, int index, int bubble)
+    /// <param name="bubble">The chat bubble style id; 30 is the neutral gray bubble.</param>
+    /// <exception cref="ArgumentNullException">
+    /// Thrown when <paramref name="avatar"/> or <paramref name="message"/> is <see langword="null"/>.
+    /// </exception>
+    public void ShowBubble(Avatar avatar, string message, int bubble = 30)
+    {
+        ArgumentNullException.ThrowIfNull(avatar);
+        ShowBubble(avatar.Index, message, bubble);
+    }
+
+    private void ShowBubble(int index, string message, int bubble)
     {
         ArgumentNullException.ThrowIfNull(message);
         SendToClient(

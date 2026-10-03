@@ -68,11 +68,11 @@ public sealed class RoomPageContext(
         Notices.Show(NoticeSeverity.Error, $"{text}: {FailureText.Describe(error)}");
     }
 
-    public async Task CopyAsync(string text, string done, CancellationToken cancellation_token)
+    public async Task CopyAsync(string text, string done, CancellationToken cancellationToken)
     {
         if (string.IsNullOrEmpty(text))
             return;
-        if (await Clipboard.TrySetTextAsync(text, cancellation_token))
+        if (await Clipboard.TrySetTextAsync(text, cancellationToken))
         {
             Say(done);
             return;

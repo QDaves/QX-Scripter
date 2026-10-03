@@ -152,50 +152,6 @@ public sealed record AvatarAction(int Index, int Action) : IParserComposer<Avata
     }
 }
 
-/// <summary>Represents the <c>FavouriteMembershipUpdate</c> message, received when a user in the room changes the group they display as their favorite.</summary>
-/// <param name="Index">The room index of the affected avatar.</param>
-/// <param name="GroupId">
-/// The group the avatar now displays, transmitted as a 32-bit value.
-/// </param>
-/// <param name="Status">
-/// The membership status. <c>RoomUsersHandler.onFavoriteMembershipUpdate</c> forwards this on the
-/// dispatched event only and never stores it on the avatar, so it is not mirrored onto
-/// <see cref="User.GroupStatus"/>.
-/// </param>
-/// <param name="GroupName">The name of the group the avatar now displays.</param>
-public sealed record FavoriteMembershipUpdate(int Index, int GroupId, int Status, string GroupName)
-    : IParserComposer<FavoriteMembershipUpdate>
-{
-    /// <summary>Parses the message from a packet.</summary>
-    /// <param name="p">The packet reader.</param>
-    public static FavoriteMembershipUpdate Parse(in PacketReader p) =>
-        FlashWire.Parse(in p, ParseFlash);
-
-    private static FavoriteMembershipUpdate ParseFlash(in PacketReader p) =>
-        new(p.ReadInt(), p.ReadInt(), p.ReadInt(), p.ReadString());
-
-    /// <summary>Composes the message into a packet.</summary>
-    /// <param name="p">The packet writer.</param>
-    public void Compose(in PacketWriter p) =>
-        FlashWire.Compose(this, in p, ComposeFlash);
-
-    private static void ComposeFlash(FavoriteMembershipUpdate value, in PacketWriter p)
-    {
-        ValidateGroupName(value, in p);
-        p.WriteInt(value.Index);
-        p.WriteInt(value.GroupId);
-        p.WriteInt(value.Status);
-        p.WriteString(value.GroupName);
-    }
-
-    private static void ValidateGroupName(FavoriteMembershipUpdate value, in PacketWriter p)
-    {
-        ArgumentNullException.ThrowIfNull(value.GroupName, nameof(GroupName));
-        if (p.Encoding.GetByteCount(value.GroupName) > ushort.MaxValue)
-            throw new ArgumentException("String exceeds the protocol limit.", nameof(GroupName));
-    }
-}
-
 /// <summary>Represents the structured pet figure carried by <see cref="PetFigureUpdate"/>.</summary>
 /// <param name="TypeId">The pet type.</param>
 /// <param name="PaletteId">The palette the pet is rendered with.</param>

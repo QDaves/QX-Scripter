@@ -1,5 +1,7 @@
 # Getting started
 
+Connect QX Scripter to the hotel, run a first script and keep a script running.
+
 ## Connect
 
 1. Start G-Earth and connect it to the hotel on the Flash client.

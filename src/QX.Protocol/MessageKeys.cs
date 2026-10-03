@@ -143,6 +143,22 @@ public static class MessageKeys
     /// <summary>Contains the wired message keys.</summary>
     public static class Wired
     {
+        /// <summary>Contains Wired Account messages.</summary>
+        public static class Account
+        {
+            /// <summary>The AccountPreferences message key.</summary>
+            public static readonly MessageKey Preferences = new("wired.account.preferences");
+        }
+
+        /// <summary>Contains Wired WebApi messages.</summary>
+        public static class WebApi
+        {
+            /// <summary>The WiredGenerateWebApiKey message key.</summary>
+            public static readonly MessageKey KeyGenerate = new("wired.web_api.key.generate");
+            /// <summary>The WiredWebApiKeyResult message key.</summary>
+            public static readonly MessageKey KeyResult = new("wired.web_api.key.result");
+        }
+
         /// <summary>Contains the wired state message keys.</summary>
         public static class State
         {
@@ -1190,6 +1206,10 @@ public static class MessageKeys
             public static readonly MessageKey ChatSettings = new("room.environment.chat_settings");
             /// <summary>The <c>room.environment.floor_plan</c> key of the incoming Flash message <c>FloorHeightmap</c>.</summary>
             public static readonly MessageKey FloorPlan = new("room.environment.floor_plan");
+            /// <summary>The incoming AreaHide live region update.</summary>
+            public static readonly MessageKey AreaHide = new("room.environment.area_hide");
+            /// <summary>The outgoing SetAreaHideData editor update.</summary>
+            public static readonly MessageKey AreaHideSet = new("room.environment.area_hide.set");
         }
 
         /// <summary>Contains the room chat message keys.</summary>

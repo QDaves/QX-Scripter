@@ -57,7 +57,6 @@ internal sealed partial class LeaderboardApplication
                 request.Limit);
             RequireLeaseActive(lease);
             return new LeaderboardRefreshResult(
-                scope.Session.Client,
                 time_provider.GetUtcNow(),
                 observed.ObservedAtUtc,
                 scope.SessionGeneration,
@@ -131,7 +130,7 @@ internal sealed partial class LeaderboardApplication
             {
                 case LeaderboardScope.Total:
                     message_dispatcher.Dispatch(
-                        MessageContracts.Leaderboards.WeeklyTotalRequest,
+                        MessageContracts.Leaderboards.WeeklyTotal.Request,
                         request,
                         session_scope.Session,
                         cancellation_token,
@@ -143,7 +142,7 @@ internal sealed partial class LeaderboardApplication
                     return;
                 case LeaderboardScope.Friends:
                     message_dispatcher.Dispatch(
-                        MessageContracts.Leaderboards.WeeklyFriendsRequest,
+                        MessageContracts.Leaderboards.WeeklyFriends.Request,
                         request,
                         session_scope.Session,
                         cancellation_token,
@@ -155,7 +154,7 @@ internal sealed partial class LeaderboardApplication
                     return;
                 case LeaderboardScope.Groups:
                     message_dispatcher.Dispatch(
-                        MessageContracts.Leaderboards.WeeklyGroupsRequest,
+                        MessageContracts.Leaderboards.WeeklyGroups.Request,
                         request,
                         session_scope.Session,
                         cancellation_token,
@@ -177,7 +176,7 @@ internal sealed partial class LeaderboardApplication
         {
             case LeaderboardScope.Total:
                 message_dispatcher.Dispatch(
-                    MessageContracts.Leaderboards.TotalRequest,
+                    MessageContracts.Leaderboards.Total.Request,
                     ordinary,
                     session_scope.Session,
                     cancellation_token,
@@ -189,7 +188,7 @@ internal sealed partial class LeaderboardApplication
                 break;
             case LeaderboardScope.Friends:
                 message_dispatcher.Dispatch(
-                    MessageContracts.Leaderboards.FriendsRequest,
+                    MessageContracts.Leaderboards.Friends.Request,
                     ordinary,
                     session_scope.Session,
                     cancellation_token,
@@ -201,7 +200,7 @@ internal sealed partial class LeaderboardApplication
                 break;
             case LeaderboardScope.Groups:
                 message_dispatcher.Dispatch(
-                    MessageContracts.Leaderboards.GroupsRequest,
+                    MessageContracts.Leaderboards.Groups.Request,
                     ordinary,
                     session_scope.Session,
                     cancellation_token,
@@ -230,9 +229,9 @@ internal sealed partial class LeaderboardApplication
         {
             { Scope: LeaderboardScope.Total, Weekly: false } => RequestRoute(
                 route,
-                MessageContracts.Leaderboards.TotalRequest,
+                MessageContracts.Leaderboards.Total.Request,
                 new LeaderboardRequest(game_type_id, start_rank, direction, view_size, window_size),
-                MessageContracts.Leaderboards.TotalSnapshot,
+                MessageContracts.Leaderboards.Total.Snapshot,
                 game_type_id,
                 null,
                 scope,
@@ -241,9 +240,9 @@ internal sealed partial class LeaderboardApplication
                 cancellation_token),
             { Scope: LeaderboardScope.Friends, Weekly: false } => RequestRoute(
                 route,
-                MessageContracts.Leaderboards.FriendsRequest,
+                MessageContracts.Leaderboards.Friends.Request,
                 new LeaderboardRequest(game_type_id, start_rank, direction, view_size, window_size),
-                MessageContracts.Leaderboards.FriendsSnapshot,
+                MessageContracts.Leaderboards.Friends.Snapshot,
                 game_type_id,
                 null,
                 scope,
@@ -252,9 +251,9 @@ internal sealed partial class LeaderboardApplication
                 cancellation_token),
             { Scope: LeaderboardScope.Groups, Weekly: false } => RequestRoute(
                 route,
-                MessageContracts.Leaderboards.GroupsRequest,
+                MessageContracts.Leaderboards.Groups.Request,
                 new LeaderboardRequest(game_type_id, start_rank, direction, view_size, window_size),
-                MessageContracts.Leaderboards.GroupsSnapshot,
+                MessageContracts.Leaderboards.Groups.Snapshot,
                 game_type_id,
                 null,
                 scope,
@@ -263,8 +262,8 @@ internal sealed partial class LeaderboardApplication
                 cancellation_token),
             { Scope: LeaderboardScope.Total, Weekly: true } => RequestWeeklyRoute(
                 route,
-                MessageContracts.Leaderboards.WeeklyTotalRequest,
-                MessageContracts.Leaderboards.WeeklyTotalSnapshot,
+                MessageContracts.Leaderboards.WeeklyTotal.Request,
+                MessageContracts.Leaderboards.WeeklyTotal.Snapshot,
                 game_type_id,
                 start_rank,
                 direction,
@@ -276,8 +275,8 @@ internal sealed partial class LeaderboardApplication
                 cancellation_token),
             { Scope: LeaderboardScope.Friends, Weekly: true } => RequestWeeklyRoute(
                 route,
-                MessageContracts.Leaderboards.WeeklyFriendsRequest,
-                MessageContracts.Leaderboards.WeeklyFriendsSnapshot,
+                MessageContracts.Leaderboards.WeeklyFriends.Request,
+                MessageContracts.Leaderboards.WeeklyFriends.Snapshot,
                 game_type_id,
                 start_rank,
                 direction,
@@ -289,8 +288,8 @@ internal sealed partial class LeaderboardApplication
                 cancellation_token),
             { Scope: LeaderboardScope.Groups, Weekly: true } => RequestWeeklyRoute(
                 route,
-                MessageContracts.Leaderboards.WeeklyGroupsRequest,
-                MessageContracts.Leaderboards.WeeklyGroupsSnapshot,
+                MessageContracts.Leaderboards.WeeklyGroups.Request,
+                MessageContracts.Leaderboards.WeeklyGroups.Snapshot,
                 game_type_id,
                 start_rank,
                 direction,

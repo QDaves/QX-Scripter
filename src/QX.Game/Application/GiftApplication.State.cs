@@ -16,7 +16,6 @@ internal sealed partial class GiftApplication
             .ToDictionary(entry => entry.Key, entry => entry.Value.Value);
         var result = new GiftStateView(
             connected,
-            connected ? state.Session!.Client : null,
             state.SessionGeneration,
             state.Revision,
             state.WrappingRevision,
@@ -61,7 +60,6 @@ internal sealed partial class GiftApplication
         bool connected = Connected(state);
         var result = new GiftWrappingPage(
             connected,
-            connected ? state.Session!.Client : null,
             state.SessionGeneration,
             state.WrappingRevision,
             lease.Revision,
@@ -125,7 +123,6 @@ internal sealed partial class GiftApplication
         bool connected = Connected(state);
         var result = new GiftClubSelectedPage(
             connected,
-            connected ? state.Session!.Client : null,
             state.SessionGeneration,
             state.ClubSelectedRevision,
             lease.Revision,
@@ -187,7 +184,6 @@ internal sealed partial class GiftApplication
         bool connected = Connected(state);
         var result = new GiftNewUserOfferPage(
             connected,
-            connected ? state.Session!.Client : null,
             state.SessionGeneration,
             state.NewUserOfferRevision,
             lease.Revision,
@@ -252,7 +248,6 @@ internal sealed partial class GiftApplication
         bool connected = Connected(state);
         var result = new GiftClubInfoPage(
             connected,
-            connected ? state.Session!.Client : null,
             state.SessionGeneration,
             state.ClubInfoRevision,
             lease.Revision,

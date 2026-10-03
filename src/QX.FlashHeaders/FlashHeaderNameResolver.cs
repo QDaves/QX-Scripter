@@ -105,7 +105,7 @@ public sealed partial class FlashHeaderNameResolver
 
     public static string ClassSignature(FlashHeaderDefinition definition)
     {
-        string direction = definition.Direction == MessageDirection.Incoming ? "in" : "out";
+        string direction = definition.Direction == FlashMessageDirection.Incoming ? "in" : "out";
         return $"class3:{direction}:{definition.Qualified}";
     }
 

@@ -36,10 +36,10 @@ public partial class ScriptGlobals
     /// It returns without waiting. The response updates <see cref="CraftableProducts"/> and runs
     /// the <see cref="OnCraftableProducts(Action{CraftableProducts})"/> handlers.
     /// </remarks>
-    /// <param name="crafting_furniture_id">The floor item id of the crafting furniture in the room.</param>
+    /// <param name="craftingFurnitureId">The floor item id of the crafting furniture in the room.</param>
     /// <exception cref="InvalidOperationException">Thrown when the application runtime is not active.</exception>
-    public void RequestCraftableProducts(Id crafting_furniture_id) =>
-        Crafting.RequestProducts(crafting_furniture_id);
+    public void RequestCraftableProducts(Id craftingFurnitureId) =>
+        Crafting.RequestProducts(craftingFurnitureId);
 
     /// <summary>
     /// Requests the ingredients of a recipe.
@@ -48,11 +48,11 @@ public partial class ScriptGlobals
     /// It returns without waiting. The response updates <see cref="CurrentCraftingRecipe"/> and
     /// runs the <see cref="OnCraftingRecipe(Action{CraftingRecipe})"/> handlers.
     /// </remarks>
-    /// <param name="recipe_code">The recipe code taken from a craftable products entry.</param>
-    /// <exception cref="ArgumentNullException">Thrown when <paramref name="recipe_code"/> is <see langword="null"/>.</exception>
+    /// <param name="recipeCode">The recipe code taken from a craftable products entry.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="recipeCode"/> is <see langword="null"/>.</exception>
     /// <exception cref="InvalidOperationException">Thrown when the application runtime is not active.</exception>
-    public void RequestCraftingRecipe(string recipe_code) =>
-        Crafting.RequestRecipe(recipe_code);
+    public void RequestCraftingRecipe(string recipeCode) =>
+        Crafting.RequestRecipe(recipeCode);
 
     /// <summary>
     /// Crafts a recipe with a crafting furniture.
@@ -61,12 +61,12 @@ public partial class ScriptGlobals
     /// It returns without waiting. The response updates <see cref="LastCraftingResult"/> and runs
     /// the <see cref="OnCraftingResult(Action{CraftingResult})"/> handlers.
     /// </remarks>
-    /// <param name="crafting_furniture_id">The floor item id of the crafting furniture.</param>
-    /// <param name="recipe_code">The recipe code to craft.</param>
-    /// <exception cref="ArgumentNullException">Thrown when <paramref name="recipe_code"/> is <see langword="null"/>.</exception>
+    /// <param name="craftingFurnitureId">The floor item id of the crafting furniture.</param>
+    /// <param name="recipeCode">The recipe code to craft.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="recipeCode"/> is <see langword="null"/>.</exception>
     /// <exception cref="InvalidOperationException">Thrown when the application runtime is not active.</exception>
-    public void Craft(Id crafting_furniture_id, string recipe_code) =>
-        Crafting.Craft(crafting_furniture_id, recipe_code);
+    public void Craft(Id craftingFurnitureId, string recipeCode) =>
+        Crafting.Craft(craftingFurnitureId, recipeCode);
 
     /// <summary>
     /// Crafts a secret recipe from a set of ingredient items.
@@ -75,14 +75,14 @@ public partial class ScriptGlobals
     /// It returns without waiting. The response updates <see cref="LastCraftingResult"/> and runs
     /// the <see cref="OnCraftingResult(Action{CraftingResult})"/> handlers.
     /// </remarks>
-    /// <param name="crafting_furniture_id">The floor item id of the crafting furniture.</param>
-    /// <param name="ingredient_item_ids">The inventory item ids to consume.</param>
-    /// <exception cref="ArgumentNullException">Thrown when <paramref name="ingredient_item_ids"/> is <see langword="null"/>.</exception>
+    /// <param name="craftingFurnitureId">The floor item id of the crafting furniture.</param>
+    /// <param name="ingredientItemIds">The inventory item ids to consume.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="ingredientItemIds"/> is <see langword="null"/>.</exception>
     /// <exception cref="InvalidOperationException">Thrown when the application runtime is not active.</exception>
     public void CraftSecret(
-        Id crafting_furniture_id,
-        params Id[] ingredient_item_ids) =>
-        Crafting.CraftSecret(crafting_furniture_id, ingredient_item_ids);
+        Id craftingFurnitureId,
+        params Id[] ingredientItemIds) =>
+        Crafting.CraftSecret(craftingFurnitureId, ingredientItemIds);
 
     /// <summary>
     /// Requests the number of recipes that match a set of ingredient items.
@@ -91,14 +91,14 @@ public partial class ScriptGlobals
     /// It returns without waiting. The response updates <see cref="AvailableCraftingRecipes"/> and
     /// runs the <see cref="OnCraftingRecipesAvailable(Action{CraftingRecipesAvailable})"/> handlers.
     /// </remarks>
-    /// <param name="crafting_furniture_id">The floor item id of the crafting furniture.</param>
-    /// <param name="ingredient_item_ids">The inventory item ids to check.</param>
-    /// <exception cref="ArgumentNullException">Thrown when <paramref name="ingredient_item_ids"/> is <see langword="null"/>.</exception>
+    /// <param name="craftingFurnitureId">The floor item id of the crafting furniture.</param>
+    /// <param name="ingredientItemIds">The inventory item ids to check.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="ingredientItemIds"/> is <see langword="null"/>.</exception>
     /// <exception cref="InvalidOperationException">Thrown when the application runtime is not active.</exception>
     public void RequestCraftingRecipesAvailable(
-        Id crafting_furniture_id,
-        params Id[] ingredient_item_ids) =>
+        Id craftingFurnitureId,
+        params Id[] ingredientItemIds) =>
         Crafting.RequestAvailableRecipes(
-            crafting_furniture_id,
-            ingredient_item_ids);
+            craftingFurnitureId,
+            ingredientItemIds);
 }

@@ -20,20 +20,20 @@ public sealed record DailyTaskReward : IParserComposer<DailyTaskReward>
     private string _extra_params = "";
 
     /// <summary>Initializes a new instance of the <see cref="DailyTaskReward"/> record.</summary>
-    /// <param name="ProductItemTypeId">The product's item type.</param>
-    /// <param name="RewardTypeId">The reward category, which decides how the client draws it.</param>
-    /// <param name="ExtraParams">Reward specific detail, such as a badge code or a furni class.</param>
-    /// <param name="Amount">How many are given.</param>
+    /// <param name="productItemTypeId">The product's item type.</param>
+    /// <param name="rewardTypeId">The reward category, which decides how the client draws it.</param>
+    /// <param name="extraParams">Reward specific detail, such as a badge code or a furni class.</param>
+    /// <param name="amount">How many are given.</param>
     public DailyTaskReward(
-        short ProductItemTypeId,
-        string RewardTypeId,
-        string ExtraParams,
-        int Amount)
+        short productItemTypeId,
+        string rewardTypeId,
+        string extraParams,
+        int amount)
     {
-        this.ProductItemTypeId = ProductItemTypeId;
-        this.RewardTypeId = RewardTypeId;
-        this.ExtraParams = ExtraParams;
-        this.Amount = Amount;
+        ProductItemTypeId = productItemTypeId;
+        RewardTypeId = rewardTypeId;
+        ExtraParams = extraParams;
+        Amount = amount;
     }
 
     /// <summary>Gets the product's item type.</summary>
@@ -65,20 +65,20 @@ public sealed record DailyTaskReward : IParserComposer<DailyTaskReward>
     public int Amount { get; init; }
 
     /// <summary>Deconstructs the reward into its parts.</summary>
-    /// <param name="ProductItemTypeId">The product's item type.</param>
-    /// <param name="RewardTypeId">The reward category.</param>
-    /// <param name="ExtraParams">Reward specific detail, such as a badge code or a furni class.</param>
-    /// <param name="Amount">How many are given.</param>
+    /// <param name="productItemTypeId">The product's item type.</param>
+    /// <param name="rewardTypeId">The reward category.</param>
+    /// <param name="extraParams">Reward specific detail, such as a badge code or a furni class.</param>
+    /// <param name="amount">How many are given.</param>
     public void Deconstruct(
-        out short ProductItemTypeId,
-        out string RewardTypeId,
-        out string ExtraParams,
-        out int Amount)
+        out short productItemTypeId,
+        out string rewardTypeId,
+        out string extraParams,
+        out int amount)
     {
-        ProductItemTypeId = this.ProductItemTypeId;
-        RewardTypeId = this.RewardTypeId;
-        ExtraParams = this.ExtraParams;
-        Amount = this.Amount;
+        productItemTypeId = ProductItemTypeId;
+        rewardTypeId = RewardTypeId;
+        extraParams = ExtraParams;
+        amount = Amount;
     }
 
     /// <summary>Parses a daily task reward from a packet.</summary>
@@ -177,47 +177,47 @@ public sealed record DailyTask : IParserComposer<DailyTask>
         Array.AsReadOnly(Array.Empty<DailyTaskReward>());
 
     /// <summary>Initializes a new instance of the <see cref="DailyTask"/> record.</summary>
-    /// <param name="TaskId">The task's identifier.</param>
-    /// <param name="TaskCode">The task's code, which keys its localized name.</param>
-    /// <param name="QuestTypeCode">The underlying quest type, shared with the quest system.</param>
-    /// <param name="IsBonus">Whether this is the bonus task, which the client styles differently.</param>
-    /// <param name="ImageVersion">Cache-busting suffix for the task's artwork.</param>
-    /// <param name="CatalogName">The catalog page the task points at, empty when it points nowhere.</param>
-    /// <param name="RequiredRepeats">How many repeats finish the task.</param>
-    /// <param name="Repeats">How many repeats are done.</param>
-    /// <param name="Status">Whether the task is running, finished or claimed.</param>
-    /// <param name="SecondsLeftAtArrival">
+    /// <param name="taskId">The task's identifier.</param>
+    /// <param name="taskCode">The task's code, which keys its localized name.</param>
+    /// <param name="questTypeCode">The underlying quest type, shared with the quest system.</param>
+    /// <param name="isBonus">Whether this is the bonus task, which the client styles differently.</param>
+    /// <param name="imageVersion">Cache-busting suffix for the task's artwork.</param>
+    /// <param name="catalogName">The catalog page the task points at, empty when it points nowhere.</param>
+    /// <param name="requiredRepeats">How many repeats finish the task.</param>
+    /// <param name="repeats">How many repeats are done.</param>
+    /// <param name="status">Whether the task is running, finished or claimed.</param>
+    /// <param name="secondsLeftAtArrival">
     /// The lifetime left when the hotel sent this, in seconds. Negative means the hotel considers it
     /// expired. Use <see cref="SecondsLeft"/> rather than this, which does not tick down.
     /// </param>
-    /// <param name="ReceivedAt">When this arrived, used to age <see cref="SecondsLeftAtArrival"/>.</param>
-    /// <param name="Rewards">What finishing the task pays out.</param>
+    /// <param name="receivedAt">When this arrived, used to age <see cref="SecondsLeftAtArrival"/>.</param>
+    /// <param name="rewards">What finishing the task pays out.</param>
     public DailyTask(
-        long TaskId,
-        string TaskCode,
-        string QuestTypeCode,
-        bool IsBonus,
-        string ImageVersion,
-        string CatalogName,
-        int RequiredRepeats,
-        int Repeats,
-        DailyTaskStatus Status,
-        int SecondsLeftAtArrival,
-        DateTimeOffset ReceivedAt,
-        IReadOnlyList<DailyTaskReward> Rewards)
+        long taskId,
+        string taskCode,
+        string questTypeCode,
+        bool isBonus,
+        string imageVersion,
+        string catalogName,
+        int requiredRepeats,
+        int repeats,
+        DailyTaskStatus status,
+        int secondsLeftAtArrival,
+        DateTimeOffset receivedAt,
+        IReadOnlyList<DailyTaskReward> rewards)
     {
-        this.TaskId = TaskId;
-        this.TaskCode = TaskCode;
-        this.QuestTypeCode = QuestTypeCode;
-        this.IsBonus = IsBonus;
-        this.ImageVersion = ImageVersion;
-        this.CatalogName = CatalogName;
-        this.RequiredRepeats = RequiredRepeats;
-        this.Repeats = Repeats;
-        this.Status = Status;
-        this.SecondsLeftAtArrival = SecondsLeftAtArrival;
-        this.ReceivedAt = ReceivedAt;
-        this.Rewards = Rewards;
+        TaskId = taskId;
+        TaskCode = taskCode;
+        QuestTypeCode = questTypeCode;
+        IsBonus = isBonus;
+        ImageVersion = imageVersion;
+        CatalogName = catalogName;
+        RequiredRepeats = requiredRepeats;
+        Repeats = repeats;
+        Status = status;
+        SecondsLeftAtArrival = secondsLeftAtArrival;
+        ReceivedAt = receivedAt;
+        Rewards = rewards;
     }
 
     /// <summary>Gets the task's identifier.</summary>
@@ -297,44 +297,44 @@ public sealed record DailyTask : IParserComposer<DailyTask>
     }
 
     /// <summary>Deconstructs the task into its parts.</summary>
-    /// <param name="TaskId">The task's identifier.</param>
-    /// <param name="TaskCode">The task's code.</param>
-    /// <param name="QuestTypeCode">The underlying quest type.</param>
-    /// <param name="IsBonus">Whether this is the bonus task.</param>
-    /// <param name="ImageVersion">The cache busting suffix for the task's artwork.</param>
-    /// <param name="CatalogName">The catalog page the task points at.</param>
-    /// <param name="RequiredRepeats">How many repeats finish the task.</param>
-    /// <param name="Repeats">How many repeats are done.</param>
-    /// <param name="Status">Whether the task is running, finished or claimed.</param>
-    /// <param name="SecondsLeftAtArrival">The lifetime left when the hotel sent the task, in seconds.</param>
-    /// <param name="ReceivedAt">When the task arrived.</param>
-    /// <param name="Rewards">What finishing the task pays out.</param>
+    /// <param name="taskId">The task's identifier.</param>
+    /// <param name="taskCode">The task's code.</param>
+    /// <param name="questTypeCode">The underlying quest type.</param>
+    /// <param name="isBonus">Whether this is the bonus task.</param>
+    /// <param name="imageVersion">The cache busting suffix for the task's artwork.</param>
+    /// <param name="catalogName">The catalog page the task points at.</param>
+    /// <param name="requiredRepeats">How many repeats finish the task.</param>
+    /// <param name="repeats">How many repeats are done.</param>
+    /// <param name="status">Whether the task is running, finished or claimed.</param>
+    /// <param name="secondsLeftAtArrival">The lifetime left when the hotel sent the task, in seconds.</param>
+    /// <param name="receivedAt">When the task arrived.</param>
+    /// <param name="rewards">What finishing the task pays out.</param>
     public void Deconstruct(
-        out long TaskId,
-        out string TaskCode,
-        out string QuestTypeCode,
-        out bool IsBonus,
-        out string ImageVersion,
-        out string CatalogName,
-        out int RequiredRepeats,
-        out int Repeats,
-        out DailyTaskStatus Status,
-        out int SecondsLeftAtArrival,
-        out DateTimeOffset ReceivedAt,
-        out IReadOnlyList<DailyTaskReward> Rewards)
+        out long taskId,
+        out string taskCode,
+        out string questTypeCode,
+        out bool isBonus,
+        out string imageVersion,
+        out string catalogName,
+        out int requiredRepeats,
+        out int repeats,
+        out DailyTaskStatus status,
+        out int secondsLeftAtArrival,
+        out DateTimeOffset receivedAt,
+        out IReadOnlyList<DailyTaskReward> rewards)
     {
-        TaskId = this.TaskId;
-        TaskCode = this.TaskCode;
-        QuestTypeCode = this.QuestTypeCode;
-        IsBonus = this.IsBonus;
-        ImageVersion = this.ImageVersion;
-        CatalogName = this.CatalogName;
-        RequiredRepeats = this.RequiredRepeats;
-        Repeats = this.Repeats;
-        Status = this.Status;
-        SecondsLeftAtArrival = this.SecondsLeftAtArrival;
-        ReceivedAt = this.ReceivedAt;
-        Rewards = this.Rewards;
+        taskId = TaskId;
+        taskCode = TaskCode;
+        questTypeCode = QuestTypeCode;
+        isBonus = IsBonus;
+        imageVersion = ImageVersion;
+        catalogName = CatalogName;
+        requiredRepeats = RequiredRepeats;
+        repeats = Repeats;
+        status = Status;
+        secondsLeftAtArrival = SecondsLeftAtArrival;
+        receivedAt = ReceivedAt;
+        rewards = Rewards;
     }
 
     /// <summary>
@@ -530,19 +530,15 @@ internal readonly record struct DailyTaskWireSnapshot(
 /// Represents the <c>DailyTasksActiveList</c> message, received with the daily tasks currently running in answer to
 /// a request.
 /// </summary>
-/// <remarks>
-/// The count is a plain <c>int</c> here rather than the usual client-dependent length, because the
-/// daily task messages exist on Flash only.
-/// </remarks>
 public sealed record DailyTasksActiveList : IParserComposer<DailyTasksActiveList>
 {
     private IReadOnlyList<DailyTask> _tasks = Array.AsReadOnly(Array.Empty<DailyTask>());
 
     /// <summary>Initializes a new instance of the <see cref="DailyTasksActiveList"/> record.</summary>
-    /// <param name="Tasks">The active tasks.</param>
-    public DailyTasksActiveList(IReadOnlyList<DailyTask> Tasks)
+    /// <param name="tasks">The active tasks.</param>
+    public DailyTasksActiveList(IReadOnlyList<DailyTask> tasks)
     {
-        this.Tasks = Tasks;
+        Tasks = tasks;
     }
 
     /// <summary>Gets the active tasks, as a read only copy.</summary>
@@ -553,10 +549,10 @@ public sealed record DailyTasksActiveList : IParserComposer<DailyTasksActiveList
     }
 
     /// <summary>Deconstructs the message into its tasks.</summary>
-    /// <param name="Tasks">The active tasks.</param>
-    public void Deconstruct(out IReadOnlyList<DailyTask> Tasks)
+    /// <param name="tasks">The active tasks.</param>
+    public void Deconstruct(out IReadOnlyList<DailyTask> tasks)
     {
-        Tasks = this.Tasks;
+        tasks = Tasks;
     }
 
     /// <summary>Parses the message from a packet.</summary>
@@ -589,10 +585,10 @@ public sealed record DailyTasksTasksAdded : IParserComposer<DailyTasksTasksAdded
     private IReadOnlyList<DailyTask> _tasks = Array.AsReadOnly(Array.Empty<DailyTask>());
 
     /// <summary>Initializes a new instance of the <see cref="DailyTasksTasksAdded"/> record.</summary>
-    /// <param name="Tasks">The added tasks.</param>
-    public DailyTasksTasksAdded(IReadOnlyList<DailyTask> Tasks)
+    /// <param name="tasks">The added tasks.</param>
+    public DailyTasksTasksAdded(IReadOnlyList<DailyTask> tasks)
     {
-        this.Tasks = Tasks;
+        Tasks = tasks;
     }
 
     /// <summary>Gets the added tasks, as a read only copy.</summary>
@@ -603,10 +599,10 @@ public sealed record DailyTasksTasksAdded : IParserComposer<DailyTasksTasksAdded
     }
 
     /// <summary>Deconstructs the message into its tasks.</summary>
-    /// <param name="Tasks">The added tasks.</param>
-    public void Deconstruct(out IReadOnlyList<DailyTask> Tasks)
+    /// <param name="tasks">The added tasks.</param>
+    public void Deconstruct(out IReadOnlyList<DailyTask> tasks)
     {
-        Tasks = this.Tasks;
+        tasks = Tasks;
     }
 
     /// <summary>Parses the message from a packet.</summary>

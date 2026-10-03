@@ -8,6 +8,7 @@ using Qx.Game.Application;
 using Qx.Interception;
 using Qx.Platform;
 using Qx.Scripting;
+using Qx.Scripting.Hosting;
 
 namespace Qx.Hosting;
 
@@ -44,33 +45,34 @@ public sealed class ScriptExecutionService(
     IInterceptor extension,
     GameState game,
     IApplicationRuntime application,
-    Keyboard keyboard,
-    string scripts_directory,
+    KeyboardReader keyboard,
+    string scriptsDirectory,
     CancellationToken lifetime = default)
 {
     readonly ConcurrentDictionary<string, RunMarker> _active = new(StoragePaths.FileComparer);
 
     /// <summary>
     /// Compiles a script without running it, resolving its <c>#load</c> and <c>#r</c> paths
-    /// against the script library the way a run does.
+    /// against the script library and its message names against the bound catalog the way a run
+    /// does.
     /// </summary>
-    public ImmutableArray<Diagnostic> Compile(string code, string file_name) =>
-        ScriptEngine.Compile(code, file_name, scripts_directory);
+    public ImmutableArray<Diagnostic> Compile(string code, string fileName) =>
+        ScriptEngine.Compile(code, fileName, scriptsDirectory, extension.Messages);
 
     public event Action? ActiveRunsChanged;
 
     public IReadOnlyList<ActiveScriptRun> ActiveRuns => [.. _active.Values.Select(marker => marker.Run)];
 
-    public bool IsRunning(string source_identity)
+    public bool IsRunning(string sourceIdentity)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(source_identity);
-        return _active.ContainsKey(source_identity);
+        ArgumentException.ThrowIfNullOrWhiteSpace(sourceIdentity);
+        return _active.ContainsKey(sourceIdentity);
     }
 
-    public bool RequestStop(string source_identity)
+    public bool RequestStop(string sourceIdentity)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(source_identity);
-        if (!_active.TryGetValue(source_identity, out RunMarker? marker))
+        ArgumentException.ThrowIfNullOrWhiteSpace(sourceIdentity);
+        if (!_active.TryGetValue(sourceIdentity, out RunMarker? marker))
             return false;
         marker.RequestStop();
         return true;
@@ -87,12 +89,12 @@ public sealed class ScriptExecutionService(
         return requested;
     }
 
-    public Task WhenAllStoppedAsync(CancellationToken cancellation_token) =>
-        Task.WhenAll(_active.Values.Select(marker => marker.Completion)).WaitAsync(cancellation_token);
+    public Task WhenAllStoppedAsync(CancellationToken cancellationToken) =>
+        Task.WhenAll(_active.Values.Select(marker => marker.Completion)).WaitAsync(cancellationToken);
 
     public async Task<ScriptExecutionResult> RunAsync(
         ScriptExecutionRequest request,
-        CancellationToken cancellation_token = default)
+        CancellationToken cancellationToken = default)
     {
         Validate(request);
         if (request.ConfigureAsync is null && UiSpec.Parse(request.Code).Required)
@@ -108,7 +110,7 @@ public sealed class ScriptExecutionService(
         RaiseActiveRunsChanged();
         try
         {
-            return await RunTrackedAsync(request, marker, cancellation_token).ConfigureAwait(false);
+            return await RunTrackedAsync(request, marker, cancellationToken).ConfigureAwait(false);
         }
         finally
         {
@@ -284,7 +286,7 @@ public sealed class ScriptExecutionService(
             await extension.WaitForCatalogBuildAsync(run_source.Token).ConfigureAwait(false);
             stage = "compile";
             ScriptProgram program = await Task.Run(
-                () => ScriptEngine.Prepare(request.Code, request.FileName, scripts_directory),
+                () => ScriptEngine.Prepare(request.Code, request.FileName, scriptsDirectory, extension.Messages),
                 run_source.Token).ConfigureAwait(false);
 
             foreach (Diagnostic diagnostic in program.Diagnostics.Where(
@@ -456,7 +458,7 @@ public sealed class ScriptExecutionService(
 
                 try
                 {
-                    globals.Dispose();
+                    globals.Close();
                 }
                 catch (Exception error)
                 {

@@ -1,6 +1,6 @@
 using Qx.Interception;
+using Qx.Model;
 using Qx.Model.Messages.Incoming;
-using Qx.Model.Quests;
 
 namespace Qx.Game.Application;
 
@@ -152,10 +152,6 @@ public sealed record QuestDailyView(
 /// Returned by <see cref="ApplicationMemberIds.QuestsState"/>.
 /// </remarks>
 /// <param name="Connected">Whether the snapshot belongs to the active hotel session.</param>
-/// <param name="Client">
-/// The client type of the hotel session, or <see langword="null"/> when <paramref name="Connected"/> is
-/// <see langword="false"/>.
-/// </param>
 /// <param name="SessionGeneration">The state generation of the hotel session the snapshot was captured in.</param>
 /// <param name="Revision">The quest state revision, increased when a quest message is stored or the state resets.</param>
 /// <param name="AvailableRevision">The revision increased when an available quest list is stored or the state resets.</param>
@@ -172,7 +168,6 @@ public sealed record QuestDailyView(
 /// <param name="Daily">The last daily quest offer, or <see langword="null"/> when none was received.</param>
 public sealed record QuestStateView(
     bool Connected,
-    ClientType? Client,
     long SessionGeneration,
     long Revision,
     long AvailableRevision,
@@ -232,10 +227,6 @@ public sealed record QuestEntryPageRequest(
 /// <see cref="ApplicationMemberIds.QuestsAvailableRefresh"/> and <see cref="ApplicationMemberIds.QuestsSeasonalRefresh"/>.
 /// </remarks>
 /// <param name="Connected">Whether the snapshot belongs to the active hotel session.</param>
-/// <param name="Client">
-/// The client type of the hotel session, or <see langword="null"/> when <paramref name="Connected"/> is
-/// <see langword="false"/>.
-/// </param>
 /// <param name="SessionGeneration">The state generation of the hotel session the snapshot was captured in.</param>
 /// <param name="StateRevision">The quest state revision of the snapshot.</param>
 /// <param name="AvailableRevision">The revision increased when an available quest list is stored or the state resets.</param>
@@ -249,7 +240,6 @@ public sealed record QuestEntryPageRequest(
 /// <param name="Entries">The quests in the page.</param>
 public sealed record QuestEntryPage(
     bool Connected,
-    ClientType? Client,
     long SessionGeneration,
     long StateRevision,
     long AvailableRevision,
@@ -287,7 +277,6 @@ public sealed record QuestAvailableRefreshRequest(
 /// <remarks>
 /// Returned by <see cref="ApplicationMemberIds.QuestsAvailableRefresh"/>.
 /// </remarks>
-/// <param name="Client">The client type of the hotel session.</param>
 /// <param name="RefreshedAtUtc">The time the result was created.</param>
 /// <param name="ObservedAtUtc">The time the matching quest list was stored.</param>
 /// <param name="SessionGeneration">The state generation of the hotel session the refresh ran in.</param>
@@ -300,7 +289,6 @@ public sealed record QuestAvailableRefreshRequest(
 /// </param>
 /// <param name="FirstPage">The first page of the stored available quest list.</param>
 public sealed record QuestAvailableRefreshResult(
-    ClientType Client,
     DateTimeOffset RefreshedAtUtc,
     DateTimeOffset ObservedAtUtc,
     long SessionGeneration,
@@ -335,7 +323,6 @@ public sealed record QuestSeasonalRefreshRequest(
 /// <remarks>
 /// Returned by <see cref="ApplicationMemberIds.QuestsSeasonalRefresh"/>.
 /// </remarks>
-/// <param name="Client">The client type of the hotel session.</param>
 /// <param name="RefreshedAtUtc">The time the result was created.</param>
 /// <param name="ObservedAtUtc">The time the matching quest list was stored.</param>
 /// <param name="SessionGeneration">The state generation of the hotel session the refresh ran in.</param>
@@ -348,7 +335,6 @@ public sealed record QuestSeasonalRefreshRequest(
 /// </param>
 /// <param name="FirstPage">The first page of the stored seasonal quest list.</param>
 public sealed record QuestSeasonalRefreshResult(
-    ClientType Client,
     DateTimeOffset RefreshedAtUtc,
     DateTimeOffset ObservedAtUtc,
     long SessionGeneration,
@@ -385,7 +371,6 @@ public sealed record QuestDailyRefreshRequest(
 /// <remarks>
 /// Returned by <see cref="ApplicationMemberIds.QuestsDailyRefresh"/>.
 /// </remarks>
-/// <param name="Client">The client type of the hotel session.</param>
 /// <param name="RefreshedAtUtc">The time the result was created.</param>
 /// <param name="ObservedAtUtc">The time the matching daily quest offer was stored.</param>
 /// <param name="SessionGeneration">The state generation of the hotel session the refresh ran in.</param>
@@ -398,7 +383,6 @@ public sealed record QuestDailyRefreshRequest(
 /// </param>
 /// <param name="Daily">The daily quest offer that was received.</param>
 public sealed record QuestDailyRefreshResult(
-    ClientType Client,
     DateTimeOffset RefreshedAtUtc,
     DateTimeOffset ObservedAtUtc,
     long SessionGeneration,
@@ -431,13 +415,11 @@ public sealed record QuestSelectionActionRequest(
 /// Returned by <see cref="ApplicationMemberIds.QuestsAccept"/>, <see cref="ApplicationMemberIds.QuestsActivate"/>
 /// and <see cref="ApplicationMemberIds.QuestsReject"/>.
 /// </remarks>
-/// <param name="Client">The client type of the hotel session.</param>
 /// <param name="DispatchedAtUtc">The time the message was sent.</param>
 /// <param name="SessionGeneration">The state generation of the hotel session the message was sent in.</param>
 /// <param name="QuestId">The id of the quest the message named.</param>
 /// <param name="MessagesDispatched">The number of messages sent, which is always 1.</param>
 public sealed record QuestSelectionDispatchReceipt(
-    ClientType Client,
     DateTimeOffset DispatchedAtUtc,
     long SessionGeneration,
     long QuestId,
@@ -464,12 +446,10 @@ public sealed record QuestDispatchRequest(
 /// Returned by <see cref="ApplicationMemberIds.QuestsCancel"/>, <see cref="ApplicationMemberIds.QuestsTrackerOpen"/>
 /// and <see cref="ApplicationMemberIds.QuestsFriendRequestComplete"/>.
 /// </remarks>
-/// <param name="Client">The client type of the hotel session.</param>
 /// <param name="DispatchedAtUtc">The time the message was sent.</param>
 /// <param name="SessionGeneration">The state generation of the hotel session the message was sent in.</param>
 /// <param name="MessagesDispatched">The number of messages sent, which is always 1.</param>
 public sealed record QuestDispatchReceipt(
-    ClientType Client,
     DateTimeOffset DispatchedAtUtc,
     long SessionGeneration,
     int MessagesDispatched);
@@ -503,7 +483,7 @@ public enum QuestChangeKind
 /// </remarks>
 /// <param name="Kind">The kind of change.</param>
 /// <param name="ChangedAtUtc">The time the change was published.</param>
-/// <param name="Client">The client type of the hotel session, or <see langword="null"/> when no session is active.</param>
+/// <param name="Connected">Whether a hotel session is active.</param>
 /// <param name="SessionGeneration">The state generation of the hotel session.</param>
 /// <param name="Revision">The quest state revision after the change.</param>
 /// <param name="SourceRevision">
@@ -534,7 +514,7 @@ public enum QuestChangeKind
 public sealed record QuestChanged(
     QuestChangeKind Kind,
     DateTimeOffset ChangedAtUtc,
-    ClientType? Client,
+    bool Connected,
     long SessionGeneration,
     long Revision,
     long SourceRevision,

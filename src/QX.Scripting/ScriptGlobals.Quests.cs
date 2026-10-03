@@ -1,6 +1,6 @@
 using Qx.Game.Application;
+using Qx.Model;
 using Qx.Model.Messages.Incoming;
-using Qx.Model.Quests;
 
 namespace Qx.Scripting;
 
@@ -93,7 +93,7 @@ public partial class ScriptGlobals
     /// It returns immediately; the answer lands in <see cref="DailyQuest"/> and runs the
     /// <see cref="OnDailyQuestChanged(Action{QuestDaily})"/> handlers.
     /// </remarks>
-    /// <param name="is_easy">
+    /// <param name="isEasy">
     /// <see langword="true"/> to pick from the easy pool; otherwise, <see langword="false"/> to
     /// pick from the hard pool.
     /// </param>
@@ -102,8 +102,8 @@ public partial class ScriptGlobals
     /// quest state.
     /// </param>
     /// <exception cref="InvalidOperationException">Thrown when the application runtime is not active or there is no hotel session.</exception>
-    public void RequestDailyQuest(bool is_easy, int index) =>
-        Quests.RequestDaily(is_easy, index);
+    public void RequestDailyQuest(bool isEasy, int index) =>
+        Quests.RequestDaily(isEasy, index);
 
     /// <summary>
     /// Sends a request to accept a quest.
@@ -112,9 +112,9 @@ public partial class ScriptGlobals
     /// It returns immediately. Quest updates that follow run the
     /// <see cref="OnCurrentQuestChanged(Action{QuestData})"/> handlers.
     /// </remarks>
-    /// <param name="quest_id">The quest id taken from a quest list entry.</param>
+    /// <param name="questId">The quest id taken from a quest list entry.</param>
     /// <exception cref="InvalidOperationException">Thrown when the application runtime is not active or there is no hotel session.</exception>
-    public void AcceptQuest(Id quest_id) => Quests.Accept(quest_id);
+    public void AcceptQuest(Id questId) => Quests.Accept(questId);
 
     /// <summary>
     /// Sends a request to activate a quest.
@@ -123,15 +123,15 @@ public partial class ScriptGlobals
     /// It returns immediately. Quest updates that follow run the
     /// <see cref="OnCurrentQuestChanged(Action{QuestData})"/> handlers.
     /// </remarks>
-    /// <param name="quest_id">The quest id taken from a quest list entry.</param>
+    /// <param name="questId">The quest id taken from a quest list entry.</param>
     /// <exception cref="InvalidOperationException">Thrown when the application runtime is not active or there is no hotel session.</exception>
-    public void ActivateQuest(Id quest_id) => Quests.Activate(quest_id);
+    public void ActivateQuest(Id questId) => Quests.Activate(questId);
 
     /// <summary>Declines a quest offer without accepting it.</summary>
     /// <remarks>It returns immediately.</remarks>
-    /// <param name="quest_id">The quest id taken from a quest list entry.</param>
+    /// <param name="questId">The quest id taken from a quest list entry.</param>
     /// <exception cref="InvalidOperationException">Thrown when the application runtime is not active or there is no hotel session.</exception>
-    public void RejectQuest(Id quest_id) => Quests.Reject(quest_id);
+    public void RejectQuest(Id questId) => Quests.Reject(questId);
 
     /// <summary>Sends a request to cancel the current quest.</summary>
     /// <remarks>
@@ -179,7 +179,7 @@ public partial class ScriptGlobals
     public async Task<IReadOnlyList<QuestData>> GetQuests(int timeoutMs = 10000)
     {
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(timeoutMs);
-        QuestStateView state = await Application
+        QuestStateView state = await _application
             .InvokeAsync<QuestStateRequest, QuestStateView>(
                 ApplicationMemberIds.QuestsState,
                 new QuestStateRequest(),
@@ -190,7 +190,7 @@ public partial class ScriptGlobals
         QuestEntryPage first_page;
         if (state.Summary.AvailableLoaded)
         {
-            first_page = await Application
+            first_page = await _application
                 .InvokeAsync<QuestEntryPageRequest, QuestEntryPage>(
                     ApplicationMemberIds.QuestsEntriesList,
                     new QuestEntryPageRequest(
@@ -203,7 +203,7 @@ public partial class ScriptGlobals
         }
         else
         {
-            QuestAvailableRefreshResult refreshed = await Application
+            QuestAvailableRefreshResult refreshed = await _application
                 .InvokeAsync<QuestAvailableRefreshRequest, QuestAvailableRefreshResult>(
                     ApplicationMemberIds.QuestsAvailableRefresh,
                     new QuestAvailableRefreshRequest(
@@ -222,7 +222,7 @@ public partial class ScriptGlobals
         AddQuests(page, quests);
         while (page.NextOffset is int offset)
         {
-            page = await Application
+            page = await _application
                 .InvokeAsync<QuestEntryPageRequest, QuestEntryPage>(
                     ApplicationMemberIds.QuestsEntriesList,
                     new QuestEntryPageRequest(
@@ -244,7 +244,6 @@ public partial class ScriptGlobals
     private static void ValidateQuestState(QuestStateView state)
     {
         if (!state.Connected ||
-            state.Client is null ||
             state.SessionGeneration <= 0 ||
             state.SnapshotRevision <= 0 ||
             state.Summary is null ||
@@ -260,7 +259,6 @@ public partial class ScriptGlobals
     {
         ArgumentNullException.ThrowIfNull(page);
         if (page.Connected != state.Connected ||
-            page.Client != state.Client ||
             page.SessionGeneration != state.SessionGeneration ||
             page.StateRevision != state.Revision ||
             page.AvailableRevision != state.AvailableRevision ||
@@ -284,7 +282,6 @@ public partial class ScriptGlobals
             refreshed.MessagesDispatched is < 0 or > 1 ||
             refreshed.SessionGeneration != expected_session_generation ||
             !page.Connected ||
-            page.Client != refreshed.Client ||
             page.SessionGeneration != refreshed.SessionGeneration ||
             page.StateRevision != refreshed.StateRevision ||
             page.AvailableRevision != refreshed.AvailableRevision ||
@@ -318,9 +315,7 @@ public partial class ScriptGlobals
         };
         if (first_page.SnapshotRevision <= 0 ||
             !first_page.Connected ||
-            first_page.Client is null ||
             page.Connected != first_page.Connected ||
-            page.Client != first_page.Client ||
             page.SessionGeneration != first_page.SessionGeneration ||
             page.StateRevision != first_page.StateRevision ||
             page.AvailableRevision != first_page.AvailableRevision ||

@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Qx.Messages;
 using Qx.Model;
 using Qx.Protocol;
@@ -18,15 +19,15 @@ internal static class TradeApplicationDescriptors
         typeof(TradeStateRequest),
         typeof(TradeStateView),
         [OutputLimit("offer_item_limit", "Maximum items returned for each participant offer."), OutputLimit("nft_offer_limit", "Maximum NFT assets returned for each participant offer.")],
-        state_effects:
+        stateEffects:
         [
             new(ApplicationStateKey.RoomActive, ApplicationStateEffectKind.Reads),
             new(ApplicationStateKey.TradeActive, ApplicationStateEffectKind.Reads),
             new(ApplicationStateKey.TradeNftInventoryLoaded, ApplicationStateEffectKind.Reads)
         ],
         messages: StateMessages(),
-        tool_hints: new(true, false, true, false),
-        invocation_scope: ApplicationInvocationScope.Persistent);
+        toolHints: new(true, false, true, false),
+        invocationScope: ApplicationInvocationScope.Persistent);
 
     public static ApplicationDescriptor Open { get; } = Dispatch<TradeOpenRequest>(
         ApplicationMemberIds.TradeOpen,
@@ -104,11 +105,11 @@ internal static class TradeApplicationDescriptors
         typeof(TradeNftInventoryPageRequest),
         typeof(TradeNftInventoryPage),
         PageParameters(),
-        state_effects:
+        stateEffects:
         [new(ApplicationStateKey.TradeNftInventoryLoaded, ApplicationStateEffectKind.Reads)],
         messages: [Observe(MessageKeys.Trade.NftInventory, false)],
-        tool_hints: new(true, false, true, false),
-        invocation_scope: ApplicationInvocationScope.Persistent);
+        toolHints: new(true, false, true, false),
+        invocationScope: ApplicationInvocationScope.Persistent);
 
     public static ApplicationDescriptor NftInventoryRefresh { get; } = new(
         ApplicationMemberIds.TradeNftInventoryRefresh,
@@ -135,7 +136,7 @@ internal static class TradeApplicationDescriptors
         event_exposure,
         null,
         typeof(TradeChanged),
-        state_effects:
+        stateEffects:
         [
             new(ApplicationStateKey.TradeActive, ApplicationStateEffectKind.Changes),
             new(ApplicationStateKey.TradeNftInventoryLoaded, ApplicationStateEffectKind.Changes)
@@ -155,7 +156,7 @@ internal static class TradeApplicationDescriptors
             key,
             required_states);
 
-    private static ApplicationDescriptor Dispatch<TRequest>(
+    private static ApplicationDescriptor Dispatch<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TRequest>(
         string id,
         string title,
         string description,
@@ -224,8 +225,8 @@ internal static class TradeApplicationDescriptors
         new(Minimum: 1, Maximum: 120000));
 
     private static ApplicationMessageRequirement Send(MessageKey key) =>
-        new(key, Direction.Out, ApplicationMessageRole.Send);
+        new(key, MessageDirection.Out, ApplicationMessageRole.Send);
 
     private static ApplicationMessageRequirement Observe(MessageKey key, bool required = true) =>
-        new(key, Direction.In, ApplicationMessageRole.Observe, required);
+        new(key, MessageDirection.In, ApplicationMessageRole.Observe, required);
 }

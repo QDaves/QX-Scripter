@@ -7,6 +7,8 @@ import { parseArgs } from 'node:util';
 import { gzipSync } from 'node:zlib';
 import { build_api } from './api.mjs';
 import { build_guide, read_markdown } from './articles.mjs';
+import { read_moved } from './moved.mjs';
+import { arrange_namespaces, check_import_list, read_imports } from './namespaces.mjs';
 
 const format = 1;
 
@@ -52,19 +54,25 @@ const repository = JSON.parse(await readFile(path.join(website_dir, 'package.jso
 const api = await build_api(path.join(website_dir, 'api'), repo_root);
 const context = { repo_root, website_dir, resolve: api.resolve };
 const guide = await build_guide(context);
+const index = await read_markdown(path.join(website_dir, 'api', 'index.md'), context);
+const imports = await read_imports(repo_root);
+check_import_list(guide, imports);
+const namespaces = arrange_namespaces(api, index, imports);
+const moved = await read_moved(path.join(website_dir, 'moved.yml'), api.pages, repo_root);
 
 const content = {
   guide,
   api: {
-    index: await read_markdown(path.join(website_dir, 'api', 'index.md'), context),
-    namespaces: api.namespaces,
+    index,
+    namespaces,
     pages: api.pages,
+    moved,
   },
 };
 
 const bundle = {
   format,
-  version: `0.0.${git('rev-list', '--first-parent', '--count', 'HEAD')}`,
+  version: `0.1.${git('rev-list', '--first-parent', '--count', 'HEAD')}`,
   commit: git('rev-parse', 'HEAD'),
   repository,
   ...content,

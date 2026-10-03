@@ -5,14 +5,7 @@ namespace Qx.Scripting;
 
 public partial class ScriptGlobals
 {
-    /// <summary>
-    /// Gets the query factory bound to the current game state.
-    /// </summary>
-    /// <remarks>
-    /// A new instance is created on every read, and each query it hands out snapshots the state
-    /// at that moment.
-    /// </remarks>
-    public ScriptQueries Queries => new(Game, Application);
+    private ScriptQueries Queries => new(Game, _application);
 
     /// <summary>
     /// Creates a snapshot query over every avatar in the current room: users, bots and pets.

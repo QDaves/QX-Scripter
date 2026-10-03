@@ -9,6 +9,7 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <Deterministic>true</Deterministic>
     <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
   </PropertyGroup>
 
   <PropertyGroup>
@@ -20,7 +21,7 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <QxVersionSeries>0.0</QxVersionSeries>
+    <QxVersionSeries>0.1</QxVersionSeries>
     <VersionPrefix>$(QxVersionSeries).1</VersionPrefix>
     <AssemblyVersion>$(QxVersionSeries).0.0</AssemblyVersion>
     <Product>QX Scripter</Product>

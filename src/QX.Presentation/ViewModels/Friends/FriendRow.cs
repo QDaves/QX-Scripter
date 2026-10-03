@@ -12,12 +12,12 @@ public sealed record FriendText(string Name, string Motto);
 
 public sealed partial class FriendRow : ObservableObject
 {
-    public FriendRow(FriendSnapshot friend, bool is_here, string? head)
+    public FriendRow(FriendSnapshot friend, bool isHere, string? head)
     {
         ArgumentNullException.ThrowIfNull(friend);
         Id = friend.Id;
         IdText = ((long)friend.Id).ToString(CultureInfo.InvariantCulture);
-        Take(friend, is_here, head);
+        Take(friend, isHere, head);
     }
 
     public long Id { get; }
@@ -59,7 +59,7 @@ public sealed partial class FriendRow : ObservableObject
 
     public long LastSeenOrder => FriendsText.LastSeenOrder(IsOnline, LastOnline);
 
-    public void Take(FriendSnapshot friend, bool is_here, string? head)
+    public void Take(FriendSnapshot friend, bool isHere, string? head)
     {
         ArgumentNullException.ThrowIfNull(friend);
         Name = friend.Name;
@@ -68,7 +68,7 @@ public sealed partial class FriendRow : ObservableObject
         Gender = friend.Gender;
         IsOnline = friend.IsOnline;
         LastOnline = friend.LastOnline;
-        IsHere = is_here;
+        IsHere = isHere;
         Text = new FriendText(friend.Name, friend.Motto);
         Head = head is { Length: > 0 } url ? new ImageRequest(url, false, IconKind.None) : null;
     }

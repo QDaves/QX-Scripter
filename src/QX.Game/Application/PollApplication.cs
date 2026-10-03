@@ -3,7 +3,7 @@ using Qx.Interception;
 using Qx.Messages;
 using Qx.Model;
 using Qx.Model.Messages.Incoming;
-using Qx.Model.Polls;
+using Qx.Model.Messages.Outgoing;
 using Qx.Protocol;
 
 namespace Qx.Game.Application;
@@ -206,33 +206,20 @@ internal sealed class PollApplication : IApplicationFeature
             request.PollId,
             request.ExpectedSessionGeneration,
             cancellation_token);
-        PollResponse[] responses = PrepareResponses(request.Responses, scope.Session.Client);
+        PollResponse[] responses = PrepareResponses(request.Responses);
         int messages_dispatched = 0;
         EnterDispatch();
         try
         {
-            if (scope.Session.Client is ClientType.Flash)
-            {
-                foreach (PollResponse response in responses)
-                {
-                    message_dispatcher.Dispatch(
-                        MessageContracts.Polls.Answer,
-                        new PollAnswer(request.PollId, Array.AsReadOnly([response])),
-                        scope.Session,
-                        cancellation_token,
-                        () => RequireScope(scope));
-                    messages_dispatched++;
-                }
-            }
-            else
+            foreach (PollResponse response in responses)
             {
                 message_dispatcher.Dispatch(
                     MessageContracts.Polls.Answer,
-                    new PollAnswer(request.PollId, Array.AsReadOnly(responses)),
+                    new PollAnswer(request.PollId, Array.AsReadOnly([response])),
                     scope.Session,
                     cancellation_token,
                     () => RequireScope(scope));
-                messages_dispatched = 1;
+                messages_dispatched++;
             }
         }
         finally
@@ -305,7 +292,7 @@ internal sealed class PollApplication : IApplicationFeature
             throw new InvalidOperationException("The poll state is not bound to the active hotel session.");
         if (expected_session_generation is long generation && state.SessionGeneration != generation)
             throw new InvalidOperationException("The expected hotel-session generation is no longer active.");
-        ValidateWireId(session.Client, poll_id, nameof(poll_id));
+        ValidateWireId(poll_id, nameof(poll_id));
         return new PollOperationScope(session, state.SessionGeneration, state.Revision, poll_id);
     }
 
@@ -404,7 +391,6 @@ internal sealed class PollApplication : IApplicationFeature
         bool connected = state.Session is not null && ReferenceEquals(state.Session, active_session);
         return new PollStateView(
             connected,
-            connected ? state.Session!.Client : null,
             state.SessionGeneration,
             state.Revision,
             state.Offer is null ? null : Offer(state.Offer),
@@ -460,7 +446,6 @@ internal sealed class PollApplication : IApplicationFeature
     }
 
     private PollDispatchReceipt Receipt(PollOperationScope scope, int messages_dispatched) => new(
-        scope.Session.Client,
         scope.SessionGeneration,
         scope.PollId,
         messages_dispatched,
@@ -473,13 +458,12 @@ internal sealed class PollApplication : IApplicationFeature
     }
 
     private static PollResponse[] PrepareResponses(
-        IReadOnlyList<PollResponseInput>? values,
-        ClientType client)
+        IReadOnlyList<PollResponseInput>? values)
     {
         ArgumentNullException.ThrowIfNull(values);
         if (values.Count > maximum_responses)
             throw new ArgumentOutOfRangeException(nameof(values));
-        if (client is ClientType.Flash && values.Count == 0)
+        if (values.Count == 0)
             throw new InvalidDataException("Flash poll answers require at least one response.");
         var responses = new PollResponse[values.Count];
         for (int index = 0; index < responses.Length; index++)
@@ -487,7 +471,7 @@ internal sealed class PollApplication : IApplicationFeature
             PollResponseInput value = values[index]
                 ?? throw new ArgumentException("Poll responses cannot contain null entries.", nameof(values));
             ValidateId(value.QuestionId, nameof(value.QuestionId));
-            ValidateWireId(client, value.QuestionId, nameof(value.QuestionId));
+            ValidateWireId(value.QuestionId, nameof(value.QuestionId));
             ArgumentNullException.ThrowIfNull(value.Answers);
             if (value.Answers.Count > maximum_answers)
                 throw new ArgumentOutOfRangeException(nameof(value.Answers));
@@ -541,9 +525,9 @@ internal sealed class PollApplication : IApplicationFeature
             throw new ArgumentOutOfRangeException(name);
     }
 
-    private static void ValidateWireId(ClientType client, Id id, string name)
+    private static void ValidateWireId(Id id, string name)
     {
-        if (client is ClientType.Flash && (long)id > int.MaxValue)
+        if ((long)id > int.MaxValue)
             throw new ArgumentOutOfRangeException(name, "The identifier does not fit the Flash wire format.");
     }
 

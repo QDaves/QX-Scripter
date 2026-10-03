@@ -9,7 +9,6 @@ public sealed record FriendCategory(Id Id, string Name) : IParserComposer<Friend
 {
     /// <summary>Reads a friend category from a packet.</summary>
     /// <param name="p">The packet to read from.</param>
-    /// <exception cref="UnsupportedClientException">Thrown when the packet is not from the Flash client.</exception>
     public static FriendCategory Parse(in PacketReader p) =>
         FlashWire.Parse(in p, ParseFlash);
 
@@ -17,7 +16,6 @@ public sealed record FriendCategory(Id Id, string Name) : IParserComposer<Friend
 
     /// <summary>Writes the friend category to a packet.</summary>
     /// <param name="p">The packet to write to.</param>
-    /// <exception cref="UnsupportedClientException">Thrown when the packet is not for the Flash client.</exception>
     public void Compose(in PacketWriter p) =>
         FlashWire.Compose(this, in p, ComposeFlash);
 

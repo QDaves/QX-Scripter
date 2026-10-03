@@ -156,8 +156,8 @@ public sealed record FurniListRemoveMultiple : IParserComposer<FurniListRemoveMu
     private IReadOnlyList<Id> _item_ids = Array.Empty<Id>();
 
     /// <summary>Initializes a new instance of the <see cref="FurniListRemoveMultiple"/> class.</summary>
-    /// <param name="item_ids">The inventory item IDs of the removed items.</param>
-    public FurniListRemoveMultiple(IReadOnlyList<Id> item_ids) => ItemIds = item_ids;
+    /// <param name="itemIds">The inventory item IDs of the removed items.</param>
+    public FurniListRemoveMultiple(IReadOnlyList<Id> itemIds) => ItemIds = itemIds;
 
     /// <summary>Gets the inventory item IDs of the removed items, as in <see cref="InventoryItem.ItemId"/>.</summary>
     public IReadOnlyList<Id> ItemIds

@@ -9,10 +9,10 @@ public static class FriendListReader
     public const int PageSize = 500;
     public const string ChangedWhileReading = "The friend list changed continuously while it was being read.";
 
-    public static Task<FriendListPage> ReadAsync(IGameGateway gateway, CancellationToken cancellation_token = default)
+    public static Task<FriendListPage> ReadAsync(IGameGateway gateway, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(gateway);
-        return gateway.ReadStableAsync(token => OnePassAsync(gateway, token), cancellation_token);
+        return gateway.ReadStableAsync(token => OnePassAsync(gateway, token), cancellationToken);
     }
 
     static async ValueTask<FriendListPage> OnePassAsync(IGameGateway gateway, CancellationToken cancellation_token)

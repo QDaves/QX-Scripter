@@ -43,7 +43,7 @@ public sealed record RuntimeHostOptions
     /// The keyboard scripts and the session rules read. Left unset, the host opens the system
     /// keyboard itself and closes it on disposal; a keyboard passed in is owned by the caller.
     /// </summary>
-    public Keyboard? Keyboard { get; init; }
+    public KeyboardReader? Keyboard { get; init; }
 
     internal void Validate()
     {

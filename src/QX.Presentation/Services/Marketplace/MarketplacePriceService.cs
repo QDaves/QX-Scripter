@@ -34,7 +34,7 @@ public sealed class MarketplacePriceService : IMarketplacePrices, IDisposable
 
     public bool WasRead(MarketplaceKind kind) => Fresh(kind, out _);
 
-    public async Task<IReadOnlyDictionary<MarketplaceKind, MarketplacePrice>> FetchAsync(IEnumerable<MarketplaceKind> kinds, CancellationToken cancellation_token)
+    public async Task<IReadOnlyDictionary<MarketplaceKind, MarketplacePrice>> FetchAsync(IEnumerable<MarketplaceKind> kinds, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(kinds);
         var answer = new Dictionary<MarketplaceKind, MarketplacePrice>();
@@ -53,9 +53,9 @@ public sealed class MarketplacePriceService : IMarketplacePrices, IDisposable
         }
         for (int index = 0; index < wanted.Count; index += BatchSize)
         {
-            cancellation_token.ThrowIfCancellationRequested();
+            cancellationToken.ThrowIfCancellationRequested();
             MarketplaceKind[] batch = [.. wanted.Skip(index).Take(BatchSize)];
-            foreach ((MarketplaceKind kind, MarketplacePrice price) in await ReadBatchAsync(batch, cancellation_token).ConfigureAwait(false))
+            foreach ((MarketplaceKind kind, MarketplacePrice price) in await ReadBatchAsync(batch, cancellationToken).ConfigureAwait(false))
                 answer[kind] = price;
         }
         return answer;

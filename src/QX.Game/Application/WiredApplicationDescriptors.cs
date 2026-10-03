@@ -1,9 +1,10 @@
+using System.Diagnostics.CodeAnalysis;
 using Qx.Model.Wired;
 using Qx.Protocol;
 
 namespace Qx.Game.Application;
 
-internal static class WiredApplicationDescriptors
+internal static partial class WiredApplicationDescriptors
 {
     private static readonly ApplicationExposure event_exposure =
         ApplicationExposure.Ui | ApplicationExposure.Cli | ApplicationExposure.Scripting;
@@ -23,8 +24,8 @@ internal static class WiredApplicationDescriptors
             new("item_limit", typeof(int), false, 20, "Maximum items returned per chest.", new(Minimum: 0, Maximum: 50))
         ],
         messages: StateMessages(),
-        tool_hints: new(true, false, true, false),
-        invocation_scope: ApplicationInvocationScope.Persistent);
+        toolHints: new(true, false, true, false),
+        invocationScope: ApplicationInvocationScope.Persistent);
 
     public static ApplicationDescriptor ConfigurationGet { get; } = Call<
         WiredConfigurationGetRequest,
@@ -350,6 +351,31 @@ internal static class WiredApplicationDescriptors
         [],
         WriteHints(true, false));
 
+    public static ApplicationDescriptor PreferencesGet { get; } = new(
+        ApplicationMemberIds.WiredPreferencesGet,
+        "Read account preferences",
+        "Reads cached account preferences, including optional Wired settings. Sends nothing.",
+        ApplicationMemberKind.Query,
+        ApplicationExposure.All,
+        typeof(WiredCommandRequest),
+        typeof(WiredAccountPreferencesView),
+        [],
+        messages: [Observe(MessageKeys.Wired.Account.Preferences, false)],
+        toolHints: ReadHints());
+
+    public static ApplicationDescriptor WebApiKeyGenerate { get; } = RequestResponse<WiredWebApiKeyRequest, WiredWebApiKeyResult>(
+        ApplicationMemberIds.WiredWebApiKeyGenerate,
+        "Generate Wired Web API key",
+        "Generates a key and waits for a result matching both Wired ID and read/write access. The key is not retained in room state.",
+        MessageKeys.Wired.WebApi.KeyGenerate,
+        MessageKeys.Wired.WebApi.KeyResult,
+        [
+            new("wired_id", typeof(Id), true, null, "The Wired furniture ID.", IdConstraint()),
+            new("read_key", typeof(bool), true, null, "True for a read key; false for a write key."),
+            TimeoutParameter()
+        ],
+        WriteHints(true, false));
+
     public static ApplicationDescriptor PreferencesSet { get; } = SendCall<WiredPreferencesSetRequest>(
         ApplicationMemberIds.WiredPreferencesSet,
         "Set Wired preferences",
@@ -585,12 +611,35 @@ internal static class WiredApplicationDescriptors
         [InventoryIdsParameter()],
         WriteHints(false, false));
 
+    public static ApplicationDescriptor TradeComplete { get; } = Call<WiredTradeCompleteRequest, WiredTradeCompleteResult>(
+        ApplicationMemberIds.WiredTradeComplete,
+        "Complete Wired trade",
+        "Accepts the reviewed offer, waits three seconds, verifies it is unchanged, confirms and waits for completion.",
+        [
+            new("expected_generation", typeof(long), true, null, "Wired generation from the reviewed state.", new(Minimum: 0)),
+            new("expected_revision", typeof(long), true, null, "Wired revision from the reviewed state.", new(Minimum: 0)),
+            TimeoutParameter(30000)
+        ],
+        [Send(MessageKeys.Wired.Trade.Confirm), Observe(MessageKeys.Wired.Trade.Initiated),
+            Observe(MessageKeys.Wired.Trade.ItemsUpdated), Observe(MessageKeys.Wired.Trade.Completed),
+            Observe(MessageKeys.Wired.Trade.Cancelled), Observe(MessageKeys.Wired.Transaction.Failed),
+            Send(MessageKeys.Wired.Trade.Cancel)],
+        WriteHints(true, false));
+
+    public static ApplicationDescriptor TradeStageSend { get; } = SendCall<WiredTradeStageRequest>(
+        ApplicationMemberIds.WiredTradeStageSend,
+        "Send Wired trade confirmation stage",
+        "Sends Accept first or Confirm after the countdown; does not wait for completion.",
+        MessageKeys.Wired.Trade.Confirm,
+        [new("stage", typeof(WiredTradeConfirmationStage), true, null, "Accept for initial acceptance; Confirm for final confirmation.")],
+        WriteHints(true, true));
+
     public static ApplicationDescriptor TradeConfirm { get; } = SendCall<WiredTradeConfirmRequest>(
         ApplicationMemberIds.WiredTradeConfirm,
         "Confirm Wired trade",
-        "Updates the confirmation state of the active Wired chest trade.",
+        "Sends one confirmation stage: false accepts initially; true confirms after the countdown. Prefer wired.trade.complete for the full sequence.",
         MessageKeys.Wired.Trade.Confirm,
-        [new("confirm", typeof(bool), false, true, "Confirmation flag sent to the hotel.")],
+        [new("confirm", typeof(bool), false, true, "False for initial acceptance; true for final confirmation after the countdown. True alone can fail with Invalid trade.")],
         WriteHints(false, true));
 
     public static ApplicationDescriptor TradeCancel { get; } = SendCall<WiredCommandRequest>(
@@ -778,7 +827,7 @@ internal static class WiredApplicationDescriptors
         "Publishes Wired trade transaction notification identifiers.",
         [Observe(MessageKeys.Wired.Trade.Notification)]);
 
-    private static ApplicationDescriptor Save<TRequest>(
+    private static ApplicationDescriptor Save<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TRequest>(
         string id,
         string title,
         string description,
@@ -798,7 +847,7 @@ internal static class WiredApplicationDescriptors
         ],
         WriteHints(true, true));
 
-    private static ApplicationDescriptor RequestResponse<TRequest, TResult>(
+    private static ApplicationDescriptor RequestResponse<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TRequest, TResult>(
         string id,
         string title,
         string description,
@@ -813,7 +862,7 @@ internal static class WiredApplicationDescriptors
         [Send(request_key), Observe(response_key)],
         hints);
 
-    private static ApplicationDescriptor Call<TRequest, TResult>(
+    private static ApplicationDescriptor Call<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TRequest, TResult>(
         string id,
         string title,
         string description,
@@ -830,9 +879,9 @@ internal static class WiredApplicationDescriptors
         parameters,
         [ApplicationStateKey.HotelConnected, ApplicationStateKey.RoomActive],
         messages: messages,
-        tool_hints: hints);
+        toolHints: hints);
 
-    private static ApplicationDescriptor SendCall<TRequest>(
+    private static ApplicationDescriptor SendCall<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TRequest>(
         string id,
         string title,
         string description,
@@ -861,10 +910,10 @@ internal static class WiredApplicationDescriptors
         messages: messages);
 
     private static ApplicationMessageRequirement Send(MessageKey key) =>
-        new(key, Direction.Out, ApplicationMessageRole.Send);
+        new(key, MessageDirection.Out, ApplicationMessageRole.Send);
 
     private static ApplicationMessageRequirement Observe(MessageKey key, bool required = true) =>
-        new(key, Direction.In, ApplicationMessageRole.Observe, required);
+        new(key, MessageDirection.In, ApplicationMessageRole.Observe, required);
 
     private static ApplicationParameterDescriptor TimeoutParameter(int default_value = 10000) => new(
         "timeout_milliseconds",

@@ -54,6 +54,7 @@ public sealed record UserSearchResult(
 }
 
 /// <summary>Represents the results of a user search, split into friends and other users.</summary>
+/// <remarks>Received as the Flash <c>HabboSearchResult</c> message.</remarks>
 /// <param name="Friends">The matching users who are friends of the local user.</param>
 /// <param name="Others">The matching users who are not friends of the local user.</param>
 public sealed record UserSearchResults(

@@ -36,8 +36,8 @@ public sealed record BlockList : IParserComposer<BlockList>
     private IReadOnlyList<Id> _user_ids = Array.Empty<Id>();
 
     /// <summary>Initializes a new instance of the <see cref="BlockList"/> record.</summary>
-    /// <param name="user_ids">The identifiers of the blocked users, copied into a read only list.</param>
-    public BlockList(IReadOnlyList<Id> user_ids) => UserIds = user_ids;
+    /// <param name="userIds">The identifiers of the blocked users, copied into a read only list.</param>
+    public BlockList(IReadOnlyList<Id> userIds) => UserIds = userIds;
 
     /// <summary>Gets the identifiers of the blocked users, as a read only copy.</summary>
     public IReadOnlyList<Id> UserIds
@@ -92,13 +92,13 @@ public sealed record IgnoreUserResult(int Result, Id UserId) : IParserComposer<I
 }
 
 /// <summary>Represents the <c>IgnoredUsers</c> message, received with the users the local user ignores.</summary>
-public sealed record RequestIgnoreList : IParserComposer<RequestIgnoreList>
+public sealed record IgnoredUsers : IParserComposer<IgnoredUsers>
 {
     private IReadOnlyList<Id> _user_ids = Array.Empty<Id>();
 
-    /// <summary>Initializes a new instance of the <see cref="RequestIgnoreList"/> record.</summary>
-    /// <param name="user_ids">The identifiers of the ignored users, copied into a read only list.</param>
-    public RequestIgnoreList(IReadOnlyList<Id> user_ids) => UserIds = user_ids;
+    /// <summary>Initializes a new instance of the <see cref="IgnoredUsers"/> record.</summary>
+    /// <param name="userIds">The identifiers of the ignored users, copied into a read only list.</param>
+    public IgnoredUsers(IReadOnlyList<Id> userIds) => UserIds = userIds;
 
     /// <summary>Gets the identifiers of the ignored users, as a read only copy.</summary>
     public IReadOnlyList<Id> UserIds
@@ -109,10 +109,10 @@ public sealed record RequestIgnoreList : IParserComposer<RequestIgnoreList>
 
     /// <summary>Parses the message from a packet.</summary>
     /// <param name="p">The packet reader.</param>
-    public static RequestIgnoreList Parse(in PacketReader p) =>
+    public static IgnoredUsers Parse(in PacketReader p) =>
         FlashWire.Parse(in p, ParseFlash);
 
-    private static RequestIgnoreList ParseFlash(in PacketReader p) =>
+    private static IgnoredUsers ParseFlash(in PacketReader p) =>
         new(AccountWire.ReadFlashIds(in p, nameof(UserIds)));
 
     /// <summary>Composes the message into a packet.</summary>
@@ -120,7 +120,7 @@ public sealed record RequestIgnoreList : IParserComposer<RequestIgnoreList>
     public void Compose(in PacketWriter p) =>
         FlashWire.Compose(this, in p, ComposeFlash);
 
-    private static void ComposeFlash(RequestIgnoreList value, in PacketWriter p) =>
+    private static void ComposeFlash(IgnoredUsers value, in PacketWriter p) =>
         AccountWire.WriteFlashIds(in p, value.UserIds, nameof(UserIds));
 }
 
@@ -170,7 +170,7 @@ public sealed record FigureSetIdRemoved(int FigureSetId) : IParserComposer<Figur
 
 /// <summary>Represents a wardrobe figure set the user owns.</summary>
 /// <param name="FigureSetId">The identifier of the figure set.</param>
-/// <param name="Metadata">The metadata value of the figure set, always 0 on the Flash client.</param>
+/// <param name="Metadata">The metadata value of the figure set, always 0 because the message carries none.</param>
 public readonly record struct FigureSetEntry(int FigureSetId, int Metadata);
 
 /// <summary>Represents the <c>FigureSetIds</c> message, received with the wardrobe figure sets the user owns.</summary>
@@ -187,13 +187,13 @@ public sealed record FigureSetIds : IParserComposer<FigureSetIds>
 
     /// <summary>Initializes a new instance of the <see cref="FigureSetIds"/> record.</summary>
     /// <param name="entries">The owned figure sets, copied into a read only list.</param>
-    /// <param name="bound_furniture_names">The bound furniture names, copied into a read only list.</param>
+    /// <param name="boundFurnitureNames">The bound furniture names, copied into a read only list.</param>
     public FigureSetIds(
         IReadOnlyList<FigureSetEntry> entries,
-        IReadOnlyList<string> bound_furniture_names)
+        IReadOnlyList<string> boundFurnitureNames)
     {
         Entries = entries;
-        BoundFurnitureNames = bound_furniture_names;
+        BoundFurnitureNames = boundFurnitureNames;
     }
 
     /// <summary>Gets the owned figure sets, as a read only copy.</summary>
@@ -472,17 +472,17 @@ public sealed record ChangeUserNameResult : IParserComposer<ChangeUserNameResult
     private IReadOnlyList<string> _name_suggestions = Array.Empty<string>();
 
     /// <summary>Initializes a new instance of the <see cref="ChangeUserNameResult"/> record.</summary>
-    /// <param name="result_code">The result code sent by the server.</param>
+    /// <param name="resultCode">The result code sent by the server.</param>
     /// <param name="name">The name the result refers to.</param>
-    /// <param name="name_suggestions">The names suggested by the server, copied into a read only list.</param>
+    /// <param name="nameSuggestions">The names suggested by the server, copied into a read only list.</param>
     public ChangeUserNameResult(
-        int result_code,
+        int resultCode,
         string name,
-        IReadOnlyList<string> name_suggestions)
+        IReadOnlyList<string> nameSuggestions)
     {
-        ResultCode = result_code;
+        ResultCode = resultCode;
         Name = name;
-        NameSuggestions = name_suggestions;
+        NameSuggestions = nameSuggestions;
     }
 
     /// <summary>The result code of a successful name change.</summary>

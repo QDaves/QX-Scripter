@@ -4,8 +4,8 @@ namespace Qx.Scripting;
 
 public partial class ScriptGlobals
 {
-    private static readonly Keyboard NoKeyboard = Qx.Platform.Keyboard.Unsupported("This host does not read the keyboard.");
-    private ScriptKeyboard? _keyboard;
+    private static readonly KeyboardReader NoKeyboard = KeyboardReader.Unsupported("This host does not read the keyboard.");
+    private Keyboard? _keyboard;
 
     /// <summary>
     /// Gets the operating system QX runs on.
@@ -21,8 +21,8 @@ public partial class ScriptGlobals
     /// Gets the physical keyboard, readable system-wide without any platform code in the script.
     /// </summary>
     /// <remarks>
-    /// Check <see cref="ScriptKeyboard.IsSupported"/> and <see cref="ScriptKeyboard.Status"/>
+    /// Check <see cref="Keyboard.IsSupported"/> and <see cref="Keyboard.Status"/>
     /// first. When the host provides no keyboard, it reports itself as unsupported.
     /// </remarks>
-    public ScriptKeyboard Keyboard => _keyboard ??= new ScriptKeyboard(_hostKeyboard, Guarded, Track);
+    public Keyboard Keyboard => _keyboard ??= new Keyboard(_hostKeyboard, Guarded, Track);
 }

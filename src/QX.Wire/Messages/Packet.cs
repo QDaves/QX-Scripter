@@ -1,21 +1,17 @@
 namespace Qx.Messages;
 
-/// <summary>Represents a packet, made of a header, a client type and a pooled body buffer.</summary>
+/// <summary>Represents a packet, made of a header and a pooled body buffer.</summary>
 /// <remarks>Dispose the packet to return its buffer memory to the pool.</remarks>
 /// <param name="header">The message header.</param>
-/// <param name="client">The client type the packet belongs to. Reading or writing IDs, lengths, floats and arrays requires <see cref="ClientType.Flash"/>.</param>
 /// <param name="buffer">The body buffer, or <see langword="null"/> to start with an empty one.</param>
-public sealed class Packet(Header header, ClientType client = ClientType.None, PacketBuffer? buffer = null) : IPacket
+public sealed class Packet(Header header, PacketBuffer? buffer = null) : IPacket
 {
     /// <summary>Gets or sets the message header.</summary>
     public Header Header { get; set; } = header;
-    /// <summary>Gets or sets the client type the packet belongs to.</summary>
-    public ClientType Client { get; set; } = client;
     /// <summary>Gets the buffer that holds the packet body.</summary>
     public PacketBuffer Buffer { get; } = buffer ?? new PacketBuffer();
     /// <summary>Gets or sets the parser context that readers and writers of this packet receive, or <see langword="null"/> for none.</summary>
     public IParserContext? Context { get; set; }
-    internal bool AllowLegacyIdProjection { get; set; }
 
     private int _position;
     /// <summary>Gets a reference to the current read and write position in the body.</summary>
@@ -25,14 +21,10 @@ public sealed class Packet(Header header, ClientType client = ClientType.None, P
     /// <summary>Gets the number of bytes between the current position and the end of the body.</summary>
     public int Available => Buffer.Length - Position;
 
-    /// <summary>Creates a copy of the packet with the same header, client type and context and its own body buffer.</summary>
+    /// <summary>Creates a copy of the packet with the same header and context and its own body buffer.</summary>
     /// <remarks>The copy starts at position 0.</remarks>
     /// <returns>The copied packet.</returns>
-    public Packet Copy() => new(Header, Client, Buffer.Copy())
-    {
-        Context = Context,
-        AllowLegacyIdProjection = this.AllowLegacyIdProjection
-    };
+    public Packet Copy() => new(Header, Buffer.Copy()) { Context = Context };
     IPacket IPacket.Copy() => Copy();
 
     /// <summary>Empties the packet body and resets the position to 0.</summary>

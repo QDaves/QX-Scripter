@@ -39,16 +39,16 @@ public sealed class EditorBridge : IEditorBridge
         _ui = ui ?? throw new ArgumentNullException(nameof(ui));
     }
 
-    public Task<string> ListTabsAsync(CancellationToken cancellation_token) =>
+    public Task<string> ListTabsAsync(CancellationToken cancellationToken) =>
         _ui.InvokeAsync(() => _workspace.Documents.Count == 0
             ? "no open tabs"
             : string.Join("\n", _workspace.Documents.Select(Describe)),
-            cancellation_token);
+            cancellationToken);
 
-    public Task<string?> ReadOpenScriptAsync(string name, CancellationToken cancellation_token) =>
-        _ui.InvokeAsync(() => OpenScript(name)?.Text, cancellation_token);
+    public Task<string?> ReadOpenScriptAsync(string name, CancellationToken cancellationToken) =>
+        _ui.InvokeAsync(() => OpenScript(name)?.Text, cancellationToken);
 
-    public Task<string?> EditOpenScriptAsync(string name, Func<string, string> edit, CancellationToken cancellation_token)
+    public Task<string?> EditOpenScriptAsync(string name, Func<string, string> edit, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(edit);
         return _ui.InvokeAsync<string?>(async () =>
@@ -65,31 +65,31 @@ public sealed class EditorBridge : IEditorBridge
                     ? $"updated the open tab '{document.Name}'; it had unsaved changes, so its file changes when the tab is saved"
                     : $"updated tab '{document.Name}'";
             }
-            if (!await _commands.SaveInPlaceAsync(document, cancellation_token))
+            if (!await _commands.SaveInPlaceAsync(document, cancellationToken))
                 throw new InvalidOperationException($"updated the open tab '{document.Name}', but its file could not be written");
             return $"saved '{document.Name}' and its open tab";
-        }, cancellation_token);
+        }, cancellationToken);
     }
 
-    public Task<string?> RenameScriptAsync(string name, string newName, CancellationToken cancellation_token) =>
+    public Task<string?> RenameScriptAsync(string name, string newName, CancellationToken cancellationToken) =>
         _ui.InvokeAsync<string?>(async () =>
         {
-            FileOperationResult renamed = await _commands.RenameUnattendedAsync(_files.PathFor(name), newName, cancellation_token);
+            FileOperationResult renamed = await _commands.RenameUnattendedAsync(_files.PathFor(name), newName, cancellationToken);
             return renamed.Succeeded
                 ? $"renamed '{name}' to '{ScriptFileName.Normalize(newName)}'"
                 : throw new InvalidOperationException(renamed.Failure ?? $"'{name}' could not be renamed");
-        }, cancellation_token);
+        }, cancellationToken);
 
-    public Task<string?> DeleteScriptAsync(string name, CancellationToken cancellation_token) =>
+    public Task<string?> DeleteScriptAsync(string name, CancellationToken cancellationToken) =>
         _ui.InvokeAsync<string?>(async () =>
         {
-            FileOperationResult deleted = await _commands.DeleteUnattendedAsync(_files.PathFor(name), cancellation_token);
+            FileOperationResult deleted = await _commands.DeleteUnattendedAsync(_files.PathFor(name), cancellationToken);
             return deleted.Succeeded
                 ? $"deleted '{name}'"
                 : throw new InvalidOperationException(deleted.Failure ?? $"'{name}' could not be deleted");
-        }, cancellation_token);
+        }, cancellationToken);
 
-    public Task<string> OpenTabAsync(string name, CancellationToken cancellation_token) =>
+    public Task<string> OpenTabAsync(string name, CancellationToken cancellationToken) =>
         _ui.InvokeAsync(async () =>
         {
             string typed = name ?? "";
@@ -98,16 +98,16 @@ public sealed class EditorBridge : IEditorBridge
             string path = _files.PathFor(typed);
             if (!_files.Exists(path))
                 throw new InvalidOperationException($"no saved script named '{name}'");
-            OpenResult opened = await _workspace.OpenAsync(path, cancellation_token);
+            OpenResult opened = await _workspace.OpenAsync(path, cancellationToken);
             if (opened.Document is not { } document)
                 throw new InvalidOperationException($"no saved script named '{name}'");
             Reveal(document, "opened");
             return opened.Outcome == OpenOutcome.AlreadyOpen
                 ? $"'{name}' is already open as tab '{document.Name}'"
                 : $"opened '{name}' as tab '{document.Name}'";
-        }, cancellation_token);
+        }, cancellationToken);
 
-    public Task<string> CreateTabAsync(string name, string code, CancellationToken cancellation_token) =>
+    public Task<string> CreateTabAsync(string name, string code, CancellationToken cancellationToken) =>
         _ui.InvokeAsync(() =>
         {
             string requested = string.IsNullOrWhiteSpace(name) ? ScriptFileName.Untitled : name.Trim();
@@ -115,26 +115,26 @@ public sealed class EditorBridge : IEditorBridge
             ScriptDocument document = _workspace.Add(actual, code ?? "", null, modified: true);
             Reveal(document, "created");
             return $"created tab '{actual}'";
-        }, cancellation_token);
+        }, cancellationToken);
 
-    public Task<string> EditActiveTabAsync(string code, CancellationToken cancellation_token) =>
+    public Task<string> EditActiveTabAsync(string code, CancellationToken cancellationToken) =>
         _ui.InvokeAsync(() =>
         {
             if (_workspace.Active is not { } document)
                 throw new InvalidOperationException("no active tab");
             document.ReplaceText(code ?? "");
             return $"updated tab '{document.Name}'";
-        }, cancellation_token);
+        }, cancellationToken);
 
-    public Task<string> SelectTabAsync(string name, CancellationToken cancellation_token) =>
+    public Task<string> SelectTabAsync(string name, CancellationToken cancellationToken) =>
         _ui.InvokeAsync(() =>
         {
             ScriptDocument document = Require(name);
             Reveal(document, "selected");
             return $"selected '{document.Name}'";
-        }, cancellation_token);
+        }, cancellationToken);
 
-    public Task<string> CloseTabAsync(string name, bool discard, CancellationToken cancellation_token) =>
+    public Task<string> CloseTabAsync(string name, bool discard, CancellationToken cancellationToken) =>
         _ui.InvokeAsync(() =>
         {
             ScriptDocument document = Require(name);
@@ -147,9 +147,9 @@ public sealed class EditorBridge : IEditorBridge
                 throw new InvalidOperationException($"'{document.Name}' has unsaved changes; save it first, or pass discard to drop them");
             _workspace.Remove(document);
             return $"closed '{document.Name}'";
-        }, cancellation_token);
+        }, cancellationToken);
 
-    public Task<string> RunActiveTabAsync(string name, CancellationToken cancellation_token) =>
+    public Task<string> RunActiveTabAsync(string name, CancellationToken cancellationToken) =>
         _ui.InvokeAsync(() =>
         {
             ScriptDocument document = Target(name);
@@ -157,9 +157,9 @@ public sealed class EditorBridge : IEditorBridge
                 return document.Run.IsArmedIdle ? "panel already running; press its buttons or stop it" : "already running";
             document.Run.Start(null, document.PanelMode);
             return $"running '{document.Name}'";
-        }, cancellation_token);
+        }, cancellationToken);
 
-    public Task<string> StopActiveTabAsync(string name, CancellationToken cancellation_token) =>
+    public Task<string> StopActiveTabAsync(string name, CancellationToken cancellationToken) =>
         _ui.InvokeAsync(() =>
         {
             ScriptDocument document = Target(name);
@@ -167,16 +167,16 @@ public sealed class EditorBridge : IEditorBridge
                 return "not running";
             document.Run.RequestStop();
             return $"stopping '{document.Name}'";
-        }, cancellation_token);
+        }, cancellationToken);
 
-    public Task<string> GetTabOutputAsync(string name, CancellationToken cancellation_token) =>
+    public Task<string> GetTabOutputAsync(string name, CancellationToken cancellationToken) =>
         _ui.InvokeAsync(() =>
         {
             ScriptDocument document = Target(name);
             return document.Run.Output.Lines.Count == 0 ? "(no output)" : document.Run.Output.Text();
-        }, cancellation_token);
+        }, cancellationToken);
 
-    public Task<string> GetTabStatusAsync(string name, CancellationToken cancellation_token) =>
+    public Task<string> GetTabStatusAsync(string name, CancellationToken cancellationToken) =>
         _ui.InvokeAsync(() =>
         {
             ScriptDocument document = Target(name);
@@ -196,14 +196,14 @@ public sealed class EditorBridge : IEditorBridge
                 outputLength = run.Output.Text().Length,
                 errorCount = run.Errors.Count
             }, _status_json);
-        }, cancellation_token);
+        }, cancellationToken);
 
-    public Task<string> GetTabErrorsAsync(string name, CancellationToken cancellation_token) =>
+    public Task<string> GetTabErrorsAsync(string name, CancellationToken cancellationToken) =>
         _ui.InvokeAsync(() =>
         {
             ScriptDocument document = Target(name);
             return document.Run.Errors.Count == 0 ? "no errors" : JsonSerializer.Serialize(document.Run.Errors.ToList(), _errors_json);
-        }, cancellation_token);
+        }, cancellationToken);
 
     ScriptDocument Target(string name) =>
         string.IsNullOrWhiteSpace(name)

@@ -456,13 +456,15 @@ public sealed class GameState : IDisposable
         }
         catch
         {
-            Dispose();
+            Close();
             throw;
         }
     }
 
     /// <summary>Detaches and disposes every state manager and cancels the running bootstrap.</summary>
-    public void Dispose()
+    void IDisposable.Dispose() => Close();
+
+    private void Close()
     {
         if (_disposed)
             return;
@@ -500,34 +502,34 @@ public sealed class GameState : IDisposable
         lock (_wallet_operations_sync)
             Volatile.Write(ref _wallet_operations, null);
         Profile.RoomUserByIndex = null;
-        RoomEntries.Dispose();
-        RoomActions.Dispose();
-        RoomBans.Dispose();
-        RoomSettings.Dispose();
-        People.Dispose();
-        Room.Dispose();
-        Profile.Dispose();
-        Inventory.Dispose();
-        Badges.Dispose();
-        Friends.Dispose();
-        Trade.Dispose();
-        Polls.Dispose();
-        Marketplace.Dispose();
-        Requests.Dispose();
-        Economy.Dispose();
-        Quests.Dispose();
-        Crafting.Dispose();
-        Gifts.Dispose();
-        Subscriptions.Dispose();
-        Forums.Dispose();
-        Catalog.Dispose();
-        Wired.Dispose();
-        DailyTasks.Dispose();
-        Habbicons.Dispose();
-        Leaderboards.Dispose();
-        Navigator.Dispose();
-        Earnings.Dispose();
-        Achievements.Dispose();
+        RoomEntries.Close();
+        RoomActions.Close();
+        RoomBans.Close();
+        RoomSettings.Close();
+        People.Close();
+        Room.Close();
+        Profile.Close();
+        Inventory.Close();
+        Badges.Close();
+        Friends.Close();
+        Trade.Close();
+        Polls.Close();
+        Marketplace.Close();
+        Requests.Close();
+        Economy.Close();
+        Quests.Close();
+        Crafting.Close();
+        Gifts.Close();
+        Subscriptions.Close();
+        Forums.Close();
+        Catalog.Close();
+        Wired.Close();
+        DailyTasks.Close();
+        Habbicons.Close();
+        Leaderboards.Close();
+        Navigator.Close();
+        Earnings.Close();
+        Achievements.Close();
         _lifetime.Dispose();
     }
 

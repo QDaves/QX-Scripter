@@ -197,7 +197,7 @@ internal sealed class RoomModerationApplication : IApplicationFeature
             cancellation_token);
         long dispatch_revision = scope.StateRevision;
         message_dispatcher.Dispatch(
-            MessageContracts.Room.Moderation.UserMute,
+            MessageContracts.Room.Moderation.Mute,
             new MuteRoomUserRequest(scope.UserId, scope.RoomId, request.Minutes),
             scope.Session,
             cancellation_token,
@@ -214,7 +214,7 @@ internal sealed class RoomModerationApplication : IApplicationFeature
         TargetScope scope = CaptureTargetScope(request, cancellation_token);
         long dispatch_revision = scope.StateRevision;
         message_dispatcher.Dispatch(
-            MessageContracts.Room.Moderation.UserKick,
+            MessageContracts.Room.Moderation.Kick,
             new KickRoomUserRequest(scope.UserId),
             scope.Session,
             cancellation_token,
@@ -238,7 +238,7 @@ internal sealed class RoomModerationApplication : IApplicationFeature
             cancellation_token);
         long dispatch_revision = scope.StateRevision;
         message_dispatcher.Dispatch(
-            MessageContracts.Room.Moderation.UserBan,
+            MessageContracts.Room.Moderation.Ban,
             new BanRoomUserRequest(scope.UserId, scope.RoomId, duration),
             scope.Session,
             cancellation_token,
@@ -265,7 +265,7 @@ internal sealed class RoomModerationApplication : IApplicationFeature
         UnbanScope scope = CaptureUnbanScope(request, cancellation_token);
         long dispatch_revision = scope.StateRevision;
         message_dispatcher.Dispatch(
-            MessageContracts.Room.Moderation.UserUnban,
+            MessageContracts.Room.Moderation.Unban,
             new UnbanRoomUserRequest(scope.UserId, scope.RoomId),
             scope.Session,
             cancellation_token,
@@ -279,7 +279,6 @@ internal sealed class RoomModerationApplication : IApplicationFeature
                 scope.RoomId);
         }
         return ValueTask.FromResult(new RoomModerationDispatchResult(
-            scope.Session.Client,
             time_provider.GetUtcNow(),
             scope.SessionGeneration,
             dispatch_revision,
@@ -299,7 +298,7 @@ internal sealed class RoomModerationApplication : IApplicationFeature
         TargetScope scope = CaptureTargetScope(request, cancellation_token);
         long dispatch_revision = scope.StateRevision;
         message_dispatcher.Dispatch(
-            MessageContracts.Room.Moderation.UserBan,
+            MessageContracts.Room.Moderation.Ban,
             new BanRoomUserRequest(scope.UserId, scope.RoomId, BanDuration(BanLength.Hour)),
             scope.Session,
             cancellation_token,
@@ -307,7 +306,7 @@ internal sealed class RoomModerationApplication : IApplicationFeature
         try
         {
             message_dispatcher.Dispatch(
-                MessageContracts.Room.Moderation.UserUnban,
+                MessageContracts.Room.Moderation.Unban,
                 new UnbanRoomUserRequest(scope.UserId, scope.RoomId),
                 scope.Session,
                 CancellationToken.None,
@@ -368,7 +367,7 @@ internal sealed class RoomModerationApplication : IApplicationFeature
         cancellation_token.ThrowIfCancellationRequested();
         Session session = connection.Session
             ?? throw new InvalidOperationException("An active hotel session is required.");
-        ValidateWireId(session.Client, request.ExpectedRoomId, nameof(request.ExpectedRoomId));
+        ValidateWireId(request.ExpectedRoomId, nameof(request.ExpectedRoomId));
         return room.Capture(current_room =>
         {
             cancellation_token.ThrowIfCancellationRequested();
@@ -377,7 +376,7 @@ internal sealed class RoomModerationApplication : IApplicationFeature
             if (!current_room.IsReady)
                 throw new InvalidOperationException("A ready hotel room is required.");
             Id room_id = (Id)current_room.RoomId;
-            ValidateWireId(session.Client, room_id, nameof(current_room.RoomId));
+            ValidateWireId(room_id, nameof(current_room.RoomId));
             RoomBanState state = room_bans.State;
             if (!ReferenceEquals(state.Session, session) ||
                 state.RoomGeneration != current_room.Generation ||
@@ -432,8 +431,8 @@ internal sealed class RoomModerationApplication : IApplicationFeature
         cancellation_token.ThrowIfCancellationRequested();
         Session session = connection.Session
             ?? throw new InvalidOperationException("An active hotel session is required.");
-        ValidateWireId(session.Client, user_id, nameof(user_id));
-        ValidateWireId(session.Client, expected_room_id, nameof(expected_room_id));
+        ValidateWireId(user_id, nameof(user_id));
+        ValidateWireId(expected_room_id, nameof(expected_room_id));
         return room.Capture(current_room =>
         {
             cancellation_token.ThrowIfCancellationRequested();
@@ -442,7 +441,7 @@ internal sealed class RoomModerationApplication : IApplicationFeature
             if (!current_room.IsReady)
                 throw new InvalidOperationException("A ready hotel room is required.");
             Id room_id = (Id)current_room.RoomId;
-            ValidateWireId(session.Client, room_id, nameof(current_room.RoomId));
+            ValidateWireId(room_id, nameof(current_room.RoomId));
             RoomBanState state = room_bans.State;
             if (!ReferenceEquals(state.Session, session) ||
                 state.RoomGeneration != current_room.Generation ||
@@ -494,8 +493,8 @@ internal sealed class RoomModerationApplication : IApplicationFeature
         cancellation_token.ThrowIfCancellationRequested();
         Session session = connection.Session
             ?? throw new InvalidOperationException("An active hotel session is required.");
-        ValidateWireId(session.Client, request.UserId, nameof(request.UserId));
-        ValidateWireId(session.Client, request.RoomId, nameof(request.RoomId));
+        ValidateWireId(request.UserId, nameof(request.UserId));
+        ValidateWireId(request.RoomId, nameof(request.RoomId));
         return room.Capture(current_room =>
         {
             cancellation_token.ThrowIfCancellationRequested();
@@ -706,7 +705,6 @@ internal sealed class RoomModerationApplication : IApplicationFeature
         TargetScope scope,
         long state_revision,
         int messages_dispatched) => new(
-        scope.Session.Client,
         time_provider.GetUtcNow(),
         scope.SessionGeneration,
         state_revision,
@@ -727,7 +725,6 @@ internal sealed class RoomModerationApplication : IApplicationFeature
         int next_offset = checked(offset + page.Length);
         return new RoomModerationStateView(
             session is not null,
-            session?.Client,
             state.SessionGeneration,
             state.Revision,
             state.RoomGeneration,
@@ -747,7 +744,6 @@ internal sealed class RoomModerationApplication : IApplicationFeature
 
     private static RoomModerationStateSummary StateSummary(RoomBanState state) => new(
         state.Session is not null,
-        state.Session?.Client,
         state.SessionGeneration,
         state.Revision,
         state.RoomGeneration,
@@ -823,16 +819,16 @@ internal sealed class RoomModerationApplication : IApplicationFeature
             throw new ArgumentOutOfRangeException(name);
     }
 
-    private static void ValidateWireId(ClientType client, Id? value, string name)
+    private static void ValidateWireId(Id? value, string name)
     {
         if (value is Id id)
-            ValidateWireId(client, id, name);
+            ValidateWireId(id, name);
     }
 
-    private static void ValidateWireId(ClientType client, Id value, string name)
+    private static void ValidateWireId(Id value, string name)
     {
         ValidateId(value, name);
-        if (client is ClientType.Flash && (long)value > int.MaxValue)
+        if ((long)value > int.MaxValue)
             throw new ArgumentOutOfRangeException(name, "The identifier does not fit the Flash wire format.");
     }
 

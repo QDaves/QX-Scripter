@@ -9,8 +9,7 @@ namespace Qx.Scripting;
 /// one-way gate, and editing or removing wall items and sticky notes.
 /// <para>
 /// Every method here is fire-and-forget. It composes one outgoing message and returns; nothing is
-/// awaited and no result is reported. Where a message differs by client, the right name and layout
-/// are chosen from the active session automatically.
+/// awaited and no result is reported.
 /// </para>
 /// <para>
 /// Most methods come in two shapes: one taking an id, and one taking the model object it was read
@@ -26,11 +25,11 @@ public partial class ScriptGlobals
     /// <remarks>
     /// The hotel limits how many respects a user can give per day and silently ignores the rest.
     /// </remarks>
-    /// <param name="user_id">The target user's account id, not their room index.</param>
-    public void RespectUser(Id user_id) =>
-        Application.Invoke<RoomUserRespectRequest, RoomPeopleDispatchResult>(
+    /// <param name="userId">The target user's account id, not their room index.</param>
+    public void RespectUser(Id userId) =>
+        _application.Invoke<RoomUserRespectRequest, RoomPeopleDispatchResult>(
             ApplicationMemberIds.RoomPeopleRespect,
-            new RoomUserRespectRequest(user_id),
+            new RoomUserRespectRequest(userId),
             Ct);
 
     /// <summary>Gives a respect to a user in the room.</summary>
@@ -43,25 +42,25 @@ public partial class ScriptGlobals
     }
 
     /// <summary>Lifts a user's ban from a room.</summary>
-    /// <param name="user_id">The banned user's account id.</param>
-    /// <param name="room_id">The room to unban them from, or the current room when omitted.</param>
+    /// <param name="userId">The banned user's account id.</param>
+    /// <param name="roomId">The room to unban them from, or the current room when omitted.</param>
     /// <exception cref="InvalidOperationException">
     /// Thrown when no room id was given and the local user is not in a ready room.
     /// </exception>
-    public void UnbanUser(Id user_id, Id? room_id = null)
+    public void UnbanUser(Id userId, Id? roomId = null)
     {
-        RoomModerationStateView state = Application.Invoke<
+        RoomModerationStateView state = _application.Invoke<
             RoomModerationStateRequest,
             RoomModerationStateView>(
                 ApplicationMemberIds.RoomModerationState,
                 new RoomModerationStateRequest(),
                 Ct);
-        Id target_room_id = room_id ?? CurrentRoomIdForUnban(state);
+        Id target_room_id = roomId ?? CurrentRoomIdForUnban(state);
         bool current_room = state.RoomReady && state.RoomId == target_room_id;
-        Application.Invoke<RoomModerationUnbanRequest, RoomModerationDispatchResult>(
+        _application.Invoke<RoomModerationUnbanRequest, RoomModerationDispatchResult>(
             ApplicationMemberIds.RoomModerationUnban,
             new RoomModerationUnbanRequest(
-                user_id,
+                userId,
                 target_room_id,
                 state.SessionGeneration,
                 current_room ? state.RoomGeneration : null,
@@ -71,39 +70,15 @@ public partial class ScriptGlobals
 
     /// <summary>Lifts a user's ban from a room.</summary>
     /// <param name="user">The banned user; only its id is used.</param>
-    /// <param name="room_id">The room to unban them from, or the current room when omitted.</param>
+    /// <param name="roomId">The room to unban them from, or the current room when omitted.</param>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="user"/> is <see langword="null"/>.</exception>
     /// <exception cref="InvalidOperationException">
     /// Thrown when no room id was given and the local user is not in a room.
     /// </exception>
-    public void UnbanUser(User user, Id? room_id = null)
+    public void UnbanUser(User user, Id? roomId = null)
     {
         ArgumentNullException.ThrowIfNull(user);
-        UnbanUser(user.Id, room_id);
-    }
-
-    /// <summary>Lifts a user's ban from a room.</summary>
-    /// <remarks>Alternative name for <see cref="UnbanUser(Id, Id?)"/>.</remarks>
-    /// <param name="user_id">The banned user's account id.</param>
-    /// <param name="room_id">The room to unban them from, or the current room when omitted.</param>
-    /// <exception cref="InvalidOperationException">
-    /// Thrown when no room id was given and the local user is not in a ready room.
-    /// </exception>
-    public void RoomUnbanUser(Id user_id, Id? room_id = null) =>
-    UnbanUser(user_id, room_id);
-
-    /// <summary>Lifts a user's ban from a room.</summary>
-    /// <remarks>Alternative name for <see cref="UnbanUser(User, Id?)"/>.</remarks>
-    /// <param name="user">The banned user; only its id is used.</param>
-    /// <param name="room_id">The room to unban them from, or the current room when omitted.</param>
-    /// <exception cref="ArgumentNullException">Thrown when <paramref name="user"/> is <see langword="null"/>.</exception>
-    /// <exception cref="InvalidOperationException">
-    /// Thrown when no room id was given and the local user is not in a room.
-    /// </exception>
-    public void RoomUnbanUser(User user, Id? room_id = null)
-    {
-        ArgumentNullException.ThrowIfNull(user);
-        UnbanUser(user.Id, room_id);
+        UnbanUser(user.Id, roomId);
     }
 
     /// <summary>
@@ -125,19 +100,19 @@ public partial class ScriptGlobals
     }
 
     /// <summary>Clicks a floor item by id, as <see cref="ClickFurni(Furni)"/> does.</summary>
-    /// <param name="item_id">The floor item id.</param>
-    public void ClickFloorItem(Id item_id) =>
-        Application.Invoke<RoomFloorItemClickRequest, RoomItemDispatchResult>(
+    /// <param name="itemId">The floor item id.</param>
+    public void ClickFloorItem(Id itemId) =>
+        _application.Invoke<RoomFloorItemClickRequest, RoomItemDispatchResult>(
             ApplicationMemberIds.RoomItemFloorClick,
-            new RoomFloorItemClickRequest(item_id),
+            new RoomFloorItemClickRequest(itemId),
             Ct);
 
     /// <summary>Clicks a wall item by id, as <see cref="ClickFurni(Furni)"/> does.</summary>
-    /// <param name="item_id">The wall item id.</param>
-    public void ClickWallItem(Id item_id) =>
-        Application.Invoke<RoomWallItemClickRequest, RoomItemDispatchResult>(
+    /// <param name="itemId">The wall item id.</param>
+    public void ClickWallItem(Id itemId) =>
+        _application.Invoke<RoomWallItemClickRequest, RoomItemDispatchResult>(
             ApplicationMemberIds.RoomItemWallClick,
-            new RoomWallItemClickRequest(item_id),
+            new RoomWallItemClickRequest(itemId),
             Ct);
 
     /// <summary>
@@ -147,11 +122,11 @@ public partial class ScriptGlobals
     /// Walking onto the tile is not enough. The client sends this separate message, and the
     /// server then moves the avatar through.
     /// </remarks>
-    /// <param name="item_id">The floor item id of the gate.</param>
-    public void EnterOneWayDoor(Id item_id) =>
-        Application.Invoke<RoomOneWayDoorEnterRequest, RoomItemDispatchResult>(
+    /// <param name="itemId">The floor item id of the gate.</param>
+    public void EnterOneWayDoor(Id itemId) =>
+        _application.Invoke<RoomOneWayDoorEnterRequest, RoomItemDispatchResult>(
             ApplicationMemberIds.RoomItemOneWayDoorEnter,
-            new RoomOneWayDoorEnterRequest(item_id),
+            new RoomOneWayDoorEnterRequest(itemId),
             Ct);
 
     /// <summary>Steps through a one-way gate.</summary>
@@ -163,31 +138,15 @@ public partial class ScriptGlobals
         EnterOneWayDoor(item.Id);
     }
 
-    /// <summary>Steps through a one-way gate.</summary>
-    /// <remarks>Alternative name for <see cref="EnterOneWayDoor(Id)"/>.</remarks>
-    /// <param name="item_id">The floor item id of the gate.</param>
-    public void UseGate(Id item_id) =>
-        EnterOneWayDoor(item_id);
-
-    /// <summary>Steps through a one-way gate.</summary>
-    /// <remarks>Alternative name for <see cref="EnterOneWayDoor(FloorItem)"/>.</remarks>
-    /// <param name="item">The gate; only its id is used.</param>
-    /// <exception cref="ArgumentNullException">Thrown when <paramref name="item"/> is <see langword="null"/>.</exception>
-    public void UseGate(FloorItem item)
-    {
-        ArgumentNullException.ThrowIfNull(item);
-        EnterOneWayDoor(item.Id);
-    }
-
     /// <summary>Rewrites a sticky note's color and text.</summary>
-    /// <param name="item_id">The wall item id of the sticky note.</param>
+    /// <param name="itemId">The wall item id of the sticky note.</param>
     /// <param name="color">The note's background color.</param>
     /// <param name="text">The note's text.</param>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="color"/> or <paramref name="text"/> is <see langword="null"/>.</exception>
-    public void SetStickyData(Id item_id, string color, string text) =>
-    Application.Invoke<RoomStickySetRequest, RoomItemDispatchResult>(
+    public void SetStickyData(Id itemId, string color, string text) =>
+    _application.Invoke<RoomStickySetRequest, RoomItemDispatchResult>(
         ApplicationMemberIds.RoomItemStickySet,
-        new RoomStickySetRequest(item_id, color, text),
+        new RoomStickySetRequest(itemId, color, text),
         Ct);
 
     /// <summary>Rewrites a sticky note's color and text.</summary>
@@ -213,99 +172,37 @@ public partial class ScriptGlobals
         SetStickyData(sticky.Id, sticky.Color, sticky.Text);
     }
 
-    /// <summary>Rewrites a sticky note's color and text.</summary>
-    /// <remarks>Alternative name for <see cref="SetStickyData(Id, string, string)"/>.</remarks>
-    /// <param name="item_id">The wall item id of the sticky note.</param>
-    /// <param name="color">The note's background color.</param>
-    /// <param name="text">The note's text.</param>
-    /// <exception cref="ArgumentNullException">Thrown when <paramref name="color"/> or <paramref name="text"/> is <see langword="null"/>.</exception>
-    public void UpdateSticky(Id item_id, string color, string text) =>
-        SetStickyData(item_id, color, text);
-
-    /// <summary>Rewrites a sticky note's color and text.</summary>
-    /// <remarks>Alternative name for <see cref="SetStickyData(WallItem, string, string)"/>.</remarks>
-    /// <param name="item">The wall item holding the note; only its id is used.</param>
-    /// <param name="color">The note's background color.</param>
-    /// <param name="text">The note's text.</param>
-    /// <exception cref="ArgumentNullException">Thrown when any argument is <see langword="null"/>.</exception>
-    public void UpdateSticky(WallItem item, string color, string text)
-    {
-        ArgumentNullException.ThrowIfNull(item);
-        SetStickyData(item.Id, color, text);
-    }
-
-    /// <summary>Writes a sticky note back after editing it.</summary>
-    /// <remarks>Alternative name for <see cref="SetStickyData(Sticky)"/>.</remarks>
-    /// <param name="sticky">The note to save.</param>
-    /// <exception cref="ArgumentNullException">Thrown when <paramref name="sticky"/> is <see langword="null"/>.</exception>
-    public void UpdateSticky(Sticky sticky)
-    {
-        ArgumentNullException.ThrowIfNull(sticky);
-        SetStickyData(sticky.Id, sticky.Color, sticky.Text);
-    }
-
     /// <summary>
     /// Deletes a wall item from the room outright.
     /// </summary>
     /// <remarks>
     /// This destroys the item rather than returning it to the inventory, which is what the client
-    /// does for sticky notes and photos.
+    /// does for sticky notes and photos. <see cref="PickupFurni(WallItem, bool)"/> returns an item
+    /// to the inventory instead.
     /// </remarks>
-    /// <param name="item_id">The wall item id.</param>
-    public void RemoveItem(Id item_id) =>
-        Application.Invoke<RoomWallItemRemoveRequest, RoomItemDispatchResult>(
+    /// <param name="itemId">The wall item id.</param>
+    public void DeleteWallItem(Id itemId) =>
+        _application.Invoke<RoomWallItemRemoveRequest, RoomItemDispatchResult>(
             ApplicationMemberIds.RoomItemWallRemove,
-            new RoomWallItemRemoveRequest(item_id),
+            new RoomWallItemRemoveRequest(itemId),
             Ct);
 
     /// <summary>Deletes a wall item from the room outright.</summary>
     /// <param name="item">The wall item; only its id is used.</param>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="item"/> is <see langword="null"/>.</exception>
-    public void RemoveItem(WallItem item)
-    {
-        ArgumentNullException.ThrowIfNull(item);
-        RemoveItem(item.Id);
-    }
-
-    /// <summary>Deletes a sticky note from the room outright.</summary>
-    /// <param name="sticky">The note; only its id is used.</param>
-    /// <exception cref="ArgumentNullException">Thrown when <paramref name="sticky"/> is <see langword="null"/>.</exception>
-    public void RemoveItem(Sticky sticky)
-    {
-        ArgumentNullException.ThrowIfNull(sticky);
-        RemoveItem(sticky.Id);
-    }
-
-    /// <summary>Deletes a wall item from the room outright.</summary>
-    /// <remarks>Alternative name for <see cref="RemoveItem(Id)"/>.</remarks>
-    /// <param name="item_id">The wall item id.</param>
-    public void DeleteWallItem(Id item_id) =>
-        RemoveItem(item_id);
-
-    /// <summary>Deletes a wall item from the room outright.</summary>
-    /// <remarks>Alternative name for <see cref="RemoveItem(WallItem)"/>.</remarks>
-    /// <param name="item">The wall item; only its id is used.</param>
-    /// <exception cref="ArgumentNullException">Thrown when <paramref name="item"/> is <see langword="null"/>.</exception>
     public void DeleteWallItem(WallItem item)
     {
         ArgumentNullException.ThrowIfNull(item);
-        RemoveItem(item.Id);
+        DeleteWallItem(item.Id);
     }
 
     /// <summary>Deletes a sticky note from the room outright.</summary>
-    /// <remarks>Alternative name for <see cref="RemoveItem(Id)"/>.</remarks>
-    /// <param name="item_id">The wall item id of the note.</param>
-    public void DeleteSticky(Id item_id) =>
-        RemoveItem(item_id);
-
-    /// <summary>Deletes a sticky note from the room outright.</summary>
-    /// <remarks>Alternative name for <see cref="RemoveItem(Sticky)"/>.</remarks>
     /// <param name="sticky">The note; only its id is used.</param>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="sticky"/> is <see langword="null"/>.</exception>
-    public void DeleteSticky(Sticky sticky)
+    public void DeleteWallItem(Sticky sticky)
     {
         ArgumentNullException.ThrowIfNull(sticky);
-        RemoveItem(sticky.Id);
+        DeleteWallItem(sticky.Id);
     }
 
     private static Id CurrentRoomIdForUnban(RoomModerationStateView state)

@@ -68,7 +68,6 @@ public sealed record DailyTaskView(
 /// <summary>Represents the daily task state read from one snapshot.</summary>
 /// <remarks>Returned by the <c>daily_tasks.state</c> query.</remarks>
 /// <param name="Connected">Whether the snapshot belongs to the active hotel session.</param>
-/// <param name="Client">The client type of the hotel session, or <see langword="null"/> when <paramref name="Connected"/> is <see langword="false"/>.</param>
 /// <param name="SessionGeneration">The generation of the hotel session the snapshot belongs to.</param>
 /// <param name="Revision">The daily task state revision, which increases with every change.</param>
 /// <param name="TasksRevision">The revision of the task list, which increases whenever tasks are received, added, updated or cleared.</param>
@@ -79,7 +78,6 @@ public sealed record DailyTaskView(
 /// <param name="Summary">The summary of the task list.</param>
 public sealed record DailyTaskStateView(
     bool Connected,
-    ClientType? Client,
     long SessionGeneration,
     long Revision,
     long TasksRevision,
@@ -105,7 +103,6 @@ public sealed record DailyTaskPageRequest(
 /// bonus task last.
 /// </remarks>
 /// <param name="Connected">Whether the snapshot belongs to the active hotel session.</param>
-/// <param name="Client">The client type of the hotel session, or <see langword="null"/> when <paramref name="Connected"/> is <see langword="false"/>.</param>
 /// <param name="SessionGeneration">The generation of the hotel session the snapshot belongs to.</param>
 /// <param name="StateRevision">The daily task state revision, which increases with every change.</param>
 /// <param name="TasksRevision">The revision of the task list, which increases whenever tasks are received, added, updated or cleared.</param>
@@ -118,7 +115,6 @@ public sealed record DailyTaskPageRequest(
 /// <param name="Tasks">The tasks in the page.</param>
 public sealed record DailyTaskPage(
     bool Connected,
-    ClientType? Client,
     long SessionGeneration,
     long StateRevision,
     long TasksRevision,
@@ -146,7 +142,6 @@ public sealed record DailyTaskRefreshRequest(
 
 /// <summary>Represents the result of a daily task refresh.</summary>
 /// <remarks>Returned by the <c>daily_tasks.refresh</c> operation.</remarks>
-/// <param name="Client">The client type of the hotel session.</param>
 /// <param name="RefreshedAtUtc">The UTC time the result was created.</param>
 /// <param name="ObservedAtUtc">The UTC time the task list was observed.</param>
 /// <param name="SessionGeneration">The generation of the hotel session the refresh ran in.</param>
@@ -157,7 +152,6 @@ public sealed record DailyTaskRefreshRequest(
 /// <param name="MessagesDispatched">The number of request messages the call sent.</param>
 /// <param name="FirstPage">The first page of tasks from the refreshed snapshot.</param>
 public sealed record DailyTaskRefreshResult(
-    ClientType Client,
     DateTimeOffset RefreshedAtUtc,
     DateTimeOffset ObservedAtUtc,
     long SessionGeneration,
@@ -181,13 +175,11 @@ public sealed record DailyTaskClaimActionRequest(
 
 /// <summary>Represents the receipt for a daily task claim that was sent.</summary>
 /// <remarks>Returned by the <c>daily_tasks.claim</c> operation.</remarks>
-/// <param name="Client">The client type of the hotel session.</param>
 /// <param name="DispatchedAtUtc">The UTC time the claim was sent.</param>
 /// <param name="SessionGeneration">The generation of the hotel session the claim was sent in.</param>
 /// <param name="TaskId">The id of the task that was claimed.</param>
 /// <param name="MessagesDispatched">The number of messages sent.</param>
 public sealed record DailyTaskClaimDispatchReceipt(
-    ClientType Client,
     DateTimeOffset DispatchedAtUtc,
     long SessionGeneration,
     long TaskId,
@@ -214,7 +206,7 @@ public enum DailyTaskChangeKind
 /// <remarks>Published by the <c>daily_tasks.changed</c> event.</remarks>
 /// <param name="Kind">The kind of change.</param>
 /// <param name="ChangedAtUtc">The UTC time the change was published.</param>
-/// <param name="Client">The client type of the hotel session, or <see langword="null"/> when there is no session.</param>
+/// <param name="Connected">Whether a hotel session is active.</param>
 /// <param name="SessionGeneration">The generation of the hotel session the change belongs to.</param>
 /// <param name="Revision">The daily task state revision after the change.</param>
 /// <param name="SourceRevision">The task list revision after the change, or <paramref name="Revision"/> for <see cref="DailyTaskChangeKind.Reset"/>.</param>
@@ -226,7 +218,7 @@ public enum DailyTaskChangeKind
 public sealed record DailyTaskChanged(
     DailyTaskChangeKind Kind,
     DateTimeOffset ChangedAtUtc,
-    ClientType? Client,
+    bool Connected,
     long SessionGeneration,
     long Revision,
     long SourceRevision,

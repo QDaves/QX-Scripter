@@ -1,6 +1,6 @@
 using Qx.Messages;
 
-namespace Qx.Model.Bots;
+namespace Qx.Model;
 
 /// <summary>Represents a bot in the local user's inventory.</summary>
 /// <param name="Id">The bot identifier.</param>

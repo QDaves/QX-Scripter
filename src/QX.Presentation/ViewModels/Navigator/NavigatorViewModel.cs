@@ -158,10 +158,10 @@ public sealed partial class NavigatorViewModel : PageViewModel
         EnterCommand.NotifyCanExecuteChanged();
     }
 
-    protected override async Task OnActivatedAsync(CancellationToken cancellation_token)
+    protected override async Task OnActivatedAsync(CancellationToken cancellationToken)
     {
-        await RefreshAsync(cancellation_token);
-        await FetchAsync(cancellation_token);
+        await RefreshAsync(cancellationToken);
+        await FetchAsync(cancellationToken);
         AskForQueryFocus();
     }
 

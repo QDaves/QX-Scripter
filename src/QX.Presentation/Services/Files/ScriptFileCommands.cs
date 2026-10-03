@@ -8,7 +8,7 @@ using Qx.Presentation.Services.Runs;
 using Qx.Presentation.Services.Settings;
 using Qx.Presentation.Services.Workspace;
 using Qx.Presentation.Visuals;
-using Qx.Scripting;
+using Qx.Scripting.Hosting;
 
 namespace Qx.Presentation.Services.Files;
 
@@ -23,39 +23,39 @@ public interface IScriptFileCommands
 {
     ScriptDocument NewDocument();
 
-    Task<ScriptDocument?> OpenAsync(string path, CancellationToken cancellation_token);
+    Task<ScriptDocument?> OpenAsync(string path, CancellationToken cancellationToken);
 
-    Task OpenDroppedAsync(IReadOnlyList<string> paths, CancellationToken cancellation_token);
+    Task OpenDroppedAsync(IReadOnlyList<string> paths, CancellationToken cancellationToken);
 
-    Task<bool> SaveAsync(ScriptDocument document, CancellationToken cancellation_token);
+    Task<bool> SaveAsync(ScriptDocument document, CancellationToken cancellationToken);
 
-    Task<bool> SaveAsAsync(ScriptDocument document, CancellationToken cancellation_token);
+    Task<bool> SaveAsAsync(ScriptDocument document, CancellationToken cancellationToken);
 
-    Task<bool> RenameAsync(ScriptDocument document, CancellationToken cancellation_token);
+    Task<bool> RenameAsync(ScriptDocument document, CancellationToken cancellationToken);
 
-    Task<bool> RenameFileAsync(string path, CancellationToken cancellation_token);
+    Task<bool> RenameFileAsync(string path, CancellationToken cancellationToken);
 
-    Task<bool> DuplicateAsync(string path, CancellationToken cancellation_token);
+    Task<bool> DuplicateAsync(string path, CancellationToken cancellationToken);
 
-    Task<bool> SetGroupAsync(string path, string? group, CancellationToken cancellation_token);
+    Task<bool> SetGroupAsync(string path, string? group, CancellationToken cancellationToken);
 
-    Task<bool> SaveInPlaceAsync(ScriptDocument document, CancellationToken cancellation_token);
+    Task<bool> SaveInPlaceAsync(ScriptDocument document, CancellationToken cancellationToken);
 
-    Task<FileOperationResult> RenameUnattendedAsync(string path, string typed, CancellationToken cancellation_token);
+    Task<FileOperationResult> RenameUnattendedAsync(string path, string typed, CancellationToken cancellationToken);
 
-    Task<FileOperationResult> DeleteUnattendedAsync(string path, CancellationToken cancellation_token);
+    Task<FileOperationResult> DeleteUnattendedAsync(string path, CancellationToken cancellationToken);
 
-    Task RevealAsync(string path, CancellationToken cancellation_token);
+    Task RevealAsync(string path, CancellationToken cancellationToken);
 
-    Task<bool> DeleteAsync(string path, CancellationToken cancellation_token);
+    Task<bool> DeleteAsync(string path, CancellationToken cancellationToken);
 
-    Task<CloseOutcome> CloseAsync(ScriptDocument document, CancellationToken cancellation_token);
+    Task<CloseOutcome> CloseAsync(ScriptDocument document, CancellationToken cancellationToken);
 
-    Task CloseOthersAsync(ScriptDocument keep, CancellationToken cancellation_token);
+    Task CloseOthersAsync(ScriptDocument keep, CancellationToken cancellationToken);
 
-    Task CloseToTheRightAsync(ScriptDocument anchor, CancellationToken cancellation_token);
+    Task CloseToTheRightAsync(ScriptDocument anchor, CancellationToken cancellationToken);
 
-    Task<bool> ReopenClosedAsync(CancellationToken cancellation_token);
+    Task<bool> ReopenClosedAsync(CancellationToken cancellationToken);
 }
 
 public sealed class ScriptFileCommands(
@@ -75,10 +75,10 @@ public sealed class ScriptFileCommands(
         return document;
     }
 
-    public async Task<ScriptDocument?> OpenAsync(string path, CancellationToken cancellation_token)
+    public async Task<ScriptDocument?> OpenAsync(string path, CancellationToken cancellationToken)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(path);
-        OpenResult opened = await workspace.OpenAsync(path, cancellation_token);
+        OpenResult opened = await workspace.OpenAsync(path, cancellationToken);
         if (opened.Outcome is OpenOutcome.Missing or OpenOutcome.Unreadable)
             return null;
         if (opened.Document is not { } document)
@@ -88,34 +88,34 @@ public sealed class ScriptFileCommands(
         return document;
     }
 
-    public async Task OpenDroppedAsync(IReadOnlyList<string> paths, CancellationToken cancellation_token)
+    public async Task OpenDroppedAsync(IReadOnlyList<string> paths, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(paths);
         foreach (string path in paths.Where(candidate => ScriptFileName.IsScript(candidate) && files.Exists(candidate)))
-            await OpenAsync(path, cancellation_token);
+            await OpenAsync(path, cancellationToken);
     }
 
-    public async Task<bool> SaveAsync(ScriptDocument document, CancellationToken cancellation_token)
+    public async Task<bool> SaveAsync(ScriptDocument document, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(document);
         if (document.FilePath is not { } known)
-            return await SaveThroughPromptAsync(document, cancellation_token);
-        if (!await WriteAsync(document, known, cancellation_token))
+            return await SaveThroughPromptAsync(document, cancellationToken);
+        if (!await WriteAsync(document, known, cancellationToken))
             return false;
-        await FollowDeclaredNameAsync(document, known, cancellation_token);
+        await FollowDeclaredNameAsync(document, known, cancellationToken);
         return true;
     }
 
-    public async Task<bool> SaveAsAsync(ScriptDocument document, CancellationToken cancellation_token)
+    public async Task<bool> SaveAsAsync(ScriptDocument document, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(document);
-        return await SaveThroughPromptAsync(document, cancellation_token);
+        return await SaveThroughPromptAsync(document, cancellationToken);
     }
 
-    public async Task<bool> RenameAsync(ScriptDocument document, CancellationToken cancellation_token)
+    public async Task<bool> RenameAsync(ScriptDocument document, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(document);
-        string? typed = await AskForNameAsync(document.Name, cancellation_token);
+        string? typed = await AskForNameAsync(document.Name, cancellationToken);
         if (typed is null || !Alive(document))
             return false;
         DeclareName(document, typed);
@@ -124,27 +124,27 @@ public sealed class ScriptFileCommands(
             document.Rename(typed);
             return true;
         }
-        return await MoveFileAsync(path, typed, cancellation_token);
+        return await MoveFileAsync(path, typed, cancellationToken);
     }
 
-    public async Task<bool> RenameFileAsync(string path, CancellationToken cancellation_token)
+    public async Task<bool> RenameFileAsync(string path, CancellationToken cancellationToken)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(path);
         string from = PathComparison.Full(path);
-        string? typed = await AskForNameAsync(ScriptFileName.NameOf(from), cancellation_token);
-        if (typed is null || !await MoveFileAsync(from, typed, cancellation_token))
+        string? typed = await AskForNameAsync(ScriptFileName.NameOf(from), cancellationToken);
+        if (typed is null || !await MoveFileAsync(from, typed, cancellationToken))
             return false;
-        await DeclareNameInFileAsync(files.PathFor(typed), cancellation_token);
+        await DeclareNameInFileAsync(files.PathFor(typed), cancellationToken);
         return true;
     }
 
-    public Task<bool> SaveInPlaceAsync(ScriptDocument document, CancellationToken cancellation_token)
+    public Task<bool> SaveInPlaceAsync(ScriptDocument document, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(document);
-        return document.FilePath is { } path ? WriteAsync(document, path, cancellation_token) : Task.FromResult(false);
+        return document.FilePath is { } path ? WriteAsync(document, path, cancellationToken) : Task.FromResult(false);
     }
 
-    public async Task<FileOperationResult> RenameUnattendedAsync(string path, string typed, CancellationToken cancellation_token)
+    public async Task<FileOperationResult> RenameUnattendedAsync(string path, string typed, CancellationToken cancellationToken)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(path);
         ArgumentException.ThrowIfNullOrWhiteSpace(typed);
@@ -161,62 +161,62 @@ public sealed class ScriptFileCommands(
             if (files.Exists(to))
                 return new FileOperationResult(false, $"A script named “{ScriptFileName.NameOf(to)}” already exists.");
         }
-        FileOperationResult moved = await MoveCoreAsync(from, to, cancellation_token);
+        FileOperationResult moved = await MoveCoreAsync(from, to, cancellationToken);
         if (moved.Succeeded)
-            await DeclareNameInFileAsync(to, cancellation_token);
+            await DeclareNameInFileAsync(to, cancellationToken);
         return moved;
     }
 
-    public async Task<FileOperationResult> DeleteUnattendedAsync(string path, CancellationToken cancellation_token)
+    public async Task<FileOperationResult> DeleteUnattendedAsync(string path, CancellationToken cancellationToken)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(path);
         string full = PathComparison.Full(path);
         if (runs.LivePaths.Contains(full))
             return new FileOperationResult(false, $"“{ScriptFileName.NameOf(full)}” has a run behind it; stop it first.");
-        return await DeleteCoreAsync(full, cancellation_token);
+        return await DeleteCoreAsync(full, cancellationToken);
     }
 
-    public async Task<bool> DuplicateAsync(string path, CancellationToken cancellation_token)
+    public async Task<bool> DuplicateAsync(string path, CancellationToken cancellationToken)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(path);
         string from = PathComparison.Full(path);
         string name = ScriptFileName.NextCopy(ScriptFileName.NameOf(from), candidate => files.Exists(files.PathFor(candidate)));
         string to = files.PathFor(name);
-        FileOperationResult copied = await files.CopyAsync(from, to, cancellation_token);
+        FileOperationResult copied = await files.CopyAsync(from, to, cancellationToken);
         if (!copied.Succeeded)
         {
-            await dialogs.AlertAsync("Duplicate failed", copied.Failure ?? "The script could not be duplicated.", cancellation_token);
+            await dialogs.AlertAsync("Duplicate failed", copied.Failure ?? "The script could not be duplicated.", cancellationToken);
             return false;
         }
         ScriptMeta meta = library.Get(ScriptFileName.NameOf(from));
         if (!meta.IsEmpty)
             library.Set(name, meta);
         CopyPanelMemory(from, to);
-        await DeclareNameInFileAsync(to, cancellation_token);
+        await DeclareNameInFileAsync(to, cancellationToken);
         return true;
     }
 
-    public Task<bool> SetGroupAsync(string path, string? group, CancellationToken cancellation_token)
+    public Task<bool> SetGroupAsync(string path, string? group, CancellationToken cancellationToken)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(path);
-        return RewriteHeaderAsync(PathComparison.Full(path), code => ScriptHeader.WithGroup(code, group), cancellation_token);
+        return RewriteHeaderAsync(PathComparison.Full(path), code => ScriptHeader.WithGroup(code, group), cancellationToken);
     }
 
-    public async Task RevealAsync(string path, CancellationToken cancellation_token)
+    public async Task RevealAsync(string path, CancellationToken cancellationToken)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(path);
-        if (!await revealer.RevealAsync(path, cancellation_token))
-            await dialogs.AlertAsync("Could not open the folder", "The folder could not be opened.", cancellation_token);
+        if (!await revealer.RevealAsync(path, cancellationToken))
+            await dialogs.AlertAsync("Could not open the folder", "The folder could not be opened.", cancellationToken);
     }
 
-    public async Task<bool> DeleteAsync(string path, CancellationToken cancellation_token)
+    public async Task<bool> DeleteAsync(string path, CancellationToken cancellationToken)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(path);
         string full = PathComparison.Full(path);
         string name = ScriptFileName.NameOf(full);
         if (runs.LivePaths.Contains(full))
         {
-            await dialogs.AlertAsync("Script is still open", $"“{name}” has a run behind it. Stop it or close its tab before deleting the script.", cancellation_token);
+            await dialogs.AlertAsync("Script is still open", $"“{name}” has a run behind it. Stop it or close its tab before deleting the script.", cancellationToken);
             return false;
         }
         bool confirmed = await dialogs.ConfirmAsync(
@@ -224,13 +224,13 @@ public sealed class ScriptFileCommands(
             $"“{name}” will be permanently deleted from the script library.",
             "Delete",
             DialogTone.Destructive,
-            cancellation_token: cancellation_token);
+            cancellationToken: cancellationToken);
         if (!confirmed)
             return false;
-        FileOperationResult deleted = await DeleteCoreAsync(full, cancellation_token);
+        FileOperationResult deleted = await DeleteCoreAsync(full, cancellationToken);
         if (!deleted.Succeeded)
         {
-            await dialogs.AlertAsync("Delete failed", deleted.Failure ?? "The script could not be deleted.", cancellation_token);
+            await dialogs.AlertAsync("Delete failed", deleted.Failure ?? "The script could not be deleted.", cancellationToken);
             return false;
         }
         return true;
@@ -248,7 +248,7 @@ public sealed class ScriptFileCommands(
         return deleted;
     }
 
-    public async Task<CloseOutcome> CloseAsync(ScriptDocument document, CancellationToken cancellation_token)
+    public async Task<CloseOutcome> CloseAsync(ScriptDocument document, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(document);
         if (document.Run.IsWorking)
@@ -263,7 +263,7 @@ public sealed class ScriptFileCommands(
                 $"“{document.Name}” has unsaved changes. Close it and discard those changes?",
                 "Discard",
                 DialogTone.Destructive,
-                cancellation_token: cancellation_token);
+                cancellationToken: cancellationToken);
             if (!Alive(document))
                 return CloseOutcome.Closed;
             if (!discard)
@@ -273,19 +273,19 @@ public sealed class ScriptFileCommands(
         return CloseOutcome.Closed;
     }
 
-    public Task CloseOthersAsync(ScriptDocument keep, CancellationToken cancellation_token)
+    public Task CloseOthersAsync(ScriptDocument keep, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(keep);
-        return CloseManyAsync(keep, [.. workspace.Documents.Where(document => !ReferenceEquals(document, keep))], cancellation_token);
+        return CloseManyAsync(keep, [.. workspace.Documents.Where(document => !ReferenceEquals(document, keep))], cancellationToken);
     }
 
-    public Task CloseToTheRightAsync(ScriptDocument anchor, CancellationToken cancellation_token)
+    public Task CloseToTheRightAsync(ScriptDocument anchor, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(anchor);
         int index = workspace.Documents.IndexOf(anchor);
         return index < 0
             ? Task.CompletedTask
-            : CloseManyAsync(anchor, [.. workspace.Documents.Skip(index + 1)], cancellation_token);
+            : CloseManyAsync(anchor, [.. workspace.Documents.Skip(index + 1)], cancellationToken);
     }
 
     async Task CloseManyAsync(ScriptDocument keep, ScriptDocument[] others, CancellationToken cancellation_token)
@@ -302,7 +302,7 @@ public sealed class ScriptFileCommands(
                     : $"{modified} other scripts have unsaved changes. Close them and discard those changes?",
                 "Discard and close",
                 DialogTone.Destructive,
-                cancellation_token: cancellation_token);
+                cancellationToken: cancellation_token);
             if (!discard || !Alive(keep))
                 return;
         }
@@ -335,11 +335,11 @@ public sealed class ScriptFileCommands(
             workspace.Active = keep;
     }
 
-    public async Task<bool> ReopenClosedAsync(CancellationToken cancellation_token)
+    public async Task<bool> ReopenClosedAsync(CancellationToken cancellationToken)
     {
         if (workspace.TakeReopenable() is not { } path)
             return false;
-        return await OpenAsync(path, cancellation_token) is not null;
+        return await OpenAsync(path, cancellationToken) is not null;
     }
 
     async Task<bool> MoveFileAsync(string path, string typed, CancellationToken cancellation_token)
@@ -489,7 +489,7 @@ public sealed class ScriptFileCommands(
             $"A script named “{ScriptFileName.NameOf(target)}” already exists.",
             "Replace",
             DialogTone.Destructive,
-            cancellation_token: cancellation_token);
+            cancellationToken: cancellation_token);
 
     Task AlertOpenAsync(ScriptDocument holder, CancellationToken cancellation_token) =>
         dialogs.AlertAsync("Script is already open", $"“{holder.Name}” is open in another tab. Close it or pick another name.", cancellation_token);

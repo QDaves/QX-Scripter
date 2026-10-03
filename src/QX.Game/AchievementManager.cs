@@ -138,7 +138,7 @@ public sealed class AchievementManager : GameStateManager
     /// <summary>Gets whether the achievement list has been received in the current session.</summary>
     public bool IsLoaded => State.Loaded;
     /// <summary>Gets the user's achievement score.</summary>
-    /// <remarks>The score is only received on the Flash client and is 0 until <see cref="IsScoreLoaded"/> is <see langword="true"/>.</remarks>
+    /// <remarks>The score is 0 until <see cref="IsScoreLoaded"/> is <see langword="true"/>.</remarks>
     public int Score => State.Score;
     /// <summary>Gets whether the achievement score has been received in the current session.</summary>
     public bool IsScoreLoaded => State.ScoreLoaded;
@@ -309,10 +309,7 @@ public sealed class AchievementManager : GameStateManager
                 generation));
         OnIncoming(MessageContracts.Achievements.Snapshot, ApplySnapshot);
         OnIncoming(MessageContracts.Achievements.Updated, ApplyUpdate);
-        OnIncoming(
-            ClientType.Flash,
-            MessageContracts.Achievements.Score,
-            ApplyScore);
+        OnIncoming(MessageContracts.Achievements.Score, ApplyScore);
         OnIncoming(MessageContracts.Achievements.PointLimits, ApplyPointLimits);
     }
 
@@ -325,11 +322,6 @@ public sealed class AchievementManager : GameStateManager
     /// <remarks>Returns without waiting. The result is stored in <see cref="PointLimits"/> and raises <see cref="Changed"/>.</remarks>
     /// <exception cref="InvalidOperationException">Thrown when the application runtime is not active.</exception>
     public void RequestPointLimits() => Operations().RequestPointLimits();
-
-    /// <summary>Gets whether data that only the Flash client receives, such as the achievement score, is supported.</summary>
-    /// <remarks>Always returns <see langword="true"/>.</remarks>
-    public bool IsFlashOnlyDataSupported =>
-        true;
 
     /// <summary>Requests the achievement list if it has not been loaded and waits for it.</summary>
     /// <remarks>Completes immediately when the list is already loaded. Concurrent callers share one request.</remarks>

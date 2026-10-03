@@ -11,44 +11,44 @@ public sealed record PurchaseOffer : IParserComposer<PurchaseOffer>
     private IReadOnlyList<Id>? _wall_items;
 
     /// <summary>Initializes a new instance of the <see cref="PurchaseOffer"/> class.</summary>
-    /// <param name="OfferId">The ID of the catalog offer.</param>
-    /// <param name="LocalizationId">The localization key of the offer's name.</param>
-    /// <param name="IsRent">Whether the offer is a rental.</param>
-    /// <param name="PriceInCredits">The price in credits.</param>
-    /// <param name="PriceInActivityPoints">The price in activity points.</param>
-    /// <param name="ActivityPointType">The activity point type the activity point price is paid in.</param>
-    /// <param name="Giftable">Whether the offer can be bought as a gift.</param>
-    /// <param name="Products">The products the offer contains.</param>
-    /// <param name="ClubLevel">The club level required to buy the offer.</param>
-    /// <param name="BundlePurchaseAllowed">Whether several of the offer can be bought at once.</param>
-    /// <param name="RoomItems">The IDs of the floor items the hotel created for the purchase, or <see langword="null"/> when the message carries no purchase results.</param>
-    /// <param name="WallItems">The IDs of the wall items the hotel created for the purchase, or <see langword="null"/> when the message carries no purchase results.</param>
+    /// <param name="offerId">The ID of the catalog offer.</param>
+    /// <param name="localizationId">The localization key of the offer's name.</param>
+    /// <param name="isRent">Whether the offer is a rental.</param>
+    /// <param name="priceInCredits">The price in credits.</param>
+    /// <param name="priceInActivityPoints">The price in activity points.</param>
+    /// <param name="activityPointType">The activity point type the activity point price is paid in.</param>
+    /// <param name="giftable">Whether the offer can be bought as a gift.</param>
+    /// <param name="products">The products the offer contains.</param>
+    /// <param name="clubLevel">The club level required to buy the offer.</param>
+    /// <param name="bundlePurchaseAllowed">Whether several of the offer can be bought at once.</param>
+    /// <param name="roomItems">The IDs of the floor items the hotel created for the purchase, or <see langword="null"/> when the message carries no purchase results.</param>
+    /// <param name="wallItems">The IDs of the wall items the hotel created for the purchase, or <see langword="null"/> when the message carries no purchase results.</param>
     public PurchaseOffer(
-        int OfferId,
-        string LocalizationId,
-        bool IsRent,
-        int PriceInCredits,
-        int PriceInActivityPoints,
-        int ActivityPointType,
-        bool Giftable,
-        IReadOnlyList<CatalogProduct> Products,
-        int ClubLevel,
-        bool BundlePurchaseAllowed,
-        IReadOnlyList<Id>? RoomItems = null,
-        IReadOnlyList<Id>? WallItems = null)
+        int offerId,
+        string localizationId,
+        bool isRent,
+        int priceInCredits,
+        int priceInActivityPoints,
+        int activityPointType,
+        bool giftable,
+        IReadOnlyList<CatalogProduct> products,
+        int clubLevel,
+        bool bundlePurchaseAllowed,
+        IReadOnlyList<Id>? roomItems = null,
+        IReadOnlyList<Id>? wallItems = null)
     {
-        this.OfferId = OfferId;
-        this.LocalizationId = LocalizationId;
-        this.IsRent = IsRent;
-        this.PriceInCredits = PriceInCredits;
-        this.PriceInActivityPoints = PriceInActivityPoints;
-        this.ActivityPointType = ActivityPointType;
-        this.Giftable = Giftable;
-        this.Products = Products;
-        this.ClubLevel = ClubLevel;
-        this.BundlePurchaseAllowed = BundlePurchaseAllowed;
-        this.RoomItems = RoomItems;
-        this.WallItems = WallItems;
+        OfferId = offerId;
+        LocalizationId = localizationId;
+        IsRent = isRent;
+        PriceInCredits = priceInCredits;
+        PriceInActivityPoints = priceInActivityPoints;
+        ActivityPointType = activityPointType;
+        Giftable = giftable;
+        Products = products;
+        ClubLevel = clubLevel;
+        BundlePurchaseAllowed = bundlePurchaseAllowed;
+        RoomItems = roomItems;
+        WallItems = wallItems;
     }
 
     /// <summary>Gets the ID of the catalog offer.</summary>
@@ -129,80 +129,80 @@ public sealed record PurchaseOffer : IParserComposer<PurchaseOffer>
         CatalogPurchaseWire.ComposeOffer(value, in p);
 
     /// <summary>Deconstructs the offer into its values.</summary>
-    /// <param name="OfferId">The ID of the catalog offer.</param>
-    /// <param name="LocalizationId">The localization key of the offer's name.</param>
-    /// <param name="IsRent">Whether the offer is a rental.</param>
-    /// <param name="PriceInCredits">The price in credits.</param>
-    /// <param name="PriceInActivityPoints">The price in activity points.</param>
-    /// <param name="ActivityPointType">The activity point type the activity point price is paid in.</param>
-    /// <param name="Giftable">Whether the offer can be bought as a gift.</param>
-    /// <param name="Products">The products the offer contains.</param>
-    /// <param name="ClubLevel">The club level required to buy the offer.</param>
-    /// <param name="BundlePurchaseAllowed">Whether several of the offer can be bought at once.</param>
+    /// <param name="offerId">The ID of the catalog offer.</param>
+    /// <param name="localizationId">The localization key of the offer's name.</param>
+    /// <param name="isRent">Whether the offer is a rental.</param>
+    /// <param name="priceInCredits">The price in credits.</param>
+    /// <param name="priceInActivityPoints">The price in activity points.</param>
+    /// <param name="activityPointType">The activity point type the activity point price is paid in.</param>
+    /// <param name="giftable">Whether the offer can be bought as a gift.</param>
+    /// <param name="products">The products the offer contains.</param>
+    /// <param name="clubLevel">The club level required to buy the offer.</param>
+    /// <param name="bundlePurchaseAllowed">Whether several of the offer can be bought at once.</param>
     public void Deconstruct(
-        out int OfferId,
-        out string LocalizationId,
-        out bool IsRent,
-        out int PriceInCredits,
-        out int PriceInActivityPoints,
-        out int ActivityPointType,
-        out bool Giftable,
-        out IReadOnlyList<CatalogProduct> Products,
-        out int ClubLevel,
-        out bool BundlePurchaseAllowed)
+        out int offerId,
+        out string localizationId,
+        out bool isRent,
+        out int priceInCredits,
+        out int priceInActivityPoints,
+        out int activityPointType,
+        out bool giftable,
+        out IReadOnlyList<CatalogProduct> products,
+        out int clubLevel,
+        out bool bundlePurchaseAllowed)
     {
-        OfferId = this.OfferId;
-        LocalizationId = this.LocalizationId;
-        IsRent = this.IsRent;
-        PriceInCredits = this.PriceInCredits;
-        PriceInActivityPoints = this.PriceInActivityPoints;
-        ActivityPointType = this.ActivityPointType;
-        Giftable = this.Giftable;
-        Products = this.Products;
-        ClubLevel = this.ClubLevel;
-        BundlePurchaseAllowed = this.BundlePurchaseAllowed;
+        offerId = OfferId;
+        localizationId = LocalizationId;
+        isRent = IsRent;
+        priceInCredits = PriceInCredits;
+        priceInActivityPoints = PriceInActivityPoints;
+        activityPointType = ActivityPointType;
+        giftable = Giftable;
+        products = Products;
+        clubLevel = ClubLevel;
+        bundlePurchaseAllowed = BundlePurchaseAllowed;
     }
 
     /// <summary>Deconstructs the offer into its values, including the purchase results.</summary>
-    /// <param name="OfferId">The ID of the catalog offer.</param>
-    /// <param name="LocalizationId">The localization key of the offer's name.</param>
-    /// <param name="IsRent">Whether the offer is a rental.</param>
-    /// <param name="PriceInCredits">The price in credits.</param>
-    /// <param name="PriceInActivityPoints">The price in activity points.</param>
-    /// <param name="ActivityPointType">The activity point type the activity point price is paid in.</param>
-    /// <param name="Giftable">Whether the offer can be bought as a gift.</param>
-    /// <param name="Products">The products the offer contains.</param>
-    /// <param name="ClubLevel">The club level required to buy the offer.</param>
-    /// <param name="BundlePurchaseAllowed">Whether several of the offer can be bought at once.</param>
-    /// <param name="RoomItems">The IDs of the floor items the hotel created for the purchase.</param>
-    /// <param name="WallItems">The IDs of the wall items the hotel created for the purchase.</param>
+    /// <param name="offerId">The ID of the catalog offer.</param>
+    /// <param name="localizationId">The localization key of the offer's name.</param>
+    /// <param name="isRent">Whether the offer is a rental.</param>
+    /// <param name="priceInCredits">The price in credits.</param>
+    /// <param name="priceInActivityPoints">The price in activity points.</param>
+    /// <param name="activityPointType">The activity point type the activity point price is paid in.</param>
+    /// <param name="giftable">Whether the offer can be bought as a gift.</param>
+    /// <param name="products">The products the offer contains.</param>
+    /// <param name="clubLevel">The club level required to buy the offer.</param>
+    /// <param name="bundlePurchaseAllowed">Whether several of the offer can be bought at once.</param>
+    /// <param name="roomItems">The IDs of the floor items the hotel created for the purchase.</param>
+    /// <param name="wallItems">The IDs of the wall items the hotel created for the purchase.</param>
     public void Deconstruct(
-        out int OfferId,
-        out string LocalizationId,
-        out bool IsRent,
-        out int PriceInCredits,
-        out int PriceInActivityPoints,
-        out int ActivityPointType,
-        out bool Giftable,
-        out IReadOnlyList<CatalogProduct> Products,
-        out int ClubLevel,
-        out bool BundlePurchaseAllowed,
-        out IReadOnlyList<Id>? RoomItems,
-        out IReadOnlyList<Id>? WallItems)
+        out int offerId,
+        out string localizationId,
+        out bool isRent,
+        out int priceInCredits,
+        out int priceInActivityPoints,
+        out int activityPointType,
+        out bool giftable,
+        out IReadOnlyList<CatalogProduct> products,
+        out int clubLevel,
+        out bool bundlePurchaseAllowed,
+        out IReadOnlyList<Id>? roomItems,
+        out IReadOnlyList<Id>? wallItems)
     {
         Deconstruct(
-            out OfferId,
-            out LocalizationId,
-            out IsRent,
-            out PriceInCredits,
-            out PriceInActivityPoints,
-            out ActivityPointType,
-            out Giftable,
-            out Products,
-            out ClubLevel,
-            out BundlePurchaseAllowed);
-        RoomItems = this.RoomItems;
-        WallItems = this.WallItems;
+            out offerId,
+            out localizationId,
+            out isRent,
+            out priceInCredits,
+            out priceInActivityPoints,
+            out activityPointType,
+            out giftable,
+            out products,
+            out clubLevel,
+            out bundlePurchaseAllowed);
+        roomItems = RoomItems;
+        wallItems = WallItems;
     }
 }
 
@@ -217,10 +217,10 @@ public sealed record PurchaseOK : IParserComposer<PurchaseOK>
     private PurchaseOffer _offer = null!;
 
     /// <summary>Initializes a new instance of the <see cref="PurchaseOK"/> class.</summary>
-    /// <param name="Offer">The offer that was bought.</param>
-    public PurchaseOK(PurchaseOffer Offer)
+    /// <param name="offer">The offer that was bought.</param>
+    public PurchaseOK(PurchaseOffer offer)
     {
-        this.Offer = Offer;
+        Offer = offer;
     }
 
     /// <summary>Gets the offer that was bought.</summary>
@@ -247,10 +247,10 @@ public sealed record PurchaseOK : IParserComposer<PurchaseOK>
         CatalogPurchaseWire.ComposeOffer(value.Offer, in p);
 
     /// <summary>Deconstructs the message into its values.</summary>
-    /// <param name="Offer">The offer that was bought.</param>
-    public void Deconstruct(out PurchaseOffer Offer)
+    /// <param name="offer">The offer that was bought.</param>
+    public void Deconstruct(out PurchaseOffer offer)
     {
-        Offer = this.Offer;
+        offer = Offer;
     }
 }
 
@@ -273,7 +273,7 @@ internal static class CatalogPurchaseWire
     {
         var strings = NewStringBudget();
         int offer_id = p.ReadInt();
-        int count_width = CatalogWire.CountWidth(p.Client);
+        int count_width = CatalogWire.CountWidth;
         int offer_tail = FlashOfferTailBytes;
         int trailing_after_localization =
             sizeof(byte) + sizeof(int) * 3 + sizeof(byte) + count_width + offer_tail;
@@ -489,7 +489,7 @@ internal static class CatalogPurchaseWire
         strings.Require(value.ExtraParam, nameof(CatalogProduct.ExtraParam), in p);
         RequireLimitedFields(value);
         if (value.ProductType == CatalogProduct.TypeBadge)
-            RequireBadgeFields(value, "Flash");
+            RequireBadgeFields(value);
     }
 
     private static void WriteFlashProduct(CatalogProduct value, in PacketWriter p)
@@ -525,7 +525,7 @@ internal static class CatalogPurchaseWire
         }
     }
 
-    private static void RequireBadgeFields(CatalogProduct value, string client)
+    private static void RequireBadgeFields(CatalogProduct value)
     {
         if (value.FurniClassId != 0 ||
             value.ProductCount != 1 ||
@@ -534,7 +534,7 @@ internal static class CatalogPurchaseWire
             value.UniqueLimitedItemsLeft != 0)
         {
             throw new InvalidDataException(
-                $"{client} badge products contain fields absent from the wire layout.");
+                "Flash badge products contain fields absent from the wire layout.");
         }
     }
 

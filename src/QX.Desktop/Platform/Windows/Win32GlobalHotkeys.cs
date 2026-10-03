@@ -11,7 +11,7 @@ sealed class Win32GlobalHotkeys : IGlobalHotkeys
 {
     public bool IsSupported => true;
 
-    public async Task<IDisposable?> TryRegisterAsync(KeyChord chord, Action pressed, CancellationToken cancellation_token = default)
+    public async Task<IDisposable?> TryRegisterAsync(KeyChord chord, Action pressed, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(pressed);
         if (chord.Modifiers.HasFlag(ChordModifiers.Primary))
@@ -25,7 +25,7 @@ sealed class Win32GlobalHotkeys : IGlobalHotkeys
             return null;
         }
         var registration = new HotkeyRegistration(HotkeyMap.Modifiers(chord.Modifiers), key, pressed);
-        if (await registration.StartAsync(cancellation_token))
+        if (await registration.StartAsync(cancellationToken))
             return registration;
         registration.Dispose();
         return null;

@@ -109,7 +109,7 @@ public sealed partial class LogViewModel : PageViewModel
         return true;
     }
 
-    protected override Task OnActivatedAsync(CancellationToken cancellation_token)
+    protected override Task OnActivatedAsync(CancellationToken cancellationToken)
     {
         Refresh(0);
         if (IsFollowing)

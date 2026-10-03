@@ -262,11 +262,11 @@ public static class SwfLoader
     }
 
     public static SwfInfo LoadDecryptedHarman(
-        string decrypted_path,
-        string original_path)
+        string decryptedPath,
+        string originalPath)
     {
-        byte[] decrypted = ReadContainer(decrypted_path);
-        byte[] original = ReadContainer(original_path);
+        byte[] decrypted = ReadContainer(decryptedPath);
+        byte[] original = ReadContainer(originalPath);
         return LoadDecryptedHarmanOwned(decrypted, original);
     }
 

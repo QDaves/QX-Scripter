@@ -6,23 +6,19 @@ namespace Qx.Messages;
 /// <summary>Provides methods that read big-endian values from a packet body and advance a shared position.</summary>
 /// <remarks>
 /// Every read throws <see cref="IndexOutOfRangeException"/> when it would pass the end of the body.
-/// Values whose format depends on the client, such as floats, IDs and array lengths, require
-/// <see cref="ClientType.Flash"/>.
 /// </remarks>
 /// <param name="packet">The packet to read from.</param>
 /// <param name="pos">A reference to the position to read from, which advances as values are read.</param>
 /// <param name="context">The parser context, or <see langword="null"/> for none.</param>
 public readonly ref struct PacketReader(IPacket packet, ref int pos, IParserContext? context = null)
 {
-    private readonly IPacket Packet = RequireSupportedClient(packet);
+    private readonly IPacket Packet = packet ?? throw new ArgumentNullException(nameof(packet));
     /// <summary>A reference to the current read position.</summary>
     public readonly ref int Pos = ref pos;
     /// <summary>Gets the parser context, or <see langword="null"/> when none was given.</summary>
     public IParserContext? Context => context;
     /// <summary>Gets the header of the packet.</summary>
     public Header Header => Packet.Header;
-    /// <summary>Gets the client type of the packet.</summary>
-    public ClientType Client => Packet.Client;
     /// <summary>Gets the bytes of the packet body.</summary>
     public ReadOnlySpan<byte> Span => Packet.Buffer.Span;
     /// <summary>Gets the length of the packet body in bytes.</summary>
@@ -64,7 +60,6 @@ public readonly ref struct PacketReader(IPacket packet, ref int pos, IParserCont
 
     /// <summary>Reads an array length followed by that many 16-bit big-endian signed integers.</summary>
     /// <returns>The values that were read.</returns>
-    /// <exception cref="UnsupportedClientException">Thrown when the packet's client type is not <see cref="ClientType.Flash"/>.</exception>
     public short[] ReadShortArray()
     {
         short[] array = new short[ReadLength()];
@@ -79,7 +74,6 @@ public readonly ref struct PacketReader(IPacket packet, ref int pos, IParserCont
 
     /// <summary>Reads an array length followed by that many 32-bit big-endian signed integers.</summary>
     /// <returns>The values that were read.</returns>
-    /// <exception cref="UnsupportedClientException">Thrown when the packet's client type is not <see cref="ClientType.Flash"/>.</exception>
     public int[] ReadIntArray()
     {
         int[] array = new int[ReadLength()];
@@ -90,13 +84,8 @@ public readonly ref struct PacketReader(IPacket packet, ref int pos, IParserCont
 
     /// <summary>Reads a float, which Flash sends as a string.</summary>
     /// <returns>The value that was read, parsed with the invariant culture.</returns>
-    /// <exception cref="UnsupportedClientException">Thrown when the packet's client type is not <see cref="ClientType.Flash"/>.</exception>
     /// <exception cref="FormatException">Thrown when the string is not a valid number.</exception>
-    public float ReadFloat() => Client switch
-    {
-        ClientType.Flash => (float)(FloatString)ReadString(),
-        _ => throw new UnsupportedClientException(Client)
-    };
+    public float ReadFloat() => (float)(FloatString)ReadString();
 
     /// <summary>Reads a 32-bit big-endian IEEE 754 float.</summary>
     /// <returns>The value that was read.</returns>
@@ -116,7 +105,6 @@ public readonly ref struct PacketReader(IPacket packet, ref int pos, IParserCont
 
     /// <summary>Reads an array length followed by that many strings.</summary>
     /// <returns>The values that were read.</returns>
-    /// <exception cref="UnsupportedClientException">Thrown when the packet's client type is not <see cref="ClientType.Flash"/>.</exception>
     public string[] ReadStringArray()
     {
         string[] array = new string[ReadLength()];
@@ -127,16 +115,10 @@ public readonly ref struct PacketReader(IPacket packet, ref int pos, IParserCont
 
     /// <summary>Reads an ID, which Flash sends as a 32-bit big-endian signed integer.</summary>
     /// <returns>The value that was read.</returns>
-    /// <exception cref="UnsupportedClientException">Thrown when the packet's client type is not <see cref="ClientType.Flash"/>.</exception>
-    public Id ReadId() => Client switch
-    {
-        ClientType.Flash => ReadInt(),
-        _ => throw new UnsupportedClientException(Client),
-    };
+    public Id ReadId() => ReadInt();
 
     /// <summary>Reads an array length followed by that many IDs.</summary>
     /// <returns>The values that were read.</returns>
-    /// <exception cref="UnsupportedClientException">Thrown when the packet's client type is not <see cref="ClientType.Flash"/>.</exception>
     public Id[] ReadIdArray()
     {
         Id[] array = new Id[ReadLength()];
@@ -147,13 +129,8 @@ public readonly ref struct PacketReader(IPacket packet, ref int pos, IParserCont
 
     /// <summary>Reads an array length, which Flash sends as a 32-bit big-endian signed integer.</summary>
     /// <returns>The value that was read.</returns>
-    /// <exception cref="UnsupportedClientException">Thrown when the packet's client type is not <see cref="ClientType.Flash"/>.</exception>
     /// <exception cref="OverflowException">Thrown when the value is negative or greater than 65535.</exception>
-    public Length ReadLength() => Client switch
-    {
-        ClientType.Flash => (Length)ReadInt(),
-        _ => throw new UnsupportedClientException(Client),
-    };
+    public Length ReadLength() => (Length)ReadInt();
 
     /// <summary>Reads a value of a type that implements <see cref="IParser{T}"/>.</summary>
     /// <typeparam name="T">The type to read.</typeparam>
@@ -163,20 +140,11 @@ public readonly ref struct PacketReader(IPacket packet, ref int pos, IParserCont
     /// <summary>Reads an array length followed by that many values of a type that implements <see cref="IParser{T}"/>.</summary>
     /// <typeparam name="T">The type to read.</typeparam>
     /// <returns>The values that were read.</returns>
-    /// <exception cref="UnsupportedClientException">Thrown when the packet's client type is not <see cref="ClientType.Flash"/>.</exception>
     public T[] ParseArray<T>() where T : IParser<T>
     {
         T[] array = new T[ReadLength()];
         for (int i = 0; i < array.Length; i++)
             array[i] = Parse<T>();
         return array;
-    }
-
-    private static IPacket RequireSupportedClient(IPacket packet)
-    {
-        ArgumentNullException.ThrowIfNull(packet);
-        if (packet.Client != ClientType.None && !ClientTypes.IsSupported(packet.Client))
-            throw new UnsupportedClientException(packet.Client);
-        return packet;
     }
 }

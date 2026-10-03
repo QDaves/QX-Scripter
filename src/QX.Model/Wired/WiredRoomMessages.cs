@@ -206,8 +206,8 @@ public sealed record WiredRoomStats(WiredRoomStatsData RoomStats) : IParserCompo
 // §_-Am§/WiredLogEntry — id and timestamp are longs (8 bytes); logLevel/logSource are single bytes.
 /// <summary>Represents one entry of the wired room log.</summary>
 /// <param name="Id">The id of the entry, sent as a 64 bit integer.</param>
-/// <param name="LogLevel">The log level code, sent as a single byte.</param>
-/// <param name="LogSource">The log source code, sent as a single byte.</param>
+/// <param name="LogLevel">The log level code, sent as a signed byte.</param>
+/// <param name="LogSource">The log source code, sent as a signed byte.</param>
 /// <param name="LogMessage">The log message.</param>
 /// <param name="Timestamp">The time of the entry as a 64 bit value sent by the hotel.</param>
 /// <param name="TimestampStr">The time of the entry as text formatted by the hotel.</param>
@@ -223,8 +223,8 @@ public sealed record WiredLogEntry(
     /// <param name="p">The packet reader.</param>
     public static WiredLogEntry Parse(in PacketReader p) => new(
         p.ReadLong(),
-        p.ReadByte(),
-        p.ReadByte(),
+        unchecked((sbyte)p.ReadByte()),
+        unchecked((sbyte)p.ReadByte()),
         p.ReadString(),
         p.ReadLong(),
         p.ReadString());
@@ -233,8 +233,8 @@ public sealed record WiredLogEntry(
     /// <param name="p">The packet writer.</param>
     public void Compose(in PacketWriter p)
     {
-        byte log_level = checked((byte)LogLevel);
-        byte log_source = checked((byte)LogSource);
+        byte log_level = unchecked((byte)checked((sbyte)LogLevel));
+        byte log_source = unchecked((byte)checked((sbyte)LogSource));
         WiredWire.RequireString(LogMessage, nameof(LogMessage), in p);
         WiredWire.RequireString(TimestampStr, nameof(TimestampStr), in p);
         p.WriteLong(Id);
@@ -254,8 +254,8 @@ public sealed record WiredLogEntry(
 /// <param name="CurrentPage">The number of the page.</param>
 /// <param name="Amount">The page size the hotel reports.</param>
 /// <param name="Elements">The entries on the page.</param>
-/// <param name="LogLevelFilter">The log level filter the page was built with, sent as a single byte, or <see langword="null"/> when none was sent.</param>
-/// <param name="LogSourceFilter">The log source filter the page was built with, sent as a single byte, or <see langword="null"/> when none was sent.</param>
+/// <param name="LogLevelFilter">The log level filter the page was built with, sent as a signed byte, or <see langword="null"/> when none was sent.</param>
+/// <param name="LogSourceFilter">The log source filter the page was built with, sent as a signed byte, or <see langword="null"/> when none was sent.</param>
 /// <param name="Query">The text filter the page was built with, or <see langword="null"/> when none was sent.</param>
 public sealed record WiredLogPage(
     int TotalEntries,
@@ -278,8 +278,8 @@ public sealed record WiredLogPage(
         var elements = new WiredLogEntry[n];
         for (int i = 0; i < n; i++)
             elements[i] = p.Parse<WiredLogEntry>();
-        int? logLevelFilter = p.ReadBool() ? p.ReadByte() : null;
-        int? logSourceFilter = p.ReadBool() ? p.ReadByte() : null;
+        int? logLevelFilter = p.ReadBool() ? unchecked((sbyte)p.ReadByte()) : null;
+        int? logSourceFilter = p.ReadBool() ? unchecked((sbyte)p.ReadByte()) : null;
         string? query = p.ReadBool() ? p.ReadString() : null;
         return new WiredLogPage(totalEntries, currentPage, amount, elements, logLevelFilter, logSourceFilter, query);
     }
@@ -289,10 +289,10 @@ public sealed record WiredLogPage(
     public void Compose(in PacketWriter p)
     {
         byte? log_level_filter = LogLevelFilter is int log_level
-            ? checked((byte)log_level)
+            ? unchecked((byte)checked((sbyte)log_level))
             : null;
         byte? log_source_filter = LogSourceFilter is int log_source
-            ? checked((byte)log_source)
+            ? unchecked((byte)checked((sbyte)log_source))
             : null;
         p.WriteInt(TotalEntries);
         p.WriteInt(CurrentPage);
@@ -342,16 +342,16 @@ public sealed record WiredRoomLogs(WiredLogPage Page) : IParserComposer<WiredRoo
     {
         ArgumentNullException.ThrowIfNull(page.Elements);
         if (page.LogLevelFilter is int log_level_filter)
-            _ = checked((byte)log_level_filter);
+            _ = checked((sbyte)log_level_filter);
         if (page.LogSourceFilter is int log_source_filter)
-            _ = checked((byte)log_source_filter);
+            _ = checked((sbyte)log_source_filter);
         if (page.Query is not null)
             WiredWire.RequireString(page.Query, nameof(page.Query), in p);
         foreach (WiredLogEntry entry in page.Elements)
         {
             ArgumentNullException.ThrowIfNull(entry);
-            _ = checked((byte)entry.LogLevel);
-            _ = checked((byte)entry.LogSource);
+            _ = checked((sbyte)entry.LogLevel);
+            _ = checked((sbyte)entry.LogSource);
             WiredWire.RequireString(entry.LogMessage, nameof(entry.LogMessage), in p);
             WiredWire.RequireString(entry.TimestampStr, nameof(entry.TimestampStr), in p);
         }

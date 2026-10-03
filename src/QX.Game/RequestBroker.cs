@@ -47,9 +47,9 @@ internal sealed class SystemRequestClock : IRequestClock
 public sealed class RequestBroker : GameStateManager
 {
     private readonly IRequestClock _clock;
-    private readonly ConcurrentDictionary<WireKey, SemaphoreSlim> _response_locks = [];
-    private readonly ConcurrentDictionary<WireKey, SemaphoreSlim> _outgoing_locks = [];
-    private readonly ConcurrentDictionary<WireKey, long> _last_request_ticks = [];
+    private readonly ConcurrentDictionary<Header, SemaphoreSlim> _response_locks = [];
+    private readonly ConcurrentDictionary<Header, SemaphoreSlim> _outgoing_locks = [];
+    private readonly ConcurrentDictionary<Header, long> _last_request_ticks = [];
     private readonly object _connection_sync = new();
     private CancellationTokenSource _connection_closed = new();
     private bool _connection_unavailable;
@@ -575,12 +575,12 @@ public sealed class RequestBroker : GameStateManager
         ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(timeout_ms, 0);
         ArgumentOutOfRangeException.ThrowIfLessThan(max_attempts, 1);
 
-        WireKey outgoing_key = outgoing_message_key.IsEmpty
-            ? ResolveWireKey(Direction.Out, out_name)
-            : ResolveWireKey(Direction.Out, outgoing_message_key);
-        WireKey incoming_key = incoming_message_key.IsEmpty
-            ? ResolveWireKey(Direction.In, in_name)
-            : ResolveWireKey(Direction.In, incoming_message_key);
+        Header outgoing_header = outgoing_message_key.IsEmpty
+            ? ResolveHeader(MessageDirection.Out, out_name)
+            : ResolveHeader(MessageDirection.Out, outgoing_message_key);
+        Header incoming_header = incoming_message_key.IsEmpty
+            ? ResolveHeader(MessageDirection.In, in_name)
+            : ResolveHeader(MessageDirection.In, incoming_message_key);
         long started = _clock.Timestamp();
         CancellationToken connection_closed;
         lock (_connection_sync)
@@ -598,7 +598,7 @@ public sealed class RequestBroker : GameStateManager
                 timeout_cancellation.Token);
         CancellationToken request_token = request_cancellation.Token;
         SemaphoreSlim response_lock = _response_locks.GetOrAdd(
-            incoming_key,
+            incoming_header,
             static _ => new SemaphoreSlim(1, 1));
         try
         {
@@ -643,14 +643,14 @@ public sealed class RequestBroker : GameStateManager
                     throw new RequestTimeoutException(out_name, in_name, timeout_ms);
                 }
                 SemaphoreSlim outgoing_lock = _outgoing_locks.GetOrAdd(
-                    outgoing_key,
+                    outgoing_header,
                     static _ => new SemaphoreSlim(1, 1));
                 await outgoing_lock.WaitAsync(request_token);
                 var reservation = new OutgoingReservation(outgoing_lock);
                 Task<TResponse> response;
                 try
                 {
-                    await WaitForRequestInterval(outgoing_key, request_token);
+                    await WaitForRequestInterval(outgoing_header, request_token);
                     int attempt_timeout_ms = AttemptTimeout(
                         started,
                         timeout_ms,
@@ -660,8 +660,8 @@ public sealed class RequestBroker : GameStateManager
                     response = AwaitSingleResponse<TResponse>(
                         out_name,
                         in_name,
-                        outgoing_key,
-                        incoming_key.Header,
+                        outgoing_header,
+                        incoming_header,
                         send,
                         match,
                         attempt_timeout_ms,
@@ -714,7 +714,7 @@ public sealed class RequestBroker : GameStateManager
     private async Task<TResponse> AwaitSingleResponse<TResponse>(
         string out_name,
         string in_name,
-        WireKey outgoing_key,
+        Header outgoing_header,
         Header incoming_header,
         Action<CancellationToken> send,
         Func<TResponse, bool>? match,
@@ -796,16 +796,16 @@ public sealed class RequestBroker : GameStateManager
             }
             cancellation_token.ThrowIfCancellationRequested();
             send(cancellation_token);
-            _last_request_ticks[outgoing_key] = _clock.Timestamp();
+            _last_request_ticks[outgoing_header] = _clock.Timestamp();
         }
         reservation.Dispose();
         return await completion.Task;
     }
 
-    private async Task WaitForRequestInterval(WireKey outgoing_key, CancellationToken cancellation_token)
+    private async Task WaitForRequestInterval(Header outgoing_header, CancellationToken cancellation_token)
     {
         if (MinimumRequestInterval <= TimeSpan.Zero ||
-            !_last_request_ticks.TryGetValue(outgoing_key, out long previous))
+            !_last_request_ticks.TryGetValue(outgoing_header, out long previous))
         {
             return;
         }
@@ -876,18 +876,15 @@ public sealed class RequestBroker : GameStateManager
     private void SendRequest(MessageKey key, object[] values) =>
         Send(key, values);
 
-    private WireKey ResolveWireKey(Direction direction, string name)
+    private Header ResolveHeader(MessageDirection direction, string name)
     {
-        var identifier = new Identifier(ClientType.None, direction, name);
+        var identifier = new Identifier(direction, name);
         if (!Interceptor.Messages.TryGetHeader(identifier, out Header header))
             throw new InvalidOperationException($"Unknown {direction.ToString().ToLowerInvariant()} message '{name}'.");
-        ClientType client = Interceptor.Session?.Client ?? Interceptor.Messages.ActiveClient;
-        if (client is ClientType.None)
-            client = ClientType.Flash;
-        return new WireKey(client, header);
+        return header;
     }
 
-    private WireKey ResolveWireKey(Direction direction, MessageKey key)
+    private Header ResolveHeader(MessageDirection direction, MessageKey key)
     {
         if (key.IsEmpty ||
             !Interceptor.Messages.TryGetHeader(key, out Header header) ||
@@ -896,10 +893,7 @@ public sealed class RequestBroker : GameStateManager
             throw new InvalidOperationException(
                 $"Unknown {direction.ToString().ToLowerInvariant()} message '{key.Value}'.");
         }
-        ClientType client = Interceptor.Session?.Client ?? Interceptor.Messages.ActiveClient;
-        if (client is ClientType.None)
-            client = ClientType.Flash;
-        return new WireKey(client, header);
+        return header;
     }
 
     /// <inheritdoc/>
@@ -918,18 +912,16 @@ public sealed class RequestBroker : GameStateManager
     }
 
     /// <inheritdoc/>
-    public override void Dispose()
+    protected internal override void Close()
     {
         if (Interlocked.Exchange(ref _dispose_state, 1) != 0)
             return;
-        base.Dispose();
+        base.Close();
         lock (_connection_sync)
             _connection_closed.Dispose();
         _response_locks.Clear();
         _outgoing_locks.Clear();
     }
-
-    private readonly record struct WireKey(ClientType Client, Header Header);
 
     private sealed class OutgoingReservation(SemaphoreSlim outgoing_lock) : IDisposable
     {

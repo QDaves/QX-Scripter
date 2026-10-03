@@ -1,5 +1,4 @@
 using Qx.Model;
-using Qx.Model.Polls;
 
 namespace Qx.Game.Application;
 
@@ -20,7 +19,7 @@ public sealed record PollStateRequest;
 /// the poll contents, which arrive later as a <see cref="PollChangeKind.Contents"/> change.
 /// </remarks>
 /// <param name="PollId">
-/// The id of the poll taken from the offer. Must be greater than 0 and, on Flash, fit in a 32-bit integer.
+/// The id of the poll taken from the offer. Must be greater than 0 and fit in a 32-bit integer.
 /// </param>
 /// <param name="ExpectedSessionGeneration">
 /// The session generation the request must run in, or <see langword="null"/> to use the active session.
@@ -59,7 +58,7 @@ public sealed record PollContentsGetRequest(
 /// response, and the hotel sends none.
 /// </remarks>
 /// <param name="PollId">
-/// The id of the poll taken from the offer. Must be greater than 0 and, on Flash, fit in a 32-bit integer.
+/// The id of the poll taken from the offer. Must be greater than 0 and fit in a 32-bit integer.
 /// </param>
 /// <param name="ExpectedSessionGeneration">
 /// The session generation the request must run in, or <see langword="null"/> to use the active session.
@@ -73,7 +72,7 @@ public sealed record PollRejectRequest(
 /// Represents the answers to one poll question.
 /// </summary>
 /// <param name="QuestionId">
-/// The id of the question. Must be greater than 0 and, on Flash, fit in a 32-bit integer.
+/// The id of the question. Must be greater than 0 and fit in a 32-bit integer.
 /// </param>
 /// <param name="Answers">
 /// The answers, at most 500, each at most 65535 UTF-8 bytes. For a choice question an answer is the
@@ -87,13 +86,13 @@ public sealed record PollResponseInput(
 /// Represents a request to send answers to a poll.
 /// </summary>
 /// <remarks>
-/// Used by <see cref="ApplicationMemberIds.PollsAnswer"/>. On Flash one message is sent per response,
-/// and other clients send every response in one message. Nothing waits for a response.
+/// Used by <see cref="ApplicationMemberIds.PollsAnswer"/>. One message is sent per response. Nothing waits
+/// for a response.
 /// </remarks>
 /// <param name="PollId">
-/// The id of the poll. Must be greater than 0 and, on Flash, fit in a 32-bit integer.
+/// The id of the poll. Must be greater than 0 and fit in a 32-bit integer.
 /// </param>
-/// <param name="Responses">The responses to send, at most 500. Flash requires at least one.</param>
+/// <param name="Responses">The responses to send, at least one and at most 500.</param>
 /// <param name="ExpectedSessionGeneration">
 /// The session generation the request must run in, or <see langword="null"/> to use the active session.
 /// Must not be negative.
@@ -111,13 +110,11 @@ public sealed record PollAnswerRequest(
 /// and <see cref="ApplicationMemberIds.PollsAnswer"/>. It confirms the messages were sent, not that the
 /// hotel accepted them.
 /// </remarks>
-/// <param name="Client">The client type of the hotel session the request was sent on.</param>
 /// <param name="SessionGeneration">The state generation of the hotel session the request was sent in.</param>
 /// <param name="PollId">The id of the poll.</param>
 /// <param name="MessagesDispatched">The number of messages sent.</param>
 /// <param name="DispatchedAtUtc">The time the request was sent.</param>
 public sealed record PollDispatchReceipt(
-    ClientType Client,
     long SessionGeneration,
     Id PollId,
     int MessagesDispatched,
@@ -207,10 +204,6 @@ public sealed record PollContentsView(
 /// ones replace them or the hotel session changes.
 /// </remarks>
 /// <param name="Connected">Whether the state belongs to the active hotel session.</param>
-/// <param name="Client">
-/// The client type of the hotel session, or <see langword="null"/> when <paramref name="Connected"/> is
-/// <see langword="false"/>.
-/// </param>
 /// <param name="SessionGeneration">The state generation of the hotel session the state belongs to.</param>
 /// <param name="Revision">
 /// The poll state revision, increased when an offer, contents or an error is received and when the state resets.
@@ -228,7 +221,6 @@ public sealed record PollContentsView(
 /// </param>
 public sealed record PollStateView(
     bool Connected,
-    ClientType? Client,
     long SessionGeneration,
     long Revision,
     PollOfferView? Offer,

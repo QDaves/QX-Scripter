@@ -41,7 +41,6 @@ internal sealed partial class QuestApplication
         bool connected = Connected(state);
         return new QuestStateView(
             connected,
-            connected ? state.Session!.Client : null,
             state.SessionGeneration,
             state.Revision,
             state.AvailableRevision,
@@ -70,7 +69,6 @@ internal sealed partial class QuestApplication
         bool connected = Connected(state);
         return new QuestEntryPage(
             connected,
-            connected ? state.Session!.Client : null,
             state.SessionGeneration,
             state.Revision,
             state.AvailableRevision,

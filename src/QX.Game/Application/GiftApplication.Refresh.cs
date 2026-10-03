@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using Qx.Game.Protocol;
 using Qx.Model;
 using Qx.Model.Messages.Incoming;
+using Qx.Model.Messages.Outgoing;
 
 namespace Qx.Game.Application;
 
@@ -82,7 +83,6 @@ internal sealed partial class GiftApplication
                 throw;
             }
             return new GiftRefreshResult(
-                scope.Session.Client,
                 scope.SessionGeneration,
                 time_provider.GetUtcNow(),
                 wrapping_commit.ObservedAtUtc,
@@ -204,7 +204,6 @@ internal sealed partial class GiftApplication
             "offer-giftability");
         IsOfferGiftable value = (IsOfferGiftable)observed.Update.Value!;
         return new GiftOfferGiftabilityRefreshResult(
-            scope.Session.Client,
             scope.SessionGeneration,
             observed.Update.State.Revision,
             observed.Update.State.OfferGiftabilityRevision,
@@ -537,7 +536,7 @@ internal sealed partial class GiftApplication
                 new GiftChanged(
                     ChangeKind(update.Kind),
                     time_provider.GetUtcNow(),
-                    update.State.Session?.Client,
+                    update.State.Session is not null,
                     update.State.SessionGeneration,
                     update.State.Revision,
                     SourceRevision(update),

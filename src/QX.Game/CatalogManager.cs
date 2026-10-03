@@ -16,9 +16,7 @@ public enum CatalogPurchaseStatus
     /// <summary>A purchase the server rejected with an error code.</summary>
     Failed,
     /// <summary>A purchase the server did not allow the user to make.</summary>
-    NotAllowed,
-    /// <summary>A purchase request that was sent without waiting for the server's answer.</summary>
-    Dispatched
+    NotAllowed
 }
 
 /// <summary>Represents the outcome of a catalog purchase.</summary>
@@ -137,9 +135,9 @@ public sealed partial class CatalogManager : GameStateManager
         ResetCatalogState();
         OnConnected(BindSession);
 
-        OnIncoming(MessageContracts.Catalog.Accepted, ApplyPurchaseAccepted);
-        OnIncoming(MessageContracts.Catalog.Failed, ApplyPurchaseFailed);
-        OnIncoming(MessageContracts.Catalog.Forbidden, ApplyPurchaseForbidden);
+        OnIncoming(MessageContracts.Catalog.PurchaseAccepted, ApplyPurchaseAccepted);
+        OnIncoming(MessageContracts.Catalog.PurchaseFailed, ApplyPurchaseFailed);
+        OnIncoming(MessageContracts.Catalog.PurchaseForbidden, ApplyPurchaseForbidden);
         OnIncoming<CatalogPublished>(MessageKeys.Catalog.Published, ApplyPublished);
     }
 
@@ -766,88 +764,81 @@ public sealed partial class CatalogManager : GameStateManager
     /// <summary>Sends a purchase message by name.</summary>
     /// <remarks>
     /// A <see cref="PurchaseFromCatalogRequest"/> sent under the catalog purchase message name is
-    /// validated first; any other message is sent as it is. The task completes once the message is
-    /// sent, with a <see cref="CatalogPurchaseStatus.Dispatched"/> outcome. The server's answer arrives
-    /// through <see cref="PurchaseAnswered"/>.
+    /// validated first; any other message is sent as it is. It returns once the message is sent and
+    /// does not wait for the server's answer, which arrives through <see cref="PurchaseAnswered"/>
+    /// and <see cref="LastPurchase"/>.
     /// </remarks>
     /// <typeparam name="T">The type of the message.</typeparam>
     /// <param name="name">The name of the outgoing message.</param>
     /// <param name="request">The message to send.</param>
-    /// <param name="timeout_ms">The timeout in milliseconds. It is not used, because the task does not wait for the answer.</param>
-    /// <param name="cancellation_token">The token to monitor for cancellation requests.</param>
-    /// <returns>A task that completes with a <see cref="CatalogPurchaseStatus.Dispatched"/> outcome.</returns>
-    /// <exception cref="InvalidOperationException">Thrown when the application runtime is not active.</exception>
-    public Task<CatalogPurchaseOutcome> PurchaseAsync<T>(
+    /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when a catalog purchase request has a value outside its allowed range.</exception>
+    /// <exception cref="InvalidOperationException">Thrown when the application runtime is not active, there is no hotel session or the message is not known.</exception>
+    public void Purchase<T>(
         string name,
         T request,
-        int timeout_ms = 10000,
-        CancellationToken cancellation_token = default)
+        CancellationToken cancellationToken = default)
         where T : Qx.Messages.IComposer
     {
         ICatalogPurchaseOperations operations = PurchaseOperations();
         if (request is PurchaseFromCatalogRequest purchase &&
             string.Equals(name, MessageKeys.Catalog.Purchase.Value, StringComparison.Ordinal))
         {
-            return operations.PurchaseAsync(purchase, timeout_ms, cancellation_token);
+            operations.Purchase(purchase, cancellationToken);
+            return;
         }
-        return operations.DispatchCompatibility(
-            () => SendMessage(name, request),
-            timeout_ms,
-            cancellation_token);
+        operations.DispatchCompatibility(() => SendMessage(name, request), cancellationToken);
     }
 
     /// <summary>Sends a purchase message by message key.</summary>
     /// <remarks>
     /// A <see cref="PurchaseFromCatalogRequest"/> sent under the catalog purchase key is validated
-    /// first; any other message is sent as it is. The task completes once the message is sent, with a
-    /// <see cref="CatalogPurchaseStatus.Dispatched"/> outcome. The server's answer arrives through
-    /// <see cref="PurchaseAnswered"/>.
+    /// first; any other message is sent as it is. It returns once the message is sent and does not
+    /// wait for the server's answer, which arrives through <see cref="PurchaseAnswered"/> and
+    /// <see cref="LastPurchase"/>.
     /// </remarks>
     /// <typeparam name="T">The type of the message.</typeparam>
     /// <param name="key">The key of the outgoing message.</param>
     /// <param name="request">The message to send.</param>
-    /// <param name="timeout_ms">The timeout in milliseconds. It is not used, because the task does not wait for the answer.</param>
-    /// <param name="cancellation_token">The token to monitor for cancellation requests.</param>
-    /// <returns>A task that completes with a <see cref="CatalogPurchaseStatus.Dispatched"/> outcome.</returns>
+    /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
     /// <exception cref="ArgumentException">Thrown when <paramref name="key"/> is empty.</exception>
-    /// <exception cref="InvalidOperationException">Thrown when the application runtime is not active.</exception>
-    public Task<CatalogPurchaseOutcome> PurchaseAsync<T>(
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when a catalog purchase request has a value outside its allowed range.</exception>
+    /// <exception cref="InvalidOperationException">Thrown when the application runtime is not active, there is no hotel session or the message is not known.</exception>
+    public void Purchase<T>(
         MessageKey key,
         T request,
-        int timeout_ms = 10000,
-        CancellationToken cancellation_token = default)
+        CancellationToken cancellationToken = default)
         where T : Qx.Messages.IComposer
     {
         if (key.IsEmpty)
             throw new ArgumentException("A catalog purchase requires a message key.", nameof(key));
         ICatalogPurchaseOperations operations = PurchaseOperations();
         if (key == MessageKeys.Catalog.Purchase && request is PurchaseFromCatalogRequest purchase)
-            return operations.PurchaseAsync(purchase, timeout_ms, cancellation_token);
-        return operations.DispatchCompatibility(
-            () => SendMessage(key, request),
-            timeout_ms,
-            cancellation_token);
+        {
+            operations.Purchase(purchase, cancellationToken);
+            return;
+        }
+        operations.DispatchCompatibility(() => SendMessage(key, request), cancellationToken);
     }
 
     /// <summary>Sends a catalog purchase request.</summary>
     /// <remarks>
-    /// The request is validated and sent. The task completes once it is sent, with a
-    /// <see cref="CatalogPurchaseStatus.Dispatched"/> outcome. The server's answer arrives through
-    /// <see cref="PurchaseAnswered"/>. Validation and send errors are reported through the returned task.
+    /// The request is validated and sent. It returns once the request is sent and does not wait for
+    /// the server's answer, which arrives through <see cref="PurchaseAnswered"/> and
+    /// <see cref="LastPurchase"/>.
     /// </remarks>
     /// <param name="request">The purchase request.</param>
-    /// <param name="timeout_ms">The timeout in milliseconds. It is not used, because the task does not wait for the answer.</param>
-    /// <param name="cancellation_token">The token to monitor for cancellation requests.</param>
-    /// <returns>A task that completes with a <see cref="CatalogPurchaseStatus.Dispatched"/> outcome.</returns>
-    /// <exception cref="InvalidOperationException">Thrown when the application runtime is not active.</exception>
-    public Task<CatalogPurchaseOutcome> PurchaseAsync(
+    /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="request"/> or its extra data is <see langword="null"/>.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">
+    /// Thrown when the page or offer id is negative, the quantity is zero or negative, or the extra
+    /// data is longer than 65535 bytes in UTF-8.
+    /// </exception>
+    /// <exception cref="InvalidOperationException">Thrown when the application runtime is not active, there is no hotel session or the catalog state changed before sending.</exception>
+    public void Purchase(
         PurchaseFromCatalogRequest request,
-        int timeout_ms = 10000,
-        CancellationToken cancellation_token = default) =>
-        PurchaseOperations().PurchaseAsync(
-            request,
-            timeout_ms,
-            cancellation_token);
+        CancellationToken cancellationToken = default) =>
+        PurchaseOperations().Purchase(request, cancellationToken);
 
     /// <inheritdoc/>
     protected override void Reset()

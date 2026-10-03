@@ -2,7 +2,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Qx.Presentation.Services.Editor;
 using Qx.Presentation.ViewModels.Editor;
-using Qx.Scripting;
+using Qx.Scripting.Hosting;
 
 namespace Qx.Presentation.ViewModels.ApiBrowser;
 

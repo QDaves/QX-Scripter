@@ -1,7 +1,9 @@
 using Qx.Game.Protocol;
 using Qx.Interception;
 using Qx.Messages;
+using Qx.Model;
 using Qx.Model.Messages.Incoming;
+using Qx.Model.Messages.Outgoing;
 using Qx.Protocol;
 
 namespace Qx.Game.Application;
@@ -49,7 +51,6 @@ internal sealed partial class QuestApplication
                 0,
                 request.Limit);
             var result = new QuestAvailableRefreshResult(
-                scope.Session.Client,
                 time_provider.GetUtcNow(),
                 observed.ObservedAtUtc,
                 scope.SessionGeneration,
@@ -104,7 +105,6 @@ internal sealed partial class QuestApplication
                 0,
                 request.Limit);
             var result = new QuestSeasonalRefreshResult(
-                scope.Session.Client,
                 time_provider.GetUtcNow(),
                 observed.ObservedAtUtc,
                 scope.SessionGeneration,
@@ -155,7 +155,6 @@ internal sealed partial class QuestApplication
         try
         {
             var result = new QuestDailyRefreshResult(
-                scope.Session.Client,
                 time_provider.GetUtcNow(),
                 observed.ObservedAtUtc,
                 scope.SessionGeneration,
@@ -221,7 +220,7 @@ internal sealed partial class QuestApplication
             QuestRequestRoute.Available,
             cancellation_token));
 
-    Task<IReadOnlyList<Qx.Model.Quests.QuestData>> IQuestOperations.EnsureAvailableLoadedAsync(
+    Task<IReadOnlyList<QuestData>> IQuestOperations.EnsureAvailableLoadedAsync(
         int timeout_milliseconds,
         CancellationToken cancellation_token) => InvokeAsync(
             cancellation_token,
@@ -251,7 +250,7 @@ internal sealed partial class QuestApplication
     void IQuestOperations.CompleteFriendRequestQuest() =>
         InvokeLegacy(DispatchLegacyFriendRequest);
 
-    private async ValueTask<IReadOnlyList<Qx.Model.Quests.QuestData>> EnsureAvailableLoadedCore(
+    private async ValueTask<IReadOnlyList<QuestData>> EnsureAvailableLoadedCore(
         int timeout_milliseconds,
         CancellationToken cancellation_token)
     {
@@ -495,14 +494,12 @@ internal sealed partial class QuestApplication
     private QuestSelectionDispatchReceipt SelectionReceipt(
         QuestSessionScope scope,
         long quest_id) => new(
-            scope.Session.Client,
             time_provider.GetUtcNow(),
             scope.SessionGeneration,
             quest_id,
             1);
 
     private QuestDispatchReceipt DispatchReceipt(QuestSessionScope scope) => new(
-        scope.Session.Client,
         time_provider.GetUtcNow(),
         scope.SessionGeneration,
         1);

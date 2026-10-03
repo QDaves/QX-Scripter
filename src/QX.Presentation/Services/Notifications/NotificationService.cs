@@ -29,10 +29,10 @@ public sealed class NotificationService : INotificationService, IDisposable
 
     public ReadOnlyObservableCollection<Toast> Toasts => _queue.Toasts;
 
-    public void Show(string text, NoticeSeverity severity = NoticeSeverity.Info, string? action_text = null, ICommand? action = null)
+    public void Show(string text, NoticeSeverity severity = NoticeSeverity.Info, string? actionText = null, ICommand? action = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(text);
-        var toast = new Toast(++_next_id, severity, text, action_text, action, _time.GetUtcNow());
+        var toast = new Toast(++_next_id, severity, text, actionText, action, _time.GetUtcNow());
         if (!_dialogs.IsOpen)
         {
             _queue.Show(toast);

@@ -1,11 +1,9 @@
-using Qx;
 using Qx.Protocol;
 using Qx.Headers.Flash;
 
 namespace Qx.ClientCatalog;
 
 public sealed record ClientCatalogResolution(
-    ClientType Client,
     string Version,
     MessageCatalog Catalog,
     string Source,
@@ -18,11 +16,11 @@ public sealed class ClientCatalogResolver
     readonly string? _launcher_data;
     readonly string? _cache_root;
 
-    public ClientCatalogResolver(HttpClient http, string? launcher_data = null, string? cache_root = null)
+    public ClientCatalogResolver(HttpClient http, string? launcherData = null, string? cacheRoot = null)
     {
         _http = http ?? throw new ArgumentNullException(nameof(http));
-        _launcher_data = launcher_data;
-        _cache_root = cache_root;
+        _launcher_data = launcherData;
+        _cache_root = cacheRoot;
     }
 
     internal HttpClient Http => _http;
@@ -30,22 +28,13 @@ public sealed class ClientCatalogResolver
     internal string? CacheRoot => _cache_root;
 
     public async Task<ClientCatalogResolution?> ResolveHeadersAsync(
-        ClientType client,
-        bool installed_only = false,
-        CancellationToken cancellation_token = default) => client switch
-        {
-            ClientCatalogClients.Flash => await ResolveFlashAsync(installed_only, cancellation_token).ConfigureAwait(false),
-            _ => null
-        };
-
-    async Task<ClientCatalogResolution?> ResolveFlashAsync(
-        bool installed_only,
-        CancellationToken cancellation_token)
+        bool installedOnly = false,
+        CancellationToken cancellationToken = default)
     {
         var resolver = new HabboAirClientResolver(_http, _launcher_data, FlashCache());
-        HabboAirRelease? release = installed_only
+        HabboAirRelease? release = installedOnly
             ? resolver.FindInstalled()
-            : await resolver.ResolveLatestAsync(cancellation_token: cancellation_token).ConfigureAwait(false);
+            : await resolver.ResolveLatestAsync(cancellationToken: cancellationToken).ConfigureAwait(false);
         if (release is null)
             return null;
 
@@ -55,9 +44,8 @@ public sealed class ClientCatalogResolver
                 release.SwfPath,
                 SignatureDatabase.LoadDefault());
             return ClientCatalogFactory.Create(extracted);
-        }, cancellation_token).ConfigureAwait(false);
+        }, cancellationToken).ConfigureAwait(false);
         return new ClientCatalogResolution(
-            ClientCatalogClients.Flash,
             release.Version,
             catalog,
             release.Source.ToString(),

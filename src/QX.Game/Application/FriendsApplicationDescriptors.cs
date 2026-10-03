@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Qx.Messages;
 using Qx.Model;
 using Qx.Model.Messages.Incoming;
@@ -19,10 +20,10 @@ internal static class FriendsApplicationDescriptors
         typeof(FriendsListRequest),
         typeof(FriendListPage),
         ListParameters(200),
-        state_effects: [new(ApplicationStateKey.FriendsLoaded, ApplicationStateEffectKind.Reads)],
+        stateEffects: [new(ApplicationStateKey.FriendsLoaded, ApplicationStateEffectKind.Reads)],
         messages: ListMessages(),
-        tool_hints: new(true, false, true, false),
-        invocation_scope: ApplicationInvocationScope.Persistent);
+        toolHints: new(true, false, true, false),
+        invocationScope: ApplicationInvocationScope.Persistent);
 
     public static ApplicationDescriptor Refresh { get; } = new(
         ApplicationMemberIds.FriendsRefresh,
@@ -36,7 +37,7 @@ internal static class FriendsApplicationDescriptors
         [ApplicationStateKey.HotelConnected],
         [new(ApplicationStateKey.FriendsLoaded, ApplicationStateEffectKind.Changes)],
         [
-            new(MessageKeys.Friends.InitializeRequest, Direction.Out, ApplicationMessageRole.Send),
+            new(MessageKeys.Friends.InitializeRequest, MessageDirection.Out, ApplicationMessageRole.Send),
             .. ListMessages()
         ],
         new(true, false, true, true));
@@ -53,10 +54,10 @@ internal static class FriendsApplicationDescriptors
         [ApplicationStateKey.HotelConnected],
         messages:
         [
-            new(MessageKeys.Friends.SearchRequest, Direction.Out, ApplicationMessageRole.Send),
-            new(MessageKeys.Friends.SearchResult, Direction.In, ApplicationMessageRole.Observe)
+            new(MessageKeys.Friends.SearchRequest, MessageDirection.Out, ApplicationMessageRole.Send),
+            new(MessageKeys.Friends.SearchResult, MessageDirection.In, ApplicationMessageRole.Observe)
         ],
-        tool_hints: new(true, false, false, true));
+        toolHints: new(true, false, false, true));
 
     public static ApplicationDescriptor MessageHistory { get; } = new(
         ApplicationMemberIds.FriendMessageHistory,
@@ -69,10 +70,10 @@ internal static class FriendsApplicationDescriptors
         CursorParameters(),
         messages:
         [
-            new(MessageKeys.Friends.PrivateMessageReceived, Direction.In, ApplicationMessageRole.Observe)
+            new(MessageKeys.Friends.PrivateMessageReceived, MessageDirection.In, ApplicationMessageRole.Observe)
         ],
-        tool_hints: new(true, false, true, false),
-        invocation_scope: ApplicationInvocationScope.Persistent);
+        toolHints: new(true, false, true, false),
+        invocationScope: ApplicationInvocationScope.Persistent);
 
     public static ApplicationDescriptor MessageSend { get; } = Operation<FriendMessageSendRequest>(
         ApplicationMemberIds.FriendMessageSend,
@@ -130,10 +131,10 @@ internal static class FriendsApplicationDescriptors
         [ApplicationStateKey.HotelConnected],
         messages:
         [
-            new(MessageKeys.Friends.FriendRequestsRequest, Direction.Out, ApplicationMessageRole.Send),
-            new(MessageKeys.Friends.FriendRequestsSnapshot, Direction.In, ApplicationMessageRole.Observe)
+            new(MessageKeys.Friends.FriendRequestsRequest, MessageDirection.Out, ApplicationMessageRole.Send),
+            new(MessageKeys.Friends.FriendRequestsSnapshot, MessageDirection.In, ApplicationMessageRole.Observe)
         ],
-        tool_hints: new(true, false, true, true));
+        toolHints: new(true, false, true, true));
 
     public static ApplicationDescriptor Remove { get; } = Operation<FriendsRemoveRequest>(
         ApplicationMemberIds.FriendsRemove,
@@ -174,27 +175,27 @@ internal static class FriendsApplicationDescriptors
         ApplicationMemberIds.FriendMessageReceived,
         "Friend message received",
         "Publishes immutable private messenger entries.",
-        [new(MessageKeys.Friends.PrivateMessageReceived, Direction.In, ApplicationMessageRole.Observe)]);
+        [new(MessageKeys.Friends.PrivateMessageReceived, MessageDirection.In, ApplicationMessageRole.Observe)]);
 
     public static ApplicationDescriptor MessageFailed { get; } = Event<InstantMessageError>(
         ApplicationMemberIds.FriendMessageFailed,
         "Friend message failed",
         "Publishes private-message delivery failures.",
-        [new(MessageKeys.Friends.PrivateMessageFailed, Direction.In, ApplicationMessageRole.Observe)]);
+        [new(MessageKeys.Friends.PrivateMessageFailed, MessageDirection.In, ApplicationMessageRole.Observe)]);
 
     public static ApplicationDescriptor OperationFailed { get; } = Event<MessengerError>(
         ApplicationMemberIds.FriendOperationFailed,
         "Friend operation failed",
         "Publishes hotel rejections for messenger operations.",
-        [new(MessageKeys.Friends.OperationFailed, Direction.In, ApplicationMessageRole.Observe)]);
+        [new(MessageKeys.Friends.OperationFailed, MessageDirection.In, ApplicationMessageRole.Observe)]);
 
     public static ApplicationDescriptor RequestReceived { get; } = Event<NewFriendRequest>(
         ApplicationMemberIds.FriendRequestReceived,
         "Friend request received",
         "Publishes immutable incoming friend requests.",
-        [new(MessageKeys.Friends.FriendRequestReceived, Direction.In, ApplicationMessageRole.Observe)]);
+        [new(MessageKeys.Friends.FriendRequestReceived, MessageDirection.In, ApplicationMessageRole.Observe)]);
 
-    private static ApplicationDescriptor Operation<TRequest>(
+    private static ApplicationDescriptor Operation<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TRequest>(
         string id,
         string title,
         string description,
@@ -216,7 +217,7 @@ internal static class FriendsApplicationDescriptors
             changes_friends
                 ? [new(ApplicationStateKey.FriendsLoaded, ApplicationStateEffectKind.Changes)]
                 : [],
-            [new(key, Direction.Out, ApplicationMessageRole.Send)],
+            [new(key, MessageDirection.Out, ApplicationMessageRole.Send)],
             new(read_only, destructive, idempotent, true));
 
     private static ApplicationDescriptor Event<TEvent>(
@@ -232,7 +233,7 @@ internal static class FriendsApplicationDescriptors
             event_exposure,
             null,
             typeof(TEvent),
-            state_effects: state_effects,
+            stateEffects: state_effects,
             messages: messages);
 
     private static ApplicationParameterDescriptor[] ListParameters(int limit) =>
@@ -295,8 +296,8 @@ internal static class FriendsApplicationDescriptors
 
     private static ApplicationMessageRequirement[] ListMessages() =>
     [
-        new(MessageKeys.Friends.Initialized, Direction.In, ApplicationMessageRole.Observe),
-        new(MessageKeys.Friends.ListFragment, Direction.In, ApplicationMessageRole.Observe),
-        new(MessageKeys.Friends.ListUpdated, Direction.In, ApplicationMessageRole.Observe)
+        new(MessageKeys.Friends.Initialized, MessageDirection.In, ApplicationMessageRole.Observe),
+        new(MessageKeys.Friends.ListFragment, MessageDirection.In, ApplicationMessageRole.Observe),
+        new(MessageKeys.Friends.ListUpdated, MessageDirection.In, ApplicationMessageRole.Observe)
     ];
 }

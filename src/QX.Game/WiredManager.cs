@@ -354,7 +354,7 @@ public sealed record WiredTradeItemSnapshot(
 /// <param name="SecondUserNumItems">The item count the hotel reports for the second user.</param>
 /// <param name="SecondUserNumCredits">The credit count the hotel reports for the second user.</param>
 /// <param name="CanAccept">Whether the trade can be accepted.</param>
-/// <param name="Extra">The extra value the hotel sends with the update.</param>
+/// <param name="RequirementsMetCount">The number of times the offer meets its requirements.</param>
 public sealed record WiredTradingItemsSnapshot(
     Id FirstUserId,
     IReadOnlyList<WiredTradeItemSnapshot> FirstUserItems,
@@ -365,7 +365,13 @@ public sealed record WiredTradingItemsSnapshot(
     int SecondUserNumItems,
     int SecondUserNumCredits,
     bool CanAccept,
-    int Extra);
+    int RequirementsMetCount)
+{
+    /// <summary>Gets or initializes RequirementsMetCount; retained for migration.</summary>
+    [Obsolete("Use RequirementsMetCount.")]
+    [System.Text.Json.Serialization.JsonIgnore]
+    public int Extra { get => RequirementsMetCount; init => RequirementsMetCount = value; }
+}
 
 /// <summary>Specifies the status of a wired trade.</summary>
 public enum WiredTradeStatus
@@ -572,8 +578,8 @@ internal sealed record WiredStateUpdate(
 /// </summary>
 /// <remarks>
 /// <para>
-/// Messages are only recorded while the user is in a room. The state is cleared when the user enters
-/// or leaves a room, and when the hotel connection closes.
+/// Room messages are only recorded while the user is in a room. Room state is cleared when the user enters
+/// or leaves a room, and when the hotel connection closes. Account preferences are retained across room changes.
 /// </para>
 /// <para>
 /// All members are safe to call from any thread.
@@ -585,6 +591,7 @@ public sealed class WiredManager : GameStateManager
     private readonly object state_sync = new();
     private readonly Dictionary<Id, ChestState> chests = [];
     private WiredSnapshot snapshot = WiredSnapshot.Empty;
+    private AccountPreferences? account_preferences;
     private WiredPermissions? permissions;
     private WiredEnvironment? environment;
     private WiredClickSettings? click_settings;
@@ -610,6 +617,10 @@ public sealed class WiredManager : GameStateManager
     /// </remarks>
     public WiredSnapshot Snapshot => Volatile.Read(ref snapshot);
 
+    /// <summary>Gets the last account preferences received during this hotel connection, or null before receipt.</summary>
+    /// <remarks>These preferences survive room changes and are cleared when the hotel connection closes.</remarks>
+    public AccountPreferences? AccountPreferences => Volatile.Read(ref account_preferences);
+
     internal event Action<WiredStateUpdate>? StateChanged;
 
     /// <inheritdoc/>
@@ -619,12 +630,23 @@ public sealed class WiredManager : GameStateManager
         {
             lock (state_sync)
             {
+                Volatile.Write(ref account_preferences, null);
                 generation++;
                 committed_generation = CurrentStateGeneration;
                 reset_generation = -1;
                 PublishState();
             }
         }
+        OnIncoming(MessageContracts.Wired.Account.Preferences, (message, state_generation) =>
+        {
+            lock (state_sync)
+            {
+                if (state_generation < committed_generation || state_generation == reset_generation)
+                    return;
+                committed_generation = state_generation;
+                Volatile.Write(ref account_preferences, message);
+            }
+        });
         OnIncoming(
             MessageContracts.Wired.State.Permissions,
             (message, state_generation) => Store(
@@ -777,6 +799,7 @@ public sealed class WiredManager : GameStateManager
                     return;
                 committed_generation = state_generation;
                 reset_generation = state_generation;
+                Volatile.Write(ref account_preferences, null);
                 if (!room_active)
                     return;
                 room_active = false;
@@ -1254,7 +1277,7 @@ public sealed class WiredManager : GameStateManager
         value.TradingItems.SecondUserNumItems,
         value.TradingItems.SecondUserNumCredits,
         value.CanAccept,
-        value.Extra);
+        value.RequirementsMetCount);
 
     internal static WiredTradeInitiate SnapshotOf(WiredTradeInitiate value) => new(
         SnapshotOf(value.Requirement),
@@ -1522,6 +1545,7 @@ public sealed class WiredManager : GameStateManager
     private sealed class ChestState
     {
         private readonly Dictionary<int, IReadOnlyList<WiredChestStorageSnapshot>> fragments = [];
+        private readonly Dictionary<int, WiredChestStorageSnapshot?> changes = [];
         private IReadOnlyList<WiredChestStorageSnapshot> items = [];
 
         public int? Coins { get; set; }
@@ -1532,35 +1556,48 @@ public sealed class WiredManager : GameStateManager
 
         public void Apply(WiredChestItemsChunkSnapshot value)
         {
-            if (value.TotalFragments <= 0 || value.FragmentNo < 0)
+            if (value.TotalFragments <= 0 || value.FragmentNo < 0 || value.FragmentNo >= value.TotalFragments)
                 return;
-            if (ExpectedFragments != value.TotalFragments ||
-                fragments.ContainsKey(value.FragmentNo) &&
-                (ItemsComplete || value.FragmentNo is 0 or 1))
+            if (value.FragmentNo == 0)
             {
                 fragments.Clear();
+                changes.Clear();
                 ExpectedFragments = value.TotalFragments;
                 ItemsComplete = false;
             }
+            else if (!fragments.ContainsKey(0) || ExpectedFragments != value.TotalFragments ||
+                fragments.ContainsKey(value.FragmentNo))
+                return;
             fragments[value.FragmentNo] = value.StorageChunk;
-            items = ReadOnly(fragments
-                .OrderBy(pair => pair.Key)
+            Dictionary<int, WiredChestStorageSnapshot> current = fragments.OrderBy(pair => pair.Key)
                 .SelectMany(pair => pair.Value)
                 .GroupBy(item => item.InventoryId)
-                .Select(group => group.Last()));
-            ItemsComplete = fragments.Count == ExpectedFragments &&
-                (fragments.Keys.All(index => index >= 0 && index < ExpectedFragments) ||
-                    fragments.Keys.All(index => index >= 1 && index <= ExpectedFragments));
+                .ToDictionary(group => group.Key, group => group.First());
+            foreach ((int id, WiredChestStorageSnapshot? item) in changes)
+            {
+                if (item is null)
+                    current.Remove(id);
+                else
+                    current[id] = item;
+            }
+            items = ReadOnly(current.Values);
+            ItemsComplete = fragments.Count == ExpectedFragments;
         }
 
         public void Apply(WiredChestItemsUpdatedSnapshot value)
         {
-            var removed = new HashSet<int>(value.RemovedIds);
-            items = ReadOnly(items
-                .Where(item => !removed.Contains(item.InventoryId))
-                .Concat(value.AddedStorage)
-                .GroupBy(item => item.InventoryId)
-                .Select(group => group.Last()));
+            Dictionary<int, WiredChestStorageSnapshot> current = items.ToDictionary(item => item.InventoryId);
+            foreach (int id in value.RemovedIds)
+            {
+                current.Remove(id);
+                changes[id] = null;
+            }
+            foreach (WiredChestStorageSnapshot item in value.AddedStorage)
+            {
+                if (current.TryAdd(item.InventoryId, item))
+                    changes[item.InventoryId] = item;
+            }
+            items = ReadOnly(current.Values);
         }
 
         public WiredChestContentsSnapshot Snapshot(Id chest_id) => new(
@@ -1578,7 +1615,7 @@ public sealed class WiredManager : GameStateManager
 /// <summary>Represents one fragment of a wired chest's item list.</summary>
 /// <param name="ChestId">The id of the chest.</param>
 /// <param name="TotalFragments">The number of fragments the item list is sent in.</param>
-/// <param name="FragmentNo">The number of this fragment.</param>
+/// <param name="FragmentNo">The zero-based number of this fragment.</param>
 /// <param name="StorageChunk">The items in this fragment.</param>
 public sealed record WiredChestItemsChunkSnapshot(
     int ChestId,
@@ -1589,7 +1626,7 @@ public sealed record WiredChestItemsChunkSnapshot(
 /// <summary>Represents a change to a wired chest's item list.</summary>
 /// <param name="ChestId">The id of the chest.</param>
 /// <param name="RemovedIds">The inventory ids of the items removed from the chest.</param>
-/// <param name="AddedStorage">The items added to the chest or changed.</param>
+/// <param name="AddedStorage">New items to add; an existing ID is ignored unless removed in the same update.</param>
 public sealed record WiredChestItemsUpdatedSnapshot(
     int ChestId,
     IReadOnlyList<int> RemovedIds,

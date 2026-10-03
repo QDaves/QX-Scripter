@@ -5,7 +5,7 @@ namespace Qx;
 /// <summary>Represents a float that is written to the wire as a string.</summary>
 /// <remarks>Flash sends float values as strings, formatted with the invariant culture.</remarks>
 /// <param name="value">The float value.</param>
-public readonly struct FloatString(float value)
+internal readonly struct FloatString(float value)
 {
     /// <summary>Formats a float with the invariant culture, with at least one and at most 15 decimal places.</summary>
     /// <param name="value">The value to format.</param>

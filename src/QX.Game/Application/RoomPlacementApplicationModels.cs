@@ -222,7 +222,6 @@ public sealed record RoomPlacementPickupRequest(
 /// <see cref="ApplicationMemberIds.RoomPlacementChanged"/>.
 /// </remarks>
 /// <param name="Operation">The operation that was sent.</param>
-/// <param name="Client">The client type of the hotel session.</param>
 /// <param name="DispatchedAtUtc">The time the receipt was created after the message was sent.</param>
 /// <param name="SessionGeneration">The inventory state generation of the hotel session the message was sent in.</param>
 /// <param name="RoomId">The id of the room.</param>
@@ -245,7 +244,6 @@ public sealed record RoomPlacementPickupRequest(
 /// <param name="Confirmed">Whether a pickup was sent as confirmed, which is <see langword="false"/> for other operations.</param>
 public sealed record RoomPlacementDispatchReceipt(
     RoomPlacementOperationKind Operation,
-    ClientType Client,
     DateTimeOffset DispatchedAtUtc,
     long SessionGeneration,
     Id RoomId,
@@ -280,7 +278,6 @@ public sealed record RoomPlacementItemView(
 /// </remarks>
 /// <param name="Kind">The kind of change.</param>
 /// <param name="ChangedAtUtc">The time the change was published.</param>
-/// <param name="Client">The client type of the hotel session.</param>
 /// <param name="SessionGeneration">The room state generation of the hotel session the change was received in.</param>
 /// <param name="RoomId">The id of the room.</param>
 /// <param name="RoomGeneration">The generation of the room.</param>
@@ -305,7 +302,6 @@ public sealed record RoomPlacementItemView(
 public sealed record RoomPlacementChanged(
     RoomPlacementChangeKind Kind,
     DateTimeOffset ChangedAtUtc,
-    ClientType Client,
     long SessionGeneration,
     Id RoomId,
     long RoomGeneration,
@@ -325,7 +321,6 @@ public sealed record RoomPlacementChanged(
 /// set to confirm it.
 /// </remarks>
 /// <param name="ReceivedAtUtc">The time the prompt was published.</param>
-/// <param name="Client">The client type of the hotel session.</param>
 /// <param name="SessionGeneration">The room state generation of the hotel session the prompt was received in.</param>
 /// <param name="RoomId">The id of the room.</param>
 /// <param name="RoomGeneration">The generation of the room.</param>
@@ -336,7 +331,6 @@ public sealed record RoomPlacementChanged(
 /// <param name="Body">The body text of the confirmation dialog.</param>
 public sealed record RoomPlacementPickupConfirmation(
     DateTimeOffset ReceivedAtUtc,
-    ClientType Client,
     long SessionGeneration,
     Id RoomId,
     long RoomGeneration,

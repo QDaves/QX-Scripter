@@ -10,21 +10,21 @@ public static class RoomModerationReader
 
     public static async Task<RoomModerationStateView> ReadAsync(
         IGameGateway gateway,
-        CancellationToken cancellation_token)
+        CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(gateway);
         RoomModerationStateView first = await gateway
             .QueryAsync<RoomModerationStateRequest, RoomModerationStateView>(
                 ApplicationMemberIds.RoomModerationState,
                 new RoomModerationStateRequest(Limit: PageLimit),
-                cancellation_token);
-        return await CompleteAsync(gateway, first, cancellation_token);
+                cancellationToken);
+        return await CompleteAsync(gateway, first, cancellationToken);
     }
 
     public static async Task<RoomModerationStateView> RefreshAsync(
         IGameGateway gateway,
         RoomModerationStateView state,
-        CancellationToken cancellation_token)
+        CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(gateway);
         ArgumentNullException.ThrowIfNull(state);
@@ -37,14 +37,14 @@ public static class RoomModerationReader
                     state.SessionGeneration,
                     state.RoomId,
                     state.RoomGeneration),
-                cancellation_token);
-        return await CompleteAsync(gateway, first, cancellation_token);
+                cancellationToken);
+        return await CompleteAsync(gateway, first, cancellationToken);
     }
 
     public static async Task<RoomModerationStateView> CompleteAsync(
         IGameGateway gateway,
         RoomModerationStateView first,
-        CancellationToken cancellation_token)
+        CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(gateway);
         ArgumentNullException.ThrowIfNull(first);
@@ -60,7 +60,7 @@ public static class RoomModerationReader
                 .QueryAsync<RoomModerationStateRequest, RoomModerationStateView>(
                     ApplicationMemberIds.RoomModerationState,
                     new RoomModerationStateRequest(offset, PageLimit, first.BanList.SnapshotRevision),
-                    cancellation_token);
+                    cancellationToken);
             if (page.SessionGeneration != first.SessionGeneration ||
                 page.Revision != first.Revision ||
                 page.RoomGeneration != first.RoomGeneration ||

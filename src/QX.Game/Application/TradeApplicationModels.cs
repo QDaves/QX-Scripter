@@ -207,10 +207,6 @@ public sealed record TradeNftInventorySummary(
 /// Returned by <see cref="ApplicationMemberIds.TradeState"/>.
 /// </remarks>
 /// <param name="Connected">Whether the state belongs to the active hotel session.</param>
-/// <param name="Client">
-/// The client type of the hotel session, or <see langword="null"/> when <paramref name="Connected"/> is
-/// <see langword="false"/>.
-/// </param>
 /// <param name="SessionGeneration">The state generation of the hotel session the state belongs to.</param>
 /// <param name="RoomGeneration">The room state generation when the state was read.</param>
 /// <param name="Revision">The trade state revision, increased by every committed trade change and reset.</param>
@@ -221,7 +217,6 @@ public sealed record TradeNftInventorySummary(
 /// <param name="NftInventory">The summary of the trade NFT inventory.</param>
 public sealed record TradeStateView(
     bool Connected,
-    ClientType? Client,
     long SessionGeneration,
     long RoomGeneration,
     long Revision,
@@ -233,10 +228,6 @@ public sealed record TradeStateView(
 /// Represents a summary of the trade state without item and asset lists.
 /// </summary>
 /// <param name="Connected">Whether the state belongs to the active hotel session.</param>
-/// <param name="Client">
-/// The client type of the hotel session, or <see langword="null"/> when <paramref name="Connected"/> is
-/// <see langword="false"/>.
-/// </param>
 /// <param name="SessionGeneration">The state generation of the hotel session the state belongs to.</param>
 /// <param name="Revision">The trade state revision, increased by every committed trade change and reset.</param>
 /// <param name="LatestEpoch">
@@ -246,7 +237,6 @@ public sealed record TradeStateView(
 /// <param name="NftInventory">The summary of the trade NFT inventory.</param>
 public sealed record TradeStateSummary(
     bool Connected,
-    ClientType? Client,
     long SessionGeneration,
     long Revision,
     long LatestEpoch,
@@ -358,14 +348,12 @@ public sealed record TradeCommandRequest(
 /// <see cref="ApplicationMemberIds.TradeClose"/>. The hotel's reaction arrives through
 /// <see cref="ApplicationMemberIds.TradeChanged"/>.
 /// </remarks>
-/// <param name="Client">The client type of the hotel session.</param>
 /// <param name="DispatchedAtUtc">The time the message was sent.</param>
 /// <param name="SessionGeneration">The trade session generation the message was sent in.</param>
 /// <param name="RoomGeneration">The room state generation the message was sent in.</param>
 /// <param name="StateRevision">The trade state revision the operation was checked against.</param>
 /// <param name="Epoch">The trade epoch the operation was checked against.</param>
 public sealed record TradeDispatchResult(
-    ClientType Client,
     DateTimeOffset DispatchedAtUtc,
     long SessionGeneration,
     long RoomGeneration,
@@ -395,8 +383,7 @@ public sealed record TradeNftInventoryPageRequest(
 /// </summary>
 /// <remarks>
 /// Used by <see cref="ApplicationMemberIds.TradeNftInventoryRefresh"/>. The refresh sends the inventory
-/// request and completes when a new inventory matching the response is stored. Only the Flash client
-/// receives the trade NFT inventory.
+/// request and completes when a new inventory matching the response is stored.
 /// </remarks>
 /// <param name="Limit">The maximum number of assets in the returned first page, from 1 to 500.</param>
 /// <param name="TimeoutMilliseconds">The time to wait for the response in milliseconds, from 1 to 120000.</param>
@@ -412,10 +399,6 @@ public sealed record TradeNftInventoryRefreshRequest(
 /// <see cref="ApplicationMemberIds.TradeNftInventoryRefresh"/>.
 /// </remarks>
 /// <param name="Connected">Whether the snapshot belongs to the active hotel session.</param>
-/// <param name="Client">
-/// The client type of the hotel session, or <see langword="null"/> when <paramref name="Connected"/> is
-/// <see langword="false"/>.
-/// </param>
 /// <param name="SessionGeneration">The state generation of the hotel session the snapshot was captured in.</param>
 /// <param name="StateRevision">The trade state revision of the snapshot.</param>
 /// <param name="SnapshotRevision">The revision of the retained snapshot, passed back to read the next page.</param>
@@ -427,7 +410,6 @@ public sealed record TradeNftInventoryRefreshRequest(
 /// <param name="Assets">The assets in the page.</param>
 public sealed record TradeNftInventoryPage(
     bool Connected,
-    ClientType? Client,
     long SessionGeneration,
     long StateRevision,
     long SnapshotRevision,

@@ -12,14 +12,14 @@ public static class InventoryRead
 {
     public const int PageLimit = 500;
 
-    public static async Task<InventoryContents> LoadAsync(IGameGateway gateway, CancellationToken cancellation_token)
+    public static async Task<InventoryContents> LoadAsync(IGameGateway gateway, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(gateway);
         (InventoryFurniPage furni, InventoryPetPage pets) = await gateway.ReadStableAsync(
             async token => (
-                await InventoryApplicationPages.ReadFurniAsync(gateway.Application, cancellation_token: token),
-                await InventoryApplicationPages.ReadPetsAsync(gateway.Application, cancellation_token: token)),
-            cancellation_token);
+                await InventoryApplicationPages.ReadFurniAsync(gateway.Application, cancellationToken: token),
+                await InventoryApplicationPages.ReadPetsAsync(gateway.Application, cancellationToken: token)),
+            cancellationToken);
         GameData data = gateway.Game.GameData;
         return Build(furni, pets, data.Furni, data.Texts);
     }
@@ -31,7 +31,6 @@ public static class InventoryRead
         bool connected = furni.Connected && pets.Connected;
         bool consistent = connected &&
             furni.SessionGeneration == pets.SessionGeneration &&
-            furni.Client == pets.Client &&
             furni.Revision == pets.Revision &&
             !furni.Stale &&
             !pets.Stale &&

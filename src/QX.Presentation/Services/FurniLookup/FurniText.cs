@@ -5,11 +5,11 @@ public static class FurniText
     public static string Display(string? text) =>
         string.Join(' ', (text ?? "").Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries));
 
-    public static string Named(string identifier, string? localized_name, Func<string, string?> texts)
+    public static string Named(string identifier, string? localizedName, Func<string, string?> texts)
     {
         ArgumentNullException.ThrowIfNull(identifier);
         ArgumentNullException.ThrowIfNull(texts);
-        string resolved = Display(Resolve(localized_name, texts));
+        string resolved = Display(Resolve(localizedName, texts));
         return resolved.Length <= 2 ? identifier : resolved;
     }
 

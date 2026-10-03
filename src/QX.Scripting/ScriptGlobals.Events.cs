@@ -1,6 +1,7 @@
 ﻿using Qx.Game;
 using Qx.Game.Protocol;
 using Qx.Game.Application;
+using Qx.Interception;
 using Qx.Messages;
 using Qx.Model.Messages.Incoming;
 using Qx.Model;
@@ -10,16 +11,6 @@ namespace Qx.Scripting;
 
 public partial class ScriptGlobals
 {
-    /// <summary>
-    /// Gets the users who hold rights in the current room, as id and name pairs.
-    /// </summary>
-    /// <remarks>
-    /// The list is empty outside a room, and also empty until the server has sent the rights
-    /// list. Check <see cref="RoomManager.ControllersAreLoaded"/> to tell the two apart. The room
-    /// owner is not listed.
-    /// </remarks>
-    public IReadOnlyList<IdName> Controllers => Room.Controllers;
-
     /// <summary>
     /// Gets every achievement the server has reported for the local account, with its current
     /// level and progress.
@@ -60,7 +51,7 @@ public partial class ScriptGlobals
     public IDisposable OnProfileUpdated(Action<UserData> handler)
     {
         ArgumentNullException.ThrowIfNull(handler);
-        return Track(Application.Subscribe<ProfileChanged>(
+        return Track(_application.Subscribe<ProfileChanged>(
             ApplicationMemberIds.ProfileChanged,
             Guarded<ProfileChanged>(change =>
             {
@@ -127,18 +118,21 @@ public partial class ScriptGlobals
     }
 
     /// <summary>
-    /// Registers a handler that runs when the server sends the room ready message, which carries
-    /// the room model and id.
+    /// Registers a handler that runs when a room starts loading, on the room ready message that
+    /// carries the room model and id.
     /// </summary>
     /// <remarks>
-    /// The message starts a new room session. The avatar and furni lists, floor plan and
-    /// heightmap are sent after it and may still be arriving when the handler runs; use
-    /// <see cref="OnFloorItemsLoaded"/>, <see cref="OnWallItemsLoaded"/> or the loaded flags on
-    /// <see cref="Room"/> when the room contents must be complete.
+    /// The message starts a new room session and sets <see cref="RoomManager.RoomType"/>, but the
+    /// room is not ready yet: <see cref="IsRoomReady"/> is normally still <see langword="false"/>
+    /// and turns <see langword="true"/> with <see cref="OnEnteredRoom"/>. The avatar and furni
+    /// lists, floor plan and heightmap are sent after it and may still be arriving when the
+    /// handler runs; use <see cref="WaitRoomReady"/>, <see cref="OnFloorItemsLoaded"/>,
+    /// <see cref="OnWallItemsLoaded"/> or the loaded flags on <see cref="Room"/> when the room
+    /// contents must be complete.
     /// </remarks>
     /// <param name="handler">The handler to call, with no arguments.</param>
     /// <returns>A handle that removes the handler when disposed.</returns>
-    public IDisposable OnRoomReady(Action handler)
+    public IDisposable OnRoomLoading(Action handler)
     {
         handler = Guarded(handler);
         Room.Ready += handler;
@@ -146,11 +140,15 @@ public partial class ScriptGlobals
     }
 
     /// <summary>
-    /// Registers a handler that runs when a room exit begins, while the room contents are still
-    /// tracked.
+    /// Registers a handler that runs when the local user leaves a room, before the handlers
+    /// registered with <see cref="OnLeftRoom(Action{RoomExitState})"/> and
+    /// <see cref="OnLeftRoom(Action)"/>.
     /// </summary>
     /// <remarks>
-    /// Read anything needed from the room here rather than in <see cref="OnLeftRoom"/>.
+    /// The handler runs once the exit has been applied, so the avatar and furni collections are
+    /// already cleared, and on a direct move to another room <see cref="RoomId"/> already holds
+    /// the new room. Use <see cref="OnLeftRoom(Action{RoomExitState})"/> to learn which room was
+    /// left.
     /// </remarks>
     /// <param name="handler">The handler to call, with no arguments.</param>
     /// <returns>A handle that removes the handler when disposed.</returns>
@@ -166,7 +164,8 @@ public partial class ScriptGlobals
     /// </summary>
     /// <remarks>
     /// By this point the avatar and furni collections are already cleared. It runs right after
-    /// the handlers registered with <see cref="OnRoomExited"/>.
+    /// the handlers registered with <see cref="OnLeftRoom(Action{RoomExitState})"/>, which also
+    /// receive which room was left and why.
     /// </remarks>
     /// <param name="handler">The handler to call, with no arguments.</param>
     /// <returns>A handle that removes the handler when disposed.</returns>
@@ -178,18 +177,41 @@ public partial class ScriptGlobals
     }
 
     /// <summary>
-    /// Registers a handler that runs when the local user leaves a room, with the reason attached.
+    /// Registers a handler that runs when the room session has ended, with how it ended.
     /// </summary>
+    /// <remarks>
+    /// By this point the avatar and furni collections are already cleared, and on a direct move to
+    /// another room <see cref="RoomId"/> already holds the new room; the exit state still names
+    /// the room that was left. It runs right before the handlers registered with
+    /// <see cref="OnLeftRoom(Action)"/>.
+    /// </remarks>
     /// <param name="handler">
     /// The handler to call with the exit state: which room was left, whether it had been fully
     /// entered, the native exit reason and the kick that caused it, if any.
     /// </param>
     /// <returns>A handle that removes the handler when disposed.</returns>
-    public IDisposable OnRoomExited(Action<RoomExitState> handler)
+    public IDisposable OnLeftRoom(Action<RoomExitState> handler)
     {
         handler = Guarded(handler);
         Room.Exited += handler;
         return Track(new Unsubscriber(() => Room.Exited -= handler));
+    }
+
+    /// <summary>
+    /// Registers a handler that runs when the server reports that the local user was kicked from
+    /// the room.
+    /// </summary>
+    /// <remarks>
+    /// It runs as soon as the kick arrives, before the room exit. The exit that follows reaches
+    /// <see cref="OnLeftRoom(Action{RoomExitState})"/> with the same kick attached.
+    /// </remarks>
+    /// <param name="handler">The handler to call with the kick.</param>
+    /// <returns>A handle that removes the handler when disposed.</returns>
+    public IDisposable OnKicked(Action<RoomKick> handler)
+    {
+        handler = Guarded(handler);
+        Room.Kicked += handler;
+        return Track(new Unsubscriber(() => Room.Kicked -= handler));
     }
 
     /// <summary>
@@ -422,14 +444,30 @@ public partial class ScriptGlobals
     }
 
     /// <summary>
-    /// Registers a handler that runs when an avatar plays an action (expression) in the room.
+    /// Registers a handler that runs when an avatar in the room is renamed.
     /// </summary>
     /// <param name="handler">
-    /// The handler to call with the avatar and the action id: 1 wave, 2 blow a kiss, 3 laugh,
-    /// 4 cry, 5 idle, 6 jump, 7 thumbs up; 0 clears the current action.
+    /// The handler to call with the avatar, its previous name and its new name, in that order.
     /// </param>
     /// <returns>A handle that removes the handler when disposed.</returns>
-    public IDisposable OnAction(Action<Avatar, int> handler)
+    public IDisposable OnAvatarNameChanged(Action<Avatar, string, string> handler)
+    {
+        handler = Guarded(handler);
+        Room.AvatarNameChanged += handler;
+        return Track(new Unsubscriber(() => Room.AvatarNameChanged -= handler));
+    }
+
+    /// <summary>
+    /// Registers a handler that runs when an avatar plays an expression in the room, such as a
+    /// wave.
+    /// </summary>
+    /// <param name="handler">
+    /// The handler to call with the avatar and the expression id: 1 wave, 2 blow a kiss, 3 laugh,
+    /// 4 cry, 5 go idle, 6 jump, 7 thumbs up; 0 clears the current expression. These are the ids
+    /// <see cref="Expression"/> plays.
+    /// </param>
+    /// <returns>A handle that removes the handler when disposed.</returns>
+    public IDisposable OnAvatarExpression(Action<Avatar, int> handler)
     {
         handler = Guarded(handler);
         Room.AvatarActioned += handler;
@@ -457,15 +495,15 @@ public partial class ScriptGlobals
     /// Registers a handler that runs when a floor item is removed from the room.
     /// </summary>
     /// <param name="handler">
-    /// The handler to call with only the removed item's id. Use
-    /// <see cref="OnFloorItemRemovedDetailed"/> when the item's kind or position is needed.
+    /// The handler to call with the item as it last was. It has already been removed from
+    /// <see cref="FloorItems"/> when the handler runs.
     /// </param>
     /// <returns>A handle that removes the handler when disposed.</returns>
-    public IDisposable OnFloorItemRemoved(Action<Id> handler)
+    public IDisposable OnFloorItemRemoved(Action<FloorItem> handler)
     {
         handler = Guarded(handler);
-        Room.FloorItemRemoved += handler;
-        return Track(new Unsubscriber(() => Room.FloorItemRemoved -= handler));
+        Room.FloorItemRemovedDetailed += handler;
+        return Track(new Unsubscriber(() => Room.FloorItemRemovedDetailed -= handler));
     }
 
     /// <summary>
@@ -514,19 +552,6 @@ public partial class ScriptGlobals
     }
 
     /// <summary>
-    /// Registers a handler that runs when a floor item is removed from the room, with the full
-    /// item as it last was rather than just its id.
-    /// </summary>
-    /// <param name="handler">The handler to call with the removed item.</param>
-    /// <returns>A handle that removes the handler when disposed.</returns>
-    public IDisposable OnFloorItemRemovedDetailed(Action<FloorItem> handler)
-    {
-        handler = Guarded(handler);
-        Room.FloorItemRemovedDetailed += handler;
-        return Track(new Unsubscriber(() => Room.FloorItemRemovedDetailed -= handler));
-    }
-
-    /// <summary>
     /// Registers a handler that runs when a single wall item appears in the room, for example
     /// when it is placed.
     /// </summary>
@@ -547,15 +572,15 @@ public partial class ScriptGlobals
     /// Registers a handler that runs when a wall item is removed from the room.
     /// </summary>
     /// <param name="handler">
-    /// The handler to call with only the removed item's id. Use
-    /// <see cref="OnWallItemRemovedDetailed"/> when the item itself is needed.
+    /// The handler to call with the item as it last was. It has already been removed from
+    /// <see cref="WallItems"/> when the handler runs.
     /// </param>
     /// <returns>A handle that removes the handler when disposed.</returns>
-    public IDisposable OnWallItemRemoved(Action<Id> handler)
+    public IDisposable OnWallItemRemoved(Action<WallItem> handler)
     {
         handler = Guarded(handler);
-        Room.WallItemRemoved += handler;
-        return Track(new Unsubscriber(() => Room.WallItemRemoved -= handler));
+        Room.WallItemRemovedDetailed += handler;
+        return Track(new Unsubscriber(() => Room.WallItemRemovedDetailed -= handler));
     }
 
     /// <summary>
@@ -587,16 +612,18 @@ public partial class ScriptGlobals
     }
 
     /// <summary>
-    /// Registers a handler that runs when a wall item is removed from the room, with the full
-    /// item as it last was rather than just its id.
+    /// Registers a handler that runs when a wall item's data changes.
     /// </summary>
-    /// <param name="handler">The handler to call with the removed item.</param>
+    /// <param name="handler">
+    /// The handler to call with the item, its previous data string and its new data string, in
+    /// that order. The item already holds the new data.
+    /// </param>
     /// <returns>A handle that removes the handler when disposed.</returns>
-    public IDisposable OnWallItemRemovedDetailed(Action<WallItem> handler)
+    public IDisposable OnWallItemDataChanged(Action<WallItem, string, string> handler)
     {
         handler = Guarded(handler);
-        Room.WallItemRemovedDetailed += handler;
-        return Track(new Unsubscriber(() => Room.WallItemRemovedDetailed -= handler));
+        Room.WallItemDataChanged += handler;
+        return Track(new Unsubscriber(() => Room.WallItemDataChanged -= handler));
     }
 
     /// <summary>
@@ -611,7 +638,7 @@ public partial class ScriptGlobals
     public IDisposable OnInventoryLoaded(Action handler)
     {
         ArgumentNullException.ThrowIfNull(handler);
-        return Track(Application.Subscribe<InventoryFurniChanged>(
+        return Track(_application.Subscribe<InventoryFurniChanged>(
             ApplicationMemberIds.InventoryFurniChanged,
             Guarded<InventoryFurniChanged>(change =>
             {
@@ -633,7 +660,7 @@ public partial class ScriptGlobals
     public IDisposable OnInventoryInvalidated(Action handler)
     {
         ArgumentNullException.ThrowIfNull(handler);
-        return Track(Application.Subscribe<InventoryFurniChanged>(
+        return Track(_application.Subscribe<InventoryFurniChanged>(
             ApplicationMemberIds.InventoryFurniChanged,
             Guarded<InventoryFurniChanged>(change =>
             {
@@ -655,7 +682,7 @@ public partial class ScriptGlobals
     public IDisposable OnInventoryItemAdded(Action<InventoryItem> handler)
     {
         ArgumentNullException.ThrowIfNull(handler);
-        return Track(Application.Subscribe<InventoryFurniChanged>(
+        return Track(_application.Subscribe<InventoryFurniChanged>(
             ApplicationMemberIds.InventoryFurniChanged,
             Guarded<InventoryFurniChanged>(change =>
             {
@@ -673,7 +700,7 @@ public partial class ScriptGlobals
     public IDisposable OnInventoryItemUpdated(Action<InventoryItem> handler)
     {
         ArgumentNullException.ThrowIfNull(handler);
-        return Track(Application.Subscribe<InventoryFurniChanged>(
+        return Track(_application.Subscribe<InventoryFurniChanged>(
             ApplicationMemberIds.InventoryFurniChanged,
             Guarded<InventoryFurniChanged>(change =>
             {
@@ -691,7 +718,7 @@ public partial class ScriptGlobals
     public IDisposable OnInventoryItemRemoved(Action<InventoryItem> handler)
     {
         ArgumentNullException.ThrowIfNull(handler);
-        return Track(Application.Subscribe<InventoryFurniChanged>(
+        return Track(_application.Subscribe<InventoryFurniChanged>(
             ApplicationMemberIds.InventoryFurniChanged,
             Guarded<InventoryFurniChanged>(change =>
             {
@@ -709,7 +736,7 @@ public partial class ScriptGlobals
     public IDisposable OnPetInventoryLoaded(Action handler)
     {
         ArgumentNullException.ThrowIfNull(handler);
-        return Track(Application.Subscribe<InventoryPetChanged>(
+        return Track(_application.Subscribe<InventoryPetChanged>(
             ApplicationMemberIds.InventoryPetsChanged,
             Guarded<InventoryPetChanged>(change =>
             {
@@ -733,7 +760,7 @@ public partial class ScriptGlobals
     public IDisposable OnInventoryPetAdded(Action<InventoryPet, bool> handler)
     {
         ArgumentNullException.ThrowIfNull(handler);
-        return Track(Application.Subscribe<InventoryPetChanged>(
+        return Track(_application.Subscribe<InventoryPetChanged>(
             ApplicationMemberIds.InventoryPetsChanged,
             Guarded<InventoryPetChanged>(change =>
             {
@@ -751,7 +778,7 @@ public partial class ScriptGlobals
     public IDisposable OnInventoryPetUpdated(Action<InventoryPet> handler)
     {
         ArgumentNullException.ThrowIfNull(handler);
-        return Track(Application.Subscribe<InventoryPetChanged>(
+        return Track(_application.Subscribe<InventoryPetChanged>(
             ApplicationMemberIds.InventoryPetsChanged,
             Guarded<InventoryPetChanged>(change =>
             {
@@ -769,7 +796,7 @@ public partial class ScriptGlobals
     public IDisposable OnInventoryPetRemoved(Action<InventoryPet> handler)
     {
         ArgumentNullException.ThrowIfNull(handler);
-        return Track(Application.Subscribe<InventoryPetChanged>(
+        return Track(_application.Subscribe<InventoryPetChanged>(
             ApplicationMemberIds.InventoryPetsChanged,
             Guarded<InventoryPetChanged>(change =>
             {
@@ -779,9 +806,45 @@ public partial class ScriptGlobals
     }
 
     /// <summary>
+    /// Registers a handler that runs when a hotel session starts.
+    /// </summary>
+    /// <remarks>
+    /// It does not run for a session that is already active when it is registered; check
+    /// <see cref="IsConnected"/> for that. The account, room and inventory state of the new
+    /// session fills in afterwards, as the hotel sends it.
+    /// </remarks>
+    /// <param name="handler">The handler to call with the new session.</param>
+    /// <returns>A handle that removes the handler when disposed.</returns>
+    public IDisposable OnSessionStarted(Action<Session> handler) =>
+        Subscribe(
+            handler,
+            value => _interceptor.Connected += value,
+            value => _interceptor.Connected -= value);
+
+    /// <summary>
+    /// Registers a handler that runs when the hotel session ends, however it ends.
+    /// </summary>
+    /// <remarks>
+    /// It runs when the connection to the hotel closes and when the connection to G-Earth is lost,
+    /// whether or not the server sent a disconnect reason. A run started from the command line is
+    /// stopped as soon as its session ends, so the handler never runs there.
+    /// </remarks>
+    /// <param name="handler">The handler to call, with no arguments.</param>
+    /// <returns>A handle that removes the handler when disposed.</returns>
+    public IDisposable OnSessionEnded(Action handler) =>
+        Subscribe(
+            handler,
+            value => _interceptor.Disconnected += value,
+            value => _interceptor.Disconnected -= value);
+
+    /// <summary>
     /// Registers a handler that runs when the server announces that it is closing the
     /// connection.
     /// </summary>
+    /// <remarks>
+    /// It runs only when the server sends a disconnect reason. Use <see cref="OnSessionEnded"/> to
+    /// react to every way a session ends.
+    /// </remarks>
     /// <param name="handler">
     /// The handler to call with the raw disconnect reason code the server sent. The connection
     /// is closed right afterwards, so this handler is the last chance to react.
@@ -799,7 +862,7 @@ public partial class ScriptGlobals
     /// </param>
     /// <returns>A handle that removes the handler when disposed.</returns>
     public IDisposable OnFriendRequest(Action<NewFriendRequest> handler) =>
-        Track(Application.Subscribe(
+        Track(_application.Subscribe(
             ApplicationMemberIds.FriendRequestReceived,
             Guarded(handler)));
 
@@ -829,7 +892,7 @@ public partial class ScriptGlobals
     /// </param>
     /// <returns>A handle that removes the handler when disposed.</returns>
     public IDisposable OnTradeChanged(Action<TradeChanged> handler) =>
-        Track(Application.Subscribe(
+        Track(_application.Subscribe(
             ApplicationMemberIds.TradeChanged,
             Guarded(handler)));
 
@@ -901,15 +964,17 @@ public partial class ScriptGlobals
         });
 
     /// <summary>
-    /// Registers a handler that runs when the trade enters the final confirmation phase.
+    /// Registers a handler that runs when both sides have accepted and the trade enters the final
+    /// confirmation phase.
     /// </summary>
     /// <remarks>
     /// In this phase both sides must call <see cref="ConfirmTrade"/>, and the offers can no
-    /// longer be changed.
+    /// longer be changed. The trade has not completed yet; <see cref="OnTradeCompleted"/> runs
+    /// once it has.
     /// </remarks>
     /// <param name="handler">The handler to call, with no arguments.</param>
     /// <returns>A handle that removes the handler when disposed.</returns>
-    public IDisposable OnTradeConfirmed(Action handler) =>
+    public IDisposable OnTradeAwaitingConfirmation(Action handler) =>
         OnTradeChanged(change =>
         {
             if (change.Kind is TradeChangeKind.Confirmation)

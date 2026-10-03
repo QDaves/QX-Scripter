@@ -46,7 +46,6 @@ public sealed class InventoryItem : IParserComposer<InventoryItem>
 
     /// <summary>Reads an inventory item from a packet.</summary>
     /// <param name="p">The packet to read from.</param>
-    /// <exception cref="UnsupportedClientException">Thrown when the packet is not from the Flash client.</exception>
     /// <exception cref="InvalidDataException">Thrown when the item type is neither floor nor wall.</exception>
     public static InventoryItem Parse(in PacketReader p) =>
         FlashWire.Parse(in p, ParseFlash);
@@ -84,7 +83,6 @@ public sealed class InventoryItem : IParserComposer<InventoryItem>
 
     /// <summary>Writes the inventory item to a packet.</summary>
     /// <param name="p">The packet to write to.</param>
-    /// <exception cref="UnsupportedClientException">Thrown when the packet is not for the Flash client.</exception>
     /// <exception cref="InvalidDataException">
     /// Thrown when the item type is neither floor nor wall, or a wall item carries a slot identifier
     /// or extra value.

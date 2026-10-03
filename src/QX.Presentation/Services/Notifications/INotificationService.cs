@@ -8,7 +8,7 @@ public interface INotificationService
 {
     ReadOnlyObservableCollection<Toast> Toasts { get; }
 
-    void Show(string text, NoticeSeverity severity = NoticeSeverity.Info, string? action_text = null, ICommand? action = null);
+    void Show(string text, NoticeSeverity severity = NoticeSeverity.Info, string? actionText = null, ICommand? action = null);
 
     void Dismiss(Toast toast);
 }

@@ -14,7 +14,6 @@ public enum HeaderCatalogPreparationStage
 
 public sealed record HeaderCatalogPreparationStatus(
     InstalledClientCandidate Candidate,
-    ClientType Client,
     string NormalizedPath,
     HeaderCatalogPreparationStage Stage,
     DateTimeOffset ChangedAt,
@@ -36,22 +35,22 @@ public sealed record PreparedHeaderCatalog
 {
     public PreparedHeaderCatalog(
         InstalledClientCandidate candidate,
-        string normalized_path,
-        string source_path,
+        string normalizedPath,
+        string sourcePath,
         HeaderCatalogKey key,
         HeaderCatalogSnapshot catalog,
-        HeaderCatalogCacheState cache_state,
-        string content_sha256,
-        DateTimeOffset prepared_at)
+        HeaderCatalogCacheState cacheState,
+        string contentSha256,
+        DateTimeOffset preparedAt)
     {
         Candidate = candidate ?? throw new ArgumentNullException(nameof(candidate));
-        NormalizedPath = Path.GetFullPath(normalized_path);
-        SourcePath = Path.GetFullPath(source_path);
+        NormalizedPath = Path.GetFullPath(normalizedPath);
+        SourcePath = Path.GetFullPath(sourcePath);
         Key = key ?? throw new ArgumentNullException(nameof(key));
         Catalog = catalog ?? throw new ArgumentNullException(nameof(catalog));
-        CacheState = cache_state;
-        ContentSha256 = HeaderCatalogKey.NormalizeHash(content_sha256, nameof(content_sha256));
-        PreparedAt = prepared_at;
+        CacheState = cacheState;
+        ContentSha256 = HeaderCatalogKey.NormalizeHash(contentSha256, nameof(contentSha256));
+        PreparedAt = preparedAt;
     }
 
     public InstalledClientCandidate Candidate { get; }

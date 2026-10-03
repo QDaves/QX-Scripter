@@ -21,12 +21,12 @@ public sealed record BannedUsersFromRoom : IParserComposer<BannedUsersFromRoom>
     private IReadOnlyList<IdName> _users = Array.Empty<IdName>();
 
     /// <summary>Initializes a new instance of the <see cref="BannedUsersFromRoom"/> record.</summary>
-    /// <param name="RoomId">The identifier of the room.</param>
-    /// <param name="Users">The banned users, copied into a read only list.</param>
-    public BannedUsersFromRoom(Id RoomId, IReadOnlyList<IdName> Users)
+    /// <param name="roomId">The identifier of the room.</param>
+    /// <param name="users">The banned users, copied into a read only list.</param>
+    public BannedUsersFromRoom(Id roomId, IReadOnlyList<IdName> users)
     {
-        this.RoomId = RoomId;
-        this.Users = Users;
+        RoomId = roomId;
+        Users = users;
     }
 
     /// <summary>Gets the identifier of the room.</summary>
@@ -40,12 +40,12 @@ public sealed record BannedUsersFromRoom : IParserComposer<BannedUsersFromRoom>
     }
 
     /// <summary>Deconstructs the message into its room and users.</summary>
-    /// <param name="RoomId">The identifier of the room.</param>
-    /// <param name="Users">The banned users.</param>
-    public void Deconstruct(out Id RoomId, out IReadOnlyList<IdName> Users)
+    /// <param name="roomId">The identifier of the room.</param>
+    /// <param name="users">The banned users.</param>
+    public void Deconstruct(out Id roomId, out IReadOnlyList<IdName> users)
     {
-        RoomId = this.RoomId;
-        Users = this.Users;
+        roomId = RoomId;
+        users = Users;
     }
 
     /// <summary>Parses the message from a packet.</summary>

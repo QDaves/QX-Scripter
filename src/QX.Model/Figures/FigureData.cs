@@ -175,11 +175,11 @@ public sealed class FigureData
 
     /// <summary>Gets the part types a figure must contain for a gender at a club level.</summary>
     /// <param name="gender">The gender. Only <see cref="FigureGender.Male"/> and <see cref="FigureGender.Female"/> have mandatory types.</param>
-    /// <param name="club_level">The club level. Any level of 1 or more counts as club, a negative level has no mandatory types.</param>
+    /// <param name="clubLevel">The club level. Any level of 1 or more counts as club, a negative level has no mandatory types.</param>
     /// <returns>The mandatory part types, in figure data order.</returns>
-    public IReadOnlyList<FigurePartType> GetMandatorySetTypes(FigureGender gender, int club_level) =>
+    public IReadOnlyList<FigurePartType> GetMandatorySetTypes(FigureGender gender, int clubLevel) =>
         Array.AsReadOnly(_setTypes
-            .Where(setType => setType.IsMandatory(gender, club_level))
+            .Where(setType => setType.IsMandatory(gender, clubLevel))
             .Select(setType => setType.Type)
             .ToArray());
 
@@ -257,11 +257,11 @@ public sealed class FigureData
     /// <summary>Gets the club level required to wear a figure.</summary>
     /// <param name="figure">The figure to inspect.</param>
     /// <param name="gender">The gender the figure is worn as.</param>
-    /// <param name="part_types">The part types the figure may omit only at a sufficient club level, or <see langword="null"/> to skip that check.</param>
+    /// <param name="partTypes">The part types the figure may omit only at a sufficient club level, or <see langword="null"/> to skip that check.</param>
     /// <returns>The required club level, 0 when no club is needed.</returns>
     /// <remarks>
     /// The level is the highest club level across the selected sets and their colors, raised by
-    /// the club level at which any of <paramref name="part_types"/> that the figure omits becomes
+    /// the club level at which any of <paramref name="partTypes"/> that the figure omits becomes
     /// optional. Unknown sets, palettes and colors are ignored.
     /// The client passes the part types explicitly, for example the mannequin widget passes
     /// its clothing part types. Its own fallback reads body part ids out of the avatar
@@ -271,7 +271,7 @@ public sealed class FigureData
     public int ResolveClubLevel(
         Figure figure,
         FigureGender gender,
-        IEnumerable<FigurePartType>? part_types = null)
+        IEnumerable<FigurePartType>? partTypes = null)
     {
         ArgumentNullException.ThrowIfNull(figure);
         int level = 0;
@@ -296,10 +296,10 @@ public sealed class FigureData
             }
         }
 
-        if (part_types is null)
+        if (partTypes is null)
             return level;
 
-        foreach (FigurePartType type in part_types)
+        foreach (FigurePartType type in partTypes)
         {
             if (figure.HasPartType(type))
                 continue;

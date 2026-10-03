@@ -358,7 +358,7 @@ public abstract partial class RoomPeopleViewModel : ViewModelBase
             $"They are banned from this room {word} and put out of it now.",
             "Ban",
             DialogTone.Destructive,
-            cancellation_token: cancellation_token);
+            cancellationToken: cancellation_token);
         if (!sure)
             return;
         await ModerateAsync(

@@ -36,7 +36,7 @@ public sealed record FloorItemRemove(Id Id, bool IsExpired, Id PickerId, int Del
 
     private static void ComposeFlash(FloorItemRemove value, in PacketWriter p)
     {
-        RoomPlacementWire.RequireId(value.PickerId, nameof(value.PickerId), in p);
+        RoomPlacementWire.RequireId(value.PickerId, nameof(value.PickerId));
         RoomPlacementWire.WriteFlashStringId(value.Id, nameof(value.Id), in p);
         value.ComposeItem(in p);
     }
@@ -87,7 +87,7 @@ public sealed record PickupConfirmation(int Category, Id ItemId, string Title, s
         int category = RoomPlacementWire.RequireCategory(
             value.Category,
             nameof(PickupConfirmation));
-        RoomPlacementWire.RequireId(value.ItemId, nameof(value.ItemId), in p);
+        RoomPlacementWire.RequireId(value.ItemId, nameof(value.ItemId));
         RoomPlacementWire.RequireString(value.Title, nameof(value.Title), in p);
         RoomPlacementWire.RequireString(value.Body, nameof(value.Body), in p);
         p.WriteInt(category);

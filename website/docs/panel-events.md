@@ -19,6 +19,20 @@ twice disables its own button while it works.
 Reads inside a handler return what the panel shows now, so a running loop sees edits made while it
 runs.
 
+`Ui.OnChange(name, handler)` runs when the user edits a control. The handler takes the new value as a
+`string`, or takes nothing and reads the control itself. Change handlers start one at a time, in the
+order the edits were made, each once the one before has returned, so an async handler lets the next
+one start at its first `await`. A value the script writes with `Ui.Set` does not call them. Like a
+click handler, a change handler keeps the script alive. An exception it throws is a script error and
+stops the run.
+
+```csharp
+//@ui:select mode "Say it as" [Talk,Shout]
+//@ui:status last "Mode"
+
+Ui.OnChange("mode", mode => Ui.Status("last", $"saying it as {mode}"));
+```
+
 ## Read
 
 Each read returns the fallback when the control is missing or empty.

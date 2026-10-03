@@ -251,7 +251,7 @@ public sealed record HabbiconCollection(
     {
         HabbiconWire.RequireRemaining(
             in p,
-            HabbiconWire.CollectionMinimumBytes(p.Client),
+            HabbiconWire.CollectionMinimumBytes,
             trailing_bytes,
             nameof(HabbiconCollection));
         int collection_id = p.ReadInt();
@@ -259,7 +259,7 @@ public sealed record HabbiconCollection(
             in p,
             nameof(Name),
             checked(trailing_bytes + sizeof(bool) + sizeof(int) * 5 +
-                HabbiconWire.CountWidth(p.Client)));
+                HabbiconWire.CountWidth));
         bool completed = p.ReadBool();
         int reward_habbicon_id = p.ReadInt();
         var reward_state = (HabbiconState)p.ReadInt();
@@ -388,7 +388,7 @@ public sealed record UserHabbicons(
 
     private static UserHabbicons ParseMessage(in PacketReader p, bool allow_missing_recents)
     {
-        int trailing = allow_missing_recents ? 0 : HabbiconWire.CountWidth(p.Client);
+        int trailing = allow_missing_recents ? 0 : HabbiconWire.CountWidth;
         int count = HabbiconWire.ReadCount(
             in p,
             HabbiconWire.UserStateBytes,
@@ -572,7 +572,7 @@ public sealed record HabbiconShopData(IReadOnlyList<HabbiconCollection> Collecti
     private static HabbiconShopData ParseMessage(in PacketReader p)
     {
         var strings = HabbiconWire.NewStringBudget();
-        int minimum = HabbiconWire.CollectionMinimumBytes(p.Client);
+        int minimum = HabbiconWire.CollectionMinimumBytes;
         int count = HabbiconWire.ReadCount(in p, minimum, 0, nameof(Collections));
         var collections = new HabbiconCollection[count];
         for (int index = 0; index < count; index++)

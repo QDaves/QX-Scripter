@@ -39,11 +39,11 @@ public sealed partial class ViewState : ObservableObject
     public void ShowLoading(string message, ICommand? cancel = null) =>
         Set(ViewStateKind.Loading, IconKind.None, "", message, null, "", cancel);
 
-    public void ShowEmpty(IconKind icon, string title, string message = "", ICommand? action = null, string action_text = "") =>
-        Set(ViewStateKind.Empty, icon, title, message, action, action_text, null);
+    public void ShowEmpty(IconKind icon, string title, string message = "", ICommand? action = null, string actionText = "") =>
+        Set(ViewStateKind.Empty, icon, title, message, action, actionText, null);
 
-    public void ShowUnavailable(IconKind icon, string title, string message = "", ICommand? action = null, string action_text = "") =>
-        Set(ViewStateKind.Unavailable, icon, title, message, action, action_text, null);
+    public void ShowUnavailable(IconKind icon, string title, string message = "", ICommand? action = null, string actionText = "") =>
+        Set(ViewStateKind.Unavailable, icon, title, message, action, actionText, null);
 
     public void ShowError(string title, string message, ICommand? retry = null) =>
         Set(ViewStateKind.Error, IconKind.Error, title, message, retry, retry is null ? "" : "Try again", null);

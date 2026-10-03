@@ -83,7 +83,7 @@ internal sealed class RoomReadsApplication : IApplicationFeature
     {
         Validate(request.RoomId, request.TimeoutMilliseconds, request.ExpectedSessionGeneration);
         RoomReadScope scope = CaptureScope(request.ExpectedSessionGeneration, cancellation_token);
-        ValidateWireId(scope.Session.Client, request.RoomId);
+        ValidateWireId(request.RoomId);
         GuestRoomResult response = await requests.RequestAsync(
             MessageContracts.Room.SnapshotRequest,
             new GetGuestRoomRequest(request.RoomId, false, false),
@@ -102,7 +102,6 @@ internal sealed class RoomReadsApplication : IApplicationFeature
         RoomDataView room = Snapshot(response.Data);
         RequireScope(scope);
         return new RoomDataReadResult(
-            scope.Session.Client,
             received_at_utc,
             scope.Generation,
             request.RoomId,
@@ -116,7 +115,7 @@ internal sealed class RoomReadsApplication : IApplicationFeature
     {
         Validate(request.RoomId, request.TimeoutMilliseconds, request.ExpectedSessionGeneration);
         RoomReadScope scope = CaptureScope(request.ExpectedSessionGeneration, cancellation_token);
-        ValidateWireId(scope.Session.Client, request.RoomId);
+        ValidateWireId(request.RoomId);
         RightsList response = await requests.RequestAsync(
             MessageContracts.Room.Authority.ControllersRequest,
             new GetFlatControllersRequest(request.RoomId),
@@ -132,7 +131,6 @@ internal sealed class RoomReadsApplication : IApplicationFeature
         IReadOnlyList<IdName> users = Freeze(response.Users);
         RequireScope(scope);
         return new RoomRightsReadResult(
-            scope.Session.Client,
             received_at_utc,
             scope.Generation,
             response.RoomId,
@@ -146,7 +144,7 @@ internal sealed class RoomReadsApplication : IApplicationFeature
     {
         Validate(request.PetId, request.TimeoutMilliseconds, request.ExpectedSessionGeneration);
         RoomReadScope scope = CaptureScope(request.ExpectedSessionGeneration, cancellation_token);
-        ValidateWireId(scope.Session.Client, request.PetId);
+        ValidateWireId(request.PetId);
         PetInfo response = await requests.RequestAsync(
             MessageContracts.Room.Occupants.Pet.InfoRequest,
             new GetPetInfoRequest(request.PetId),
@@ -162,7 +160,6 @@ internal sealed class RoomReadsApplication : IApplicationFeature
         PetInfoView pet = Snapshot(response);
         RequireScope(scope);
         return new PetInfoReadResult(
-            scope.Session.Client,
             received_at_utc,
             scope.Generation,
             request.PetId,
@@ -176,7 +173,7 @@ internal sealed class RoomReadsApplication : IApplicationFeature
     {
         Validate(request.ItemId, request.TimeoutMilliseconds, request.ExpectedSessionGeneration);
         RoomReadScope scope = CaptureScope(request.ExpectedSessionGeneration, cancellation_token);
-        ValidateWireId(scope.Session.Client, request.ItemId);
+        ValidateWireId(request.ItemId);
         Sticky response = await requests.RequestAsync(
             MessageContracts.Room.WallItem.StickyDataRequest,
             new GetStickyDataRequest(request.ItemId),
@@ -191,7 +188,6 @@ internal sealed class RoomReadsApplication : IApplicationFeature
         DateTimeOffset received_at_utc = time_provider.GetUtcNow();
         RequireScope(scope);
         return new StickyReadResult(
-            scope.Session.Client,
             received_at_utc,
             scope.Generation,
             response.Id,
@@ -221,7 +217,6 @@ internal sealed class RoomReadsApplication : IApplicationFeature
         IReadOnlyList<RoomAdRoomView> rooms = Snapshot(response.Rooms);
         RequireScope(scope);
         return new RoomAdInfoReadResult(
-            scope.Session.Client,
             received_at_utc,
             scope.Generation,
             1,
@@ -465,9 +460,9 @@ internal sealed class RoomReadsApplication : IApplicationFeature
             throw new ArgumentOutOfRangeException(nameof(generation));
     }
 
-    private static void ValidateWireId(ClientType client, Id room_id)
+    private static void ValidateWireId(Id room_id)
     {
-        if (client is ClientType.Flash && (long)room_id > int.MaxValue)
+        if ((long)room_id > int.MaxValue)
             throw new ArgumentOutOfRangeException(nameof(room_id));
     }
 

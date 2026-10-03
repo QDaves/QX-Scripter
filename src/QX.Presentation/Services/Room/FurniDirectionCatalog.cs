@@ -8,7 +8,7 @@ namespace Qx.Presentation.Services.Room;
 
 public interface IFurniDirections
 {
-    Task<IReadOnlyList<int>> ForAsync(int revision, string? identifier, CancellationToken cancellation_token = default);
+    Task<IReadOnlyList<int>> ForAsync(int revision, string? identifier, CancellationToken cancellationToken = default);
 }
 
 public sealed class FurniDirectionCatalog : IFurniDirections, IDisposable
@@ -28,14 +28,14 @@ public sealed class FurniDirectionCatalog : IFurniDirections, IDisposable
     public async Task<IReadOnlyList<int>> ForAsync(
         int revision,
         string? identifier,
-        CancellationToken cancellation_token = default)
+        CancellationToken cancellationToken = default)
     {
         if (revision <= 0 || string.IsNullOrWhiteSpace(identifier))
             return [];
         string name = identifier.Replace('*', '_');
         string key = $"{revision}/{name}";
         Task<IReadOnlyList<int>> pending = _cache.GetOrAdd(key, _ => DownloadAsync(revision, name, key));
-        return await pending.WaitAsync(cancellation_token).ConfigureAwait(false);
+        return await pending.WaitAsync(cancellationToken).ConfigureAwait(false);
     }
 
     public void Dispose() => _http.Dispose();

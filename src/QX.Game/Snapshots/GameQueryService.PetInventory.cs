@@ -13,7 +13,7 @@ public sealed partial class GameQueryService
         ArgumentOutOfRangeException.ThrowIfNegative(maxPets);
         InventoryPetPage page = InventoryApplicationPages.ReadPets(
             application,
-            max_pets: maxPets);
+            maxPets: maxPets);
         var snapshot = new PetInventorySnapshot(
             page.Loading,
             page.Stale,

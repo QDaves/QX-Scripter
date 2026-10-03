@@ -24,11 +24,11 @@ public readonly record struct Id : IComparable<Id>, IComparable
 
     /// <summary>Parses a string into an ID.</summary>
     /// <param name="s">The string to parse.</param>
-    /// <exception cref="Exception">Thrown when <paramref name="s"/> is not a valid 64-bit integer.</exception>
+    /// <exception cref="FormatException">Thrown when <paramref name="s"/> is not a valid 64-bit integer.</exception>
     public static explicit operator Id(string s)
     {
         if (!long.TryParse(s, out long value))
-            throw new Exception($"Invalid ID: {s}");
+            throw new FormatException($"Invalid ID: {s}");
         return new Id(value);
     }
 

@@ -1,3 +1,6 @@
+using System.Diagnostics.CodeAnalysis;
+using System.Reflection;
+using System.Text.Json;
 using Qx.Messages;
 using Qx.Protocol;
 
@@ -59,7 +62,10 @@ public enum ApplicationStateKey
     CatalogCache,
     /// <summary>The user is in a room.</summary>
     RoomActive,
-    /// <summary>The current room has finished loading.</summary>
+    /// <summary>
+    /// The current room is ready: the server reported it ready and confirmed the entry. Its avatars
+    /// and furni may still be arriving.
+    /// </summary>
     RoomReady,
     /// <summary>The local user's profile has been received.</summary>
     ProfileLoaded,
@@ -152,7 +158,12 @@ public enum ApplicationMessageRole
 }
 
 /// <summary>Represents one request parameter of an application member.</summary>
-/// <remarks>The JSON input schema of a member is built from its parameters.</remarks>
+/// <remarks>
+/// The JSON input schema of a member is built from its parameters. Each parameter stands for one
+/// parameter of the public constructor of the request type: the name is the snake_case form of the
+/// constructor parameter name, and the type, required flag and default value match the constructor
+/// parameter. <see cref="ApplicationDescriptor"/> checks this when it is created.
+/// </remarks>
 /// <param name="Name">The parameter name as it appears in JSON, such as <c>timeout_milliseconds</c>.</param>
 /// <param name="Type">The type of the parameter value.</param>
 /// <param name="Required">Whether the parameter must be given.</param>
@@ -198,14 +209,14 @@ public sealed record ApplicationStateEffect(
     ApplicationStateEffectKind Kind);
 
 /// <summary>Represents a message that an application member sends or observes.</summary>
-/// <remarks>The availability of a member is computed from its required messages for the active client.</remarks>
+/// <remarks>The availability of a member is computed from its required messages in the active session.</remarks>
 /// <param name="Key">The semantic key of the message.</param>
 /// <param name="Direction">The direction the message travels.</param>
 /// <param name="Role">Whether the member sends or observes the message.</param>
 /// <param name="Required">Whether the member needs the message. An optional message does not affect availability.</param>
 public sealed record ApplicationMessageRequirement(
     MessageKey Key,
-    Direction Direction,
+    MessageDirection Direction,
     ApplicationMessageRole Role,
     bool Required = true);
 
@@ -234,52 +245,54 @@ public sealed class ApplicationDescriptor
     /// <param name="description">The description of what the member does.</param>
     /// <param name="kind">The kind of member.</param>
     /// <param name="exposure">The surfaces the member is offered on.</param>
-    /// <param name="request_type">The request type, or <see langword="null"/> for an event.</param>
-    /// <param name="result_type">The result type of a call, or the value type of an event.</param>
-    /// <param name="parameters">The request parameters with unique names, or <see langword="null"/> for none.</param>
-    /// <param name="required_states">The states that must be satisfied before the member can be invoked, or <see langword="null"/> for none. Duplicates are removed.</param>
-    /// <param name="state_effects">The ways the member affects the client state, or <see langword="null"/> for none.</param>
+    /// <param name="requestType">The request type, or <see langword="null"/> for an event. A call binds its parameters through the single public constructor of this type.</param>
+    /// <param name="resultType">The result type of a call, or the value type of an event.</param>
+    /// <param name="parameters">The request parameters with unique names, or <see langword="null"/> for none. An event has no parameters, and the parameters of a call must match the parameters of the public constructor of <paramref name="requestType"/>.</param>
+    /// <param name="requiredStates">The states that must be satisfied before the member can be invoked, or <see langword="null"/> for none. Duplicates are removed.</param>
+    /// <param name="stateEffects">The ways the member affects the client state, or <see langword="null"/> for none.</param>
     /// <param name="messages">The messages the member sends or observes, or <see langword="null"/> for none.</param>
-    /// <param name="tool_hints">The MCP tool hints, or <see langword="null"/>. Required when <paramref name="exposure"/> includes <see cref="ApplicationExposure.Mcp"/>.</param>
-    /// <param name="invocation_scope">Whether the member can run in a short-lived runtime.</param>
-    /// <exception cref="ArgumentNullException">Thrown when <paramref name="id"/>, <paramref name="title"/>, <paramref name="description"/> or <paramref name="result_type"/> is <see langword="null"/>, or a parameter has no name or type.</exception>
-    /// <exception cref="ArgumentException">Thrown when a text argument is empty or white space, the request type does not fit the kind, an event is offered to MCP, an MCP member has no tool hints, the hints are both read-only and destructive, or a parameter or message requirement is invalid.</exception>
-    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="exposure"/> is <see cref="ApplicationExposure.None"/> or holds an undefined flag, or <paramref name="invocation_scope"/> is not defined.</exception>
+    /// <param name="toolHints">The MCP tool hints, or <see langword="null"/>. Required when <paramref name="exposure"/> includes <see cref="ApplicationExposure.Mcp"/>.</param>
+    /// <param name="invocationScope">Whether the member can run in a short-lived runtime.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="id"/>, <paramref name="title"/>, <paramref name="description"/> or <paramref name="resultType"/> is <see langword="null"/>, or a parameter has no name or type.</exception>
+    /// <exception cref="ArgumentException">Thrown when a text argument is empty or white space, the request type does not fit the kind or does not have exactly one public constructor, an event declares parameters or is offered to MCP, an MCP member has no tool hints, the hints are both read-only and destructive, a parameter or message requirement is invalid, or the parameters of a call differ from the parameters of the request type's public constructor in name, type, required flag or default value.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="exposure"/> is <see cref="ApplicationExposure.None"/> or holds an undefined flag, or <paramref name="invocationScope"/> is not defined.</exception>
     public ApplicationDescriptor(
         string id,
         string title,
         string description,
         ApplicationMemberKind kind,
         ApplicationExposure exposure,
-        Type? request_type,
-        Type result_type,
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] Type? requestType,
+        Type resultType,
         IEnumerable<ApplicationParameterDescriptor>? parameters = null,
-        IEnumerable<ApplicationStateKey>? required_states = null,
-        IEnumerable<ApplicationStateEffect>? state_effects = null,
+        IEnumerable<ApplicationStateKey>? requiredStates = null,
+        IEnumerable<ApplicationStateEffect>? stateEffects = null,
         IEnumerable<ApplicationMessageRequirement>? messages = null,
-        ApplicationToolHints? tool_hints = null,
-        ApplicationInvocationScope invocation_scope = ApplicationInvocationScope.Transient)
+        ApplicationToolHints? toolHints = null,
+        ApplicationInvocationScope invocationScope = ApplicationInvocationScope.Transient)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(id);
         ArgumentException.ThrowIfNullOrWhiteSpace(title);
         ArgumentException.ThrowIfNullOrWhiteSpace(description);
-        ArgumentNullException.ThrowIfNull(result_type);
-        if (kind is ApplicationMemberKind.Event && request_type is not null)
-            throw new ArgumentException("An event cannot declare a request type.", nameof(request_type));
-        if (kind is not ApplicationMemberKind.Event && request_type is null)
-            throw new ArgumentException("A call requires a request type.", nameof(request_type));
+        ArgumentNullException.ThrowIfNull(resultType);
+        if (kind is ApplicationMemberKind.Event && requestType is not null)
+            throw new ArgumentException("An event cannot declare a request type.", nameof(requestType));
+        if (kind is not ApplicationMemberKind.Event && requestType is null)
+            throw new ArgumentException("A call requires a request type.", nameof(requestType));
         if (exposure is ApplicationExposure.None || (exposure & ~ApplicationExposure.All) != 0)
             throw new ArgumentOutOfRangeException(nameof(exposure));
-        if (!Enum.IsDefined(invocation_scope))
-            throw new ArgumentOutOfRangeException(nameof(invocation_scope));
+        if (!Enum.IsDefined(invocationScope))
+            throw new ArgumentOutOfRangeException(nameof(invocationScope));
         if (exposure.HasFlag(ApplicationExposure.Mcp) && kind is ApplicationMemberKind.Event)
             throw new ArgumentException("MCP event exposure requires a streaming binding.", nameof(exposure));
-        if (exposure.HasFlag(ApplicationExposure.Mcp) && tool_hints is null)
-            throw new ArgumentException("MCP call exposure requires explicit tool hints.", nameof(tool_hints));
-        if (tool_hints is { ReadOnly: true, Destructive: true })
-            throw new ArgumentException("A read-only application member cannot be destructive.", nameof(tool_hints));
+        if (exposure.HasFlag(ApplicationExposure.Mcp) && toolHints is null)
+            throw new ArgumentException("MCP call exposure requires explicit tool hints.", nameof(toolHints));
+        if (toolHints is { ReadOnly: true, Destructive: true })
+            throw new ArgumentException("A read-only application member cannot be destructive.", nameof(toolHints));
 
         ApplicationParameterDescriptor[] parameter_values = [.. parameters ?? []];
+        if (kind is ApplicationMemberKind.Event && parameter_values.Length != 0)
+            throw new ArgumentException("An event cannot declare parameters.", nameof(parameters));
         string[] duplicate_parameters = parameter_values
             .GroupBy(parameter => parameter.Name, StringComparer.Ordinal)
             .Where(group => group.Count() > 1)
@@ -298,11 +311,13 @@ public sealed class ApplicationDescriptor
                 throw new ArgumentException($"Default value for '{parameter.Name}' does not match '{parameter.Type.FullName}'.", nameof(parameters));
             ValidateConstraints(parameter, nameof(parameters));
         }
+        if (requestType is not null)
+            ValidateRequestParameters(requestType, parameter_values, nameof(requestType), nameof(parameters));
 
-        ApplicationStateKey[] state_values = [.. (required_states ?? []).Distinct()];
-        ApplicationStateEffect[] effect_values = [.. state_effects ?? []];
+        ApplicationStateKey[] state_values = [.. (requiredStates ?? []).Distinct()];
+        ApplicationStateEffect[] effect_values = [.. stateEffects ?? []];
         ApplicationMessageRequirement[] message_values = [.. messages ?? []];
-        if (message_values.Any(message => message.Key.IsEmpty || message.Direction is Direction.None))
+        if (message_values.Any(message => message.Key.IsEmpty || message.Direction is MessageDirection.None))
             throw new ArgumentException("Application message requirements need a semantic key and direction.", nameof(messages));
 
         Id = id;
@@ -310,14 +325,14 @@ public sealed class ApplicationDescriptor
         Description = description;
         Kind = kind;
         Exposure = exposure;
-        RequestType = request_type;
-        ResultType = result_type;
+        RequestType = requestType;
+        ResultType = resultType;
         Parameters = Array.AsReadOnly(parameter_values);
         RequiredStates = Array.AsReadOnly(state_values);
         StateEffects = Array.AsReadOnly(effect_values);
         Messages = Array.AsReadOnly(message_values);
-        ToolHints = tool_hints;
-        InvocationScope = invocation_scope;
+        ToolHints = toolHints;
+        InvocationScope = invocationScope;
     }
 
     /// <summary>Gets the member id, such as <c>room.chat.talk</c>.</summary>
@@ -387,6 +402,33 @@ public sealed class ApplicationDescriptor
         }
         if (constraints.Pattern is { Length: 0 })
             throw new ArgumentException($"Parameter '{parameter.Name}' has an empty pattern.", argument_name);
+    }
+
+    private static void ValidateRequestParameters(
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] Type request_type,
+        ApplicationParameterDescriptor[] parameters,
+        string request_argument_name,
+        string parameters_argument_name)
+    {
+        ConstructorInfo[] constructors = request_type.GetConstructors();
+        if (constructors.Length != 1)
+            throw new ArgumentException($"Request type '{request_type}' must have exactly one public constructor.", request_argument_name);
+        Dictionary<string, ApplicationParameterDescriptor> declared =
+            parameters.ToDictionary(parameter => parameter.Name, StringComparer.Ordinal);
+        foreach (ParameterInfo constructor_parameter in constructors[0].GetParameters())
+        {
+            string name = JsonNamingPolicy.SnakeCaseLower.ConvertName(constructor_parameter.Name!);
+            if (!declared.Remove(name, out ApplicationParameterDescriptor? parameter))
+                throw new ArgumentException($"Parameter '{name}' of '{request_type}' is not declared.", parameters_argument_name);
+            if (parameter.Type != constructor_parameter.ParameterType)
+                throw new ArgumentException($"Parameter '{name}' must have the type '{constructor_parameter.ParameterType}' to match '{request_type}'.", parameters_argument_name);
+            if (parameter.Required == constructor_parameter.HasDefaultValue)
+                throw new ArgumentException($"Parameter '{name}' must be {(parameter.Required ? "optional" : "required")} to match '{request_type}'.", parameters_argument_name);
+            if (constructor_parameter.HasDefaultValue && !Equals(parameter.DefaultValue, constructor_parameter.DefaultValue))
+                throw new ArgumentException($"Parameter '{name}' must default to '{constructor_parameter.DefaultValue ?? "null"}' to match '{request_type}'.", parameters_argument_name);
+        }
+        if (declared.Count != 0)
+            throw new ArgumentException($"Parameter '{declared.Keys.First()}' is not a parameter of '{request_type}'.", parameters_argument_name);
     }
 }
 
@@ -1024,6 +1066,27 @@ public static class ApplicationMemberIds
     public const string WiredConfigurationOpen = "wired.configuration.open";
     /// <summary>The id of the <c>wired.configuration.get</c> operation, which requests and returns the configuration of a Wired furni.</summary>
     public const string WiredConfigurationGet = "wired.configuration.get";
+
+    /// <summary>The wired.form.get application member.</summary>
+    public const string WiredFormGet = "wired.form.get";
+
+    /// <summary>The wired.form.save application member.</summary>
+    public const string WiredFormSave = "wired.form.save";
+
+    /// <summary>The wired.form.definitions application member.</summary>
+    public const string WiredFormDefinitions = "wired.form.definitions";
+
+    /// <summary>The wired.fx.styles application member.</summary>
+    public const string WiredFxStyles = "wired.fx.styles";
+
+    /// <summary>The wired.area_hide.get application member.</summary>
+    public const string WiredAreaHideGet = "wired.area_hide.get";
+
+    /// <summary>The wired.area_hide.set application member.</summary>
+    public const string WiredAreaHideSet = "wired.area_hide.set";
+
+    /// <summary>The wired.area_hide.toggle application member.</summary>
+    public const string WiredAreaHideToggle = "wired.area_hide.toggle";
     /// <summary>The id of the <c>wired.configuration.snapshot.apply</c> operation, which stores the current state of a Wired furni as its restore snapshot.</summary>
     public const string WiredConfigurationSnapshotApply = "wired.configuration.snapshot.apply";
     /// <summary>The id of the <c>wired.configuration.trigger.save</c> operation, which saves a trigger configuration and returns the hotel result.</summary>
@@ -1080,6 +1143,10 @@ public static class ApplicationMemberIds
     public const string WiredRoomRollback = "wired.room.rollback";
     /// <summary>The id of the <c>wired.preferences.set</c> operation, which updates the Wired menu, inspection, play test, notification and interface preferences.</summary>
     public const string WiredPreferencesSet = "wired.preferences.set";
+    /// <summary>Reads account preferences retained during the hotel connection.</summary>
+    public const string WiredPreferencesGet = "wired.preferences.get";
+    /// <summary>Generates a Wired Web API key and waits for its correlated result.</summary>
+    public const string WiredWebApiKeyGenerate = "wired.web_api.key.generate";
     /// <summary>The id of the <c>wired.chest.open</c> operation, which requests the contents of a Wired chest.</summary>
     public const string WiredChestOpen = "wired.chest.open";
     /// <summary>The id of the <c>wired.chest.close</c> operation, which closes a Wired chest.</summary>
@@ -1124,6 +1191,10 @@ public static class ApplicationMemberIds
     public const string WiredTradeItemsRemove = "wired.trade.items.remove";
     /// <summary>The id of the <c>wired.trade.confirm</c> operation, which updates the confirmation of the active Wired chest trade.</summary>
     public const string WiredTradeConfirm = "wired.trade.confirm";
+    /// <summary>The id of the operation that accepts and completes an unchanged reviewed Wired trade.</summary>
+    public const string WiredTradeComplete = "wired.trade.complete";
+    /// <summary>The id of the operation that sends an explicitly named Wired confirmation stage.</summary>
+    public const string WiredTradeStageSend = "wired.trade.stage.send";
     /// <summary>The id of the <c>wired.trade.cancel</c> operation, which cancels the active Wired chest trade.</summary>
     public const string WiredTradeCancel = "wired.trade.cancel";
     /// <summary>The id of the <c>wired.changed</c> event, which publishes each Wired state revision.</summary>

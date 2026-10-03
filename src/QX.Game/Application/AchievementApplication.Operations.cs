@@ -45,7 +45,6 @@ internal sealed partial class AchievementApplication
         {
             AchievementPage first_page = AchievementPageFor(lease, 0, request.Limit);
             var result = new AchievementRefreshResult(
-                scope.Session.Client,
                 time_provider.GetUtcNow(),
                 observed.ObservedAtUtc,
                 scope.SessionGeneration,
@@ -100,7 +99,6 @@ internal sealed partial class AchievementApplication
                 0,
                 request.Limit);
             var result = new AchievementPointLimitsRefreshResult(
-                scope.Session.Client,
                 time_provider.GetUtcNow(),
                 observed.ObservedAtUtc,
                 scope.SessionGeneration,
@@ -149,7 +147,6 @@ internal sealed partial class AchievementApplication
         {
             OwnedBadgePage first_page = OwnedBadgePageFor(lease, 0, request.Limit);
             var result = new BadgeRefreshResult(
-                scope.Session.Client,
                 time_provider.GetUtcNow(),
                 observed.ObservedAtUtc,
                 scope.SessionGeneration,

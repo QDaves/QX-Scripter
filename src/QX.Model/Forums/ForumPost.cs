@@ -1,6 +1,6 @@
 using Qx.Messages;
 
-namespace Qx.Model.Forums;
+namespace Qx.Model;
 
 /// <summary>Represents a message posted in a group forum thread.</summary>
 /// <param name="MessageId">The message id.</param>

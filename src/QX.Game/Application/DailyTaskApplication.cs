@@ -261,7 +261,7 @@ internal sealed partial class DailyTaskApplication : IApplicationFeature, IDaily
         var value = new DailyTaskChanged(
             kind,
             time_provider.GetUtcNow(),
-            update.State.Session?.Client,
+            update.State.Session is not null,
             update.State.SessionGeneration,
             update.State.Revision,
             update.Kind is DailyTaskStateChangeKind.Reset

@@ -2,6 +2,7 @@ using Qx.Game.Protocol;
 using Qx.Interception;
 using Qx.Model;
 using Qx.Model.Messages.Incoming;
+using Qx.Model.Messages.Outgoing;
 using Qx.Protocol;
 
 namespace Qx.Game.Application;
@@ -409,7 +410,7 @@ internal sealed class WalletApplication : IApplicationFeature, IWalletOperations
         changed.Publish(new WalletChanged(
             ChangeKind(update.Kind),
             time_provider.GetUtcNow(),
-            state.Session?.Client,
+            state.Session is not null,
             state.Generation,
             state.Revision,
             state.CreditsSnapshotRevision,
@@ -486,7 +487,6 @@ internal sealed class WalletApplication : IApplicationFeature, IWalletOperations
             ReferenceEquals(active_session, state.Session);
         return new WalletStateView(
             connected,
-            connected ? state.Session!.Client : null,
             state.Generation,
             state.Revision,
             state.CreditsSnapshotRevision,

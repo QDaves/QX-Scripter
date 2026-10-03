@@ -79,6 +79,10 @@ Buttons appear where they are declared. Put one in a row next to the input it ac
 A flag can be written alone, so `wrap` and `wrap=true` mean the same. An attribute the panel does not
 know is kept and ignored.
 
+A directive the panel does not know is ignored and reported as warning `QX1004`, and a `Ui` call on
+a name the panel does not declare is reported as warning `QX1005`. A name the script stores with
+`Ui.Set` counts as declared.
+
 ## Required panels
 
 A script with `//@ui:required` opens in panel view, and **Run** starts it there. Runs without a panel,

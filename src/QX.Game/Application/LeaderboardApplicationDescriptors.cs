@@ -16,10 +16,10 @@ internal static class LeaderboardApplicationDescriptors
         typeof(LeaderboardStateRequest),
         typeof(LeaderboardStateView),
         [ScopeParameter(), WeeklyParameter(), SnapshotRevisionParameter(false)],
-        state_effects: [ReadEffect()],
+        stateEffects: [ReadEffect()],
         messages: ObservedMessages(),
-        tool_hints: QueryHints(),
-        invocation_scope: ApplicationInvocationScope.Persistent);
+        toolHints: QueryHints(),
+        invocationScope: ApplicationInvocationScope.Persistent);
 
     public static ApplicationDescriptor Entries { get; } = new(
         ApplicationMemberIds.LeaderboardsEntriesList,
@@ -30,15 +30,15 @@ internal static class LeaderboardApplicationDescriptors
         typeof(LeaderboardEntryPageRequest),
         typeof(LeaderboardEntryPage),
         [ScopeParameter(), WeeklyParameter(), OffsetParameter(), LimitParameter(), SnapshotRevisionParameter(true)],
-        state_effects: [ReadEffect()],
+        stateEffects: [ReadEffect()],
         messages: ObservedMessages(),
-        tool_hints: QueryHints(),
-        invocation_scope: ApplicationInvocationScope.Persistent);
+        toolHints: QueryHints(),
+        invocationScope: ApplicationInvocationScope.Persistent);
 
     public static ApplicationDescriptor Refresh { get; } = new(
         ApplicationMemberIds.LeaderboardsRefresh,
         "Refresh leaderboard",
-        "Dispatches one route request after passive requests drain and returns the first fresh route response matching the game and week. Responses do not identify the requested rank or direction.",
+        "Reloads one leaderboard from the server. Dispatches one route request after passive requests drain and returns the first fresh route response matching the game and week. Responses do not identify the requested rank or direction.",
         ApplicationMemberKind.Operation,
         ApplicationExposure.All,
         typeof(LeaderboardRefreshRequest),
@@ -47,7 +47,7 @@ internal static class LeaderboardApplicationDescriptors
         [ApplicationStateKey.HotelConnected],
         [ChangeEffect()],
         AllMessages(),
-        new ApplicationToolHints(false, false, true, true));
+        new ApplicationToolHints(true, false, true, true));
 
     public static ApplicationDescriptor WeekOffsetSet { get; } = new(
         ApplicationMemberIds.LeaderboardsWeekOffsetSet,
@@ -58,10 +58,10 @@ internal static class LeaderboardApplicationDescriptors
         typeof(LeaderboardWeekOffsetRequest),
         typeof(LeaderboardWeekOffsetResult),
         [new ApplicationParameterDescriptor("offset", typeof(int), true, null, "Non-negative week offset.", new(Minimum: 0))],
-        state_effects: [ChangeEffect()],
+        stateEffects: [ChangeEffect()],
         messages: OptionalObservedMessages(),
-        tool_hints: new ApplicationToolHints(false, false, true, false),
-        invocation_scope: ApplicationInvocationScope.Persistent);
+        toolHints: new ApplicationToolHints(false, false, true, false),
+        invocationScope: ApplicationInvocationScope.Persistent);
 
     public static ApplicationDescriptor Changed { get; } = new(
         ApplicationMemberIds.LeaderboardsChanged,
@@ -71,9 +71,9 @@ internal static class LeaderboardApplicationDescriptors
         event_exposure,
         null,
         typeof(LeaderboardChanged),
-        state_effects: [ChangeEffect()],
+        stateEffects: [ChangeEffect()],
         messages: ObservedMessages(),
-        invocation_scope: ApplicationInvocationScope.Persistent);
+        invocationScope: ApplicationInvocationScope.Persistent);
 
     private static IReadOnlyList<ApplicationParameterDescriptor> RefreshParameters() =>
     [
@@ -152,10 +152,10 @@ internal static class LeaderboardApplicationDescriptors
             .ToArray();
 
     private static ApplicationMessageRequirement Send(MessageKey key) =>
-        new(key, Direction.Out, ApplicationMessageRole.Send);
+        new(key, MessageDirection.Out, ApplicationMessageRole.Send);
 
     private static ApplicationMessageRequirement Observe(MessageKey key) =>
-        new(key, Direction.In, ApplicationMessageRole.Observe);
+        new(key, MessageDirection.In, ApplicationMessageRole.Observe);
 
     private static ApplicationStateEffect ReadEffect() =>
         new(ApplicationStateKey.Leaderboards, ApplicationStateEffectKind.Reads);

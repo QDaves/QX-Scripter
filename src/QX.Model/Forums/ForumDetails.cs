@@ -1,6 +1,6 @@
 using Qx.Messages;
 
-namespace Qx.Model.Forums;
+namespace Qx.Model;
 
 /// <summary>
 /// Represents the forum's permission levels and the viewer's access to a group forum.

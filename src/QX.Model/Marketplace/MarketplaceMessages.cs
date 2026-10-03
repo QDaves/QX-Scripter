@@ -1,5 +1,4 @@
 using Qx.Messages;
-using Qx.Model.Marketplace;
 
 namespace Qx.Model.Messages.Incoming;
 
@@ -28,30 +27,12 @@ public sealed record MarketplaceOffer
     public int UniqueSeriesSize { get; init; }
     /// <summary>Gets whether the item of a used floor offer has been used, or <see langword="null"/> for other offer types.</summary>
     public bool? IsUsed { get; init; }
-
-    /// <summary>Gets whether the item has been used, <see langword="false"/> when <see cref="IsUsed"/> is <see langword="null"/>.</summary>
-    [Obsolete("Use IsUsed.")]
-    public bool SoldOut
-    {
-        get => IsUsed ?? false;
-        init => IsUsed = value;
-    }
-
     /// <summary>Gets the price of the offer in credits.</summary>
     public int Price { get; init; }
     /// <summary>Gets the number of minutes until the offer expires.</summary>
     public int MinutesRemaining { get; init; }
     /// <summary>Gets the average price of the item in credits.</summary>
     public int AveragePrice { get; init; }
-
-    /// <summary>Gets the average price of the item in credits.</summary>
-    [Obsolete("Use AveragePrice.")]
-    public int Average
-    {
-        get => AveragePrice;
-        init => AveragePrice = value;
-    }
-
     /// <summary>Gets the trade volume of the item, which the offer layout does not carry, so parsed offers report 0.</summary>
     public int TradeVolume { get; init; }
     /// <summary>Gets the number of open offers for the item in a search result, or 0 for the local user's own offers.</summary>
@@ -61,15 +42,6 @@ public sealed record MarketplaceOffer
     /// <see langword="null"/> when the hotel did not send it.
     /// </summary>
     public long? StatusTimeMilliseconds { get; init; }
-
-    /// <summary>Gets the sold or expired time in Unix milliseconds.</summary>
-    [Obsolete("Use StatusTimeMilliseconds.")]
-    public long? ExtraLong
-    {
-        get => StatusTimeMilliseconds;
-        init => StatusTimeMilliseconds = value;
-    }
-
     /// <summary>Gets whether the offer contains a floor item, which includes limited edition and used floor offers.</summary>
     public bool IsFloor => WireType is 1 or 3 or 4;
     /// <summary>Gets whether the offer contains a wall item.</summary>
@@ -250,19 +222,20 @@ internal static class MarketplaceCodec
 }
 
 /// <summary>Represents the hotel's result for a marketplace offer search.</summary>
+/// <remarks>Received as the Flash <c>MarketPlaceOffers</c> message.</remarks>
 public sealed record MarketplaceOffers : IParserComposer<MarketplaceOffers>
 {
     private IReadOnlyList<MarketplaceOffer> _offers = Array.Empty<MarketplaceOffer>();
 
     /// <summary>Initializes a new instance of the <see cref="MarketplaceOffers"/> record.</summary>
     /// <param name="offers">The offers in the result.</param>
-    /// <param name="total_items_found">The total number of items the hotel found for the search.</param>
+    /// <param name="totalItemsFound">The total number of items the hotel found for the search.</param>
     public MarketplaceOffers(
         IReadOnlyList<MarketplaceOffer> offers,
-        int total_items_found)
+        int totalItemsFound)
     {
         Offers = offers;
-        TotalItemsFound = total_items_found;
+        TotalItemsFound = totalItemsFound;
     }
 
     /// <summary>Gets the offers in the result, as a read only copy.</summary>
@@ -307,18 +280,19 @@ public sealed record MarketplaceOffers : IParserComposer<MarketplaceOffers>
 }
 
 /// <summary>Represents the local user's own marketplace offers.</summary>
+/// <remarks>Received as the Flash <c>MarketPlaceOwnOffers</c> message.</remarks>
 public sealed record MarketplaceOwnOffers : IParserComposer<MarketplaceOwnOffers>
 {
     private IReadOnlyList<MarketplaceOffer> _offers = Array.Empty<MarketplaceOffer>();
 
     /// <summary>Initializes a new instance of the <see cref="MarketplaceOwnOffers"/> record.</summary>
-    /// <param name="credits_waiting">The credits from sold offers that are waiting to be redeemed.</param>
+    /// <param name="creditsWaiting">The credits from sold offers that are waiting to be redeemed.</param>
     /// <param name="offers">The local user's offers.</param>
     public MarketplaceOwnOffers(
-        int credits_waiting,
+        int creditsWaiting,
         IReadOnlyList<MarketplaceOffer> offers)
     {
-        CreditsWaiting = credits_waiting;
+        CreditsWaiting = creditsWaiting;
         Offers = offers;
     }
 
@@ -415,12 +389,7 @@ public sealed record MarketplaceOwnOffers : IParserComposer<MarketplaceOwnOffers
 public readonly record struct MarketplaceTradeInfo(
     int DayOffset,
     int AverageSalePrice,
-    int SoldAmount)
-{
-    /// <summary>Gets the number of items sold on that day.</summary>
-    [Obsolete("Use SoldAmount.")]
-    public int TradeVolume => SoldAmount;
-}
+    int SoldAmount);
 
 /// <summary>Represents the marketplace statistics for one furni kind.</summary>
 public sealed record MarketplaceItemStats : IParserComposer<MarketplaceItemStats>
@@ -429,32 +398,32 @@ public sealed record MarketplaceItemStats : IParserComposer<MarketplaceItemStats
         Array.Empty<MarketplaceTradeInfo>();
 
     /// <summary>Initializes a new instance of the <see cref="MarketplaceItemStats"/> record.</summary>
-    /// <param name="average_sale_price">The average sale price in credits.</param>
-    /// <param name="offer_count">The number of open offers for the item.</param>
-    /// <param name="history_length_days">The number of days the history covers.</param>
+    /// <param name="averageSalePrice">The average sale price in credits.</param>
+    /// <param name="offerCount">The number of open offers for the item.</param>
+    /// <param name="historyLengthDays">The number of days the history covers.</param>
     /// <param name="history">The daily trade history.</param>
-    /// <param name="furni_type_id">The furni type id.</param>
-    /// <param name="furni_category_id">The raw marketplace category of the furni.</param>
-    /// <param name="lowest_price">The lowest open offer price, or <see langword="null"/> when the hotel did not send it.</param>
-    /// <param name="suggested_price">The suggested price, or <see langword="null"/> when the hotel did not send it.</param>
+    /// <param name="furniTypeId">The furni type id.</param>
+    /// <param name="furniCategoryId">The raw marketplace category of the furni.</param>
+    /// <param name="lowestPrice">The lowest open offer price, or <see langword="null"/> when the hotel did not send it.</param>
+    /// <param name="suggestedPrice">The suggested price, or <see langword="null"/> when the hotel did not send it.</param>
     public MarketplaceItemStats(
-        int average_sale_price,
-        int offer_count,
-        int history_length_days,
+        int averageSalePrice,
+        int offerCount,
+        int historyLengthDays,
         IReadOnlyList<MarketplaceTradeInfo> history,
-        int furni_type_id,
-        int furni_category_id,
-        int? lowest_price,
-        int? suggested_price)
+        int furniTypeId,
+        int furniCategoryId,
+        int? lowestPrice,
+        int? suggestedPrice)
     {
-        AverageSalePrice = average_sale_price;
-        OfferCount = offer_count;
-        HistoryLengthDays = history_length_days;
+        AverageSalePrice = averageSalePrice;
+        OfferCount = offerCount;
+        HistoryLengthDays = historyLengthDays;
         History = history;
-        FurniTypeId = furni_type_id;
-        FurniCategoryId = furni_category_id;
-        LowestPrice = lowest_price;
-        SuggestedPrice = suggested_price;
+        FurniTypeId = furniTypeId;
+        FurniCategoryId = furniCategoryId;
+        LowestPrice = lowestPrice;
+        SuggestedPrice = suggestedPrice;
     }
 
     /// <summary>Gets the average sale price in credits.</summary>
@@ -503,7 +472,7 @@ public sealed record MarketplaceItemStats : IParserComposer<MarketplaceItemStats
         int furni_category_id = p.ReadInt();
         int furni_type_id = p.ReadInt();
         (int? lowest_price, int? suggested_price) =
-            ReadPriceTail(in p, "Flash");
+            ReadPriceTail(in p);
         return new MarketplaceItemStats(
             average_sale_price,
             offer_count,
@@ -531,13 +500,12 @@ public sealed record MarketplaceItemStats : IParserComposer<MarketplaceItemStats
     }
 
     private static (int? LowestPrice, int? SuggestedPrice) ReadPriceTail(
-        in PacketReader p,
-        string client) => p.Available switch
+        in PacketReader p) => p.Available switch
         {
             0 => (null, null),
             8 => (p.ReadInt(), p.ReadInt()),
             _ => throw new InvalidDataException(
-                $"Unsupported {client} marketplace item-stats tail length {p.Available}.")
+                $"Unsupported Flash marketplace item-stats tail length {p.Available}.")
         };
 
     /// <summary>Composes the message into a packet.</summary>
@@ -549,8 +517,7 @@ public sealed record MarketplaceItemStats : IParserComposer<MarketplaceItemStats
     {
         MarketplaceWire.RequirePriceTail(
             value.LowestPrice,
-            value.SuggestedPrice,
-            "Flash");
+            value.SuggestedPrice);
         WriteFlash(value, in p);
     }
 
@@ -592,6 +559,7 @@ public sealed record MarketplaceItemStats : IParserComposer<MarketplaceItemStats
 }
 
 /// <summary>Represents the hotel's answer to a marketplace purchase.</summary>
+/// <remarks>Received as the Flash <c>MarketplaceBuyOfferResult</c> message.</remarks>
 /// <param name="Result">The raw result code, see <see cref="ResultCode"/>.</param>
 /// <param name="RequestedOfferId">The id of the offer the purchase asked for.</param>
 /// <param name="NewOfferId">The id of the replacement offer when the offer changed, as sent by the hotel.</param>
@@ -642,10 +610,10 @@ public sealed record MarketplaceBuyResult(
 
 /// <summary>Represents the hotel's answer to whether the local user may list a marketplace offer.</summary>
 /// <param name="ResultCode">The raw result code, see <see cref="Result"/>.</param>
-/// <param name="TokenCount">The number of listing tokens the account holds, always sent by Flash. Composing requires a value.</param>
+/// <param name="TokenCount">The number of listing tokens the account holds.</param>
 public sealed record MarketplaceCanMakeOfferResult(
     int ResultCode,
-    int? TokenCount) : IParserComposer<MarketplaceCanMakeOfferResult>
+    int TokenCount) : IParserComposer<MarketplaceCanMakeOfferResult>
 {
     /// <summary>Gets the verdict on whether the local user may list an offer.</summary>
     public MarketplaceEligibilityResult Result =>
@@ -668,11 +636,8 @@ public sealed record MarketplaceCanMakeOfferResult(
         MarketplaceCanMakeOfferResult value,
         in PacketWriter p)
     {
-        int token_count = value.TokenCount ??
-            throw new InvalidDataException(
-                "Flash marketplace eligibility results require the token count.");
         p.WriteInt(value.ResultCode);
-        p.WriteInt(token_count);
+        p.WriteInt(value.TokenCount);
     }
 }
 
@@ -806,13 +771,13 @@ public sealed record MarketplaceCancelAllOffersResult
     private IReadOnlyList<Id> _offer_ids = Array.Empty<Id>();
 
     /// <summary>Initializes a new instance of the <see cref="MarketplaceCancelAllOffersResult"/> record.</summary>
-    /// <param name="offer_ids">The ids of the canceled offers.</param>
+    /// <param name="offerIds">The ids of the canceled offers.</param>
     /// <param name="success">Whether the hotel reported success.</param>
     public MarketplaceCancelAllOffersResult(
-        IReadOnlyList<Id> offer_ids,
+        IReadOnlyList<Id> offerIds,
         bool success)
     {
-        OfferIds = offer_ids;
+        OfferIds = offerIds;
         Success = success;
     }
 
@@ -1039,13 +1004,12 @@ internal static class MarketplaceWire
 
     public static void RequirePriceTail(
         int? lowest_price,
-        int? suggested_price,
-        string client)
+        int? suggested_price)
     {
         if (lowest_price.HasValue != suggested_price.HasValue)
         {
             throw new InvalidDataException(
-                $"{client} marketplace item stats require both price-tail fields or neither.");
+                "Flash marketplace item stats require both price-tail fields or neither.");
         }
     }
 

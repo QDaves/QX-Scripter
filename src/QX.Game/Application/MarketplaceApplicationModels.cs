@@ -1,5 +1,5 @@
 using Qx.Messages;
-using Qx.Model.Marketplace;
+using Qx.Model;
 using Qx.Model.Messages.Incoming;
 
 namespace Qx.Game.Application;
@@ -150,9 +150,9 @@ public sealed record MarketplaceBuySendRequest(Id OfferId);
 /// Represents a request to cancel one of the local user's marketplace offers and wait for the result.
 /// </summary>
 /// <remarks>
-/// Used by <see cref="ApplicationMemberIds.MarketplaceOfferCancel"/>. Requires a Flash session. The
-/// request is sent once and completes with the first cancellation result for the same offer id. A
-/// successful cancellation removes the offer from the stored own offers.
+/// Used by <see cref="ApplicationMemberIds.MarketplaceOfferCancel"/>. The request is sent once and
+/// completes with the first cancellation result for the same offer id. A successful cancellation
+/// removes the offer from the stored own offers.
 /// </remarks>
 /// <param name="OfferId">The id of the offer. Must be positive.</param>
 /// <param name="TimeoutMilliseconds">The maximum time to wait for the hotel response in milliseconds, from 1 to 120000.</param>
@@ -185,9 +185,9 @@ public sealed record MarketplaceCancelAllRequest(
 /// Represents a request to clear the local user's sold or expired marketplace offer history.
 /// </summary>
 /// <remarks>
-/// Used by <see cref="ApplicationMemberIds.MarketplaceHistoryClear"/>. Requires a Flash session on the
-/// modern Flash marketplace layout. The request is sent once and completes with the next history clear
-/// result received.
+/// Used by <see cref="ApplicationMemberIds.MarketplaceHistoryClear"/>. Requires the modern Flash
+/// marketplace layout. The request is sent once and completes with the next history clear result
+/// received.
 /// </remarks>
 /// <param name="Category">The history to clear.</param>
 /// <param name="TimeoutMilliseconds">The maximum time to wait for the hotel response in milliseconds, from 1 to 120000.</param>
@@ -345,14 +345,12 @@ public sealed record MarketplaceStateSummary(
 /// <see cref="ApplicationMemberIds.MarketplaceCreditsRedeem"/> and
 /// <see cref="ApplicationMemberIds.MarketplaceTokensBuy"/>.
 /// </remarks>
-/// <param name="Client">The client type of the hotel session the message was sent in.</param>
 /// <param name="DispatchedAtUtc">The time the message was sent.</param>
 /// <param name="OfferId">The id of the offer the message addressed, or <see langword="null"/> for commands without an offer.</param>
 /// <param name="Category">
 /// The own offers category the message addressed, or <see langword="null"/> for messages without a category.
 /// </param>
 public sealed record MarketplaceDispatchResult(
-    ClientType Client,
     DateTimeOffset DispatchedAtUtc,
     Id? OfferId = null,
     MarketplaceOwnOffersCategory? Category = null);

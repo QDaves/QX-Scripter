@@ -353,7 +353,7 @@ internal sealed class NavigatorApplication : IApplicationFeature
             new AddSavedSearchRequest(request.SearchCode, request.Filter),
             session,
             cancellation_token);
-        return OperationResult(session, request.SearchCode, request.Filter);
+        return OperationResult(request.SearchCode, request.Filter);
     }
 
     public ValueTask<NavigatorOperationResult> DeleteSavedSearch(
@@ -370,7 +370,7 @@ internal sealed class NavigatorApplication : IApplicationFeature
             new DeleteSavedSearchRequest(request.SavedSearchId),
             session,
             cancellation_token);
-        return OperationResult(session, saved_search_id: request.SavedSearchId);
+        return OperationResult(saved_search_id: request.SavedSearchId);
     }
 
     public ValueTask<NavigatorOperationResult> CollapseCategory(
@@ -413,7 +413,7 @@ internal sealed class NavigatorApplication : IApplicationFeature
             session,
             cancellation_token,
             () => RequireDispatch(session, cancellation_token));
-        return RoomOperationResult(session);
+        return RoomOperationResult();
     }
 
     public ValueTask<NavigatorRoomOperationResult> DeleteRoom(
@@ -429,7 +429,7 @@ internal sealed class NavigatorApplication : IApplicationFeature
             session,
             cancellation_token,
             () => RequireDispatch(session, cancellation_token));
-        return RoomOperationResult(session, request.RoomId);
+        return RoomOperationResult(request.RoomId);
     }
 
     public ValueTask<NavigatorRoomOperationResult> SetHomeRoom(
@@ -445,7 +445,7 @@ internal sealed class NavigatorApplication : IApplicationFeature
             session,
             cancellation_token,
             () => RequireDispatch(session, cancellation_token));
-        return RoomOperationResult(session, request.RoomId);
+        return RoomOperationResult(request.RoomId);
     }
 
     public void Dispose()
@@ -498,7 +498,7 @@ internal sealed class NavigatorApplication : IApplicationFeature
         RequiredText(request.SearchCode, nameof(request.SearchCode));
         Session session = RequireSession(cancellation_token);
         messages.Dispatch(contract, create(request.SearchCode), session, cancellation_token);
-        return OperationResult(session, request.SearchCode);
+        return OperationResult(request.SearchCode);
     }
 
     private Session RequireSession(CancellationToken cancellation_token)
@@ -523,20 +523,16 @@ internal sealed class NavigatorApplication : IApplicationFeature
     }
 
     private ValueTask<NavigatorOperationResult> OperationResult(
-        Session session,
         string? search_code = null,
         string? filter = null,
         int? saved_search_id = null) => ValueTask.FromResult(new NavigatorOperationResult(
-            session.Client,
             time_provider.GetUtcNow(),
             search_code,
             filter,
             saved_search_id));
 
     private ValueTask<NavigatorRoomOperationResult> RoomOperationResult(
-        Session session,
         Id? room_id = null) => ValueTask.FromResult(new NavigatorRoomOperationResult(
-            session.Client,
             time_provider.GetUtcNow(),
             room_id));
 

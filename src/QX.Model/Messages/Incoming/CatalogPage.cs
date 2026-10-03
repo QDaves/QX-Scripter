@@ -9,12 +9,12 @@ public sealed record CatalogPageLocalization : IParserComposer<CatalogPageLocali
     private IReadOnlyList<string> _texts = Array.AsReadOnly(Array.Empty<string>());
 
     /// <summary>Initializes a new instance of the <see cref="CatalogPageLocalization"/> record.</summary>
-    /// <param name="Images">The image names of the page, copied into a read only list.</param>
-    /// <param name="Texts">The texts of the page, copied into a read only list.</param>
-    public CatalogPageLocalization(IReadOnlyList<string> Images, IReadOnlyList<string> Texts)
+    /// <param name="images">The image names of the page, copied into a read only list.</param>
+    /// <param name="texts">The texts of the page, copied into a read only list.</param>
+    public CatalogPageLocalization(IReadOnlyList<string> images, IReadOnlyList<string> texts)
     {
-        this.Images = Images;
-        this.Texts = Texts;
+        Images = images;
+        Texts = texts;
     }
 
     /// <summary>Gets the image names of the page, as a read only copy.</summary>
@@ -54,12 +54,12 @@ public sealed record CatalogPageLocalization : IParserComposer<CatalogPageLocali
         CatalogPageWire.ComposeLocalization(value, in p);
 
     /// <summary>Deconstructs the localization into its images and texts.</summary>
-    /// <param name="Images">The image names of the page.</param>
-    /// <param name="Texts">The texts of the page.</param>
-    public void Deconstruct(out IReadOnlyList<string> Images, out IReadOnlyList<string> Texts)
+    /// <param name="images">The image names of the page.</param>
+    /// <param name="texts">The texts of the page.</param>
+    public void Deconstruct(out IReadOnlyList<string> images, out IReadOnlyList<string> texts)
     {
-        Images = this.Images;
-        Texts = this.Texts;
+        images = Images;
+        texts = Texts;
     }
 }
 
@@ -71,47 +71,47 @@ public sealed record CatalogPageOffer : IParserComposer<CatalogPageOffer>
     private string _preview_image = "";
 
     /// <summary>Initializes a new instance of the <see cref="CatalogPageOffer"/> record.</summary>
-    /// <param name="OfferId">The identifier of the offer.</param>
-    /// <param name="LocalizationId">The localization key of the offer.</param>
-    /// <param name="IsRent">Whether the offer is a rental.</param>
-    /// <param name="PriceInCredits">The price in credits.</param>
-    /// <param name="PriceInActivityPoints">The price in activity points.</param>
-    /// <param name="ActivityPointType">The activity point type of <paramref name="PriceInActivityPoints"/>.</param>
-    /// <param name="PriceInSilver">The price in silver.</param>
-    /// <param name="Giftable">Whether the offer can be bought as a gift.</param>
-    /// <param name="Products">The products the offer gives, copied into a read only list.</param>
-    /// <param name="ClubLevel">The club level the offer requires.</param>
-    /// <param name="BundlePurchaseAllowed">Whether the offer can be bought in bulk.</param>
-    /// <param name="IsPet">Whether the offer is a pet.</param>
-    /// <param name="PreviewImage">The preview image of the offer.</param>
+    /// <param name="offerId">The identifier of the offer.</param>
+    /// <param name="localizationId">The localization key of the offer.</param>
+    /// <param name="isRent">Whether the offer is a rental.</param>
+    /// <param name="priceInCredits">The price in credits.</param>
+    /// <param name="priceInActivityPoints">The price in activity points.</param>
+    /// <param name="activityPointType">The activity point type of <paramref name="priceInActivityPoints"/>.</param>
+    /// <param name="priceInSilver">The price in silver.</param>
+    /// <param name="giftable">Whether the offer can be bought as a gift.</param>
+    /// <param name="products">The products the offer gives, copied into a read only list.</param>
+    /// <param name="clubLevel">The club level the offer requires.</param>
+    /// <param name="bundlePurchaseAllowed">Whether the offer can be bought in bulk.</param>
+    /// <param name="isPet">Whether the offer is a pet.</param>
+    /// <param name="previewImage">The preview image of the offer.</param>
     public CatalogPageOffer(
-        int OfferId,
-        string LocalizationId,
-        bool IsRent,
-        int PriceInCredits,
-        int PriceInActivityPoints,
-        int ActivityPointType,
-        int PriceInSilver,
-        bool Giftable,
-        IReadOnlyList<CatalogProduct> Products,
-        int ClubLevel,
-        bool BundlePurchaseAllowed,
-        bool IsPet,
-        string PreviewImage)
+        int offerId,
+        string localizationId,
+        bool isRent,
+        int priceInCredits,
+        int priceInActivityPoints,
+        int activityPointType,
+        int priceInSilver,
+        bool giftable,
+        IReadOnlyList<CatalogProduct> products,
+        int clubLevel,
+        bool bundlePurchaseAllowed,
+        bool isPet,
+        string previewImage)
     {
-        this.OfferId = OfferId;
-        this.LocalizationId = LocalizationId;
-        this.IsRent = IsRent;
-        this.PriceInCredits = PriceInCredits;
-        this.PriceInActivityPoints = PriceInActivityPoints;
-        this.ActivityPointType = ActivityPointType;
-        this.PriceInSilver = PriceInSilver;
-        this.Giftable = Giftable;
-        this.Products = Products;
-        this.ClubLevel = ClubLevel;
-        this.BundlePurchaseAllowed = BundlePurchaseAllowed;
-        this.IsPet = IsPet;
-        this.PreviewImage = PreviewImage;
+        OfferId = offerId;
+        LocalizationId = localizationId;
+        IsRent = isRent;
+        PriceInCredits = priceInCredits;
+        PriceInActivityPoints = priceInActivityPoints;
+        ActivityPointType = activityPointType;
+        PriceInSilver = priceInSilver;
+        Giftable = giftable;
+        Products = products;
+        ClubLevel = clubLevel;
+        BundlePurchaseAllowed = bundlePurchaseAllowed;
+        IsPet = isPet;
+        PreviewImage = previewImage;
     }
 
     /// <summary>Gets the identifier of the offer.</summary>
@@ -185,47 +185,47 @@ public sealed record CatalogPageOffer : IParserComposer<CatalogPageOffer>
         CatalogPageWire.ComposeOffer(value, false, in p);
 
     /// <summary>Deconstructs the offer into its parts.</summary>
-    /// <param name="OfferId">The identifier of the offer.</param>
-    /// <param name="LocalizationId">The localization key of the offer.</param>
-    /// <param name="IsRent">Whether the offer is a rental.</param>
-    /// <param name="PriceInCredits">The price in credits.</param>
-    /// <param name="PriceInActivityPoints">The price in activity points.</param>
-    /// <param name="ActivityPointType">The activity point type of the activity point price.</param>
-    /// <param name="PriceInSilver">The price in silver.</param>
-    /// <param name="Giftable">Whether the offer can be bought as a gift.</param>
-    /// <param name="Products">The products the offer gives.</param>
-    /// <param name="ClubLevel">The club level the offer requires.</param>
-    /// <param name="BundlePurchaseAllowed">Whether the offer can be bought in bulk.</param>
-    /// <param name="IsPet">Whether the offer is a pet.</param>
-    /// <param name="PreviewImage">The preview image of the offer.</param>
+    /// <param name="offerId">The identifier of the offer.</param>
+    /// <param name="localizationId">The localization key of the offer.</param>
+    /// <param name="isRent">Whether the offer is a rental.</param>
+    /// <param name="priceInCredits">The price in credits.</param>
+    /// <param name="priceInActivityPoints">The price in activity points.</param>
+    /// <param name="activityPointType">The activity point type of the activity point price.</param>
+    /// <param name="priceInSilver">The price in silver.</param>
+    /// <param name="giftable">Whether the offer can be bought as a gift.</param>
+    /// <param name="products">The products the offer gives.</param>
+    /// <param name="clubLevel">The club level the offer requires.</param>
+    /// <param name="bundlePurchaseAllowed">Whether the offer can be bought in bulk.</param>
+    /// <param name="isPet">Whether the offer is a pet.</param>
+    /// <param name="previewImage">The preview image of the offer.</param>
     public void Deconstruct(
-        out int OfferId,
-        out string LocalizationId,
-        out bool IsRent,
-        out int PriceInCredits,
-        out int PriceInActivityPoints,
-        out int ActivityPointType,
-        out int PriceInSilver,
-        out bool Giftable,
-        out IReadOnlyList<CatalogProduct> Products,
-        out int ClubLevel,
-        out bool BundlePurchaseAllowed,
-        out bool IsPet,
-        out string PreviewImage)
+        out int offerId,
+        out string localizationId,
+        out bool isRent,
+        out int priceInCredits,
+        out int priceInActivityPoints,
+        out int activityPointType,
+        out int priceInSilver,
+        out bool giftable,
+        out IReadOnlyList<CatalogProduct> products,
+        out int clubLevel,
+        out bool bundlePurchaseAllowed,
+        out bool isPet,
+        out string previewImage)
     {
-        OfferId = this.OfferId;
-        LocalizationId = this.LocalizationId;
-        IsRent = this.IsRent;
-        PriceInCredits = this.PriceInCredits;
-        PriceInActivityPoints = this.PriceInActivityPoints;
-        ActivityPointType = this.ActivityPointType;
-        PriceInSilver = this.PriceInSilver;
-        Giftable = this.Giftable;
-        Products = this.Products;
-        ClubLevel = this.ClubLevel;
-        BundlePurchaseAllowed = this.BundlePurchaseAllowed;
-        IsPet = this.IsPet;
-        PreviewImage = this.PreviewImage;
+        offerId = OfferId;
+        localizationId = LocalizationId;
+        isRent = IsRent;
+        priceInCredits = PriceInCredits;
+        priceInActivityPoints = PriceInActivityPoints;
+        activityPointType = ActivityPointType;
+        priceInSilver = PriceInSilver;
+        giftable = Giftable;
+        products = Products;
+        clubLevel = ClubLevel;
+        bundlePurchaseAllowed = BundlePurchaseAllowed;
+        isPet = IsPet;
+        previewImage = PreviewImage;
     }
 }
 
@@ -281,36 +281,36 @@ public sealed record CatalogPage : IParserComposer<CatalogPage>
     private IReadOnlyList<CatalogFrontPageItem>? _front_page_items;
 
     /// <summary>Initializes a new instance of the <see cref="CatalogPage"/> record.</summary>
-    /// <param name="PageId">The identifier of the page.</param>
-    /// <param name="CatalogType">The type of the catalog, such as <c>NORMAL</c> or <c>BUILDERS_CLUB</c>.</param>
-    /// <param name="LayoutCode">The layout code of the page.</param>
-    /// <param name="Localization">The images and texts of the page.</param>
-    /// <param name="Offers">The offers on the page, copied into a read only list.</param>
-    /// <param name="OfferId">The identifier of the offer selected on the page.</param>
-    /// <param name="AcceptSeasonCurrencyAsCredits">
+    /// <param name="pageId">The identifier of the page.</param>
+    /// <param name="catalogType">The type of the catalog, such as <c>NORMAL</c> or <c>BUILDERS_CLUB</c>.</param>
+    /// <param name="layoutCode">The layout code of the page.</param>
+    /// <param name="localization">The images and texts of the page.</param>
+    /// <param name="offers">The offers on the page, copied into a read only list.</param>
+    /// <param name="offerId">The identifier of the offer selected on the page.</param>
+    /// <param name="acceptSeasonCurrencyAsCredits">
     /// Whether the page accepts seasonal currency in place of credits.
     /// </param>
-    /// <param name="FrontPageItems">
+    /// <param name="frontPageItems">
     /// The front page items, or <see langword="null"/> when the message does not carry them.
     /// </param>
     public CatalogPage(
-        int PageId,
-        string CatalogType,
-        string LayoutCode,
-        CatalogPageLocalization Localization,
-        IReadOnlyList<CatalogPageOffer> Offers,
-        int OfferId,
-        bool AcceptSeasonCurrencyAsCredits,
-        IReadOnlyList<CatalogFrontPageItem>? FrontPageItems)
+        int pageId,
+        string catalogType,
+        string layoutCode,
+        CatalogPageLocalization localization,
+        IReadOnlyList<CatalogPageOffer> offers,
+        int offerId,
+        bool acceptSeasonCurrencyAsCredits,
+        IReadOnlyList<CatalogFrontPageItem>? frontPageItems)
     {
-        this.PageId = PageId;
-        this.CatalogType = CatalogType;
-        this.LayoutCode = LayoutCode;
-        this.Localization = Localization;
-        this.Offers = Offers;
-        this.OfferId = OfferId;
-        this.AcceptSeasonCurrencyAsCredits = AcceptSeasonCurrencyAsCredits;
-        this.FrontPageItems = FrontPageItems;
+        PageId = pageId;
+        CatalogType = catalogType;
+        LayoutCode = layoutCode;
+        Localization = localization;
+        Offers = offers;
+        OfferId = offerId;
+        AcceptSeasonCurrencyAsCredits = acceptSeasonCurrencyAsCredits;
+        FrontPageItems = frontPageItems;
     }
 
     /// <summary>Gets the identifier of the page.</summary>
@@ -382,34 +382,34 @@ public sealed record CatalogPage : IParserComposer<CatalogPage>
         CatalogPageWire.ComposePage(value, in p);
 
     /// <summary>Deconstructs the message into its parts.</summary>
-    /// <param name="PageId">The identifier of the page.</param>
-    /// <param name="CatalogType">The type of the catalog.</param>
-    /// <param name="LayoutCode">The layout code of the page.</param>
-    /// <param name="Localization">The images and texts of the page.</param>
-    /// <param name="Offers">The offers on the page.</param>
-    /// <param name="OfferId">The identifier of the offer selected on the page.</param>
-    /// <param name="AcceptSeasonCurrencyAsCredits">
+    /// <param name="pageId">The identifier of the page.</param>
+    /// <param name="catalogType">The type of the catalog.</param>
+    /// <param name="layoutCode">The layout code of the page.</param>
+    /// <param name="localization">The images and texts of the page.</param>
+    /// <param name="offers">The offers on the page.</param>
+    /// <param name="offerId">The identifier of the offer selected on the page.</param>
+    /// <param name="acceptSeasonCurrencyAsCredits">
     /// Whether the page accepts seasonal currency in place of credits.
     /// </param>
-    /// <param name="FrontPageItems">The front page items, or <see langword="null"/>.</param>
+    /// <param name="frontPageItems">The front page items, or <see langword="null"/>.</param>
     public void Deconstruct(
-        out int PageId,
-        out string CatalogType,
-        out string LayoutCode,
-        out CatalogPageLocalization Localization,
-        out IReadOnlyList<CatalogPageOffer> Offers,
-        out int OfferId,
-        out bool AcceptSeasonCurrencyAsCredits,
-        out IReadOnlyList<CatalogFrontPageItem>? FrontPageItems)
+        out int pageId,
+        out string catalogType,
+        out string layoutCode,
+        out CatalogPageLocalization localization,
+        out IReadOnlyList<CatalogPageOffer> offers,
+        out int offerId,
+        out bool acceptSeasonCurrencyAsCredits,
+        out IReadOnlyList<CatalogFrontPageItem>? frontPageItems)
     {
-        PageId = this.PageId;
-        CatalogType = this.CatalogType;
-        LayoutCode = this.LayoutCode;
-        Localization = this.Localization;
-        Offers = this.Offers;
-        OfferId = this.OfferId;
-        AcceptSeasonCurrencyAsCredits = this.AcceptSeasonCurrencyAsCredits;
-        FrontPageItems = this.FrontPageItems;
+        pageId = PageId;
+        catalogType = CatalogType;
+        layoutCode = LayoutCode;
+        localization = Localization;
+        offers = Offers;
+        offerId = OfferId;
+        acceptSeasonCurrencyAsCredits = AcceptSeasonCurrencyAsCredits;
+        frontPageItems = FrontPageItems;
     }
 }
 
@@ -457,7 +457,7 @@ internal static class CatalogPageWire
         int page_id = p.ReadInt();
         string catalog_type = strings.Read(in p, nameof(CatalogPage.CatalogType));
         string layout_code = strings.Read(in p, nameof(CatalogPage.LayoutCode));
-        int count_width = CatalogWire.CountWidth(p.Client);
+        int count_width = CatalogWire.CountWidth;
         int trailing_after_localization = count_width + sizeof(int) + sizeof(byte) +
             (0);
         CatalogPageLocalization localization = ParseLocalization(
@@ -620,7 +620,7 @@ internal static class CatalogPageWire
         ref CatalogPageBudget budget,
         ref CatalogStringBudget strings)
     {
-        int count_width = CatalogWire.CountWidth(p.Client);
+        int count_width = CatalogWire.CountWidth;
         int image_count = CatalogWire.ReadCount(
             in p,
             CatalogWire.StringMinimumBytes,
@@ -652,7 +652,7 @@ internal static class CatalogPageWire
         ref CatalogStringBudget strings)
     {
         int offer_id = p.ReadInt();
-        int count_width = CatalogWire.CountWidth(p.Client);
+        int count_width = CatalogWire.CountWidth;
         int fields_after_localization = sizeof(byte) + sizeof(int) * 4 + sizeof(byte) +
             (count_width + FlashOfferTailBytes);
         string localization_id = strings.Read(

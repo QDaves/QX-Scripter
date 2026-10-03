@@ -1,4 +1,4 @@
-using Qx.Model.Crafting;
+using Qx.Model;
 using Qx.Model.Messages.Incoming;
 
 namespace Qx.Game.Application;
@@ -28,7 +28,6 @@ public sealed record CraftingRecipeSummary(
 /// <summary>Represents the crafting state read from one snapshot.</summary>
 /// <remarks>Returned by the <c>crafting.state</c> query.</remarks>
 /// <param name="Connected">Whether the snapshot belongs to the active hotel session.</param>
-/// <param name="Client">The client type of the hotel session, or <see langword="null"/> when <paramref name="Connected"/> is <see langword="false"/>.</param>
 /// <param name="SessionGeneration">The generation of the hotel session the snapshot belongs to.</param>
 /// <param name="Revision">The crafting state revision, which increases with every change.</param>
 /// <param name="ProductsRevision">The revision of the craftable products, which increases when they are received or cleared.</param>
@@ -42,7 +41,6 @@ public sealed record CraftingRecipeSummary(
 /// <param name="AvailableRecipes">The last recipe availability received, or <see langword="null"/> when none has been received.</param>
 public sealed record CraftingStateView(
     bool Connected,
-    ClientType? Client,
     long SessionGeneration,
     long Revision,
     long ProductsRevision,
@@ -82,7 +80,6 @@ public sealed record CraftingProductsPageRequest(
 /// <paramref name="Collection"/> holds rows, and the other one is empty.
 /// </remarks>
 /// <param name="Connected">Whether the snapshot belongs to the active hotel session.</param>
-/// <param name="Client">The client type of the hotel session, or <see langword="null"/> when <paramref name="Connected"/> is <see langword="false"/>.</param>
 /// <param name="SessionGeneration">The generation of the hotel session the snapshot belongs to.</param>
 /// <param name="StateRevision">The crafting state revision, which increases with every change.</param>
 /// <param name="ProductsRevision">The revision of the craftable products, which increases when they are received or cleared.</param>
@@ -98,7 +95,6 @@ public sealed record CraftingProductsPageRequest(
 /// <param name="UsableInventoryFurnitureClasses">The furniture class names in the page when <paramref name="Collection"/> is <see cref="CraftingProductsCollection.UsableInventoryFurnitureClasses"/>.</param>
 public sealed record CraftingProductsPage(
     bool Connected,
-    ClientType? Client,
     long SessionGeneration,
     long StateRevision,
     long ProductsRevision,
@@ -126,7 +122,6 @@ public sealed record CraftingRecipePageRequest(
 /// <summary>Represents a page of the ingredients of the last recipe received, read from one snapshot.</summary>
 /// <remarks>Returned by the <c>crafting.recipe.list</c> query.</remarks>
 /// <param name="Connected">Whether the snapshot belongs to the active hotel session.</param>
-/// <param name="Client">The client type of the hotel session, or <see langword="null"/> when <paramref name="Connected"/> is <see langword="false"/>.</param>
 /// <param name="SessionGeneration">The generation of the hotel session the snapshot belongs to.</param>
 /// <param name="StateRevision">The crafting state revision, which increases with every change.</param>
 /// <param name="RecipeRevision">The revision of the recipe, which increases when a recipe is received or cleared.</param>
@@ -138,7 +133,6 @@ public sealed record CraftingRecipePageRequest(
 /// <param name="Ingredients">The ingredients in the page.</param>
 public sealed record CraftingRecipePage(
     bool Connected,
-    ClientType? Client,
     long SessionGeneration,
     long StateRevision,
     long RecipeRevision,
@@ -169,7 +163,6 @@ public sealed record CraftingProductsRefreshRequest(
 
 /// <summary>Represents the result of a craftable products refresh.</summary>
 /// <remarks>Returned by the <c>crafting.products.refresh</c> operation.</remarks>
-/// <param name="Client">The client type of the hotel session.</param>
 /// <param name="RefreshedAtUtc">The UTC time the result was created.</param>
 /// <param name="ObservedAtUtc">The UTC time the response was observed.</param>
 /// <param name="SessionGeneration">The generation of the hotel session the refresh ran in.</param>
@@ -183,7 +176,6 @@ public sealed record CraftingProductsRefreshRequest(
 /// <param name="MessagesDispatched">The number of request messages the call sent.</param>
 /// <param name="FirstPage">The first page of products from the refreshed snapshot.</param>
 public sealed record CraftingProductsRefreshResult(
-    ClientType Client,
     DateTimeOffset RefreshedAtUtc,
     DateTimeOffset ObservedAtUtc,
     long SessionGeneration,
@@ -217,7 +209,6 @@ public sealed record CraftingRecipeRefreshRequest(
 
 /// <summary>Represents the result of a crafting recipe refresh.</summary>
 /// <remarks>Returned by the <c>crafting.recipe.refresh</c> operation.</remarks>
-/// <param name="Client">The client type of the hotel session.</param>
 /// <param name="RefreshedAtUtc">The UTC time the result was created.</param>
 /// <param name="ObservedAtUtc">The UTC time the response was observed.</param>
 /// <param name="SessionGeneration">The generation of the hotel session the refresh ran in.</param>
@@ -231,7 +222,6 @@ public sealed record CraftingRecipeRefreshRequest(
 /// <param name="MessagesDispatched">The number of request messages the call sent.</param>
 /// <param name="FirstPage">The first page of ingredients from the refreshed snapshot.</param>
 public sealed record CraftingRecipeRefreshResult(
-    ClientType Client,
     DateTimeOffset RefreshedAtUtc,
     DateTimeOffset ObservedAtUtc,
     long SessionGeneration,
@@ -247,9 +237,9 @@ public sealed record CraftingRecipeRefreshResult(
 
 /// <summary>Represents a request for the recipes that a set of ingredient items can craft.</summary>
 /// <remarks>
-/// Used by the <c>crafting.availability.refresh</c> operation, which requires a ready room and the
-/// Flash client. Each call sends its own request and accepts the first matching response that
-/// arrives after it, as long as no newer availability request has been sent in the meantime.
+/// Used by the <c>crafting.availability.refresh</c> operation, which requires a ready room. Each call
+/// sends its own request and accepts the first matching response that arrives after it, as long as no
+/// newer availability request has been sent in the meantime.
 /// </remarks>
 /// <param name="CraftingFurnitureId">The id of the crafting furniture, a positive 32-bit value.</param>
 /// <param name="IngredientItemIds">The ids of the inventory items to check, at most 65535 positive 32-bit values.</param>
@@ -265,7 +255,6 @@ public sealed record CraftingAvailabilityRefreshRequest(
 
 /// <summary>Represents the result of a crafting availability refresh.</summary>
 /// <remarks>Returned by the <c>crafting.availability.refresh</c> operation.</remarks>
-/// <param name="Client">The client type of the hotel session.</param>
 /// <param name="RefreshedAtUtc">The UTC time the result was created.</param>
 /// <param name="ObservedAtUtc">The UTC time the response was observed.</param>
 /// <param name="SessionGeneration">The generation of the hotel session the refresh ran in.</param>
@@ -279,7 +268,6 @@ public sealed record CraftingAvailabilityRefreshRequest(
 /// <param name="MessagesDispatched">The number of request messages the call sent.</param>
 /// <param name="AvailableRecipes">The recipe availability the server returned.</param>
 public sealed record CraftingAvailabilityRefreshResult(
-    ClientType Client,
     DateTimeOffset RefreshedAtUtc,
     DateTimeOffset ObservedAtUtc,
     long SessionGeneration,
@@ -295,7 +283,7 @@ public sealed record CraftingAvailabilityRefreshResult(
 
 /// <summary>Represents a request to craft a known recipe.</summary>
 /// <remarks>
-/// Used by the <c>crafting.craft</c> operation, which requires a ready room and the Flash client.
+/// Used by the <c>crafting.craft</c> operation, which requires a ready room.
 /// The operation sends the request and returns without waiting for the crafting result, which
 /// arrives later as a <see cref="CraftingChanged"/> of kind <see cref="CraftingChangeKind.Result"/>.
 /// </remarks>
@@ -311,7 +299,6 @@ public sealed record CraftingCraftRequest(
 
 /// <summary>Represents the receipt for a craft request that was sent.</summary>
 /// <remarks>Returned by the <c>crafting.craft</c> operation.</remarks>
-/// <param name="Client">The client type of the hotel session.</param>
 /// <param name="DispatchedAtUtc">The UTC time the request was sent.</param>
 /// <param name="SessionGeneration">The generation of the hotel session the request was sent in.</param>
 /// <param name="RoomId">The id of the room the request was sent in.</param>
@@ -321,7 +308,6 @@ public sealed record CraftingCraftRequest(
 /// <param name="RecipeCode">The recipe code that was sent.</param>
 /// <param name="MessagesDispatched">The number of messages sent.</param>
 public sealed record CraftingCraftDispatchReceipt(
-    ClientType Client,
     DateTimeOffset DispatchedAtUtc,
     long SessionGeneration,
     Id RoomId,
@@ -349,7 +335,6 @@ public sealed record CraftingSecretCraftRequest(
 
 /// <summary>Represents the receipt for a secret craft request that was sent.</summary>
 /// <remarks>Returned by the <c>crafting.secret_craft</c> operation.</remarks>
-/// <param name="Client">The client type of the hotel session.</param>
 /// <param name="DispatchedAtUtc">The UTC time the request was sent.</param>
 /// <param name="SessionGeneration">The generation of the hotel session the request was sent in.</param>
 /// <param name="RoomId">The id of the room the request was sent in.</param>
@@ -359,7 +344,6 @@ public sealed record CraftingSecretCraftRequest(
 /// <param name="IngredientItemCount">The number of ingredient item ids that were sent.</param>
 /// <param name="MessagesDispatched">The number of messages sent.</param>
 public sealed record CraftingSecretCraftDispatchReceipt(
-    ClientType Client,
     DateTimeOffset DispatchedAtUtc,
     long SessionGeneration,
     Id RoomId,
@@ -391,7 +375,7 @@ public enum CraftingChangeKind
 /// </remarks>
 /// <param name="Kind">The kind of change.</param>
 /// <param name="ChangedAtUtc">The UTC time the change was published.</param>
-/// <param name="Client">The client type of the hotel session, or <see langword="null"/> when there is no session.</param>
+/// <param name="Connected">Whether a hotel session is active.</param>
 /// <param name="SessionGeneration">The generation of the hotel session the change belongs to.</param>
 /// <param name="Revision">The crafting state revision after the change.</param>
 /// <param name="SourceRevision">The revision of the part that changed, or <paramref name="Revision"/> for <see cref="CraftingChangeKind.Reset"/>.</param>
@@ -403,7 +387,7 @@ public enum CraftingChangeKind
 public sealed record CraftingChanged(
     CraftingChangeKind Kind,
     DateTimeOffset ChangedAtUtc,
-    ClientType? Client,
+    bool Connected,
     long SessionGeneration,
     long Revision,
     long SourceRevision,

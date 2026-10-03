@@ -20,7 +20,7 @@
       <FileVersion>$(QxBuildVersion).0</FileVersion>
       <InformationalVersion>$(QxBuildVersion)</InformationalVersion>
     </PropertyGroup>
-    <Error Condition="!$([System.Text.RegularExpressions.Regex]::IsMatch('$(QxBuildVersion)', '^0\.0\.[1-9][0-9]*$'))"
-           Text="QxBuildVersion must be a version in the 0.0 series, starting at 0.0.1." />
+    <Error Condition="!$([System.Text.RegularExpressions.Regex]::IsMatch('$(QxBuildVersion)', '^0\.1\.[1-9][0-9]*$'))"
+           Text="QxBuildVersion must be a version in the 0.1 series, starting at 0.1.1." />
   </Target>
 </Project>

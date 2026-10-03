@@ -247,7 +247,7 @@ internal sealed partial class EarningApplication : IApplicationFeature, IEarning
         var value = new EarningChanged(
             kind,
             time_provider.GetUtcNow(),
-            update.State.Session?.Client,
+            update.State.Session is not null,
             update.State.SessionGeneration,
             update.State.Revision,
             source_revision,

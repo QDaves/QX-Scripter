@@ -192,14 +192,14 @@ public sealed class BadgeInventoryManager : GameStateManager
 
     /// <summary>Gets the owned badge with the specified id.</summary>
     /// <remarks>Badges whose id does not fit in an <see cref="int"/> are never matched.</remarks>
-    /// <param name="badge_id">The id of the badge.</param>
+    /// <param name="badgeId">The id of the badge.</param>
     /// <returns>The badge, or <see langword="null"/> if the user does not own it.</returns>
-    public OwnedBadge? Badge(int badge_id)
+    public OwnedBadge? Badge(int badgeId)
     {
         foreach (OwnedBadge badge in State.OwnedBadges)
         {
             if ((long)badge.NativeBadgeId is >= int.MinValue and <= int.MaxValue &&
-                badge.BadgeId == badge_id)
+                badge.BadgeId == badgeId)
             {
                 return badge;
             }
@@ -208,53 +208,53 @@ public sealed class BadgeInventoryManager : GameStateManager
     }
 
     /// <summary>Gets the owned badge with the specified id.</summary>
-    /// <param name="badge_id">The id of the badge.</param>
+    /// <param name="badgeId">The id of the badge.</param>
     /// <returns>The badge, or <see langword="null"/> if the user does not own it.</returns>
-    public OwnedBadge? Badge(Id badge_id)
+    public OwnedBadge? Badge(Id badgeId)
     {
         foreach (OwnedBadge badge in State.OwnedBadges)
         {
-            if (badge.NativeBadgeId == badge_id)
+            if (badge.NativeBadgeId == badgeId)
                 return badge;
         }
         return null;
     }
 
     /// <summary>Gets the selected badges of a user.</summary>
-    /// <param name="user_id">The id of the user.</param>
+    /// <param name="userId">The id of the user.</param>
     /// <returns>The user's selected badges, or <see langword="null"/> if none were received in the session.</returns>
-    public UserBadges? SelectedBadgeSet(Id user_id)
+    public UserBadges? SelectedBadgeSet(Id userId)
     {
         BadgeSelectedState? selected = State.SelectedBadgeSets.FirstOrDefault(
-            value => value.Value.UserId == user_id);
+            value => value.Value.UserId == userId);
         return selected is null ? null : Clone(selected.Value);
     }
 
     /// <summary>Gets the badges a user has selected.</summary>
-    /// <param name="user_id">The id of the user.</param>
+    /// <param name="userId">The id of the user.</param>
     /// <returns>The selected badges, or an empty list if none were received in the session.</returns>
-    public IReadOnlyList<SelectedBadge> SelectedBadgesFor(Id user_id)
+    public IReadOnlyList<SelectedBadge> SelectedBadgesFor(Id userId)
     {
         BadgeSelectedState? selected = State.SelectedBadgeSets.FirstOrDefault(
-            value => value.Value.UserId == user_id);
+            value => value.Value.UserId == userId);
         return selected?.Value.Badges.ToArray() ?? [];
     }
 
     /// <summary>Requests the badge inventory if it has not been loaded and waits for every fragment.</summary>
     /// <remarks>Completes immediately when the inventory is already loaded. Concurrent callers share one request.</remarks>
-    /// <param name="timeout_ms">The time to wait for the inventory, in milliseconds.</param>
-    /// <param name="cancellation_token">The token to monitor for cancellation requests.</param>
+    /// <param name="timeoutMs">The time to wait for the inventory, in milliseconds.</param>
+    /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
     /// <returns>A task that completes with the owned badges.</returns>
-    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="timeout_ms"/> is zero or negative.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="timeoutMs"/> is zero or negative.</exception>
     /// <exception cref="InvalidOperationException">Thrown when the application runtime is not active.</exception>
-    /// <exception cref="RequestTimeoutException">Thrown when the inventory does not arrive within <paramref name="timeout_ms"/>.</exception>
+    /// <exception cref="RequestTimeoutException">Thrown when the inventory does not arrive within <paramref name="timeoutMs"/>.</exception>
     public Task<IReadOnlyCollection<OwnedBadge>> EnsureLoadedAsync(
-        int timeout_ms = 10000,
-        CancellationToken cancellation_token = default)
+        int timeoutMs = 10000,
+        CancellationToken cancellationToken = default)
     {
-        ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(timeout_ms, 0);
-        cancellation_token.ThrowIfCancellationRequested();
-        return Operations().EnsureLoadedAsync(timeout_ms, cancellation_token);
+        ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(timeoutMs, 0);
+        cancellationToken.ThrowIfCancellationRequested();
+        return Operations().EnsureLoadedAsync(timeoutMs, cancellationToken);
     }
 
     /// <inheritdoc/>
@@ -814,8 +814,7 @@ public sealed class BadgeInventoryManager : GameStateManager
             state_generation,
             current =>
             {
-                bool has_rarity_data = current.Session is { } session &&
-                    ClientTypes.IsFlash(session.Client);
+                bool has_rarity_data = current.Session is not null;
                 var values = current.OwnedBadges.ToList();
                 var positions = Positions(values);
                 var mutations = new List<BadgeMutation>(2);

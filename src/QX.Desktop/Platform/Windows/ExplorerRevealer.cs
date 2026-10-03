@@ -8,7 +8,7 @@ namespace Qx.Desktop.Platform.Windows;
 [SupportedOSPlatform("windows")]
 sealed class ExplorerRevealer : IFileRevealer
 {
-    public Task<bool> RevealAsync(string path, CancellationToken cancellation_token = default)
+    public Task<bool> RevealAsync(string path, CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(path);
         if (!Path.IsPathRooted(path) || path.Contains('"', StringComparison.Ordinal))

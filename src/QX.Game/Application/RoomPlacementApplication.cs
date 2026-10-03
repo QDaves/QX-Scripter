@@ -130,7 +130,7 @@ internal sealed class RoomPlacementApplication : IApplicationFeature, IRoomPlace
             cancellation_token);
         long room_revision = scope.RoomRevision;
         message_dispatcher.Dispatch(
-            MessageContracts.Room.ItemPlace,
+            MessageContracts.Room.Item.Place,
             PlaceRoomItemRequest.Floor(scope.InventoryItemId, target.X, target.Y, target.Direction),
             scope.Session,
             cancellation_token,
@@ -167,7 +167,7 @@ internal sealed class RoomPlacementApplication : IApplicationFeature, IRoomPlace
             cancellation_token);
         long room_revision = scope.RoomRevision;
         message_dispatcher.Dispatch(
-            MessageContracts.Room.ItemPlace,
+            MessageContracts.Room.Item.Place,
             PlaceRoomItemRequest.Wall(scope.InventoryItemId, target_location),
             scope.Session,
             cancellation_token,
@@ -205,7 +205,7 @@ internal sealed class RoomPlacementApplication : IApplicationFeature, IRoomPlace
             cancellation_token);
         long room_revision = scope.RoomRevision;
         message_dispatcher.Dispatch(
-            MessageContracts.Room.FloorItemMove,
+            MessageContracts.Room.FloorItem.Move,
             new MoveFloorItemRequest(request.RoomItemId, target.X, target.Y, target.Direction),
             scope.Session,
             cancellation_token,
@@ -243,7 +243,7 @@ internal sealed class RoomPlacementApplication : IApplicationFeature, IRoomPlace
             cancellation_token);
         long room_revision = scope.RoomRevision;
         message_dispatcher.Dispatch(
-            MessageContracts.Room.WallItemMove,
+            MessageContracts.Room.WallItem.Move,
             new MoveWallItemRequest(request.RoomItemId, target_location),
             scope.Session,
             cancellation_token,
@@ -280,7 +280,7 @@ internal sealed class RoomPlacementApplication : IApplicationFeature, IRoomPlace
         int category = request.ItemKind is RoomPlacementItemKind.Floor ? 2 : 1;
         long room_revision = scope.RoomRevision;
         message_dispatcher.Dispatch(
-            MessageContracts.Room.ItemPickup,
+            MessageContracts.Room.Item.Pickup,
             new PickupRoomItemRequest(category, request.RoomItemId, request.Confirmed),
             scope.Session,
             cancellation_token,
@@ -528,7 +528,6 @@ internal sealed class RoomPlacementApplication : IApplicationFeature, IRoomPlace
         RoomPlacementWallPosition? wall_target,
         bool confirmed) => new(
         operation,
-        scope.Session.Client,
         time_provider.GetUtcNow(),
         scope.SessionGeneration,
         scope.RoomId,
@@ -551,7 +550,6 @@ internal sealed class RoomPlacementApplication : IApplicationFeature, IRoomPlace
         RoomPlacementWallPosition? wall_target,
         bool confirmed) => new(
         operation,
-        scope.Session.Client,
         time_provider.GetUtcNow(),
         scope.SessionGeneration,
         scope.RoomId,
@@ -572,7 +570,6 @@ internal sealed class RoomPlacementApplication : IApplicationFeature, IRoomPlace
         changed.Publish(new RoomPlacementChanged(
             ChangeKind(commit.Kind),
             time_provider.GetUtcNow(),
-            commit.Client,
             commit.SessionGeneration,
             commit.RoomId,
             commit.RoomGeneration,
@@ -590,7 +587,6 @@ internal sealed class RoomPlacementApplication : IApplicationFeature, IRoomPlace
             return;
         pickup_confirmation.Publish(new RoomPlacementPickupConfirmation(
             time_provider.GetUtcNow(),
-            commit.Client,
             commit.SessionGeneration,
             commit.RoomId,
             commit.RoomGeneration,

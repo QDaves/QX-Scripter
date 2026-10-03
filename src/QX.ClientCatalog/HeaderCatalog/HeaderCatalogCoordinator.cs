@@ -35,10 +35,10 @@ public sealed class HeaderCatalogCoordinator : IAsyncDisposable, IMessageCatalog
 
     public HeaderCatalogCoordinator(
         InstalledClientMonitor monitor,
-        string cache_root)
+        string cacheRoot)
         : this(
             new InstalledClientCandidateSource(monitor),
-            cache_root,
+            cacheRoot,
             new HeaderCatalogExtractor())
     {
     }
@@ -78,19 +78,15 @@ public sealed class HeaderCatalogCoordinator : IAsyncDisposable, IMessageCatalog
         }
     }
 
-    public IReadOnlyList<PreparedHeaderCatalog> CurrentCatalogs(ClientType client)
+    public IReadOnlyList<PreparedHeaderCatalog> CurrentCatalogs()
     {
         lock (_gate)
-        {
-            return client is ClientType.Flash
-                ? Array.AsReadOnly(_by_path.Values.OrderBy(value => value.NormalizedPath, PathComparer()).ToArray())
-                : [];
-        }
+            return Array.AsReadOnly(_by_path.Values.OrderBy(value => value.NormalizedPath, PathComparer()).ToArray());
     }
 
-    public Task StartAsync(CancellationToken cancellation_token = default)
+    public Task StartAsync(CancellationToken cancellationToken = default)
     {
-        cancellation_token.ThrowIfCancellationRequested();
+        cancellationToken.ThrowIfCancellationRequested();
         Task startup;
         lock (_gate)
         {
@@ -98,16 +94,16 @@ public sealed class HeaderCatalogCoordinator : IAsyncDisposable, IMessageCatalog
             _startup ??= StartCoreAsync();
             startup = _startup;
         }
-        return startup.WaitAsync(cancellation_token);
+        return startup.WaitAsync(cancellationToken);
     }
 
-    public Task WaitForIdleAsync(CancellationToken cancellation_token = default) =>
-        WaitForIdleCoreAsync(null, cancellation_token);
+    public Task WaitForIdleAsync(CancellationToken cancellationToken = default) =>
+        WaitForIdleCoreAsync(null, cancellationToken);
 
-    public async Task WaitUntilReadyAsync(CancellationToken cancellation_token = default)
+    public async Task WaitUntilReadyAsync(CancellationToken cancellationToken = default)
     {
-        await StartAsync(cancellation_token).ConfigureAwait(false);
-        await WaitForIdleAsync(cancellation_token).ConfigureAwait(false);
+        await StartAsync(cancellationToken).ConfigureAwait(false);
+        await WaitForIdleAsync(cancellationToken).ConfigureAwait(false);
     }
 
     internal Task WaitForIdleAsync(
@@ -159,37 +155,33 @@ public sealed class HeaderCatalogCoordinator : IAsyncDisposable, IMessageCatalog
     }
 
     public bool TryGet(
-        ClientType client,
-        string source_sha256,
+        string sourceSha256,
         out PreparedHeaderCatalog? catalog)
     {
-        string source = HeaderCatalogKey.NormalizeHash(source_sha256, nameof(source_sha256));
+        string source = HeaderCatalogKey.NormalizeHash(sourceSha256, nameof(sourceSha256));
         lock (_gate)
         {
             PreparedHeaderCatalog[] matches = _prepared.Values
-                .Where(value => value.Key.Client == client && value.Key.SourceSha256 == source)
+                .Where(value => value.Key.SourceSha256 == source)
                 .ToArray();
             catalog = matches.Length == 1 ? matches[0] : null;
             return matches.Length == 1;
         }
     }
 
-    public IReadOnlyList<PreparedHeaderCatalog> Find(
-        ClientType client,
-        string source_sha256)
+    public IReadOnlyList<PreparedHeaderCatalog> Find(string sourceSha256)
     {
-        string source = HeaderCatalogKey.NormalizeHash(source_sha256, nameof(source_sha256));
+        string source = HeaderCatalogKey.NormalizeHash(sourceSha256, nameof(sourceSha256));
         lock (_gate)
         {
             return Array.AsReadOnly(_prepared.Values
-                .Where(value => value.Key.Client == client && value.Key.SourceSha256 == source)
+                .Where(value => value.Key.SourceSha256 == source)
                 .OrderBy(value => value.PreparedAt)
                 .ToArray());
         }
     }
 
     public bool TryGetByPath(
-        ClientType client,
         string path,
         out PreparedHeaderCatalog? catalog)
     {
@@ -197,9 +189,7 @@ public sealed class HeaderCatalogCoordinator : IAsyncDisposable, IMessageCatalog
         string normalized = Path.GetFullPath(path);
         lock (_gate)
         {
-            catalog = client is ClientType.Flash
-                ? _by_path.GetValueOrDefault(normalized)
-                : null;
+            catalog = _by_path.GetValueOrDefault(normalized);
             return catalog is not null;
         }
     }
@@ -210,14 +200,10 @@ public sealed class HeaderCatalogCoordinator : IAsyncDisposable, IMessageCatalog
         {
             await _source.StartAsync(_stop.Token).ConfigureAwait(false);
             Subscribe();
-            InstalledClientCandidate[] candidates = _source.Candidates.Values.ToArray();
-            InitialPreparation?[] initial = await Task.WhenAll(candidates.Select(candidate =>
-                ProbeInitialCacheAsync(candidate, _stop.Token))).ConfigureAwait(false);
-            foreach (InitialPreparation preparation in initial.OfType<InitialPreparation>())
-            {
-                if (IsCurrent(preparation))
-                    Queue(new PendingPreparation(preparation.Candidate, preparation), false);
-            }
+            if (_source.Candidate is { } candidate &&
+                await ProbeInitialCacheAsync(candidate, _stop.Token).ConfigureAwait(false) is { } preparation &&
+                IsCurrent(preparation))
+                Queue(new PendingPreparation(candidate, preparation), false);
             lock (_gate)
                 _worker ??= RunAsync(_stop.Token);
         }
@@ -270,12 +256,10 @@ public sealed class HeaderCatalogCoordinator : IAsyncDisposable, IMessageCatalog
     {
         InstalledClientCandidate candidate = preparation.Candidate;
         string normalized_path;
-        ClientType client;
         string identity;
         try
         {
             normalized_path = Path.GetFullPath(candidate.Path);
-            client = ClientCatalogClients.FromFamily(candidate.Family);
             identity = Identity(candidate, normalized_path);
         }
         catch
@@ -288,7 +272,7 @@ public sealed class HeaderCatalogCoordinator : IAsyncDisposable, IMessageCatalog
         {
             if (_disposed)
                 return;
-            _current_by_path[PathIdentity(client, normalized_path)] = identity;
+            _current_by_path[normalized_path] = identity;
             queued = _pending.TryAdd(identity, preparation);
             if (queued)
             {
@@ -304,7 +288,6 @@ public sealed class HeaderCatalogCoordinator : IAsyncDisposable, IMessageCatalog
         {
             PublishStatus(new HeaderCatalogPreparationStatus(
                 candidate,
-                client,
                 normalized_path,
                 HeaderCatalogPreparationStage.Discovered,
                 DateTimeOffset.UtcNow));
@@ -358,18 +341,15 @@ public sealed class HeaderCatalogCoordinator : IAsyncDisposable, IMessageCatalog
         InstalledClientCandidate candidate,
         CancellationToken cancellation_token)
     {
-        ClientType client;
         string normalized_path;
         try
         {
-            client = ClientCatalogClients.FromFamily(candidate.Family);
             normalized_path = Path.GetFullPath(candidate.Path);
         }
         catch (Exception error)
         {
             PublishStatus(new HeaderCatalogPreparationStatus(
                 candidate,
-                ClientType.None,
                 candidate.Path,
                 HeaderCatalogPreparationStage.Failed,
                 DateTimeOffset.UtcNow,
@@ -381,11 +361,10 @@ public sealed class HeaderCatalogCoordinator : IAsyncDisposable, IMessageCatalog
         {
             if (_disposed)
                 return null;
-            _current_by_path[PathIdentity(client, normalized_path)] = Identity(candidate, normalized_path);
+            _current_by_path[normalized_path] = Identity(candidate, normalized_path);
         }
         PublishStatus(Status(
             candidate,
-            client,
             normalized_path,
             HeaderCatalogPreparationStage.Discovered));
 
@@ -394,7 +373,6 @@ public sealed class HeaderCatalogCoordinator : IAsyncDisposable, IMessageCatalog
         {
             InitialPreparation preparation = await CreateInitialPreparationAsync(
                 candidate,
-                client,
                 normalized_path,
                 cancellation_token).ConfigureAwait(false);
             source_sha256 = preparation.SourceSha256;
@@ -420,7 +398,6 @@ public sealed class HeaderCatalogCoordinator : IAsyncDisposable, IMessageCatalog
                 DateTimeOffset.UtcNow));
             PublishStatus(Status(
                 candidate,
-                client,
                 normalized_path,
                 HeaderCatalogPreparationStage.Ready,
                 preparation.SourceSha256,
@@ -435,7 +412,6 @@ public sealed class HeaderCatalogCoordinator : IAsyncDisposable, IMessageCatalog
         {
             PublishStatus(Status(
                 candidate,
-                client,
                 normalized_path,
                 HeaderCatalogPreparationStage.Failed,
                 source_sha256,
@@ -446,17 +422,13 @@ public sealed class HeaderCatalogCoordinator : IAsyncDisposable, IMessageCatalog
 
     async Task<InitialPreparation> CreateInitialPreparationAsync(
         InstalledClientCandidate candidate,
-        ClientType client,
         string normalized_path,
         CancellationToken cancellation_token)
     {
         HeaderCatalogExtractionTarget target = _extractor.Resolve(candidate);
-        if (target.Client != client)
-            throw new InvalidDataException("The header extractor target does not match the installed client family.");
         string source_path = Path.GetFullPath(target.SourcePath);
         PublishStatus(Status(
             candidate,
-            client,
             normalized_path,
             HeaderCatalogPreparationStage.Hashing));
         string source_sha256 = await HashFileAsync(source_path, cancellation_token).ConfigureAwait(false);
@@ -465,20 +437,17 @@ public sealed class HeaderCatalogCoordinator : IAsyncDisposable, IMessageCatalog
             candidate.Source,
             candidate.ContentRevision);
         var key = new HeaderCatalogKey(
-            client,
             source_sha256,
             target.NameDatabaseSha256,
             target.ExtractorRevision,
             provenance);
         PublishStatus(Status(
             candidate,
-            client,
             normalized_path,
             HeaderCatalogPreparationStage.CacheLookup,
             source_sha256));
         return new InitialPreparation(
             candidate,
-            client,
             normalized_path,
             target,
             source_path,
@@ -491,14 +460,12 @@ public sealed class HeaderCatalogCoordinator : IAsyncDisposable, IMessageCatalog
         CancellationToken cancellation_token)
     {
         InstalledClientCandidate candidate = pending.Candidate;
-        ClientType client = ClientCatalogClients.FromFamily(candidate.Family);
         string normalized_path = Path.GetFullPath(candidate.Path);
         string? source_sha256 = null;
         try
         {
             InitialPreparation preparation = pending.Initial ?? await CreateInitialPreparationAsync(
                 candidate,
-                client,
                 normalized_path,
                 cancellation_token).ConfigureAwait(false);
             source_sha256 = preparation.SourceSha256;
@@ -509,12 +476,10 @@ public sealed class HeaderCatalogCoordinator : IAsyncDisposable, IMessageCatalog
                 {
                     PublishStatus(Status(
                         candidate,
-                        client,
                         normalized_path,
                         HeaderCatalogPreparationStage.Extracting,
                         source_sha256));
                     HeaderCatalogExtractionResult extraction = await _extractor.ExtractAsync(
-                        candidate,
                         preparation.Target,
                         preparation.Key.Provenance,
                         token).ConfigureAwait(false);
@@ -542,7 +507,6 @@ public sealed class HeaderCatalogCoordinator : IAsyncDisposable, IMessageCatalog
             PublishPrepared(prepared);
             PublishStatus(Status(
                 candidate,
-                client,
                 normalized_path,
                 HeaderCatalogPreparationStage.Ready,
                 source_sha256,
@@ -556,7 +520,6 @@ public sealed class HeaderCatalogCoordinator : IAsyncDisposable, IMessageCatalog
         {
             PublishStatus(Status(
                 candidate,
-                client,
                 normalized_path,
                 HeaderCatalogPreparationStage.Failed,
                 source_sha256,
@@ -572,8 +535,7 @@ public sealed class HeaderCatalogCoordinator : IAsyncDisposable, IMessageCatalog
                 return;
             _prepared[prepared.Key.Fingerprint] = prepared;
             string identity = Identity(prepared.Candidate, prepared.NormalizedPath);
-            if (_current_by_path.GetValueOrDefault(
-                    PathIdentity(prepared.Key.Client, prepared.NormalizedPath)) == identity)
+            if (_current_by_path.GetValueOrDefault(prepared.NormalizedPath) == identity)
             {
                 _by_path[prepared.NormalizedPath] = prepared;
             }
@@ -582,11 +544,9 @@ public sealed class HeaderCatalogCoordinator : IAsyncDisposable, IMessageCatalog
 
     void RemovePathBinding(InstalledClientCandidate candidate)
     {
-        ClientType client;
         string normalized_path;
         try
         {
-            client = ClientCatalogClients.FromFamily(candidate.Family);
             normalized_path = Path.GetFullPath(candidate.Path);
         }
         catch
@@ -597,11 +557,10 @@ public sealed class HeaderCatalogCoordinator : IAsyncDisposable, IMessageCatalog
         {
             if (_disposed)
                 return;
-            string path_identity = PathIdentity(client, normalized_path);
             string candidate_identity = Identity(candidate, normalized_path);
-            if (_current_by_path.GetValueOrDefault(path_identity) != candidate_identity)
+            if (_current_by_path.GetValueOrDefault(normalized_path) != candidate_identity)
                 return;
-            _current_by_path.Remove(path_identity);
+            _current_by_path.Remove(normalized_path);
             if (_by_path.TryGetValue(normalized_path, out PreparedHeaderCatalog? prepared) &&
                 Identity(prepared.Candidate, prepared.NormalizedPath) == candidate_identity)
             {
@@ -615,8 +574,7 @@ public sealed class HeaderCatalogCoordinator : IAsyncDisposable, IMessageCatalog
         lock (_gate)
         {
             return !_disposed &&
-                _current_by_path.GetValueOrDefault(
-                    PathIdentity(preparation.Client, preparation.NormalizedPath)) ==
+                _current_by_path.GetValueOrDefault(preparation.NormalizedPath) ==
                 Identity(preparation.Candidate, preparation.NormalizedPath);
         }
     }
@@ -649,14 +607,12 @@ public sealed class HeaderCatalogCoordinator : IAsyncDisposable, IMessageCatalog
 
     static HeaderCatalogPreparationStatus Status(
         InstalledClientCandidate candidate,
-        ClientType client,
         string normalized_path,
         HeaderCatalogPreparationStage stage,
         string? source_sha256 = null,
         HeaderCatalogCacheState? cache_state = null,
         Exception? error = null) => new(
             candidate,
-            client,
             normalized_path,
             stage,
             DateTimeOffset.UtcNow,
@@ -777,13 +733,9 @@ public sealed class HeaderCatalogCoordinator : IAsyncDisposable, IMessageCatalog
 
     static string Identity(InstalledClientCandidate candidate, string normalized_path) => string.Join(
         '\0',
-        candidate.Family,
         normalized_path,
         candidate.Version,
         candidate.ContentRevision ?? string.Empty);
-
-    static string PathIdentity(ClientType client, string normalized_path) =>
-        $"{(int)client}\0{normalized_path}";
 
     static StringComparer PathComparer() =>
         OperatingSystem.IsWindows() ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal;
@@ -797,7 +749,6 @@ public sealed class HeaderCatalogCoordinator : IAsyncDisposable, IMessageCatalog
 
     sealed record InitialPreparation(
         InstalledClientCandidate Candidate,
-        ClientType Client,
         string NormalizedPath,
         HeaderCatalogExtractionTarget Target,
         string SourcePath,
@@ -813,7 +764,7 @@ internal interface IInstalledClientCandidateSource : IAsyncDisposable
 {
     event EventHandler<InstalledClientCandidateChangedEventArgs>? CandidateChanged;
 
-    IReadOnlyDictionary<InstalledClientFamily, InstalledClientCandidate> Candidates { get; }
+    InstalledClientCandidate? Candidate { get; }
 
     Task StartAsync(CancellationToken cancellation_token);
 }
@@ -833,7 +784,7 @@ internal sealed class InstalledClientCandidateSource : IInstalledClientCandidate
         remove => _monitor.CandidateChanged -= value;
     }
 
-    public IReadOnlyDictionary<InstalledClientFamily, InstalledClientCandidate> Candidates => _monitor.Candidates;
+    public InstalledClientCandidate? Candidate => _monitor.Candidate;
 
     public Task StartAsync(CancellationToken cancellation_token) => _monitor.StartAsync(cancellation_token);
 

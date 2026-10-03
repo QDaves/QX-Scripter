@@ -1,6 +1,6 @@
-using Qx.Game;
 using Qx.Game.Application;
 using Qx.Model.Messages.Incoming;
+using Qx.Model.Messages.Outgoing;
 using Qx.Protocol;
 using System.Globalization;
 
@@ -28,27 +28,26 @@ public partial class ScriptGlobals
     /// The hotel expects these as one string: the name, the palette id and the color as six
     /// upper-case hexadecimal digits, separated by newlines (see <see cref="PetPurchaseData"/>).
     /// The name is validated by the server for length and for characters, so a refusal here is
-    /// usually the name rather than the funds. The task completes once the request is sent, as
-    /// with <see cref="BuyFromCatalog"/>.
+    /// usually the name rather than the funds. It returns once the request is sent, as with
+    /// <see cref="BuyFromCatalog"/>.
     /// </remarks>
     /// <param name="pageId">The catalog page the pet offer sits on.</param>
     /// <param name="offerId">The pet offer.</param>
     /// <param name="name">The pet's name.</param>
     /// <param name="paletteId">The color palette, taken from the offer's available palettes.</param>
     /// <param name="color">The color, as a 24-bit RGB value.</param>
-    /// <param name="timeoutMs">The timeout in milliseconds. It is currently not used, because the call does not wait for an answer.</param>
-    /// <returns>An outcome with <see cref="CatalogPurchaseStatus.Dispatched"/>.</returns>
     /// <exception cref="ArgumentException">Thrown when <paramref name="name"/> is <see langword="null"/>, empty or white space.</exception>
-    public Task<CatalogPurchaseOutcome> BuyPet(
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="pageId"/> or <paramref name="offerId"/> is negative, or <paramref name="name"/> is too long for the wire.</exception>
+    /// <exception cref="InvalidOperationException">Thrown when there is no active hotel session or the catalog state changed before sending.</exception>
+    public void BuyPet(
         int pageId,
         int offerId,
         string name,
         int paletteId,
-        int color = 0xFFFFFF,
-        int timeoutMs = 10000)
+        int color = 0xFFFFFF)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
-        return BuyFromCatalog(pageId, offerId, PetPurchaseData(name, paletteId, color), 1, timeoutMs);
+        BuyFromCatalog(pageId, offerId, PetPurchaseData(name, paletteId, color));
     }
 
     /// <summary>
@@ -79,17 +78,16 @@ public partial class ScriptGlobals
     /// <param name="pageId">The catalog page the offer sits on.</param>
     /// <param name="offerId">The offer to buy.</param>
     /// <param name="badgeCode">The badge to show, as its code appears in the badge inventory.</param>
-    /// <param name="timeoutMs">The timeout in milliseconds. It is currently not used, because the call does not wait for an answer.</param>
-    /// <returns>An outcome with <see cref="CatalogPurchaseStatus.Dispatched"/>.</returns>
     /// <exception cref="ArgumentException">Thrown when <paramref name="badgeCode"/> is <see langword="null"/>, empty or white space.</exception>
-    public Task<CatalogPurchaseOutcome> BuyBadgeItem(
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="pageId"/> or <paramref name="offerId"/> is negative, or <paramref name="badgeCode"/> is too long for the wire.</exception>
+    /// <exception cref="InvalidOperationException">Thrown when there is no active hotel session or the catalog state changed before sending.</exception>
+    public void BuyBadgeItem(
         int pageId,
         int offerId,
-        string badgeCode,
-        int timeoutMs = 10000)
+        string badgeCode)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(badgeCode);
-        return BuyFromCatalog(pageId, offerId, badgeCode, 1, timeoutMs);
+        BuyFromCatalog(pageId, offerId, badgeCode);
     }
 
     /// <summary>
@@ -98,14 +96,13 @@ public partial class ScriptGlobals
     /// <param name="pageId">The catalog page the offer sits on.</param>
     /// <param name="offerId">The offer to buy.</param>
     /// <param name="groupId">The group the item belongs to, sent as the offer's extra data.</param>
-    /// <param name="timeoutMs">The timeout in milliseconds. It is currently not used, because the call does not wait for an answer.</param>
-    /// <returns>An outcome with <see cref="CatalogPurchaseStatus.Dispatched"/>.</returns>
-    public Task<CatalogPurchaseOutcome> BuyGroupItem(
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="pageId"/> or <paramref name="offerId"/> is negative.</exception>
+    /// <exception cref="InvalidOperationException">Thrown when there is no active hotel session or the catalog state changed before sending.</exception>
+    public void BuyGroupItem(
         int pageId,
         int offerId,
-        Id groupId,
-        int timeoutMs = 10000) =>
-        BuyFromCatalog(pageId, offerId, groupId.ToString(), 1, timeoutMs);
+        Id groupId) =>
+        BuyFromCatalog(pageId, offerId, groupId.ToString());
 
     /// <summary>
     /// Buys an engraved offer such as a trophy, where the buyer supplies the inscription.
@@ -113,14 +110,13 @@ public partial class ScriptGlobals
     /// <param name="pageId">The catalog page the offer sits on.</param>
     /// <param name="offerId">The offer to buy.</param>
     /// <param name="inscription">The text to engrave; <see langword="null"/> is sent as an empty string.</param>
-    /// <param name="timeoutMs">The timeout in milliseconds. It is currently not used, because the call does not wait for an answer.</param>
-    /// <returns>An outcome with <see cref="CatalogPurchaseStatus.Dispatched"/>.</returns>
-    public Task<CatalogPurchaseOutcome> BuyEngraved(
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="pageId"/> or <paramref name="offerId"/> is negative, or <paramref name="inscription"/> is too long for the wire.</exception>
+    /// <exception cref="InvalidOperationException">Thrown when there is no active hotel session or the catalog state changed before sending.</exception>
+    public void BuyEngraved(
         int pageId,
         int offerId,
-        string inscription,
-        int timeoutMs = 10000) =>
-        BuyFromCatalog(pageId, offerId, inscription ?? "", 1, timeoutMs);
+        string inscription) =>
+        BuyFromCatalog(pageId, offerId, inscription ?? "");
 
     /// <summary>
     /// Requests which rooms may be advertised, and whether the account's membership extends an event.
@@ -140,7 +136,7 @@ public partial class ScriptGlobals
     /// <exception cref="InvalidOperationException">Thrown when the request was not sent exactly once.</exception>
     public async Task<RoomAdPurchaseInfo> GetRoomEventInfo(int timeoutMs = 10000)
     {
-        RoomAdInfoReadResult result = await Application
+        RoomAdInfoReadResult result = await _application
             .InvokeAsync<RoomAdInfoReadRequest, RoomAdInfoReadResult>(
                 ApplicationMemberIds.CatalogRoomAdInfoGet,
                 new RoomAdInfoReadRequest(timeoutMs),
@@ -161,7 +157,7 @@ public partial class ScriptGlobals
     /// Buys a room event, which advertises a room in the navigator for a while.
     /// </summary>
     /// <remarks>
-    /// The task completes once the request is sent and does not wait for the server's answer.
+    /// It returns once the request is sent and does not wait for the server's answer.
     /// </remarks>
     /// <param name="pageId">The catalog page the offer sits on.</param>
     /// <param name="offerId">The offer to buy.</param>
@@ -170,30 +166,26 @@ public partial class ScriptGlobals
     /// <param name="description">The event's description.</param>
     /// <param name="categoryId">The navigator category the event is listed under.</param>
     /// <param name="extended"><see langword="true"/> to run the longer form, which needs the membership; otherwise, <see langword="false"/>.</param>
-    /// <param name="timeoutMs">The timeout in milliseconds. It is currently not used, because the call does not wait for an answer.</param>
-    /// <returns>An outcome with <see cref="CatalogPurchaseStatus.Dispatched"/>.</returns>
     /// <exception cref="ArgumentException">Thrown when <paramref name="name"/> is <see langword="null"/>, empty or white space.</exception>
-    /// <exception cref="InvalidOperationException">Thrown when the application runtime is not active.</exception>
-    public Task<CatalogPurchaseOutcome> BuyRoomEvent(
+    /// <exception cref="InvalidOperationException">Thrown when the application runtime is not active or there is no hotel session.</exception>
+    public void BuyRoomEvent(
         int pageId,
         int offerId,
         Id roomId,
         string name,
         string description = "",
         int categoryId = 0,
-        bool extended = false,
-        int timeoutMs = 10000)
+        bool extended = false)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
-        return Game.Catalog.PurchaseAsync(
+        Game.Catalog.Purchase(
             Msg.Out.PurchaseRoomAd,
             new PurchaseRoomAd(pageId, offerId, roomId, name, extended, description, categoryId),
-            timeoutMs,
             Ct);
     }
 
     /// <summary>
-    /// Buys a Builders Club floor offer directly into a spot in the current room.
+    /// Places a Builders Club floor offer directly into a spot in the current room.
     /// </summary>
     /// <remarks>
     /// Builders Club does not stock the inventory: the item is placed as it is bought, so the tile
@@ -216,7 +208,7 @@ public partial class ScriptGlobals
         int direction = 0,
         string extraData = "",
         bool isRetry = false) =>
-        _ = Application.Invoke<
+        _ = _application.Invoke<
             SubscriptionBuildersClubFloorPlaceRequest,
             SubscriptionBuildersClubPlacementDispatchReceipt>(
                 ApplicationMemberIds.SubscriptionsBuildersClubFloorOfferPlace,
@@ -231,7 +223,7 @@ public partial class ScriptGlobals
                 Ct);
 
     /// <summary>
-    /// Buys a Builders Club wall offer directly onto a wall in the current room.
+    /// Places a Builders Club wall offer directly onto a wall in the current room.
     /// </summary>
     /// <remarks>
     /// Nothing confirms the placement: it arrives as an ordinary wall item add.
@@ -251,7 +243,7 @@ public partial class ScriptGlobals
         bool isRetry = false)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(wallLocation);
-        _ = Application.Invoke<
+        _ = _application.Invoke<
             SubscriptionBuildersClubWallPlaceRequest,
             SubscriptionBuildersClubPlacementDispatchReceipt>(
                 ApplicationMemberIds.SubscriptionsBuildersClubWallOfferPlace,

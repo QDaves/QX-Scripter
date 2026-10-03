@@ -17,9 +17,18 @@ public static class ApplicationJson
         return JsonSerializer.Serialize(value, options);
     }
 
-    public static object Deserialize(JsonElement value, Type type)
+    /// <summary>Binds JSON arguments to the request of an application member.</summary>
+    /// <param name="value">The arguments as a JSON object, or an undefined or null element for none.</param>
+    /// <param name="descriptor">The member whose request type the arguments are bound to.</param>
+    /// <returns>The request, ready to pass to <see cref="IApplicationRuntime"/>.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="descriptor"/> is <see langword="null"/>.</exception>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="descriptor"/> describes an event, which has no request.</exception>
+    /// <exception cref="JsonException">Thrown when the arguments are not an object, name a parameter the member does not declare, or do not bind to the request type.</exception>
+    public static object Deserialize(JsonElement value, ApplicationDescriptor descriptor)
     {
-        ArgumentNullException.ThrowIfNull(type);
+        ArgumentNullException.ThrowIfNull(descriptor);
+        Type type = descriptor.RequestType
+            ?? throw new ArgumentException($"Application member '{descriptor.Id}' has no request.", nameof(descriptor));
         if (value.ValueKind is JsonValueKind.Undefined or JsonValueKind.Null)
         {
             using JsonDocument empty = JsonDocument.Parse("{}");
@@ -28,6 +37,7 @@ public static class ApplicationJson
         }
         if (value.ValueKind is not JsonValueKind.Object)
             throw new JsonException("Application arguments must be a JSON object.");
+        RequireDeclaredParameters(value, descriptor);
         return value.Deserialize(type, Options)
             ?? throw new JsonException($"Could not create '{type.FullName}'.");
     }
@@ -54,6 +64,7 @@ public static class ApplicationJson
             default_value = parameter.DefaultValue,
             description = parameter.Description
         }).ToArray(),
+        script = ApplicationScript.Call(member.Descriptor),
         required_states = member.Descriptor.RequiredStates.Select(Name).ToArray(),
         state_effects = member.Descriptor.StateEffects.Select(effect => new
         {
@@ -70,12 +81,6 @@ public static class ApplicationJson
             }
             : null,
         messages = member.Availability.ActiveMessages.Select(Message).ToArray(),
-        clients = member.Availability.Clients.Select(client => new
-        {
-            client = Name(client.Client),
-            supported = client.Supported,
-            messages = client.Messages.Select(Message).ToArray()
-        }).ToArray(),
         availability = DescribeAvailability(member.Availability),
         input_schema = InputSchema(member.Descriptor),
         output_schema = OutputSchema(member.Descriptor.ResultType)
@@ -118,7 +123,7 @@ public static class ApplicationJson
         return new
         {
             available = availability.Available,
-            client = Name(availability.Client),
+            connected = availability.Connected,
             missing_states = availability.MissingStates.Select(Name).ToArray(),
             unresolved_messages = availability.ActiveMessages
                 .Where(message => !message.Resolved)
@@ -158,6 +163,21 @@ public static class ApplicationJson
                 }
                 : null
         };
+    }
+
+    private static void RequireDeclaredParameters(JsonElement value, ApplicationDescriptor descriptor)
+    {
+        foreach (JsonProperty argument in value.EnumerateObject())
+        {
+            if (descriptor.Parameters.Any(parameter =>
+                    string.Equals(parameter.Name, argument.Name, StringComparison.OrdinalIgnoreCase)))
+            {
+                continue;
+            }
+            throw new JsonException(descriptor.Parameters.Count == 0
+                ? $"unknown parameter '{argument.Name}'; '{descriptor.Id}' takes no parameters"
+                : $"unknown parameter '{argument.Name}'; valid: {string.Join(", ", descriptor.Parameters.Select(parameter => parameter.Name))}");
+        }
     }
 
     private static object Message(ApplicationMessageAvailability message) => new
@@ -260,14 +280,6 @@ public static class ApplicationJson
         }
         if (effective == typeof(DateTimeOffset) || effective == typeof(DateTime))
             return new() { ["type"] = "string", ["format"] = "date-time" };
-        if (effective == typeof(ClientType))
-        {
-            return new()
-            {
-                ["type"] = "string",
-                ["enum"] = new[] { "flash" }
-            };
-        }
         if (effective.IsEnum)
         {
             return new()

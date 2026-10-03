@@ -148,7 +148,6 @@ internal sealed class RoomChatJournal : IDisposable
             entry = new RoomChatEntry(
                 ++_next_sequence,
                 _time_provider.GetUtcNow(),
-                session.Client,
                 snapshot.RoomId,
                 snapshot.RoomGeneration,
                 snapshot.SpeakerIndex,

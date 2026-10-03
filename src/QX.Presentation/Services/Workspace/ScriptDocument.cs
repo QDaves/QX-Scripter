@@ -5,7 +5,7 @@ using Qx.Presentation.Services.Panels;
 using Qx.Presentation.Services.Runs;
 using Qx.Presentation.Threading;
 using Qx.Presentation.ViewModels.Editor;
-using Qx.Scripting;
+using Qx.Scripting.Hosting;
 
 namespace Qx.Presentation.Services.Workspace;
 
@@ -15,7 +15,7 @@ public interface IScriptTextBuffer
 
     void Replace(string text);
 
-    void Insert(string text, int caret_offset);
+    void Insert(string text, int caretOffset);
 
     bool GoTo(int line, int column);
 
@@ -44,13 +44,13 @@ public sealed partial class ScriptDocument : ObservableObject, IRunSource, IDisp
     bool _console_seeded;
     string? _disk_text;
 
-    public ScriptDocument(string name, string text, string? file_path, IUiDispatcher dispatcher, TimeProvider time, Func<ScriptDocument, DocumentParts> parts)
+    public ScriptDocument(string name, string text, string? filePath, IUiDispatcher dispatcher, TimeProvider time, Func<ScriptDocument, DocumentParts> parts)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
         ArgumentNullException.ThrowIfNull(parts);
         _text = text ?? throw new ArgumentNullException(nameof(text));
         Name = ScriptFileName.FromDirective(text) ?? name;
-        FilePath = file_path is null ? null : PathComparison.Full(file_path);
+        FilePath = filePath is null ? null : PathComparison.Full(filePath);
         ExecutionIdentity = "ui:" + Guid.NewGuid().ToString("N");
         Describe(UiSpec.Parse(text));
         _panel_probe = new Debouncer(dispatcher, time, PanelProbeDelay, ProbePanel);
@@ -173,11 +173,11 @@ public sealed partial class ScriptDocument : ObservableObject, IRunSource, IDisp
         TextReplaced?.Invoke(this);
     }
 
-    public void MarkSaved(string path, string saved_text)
+    public void MarkSaved(string path, string savedText)
     {
-        ArgumentNullException.ThrowIfNull(saved_text);
+        ArgumentNullException.ThrowIfNull(savedText);
         MoveTo(path);
-        IsModified = !string.Equals(saved_text, Text, StringComparison.Ordinal);
+        IsModified = !string.Equals(savedText, Text, StringComparison.Ordinal);
     }
 
     public void MoveTo(string path)
@@ -187,9 +187,9 @@ public sealed partial class ScriptDocument : ObservableObject, IRunSource, IDisp
         RefreshName();
     }
 
-    public void MarkClean(string saved_text)
+    public void MarkClean(string savedText)
     {
-        if (string.Equals(saved_text, Text, StringComparison.Ordinal))
+        if (string.Equals(savedText, Text, StringComparison.Ordinal))
             IsModified = false;
     }
 
@@ -230,7 +230,7 @@ public sealed partial class ScriptDocument : ObservableObject, IRunSource, IDisp
         IsModified = true;
     }
 
-    public void SetPanelMode(bool panel_mode) => PanelMode = panel_mode && HasUi;
+    public void SetPanelMode(bool panelMode) => PanelMode = panelMode && HasUi;
 
     internal void MarkClosed() => IsClosed = true;
 

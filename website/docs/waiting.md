@@ -1,5 +1,8 @@
 # Waiting and room scope
 
+A script waits for a condition or a room without blocking, and binds work to the current room visit
+with a room scope.
+
 ## Wait for a condition
 
 `WaitUntil` checks a condition after every room change and at least every `pollMs`. It returns

@@ -6,6 +6,7 @@ using Qx.Presentation.Services.Files;
 using Qx.Presentation.Services.Output;
 using Qx.Presentation.Threading;
 using Qx.Scripting;
+using Qx.Scripting.Hosting;
 
 namespace Qx.Presentation.Services.Runs;
 
@@ -46,7 +47,7 @@ public interface IRunSource
 
 public interface IRunHooks
 {
-    Task SaveBeforeRunAsync(string code, CancellationToken cancellation_token);
+    Task SaveBeforeRunAsync(string code, CancellationToken cancellationToken);
 
     void RecordStarted(DateTimeOffset at);
 
@@ -55,13 +56,13 @@ public interface IRunHooks
 
 public interface IPanelRunTarget
 {
-    void BeginStarting(string? pressed_button);
+    void BeginStarting(string? pressedButton);
 
-    void EndStarting(string? pressed_button);
+    void EndStarting(string? pressedButton);
 
     void SetRunBusy(bool busy);
 
-    IDisposable Attach(ScriptUi ui, string code, long run_epoch, string file_name, string? pressed_button, CancellationToken run_token);
+    IDisposable Attach(ScriptUi ui, string code, long runEpoch, string fileName, string? pressedButton, CancellationToken runToken);
 
     void SetButtonBusy(string button, bool busy);
 
@@ -152,13 +153,13 @@ public sealed partial class ScriptRunController : ObservableObject
 
     public double RuntimeMs => StartedAt is { } started ? ((FinishedAt ?? _time.GetUtcNow()) - started).TotalMilliseconds : 0;
 
-    public bool IsCurrent(long run_epoch) => IsAlive && _frame is { } frame && frame.Epoch == run_epoch;
+    public bool IsCurrent(long runEpoch) => IsAlive && _frame is { } frame && frame.Epoch == runEpoch;
 
-    public RunStartOutcome Start(string? pressed_button, bool panel_mode)
+    public RunStartOutcome Start(string? pressedButton, bool panelMode)
     {
         if (IsAlive)
             return RunStartOutcome.AlreadyAlive;
-        var frame = new RunFrame(++_epoch, CancellationTokenSource.CreateLinkedTokenSource(_lifetime), panel_mode || _source.PanelRequired);
+        var frame = new RunFrame(++_epoch, CancellationTokenSource.CreateLinkedTokenSource(_lifetime), panelMode || _source.PanelRequired);
         _frame = frame;
         _armed = null;
         _errors.Clear();
@@ -168,7 +169,7 @@ public sealed partial class ScriptRunController : ObservableObject
         FinishedAt = null;
         State = ScriptRunState.Compiling;
         _hooks.RecordStarted(_time.GetLocalNow());
-        Completion = RunAsync(frame, pressed_button);
+        Completion = RunAsync(frame, pressedButton);
         Started?.Invoke();
         return RunStartOutcome.Started;
     }
@@ -185,14 +186,14 @@ public sealed partial class ScriptRunController : ObservableObject
     public PressOutcome Press(string button)
     {
         ArgumentException.ThrowIfNullOrEmpty(button);
-        if (_armed is { } armed && armed.Globals.Ui.HandledButtons.Contains(button, StringComparer.OrdinalIgnoreCase))
+        if (_armed is { } armed && armed.Ui.HandledButtons.Contains(button, StringComparer.OrdinalIgnoreCase))
             return FireHandler(armed, button) ? PressOutcome.HandlerStarted : PressOutcome.StopRequested;
         if (IsAlive)
         {
             RequestStop();
             return PressOutcome.StopRequested;
         }
-        Start(button, panel_mode: true);
+        Start(button, panelMode: true);
         return PressOutcome.RunStarted;
     }
 
@@ -302,24 +303,25 @@ public sealed partial class ScriptRunController : ObservableObject
         if (!ReferenceEquals(_frame, frame))
             return false;
         _panel.EndStarting(pressed_button);
-        if (!globals.Ui.HasClickHandlers)
+        ScriptUiHost ui = ScriptUiHost.Of(globals.Ui);
+        if (!ui.HasHandlers)
             return false;
-        foreach (string handled in globals.Ui.HandledButtons)
+        foreach (string handled in ui.HandledButtons)
         {
             if (!_panel.DeclaredButtons.Contains(handled))
                 Output.Write($"warning: Ui.OnClick(\"{handled}\", ...) has no //@ui:button {handled}", OutputLevel.Warning);
         }
-        var armed = new ArmedRun(frame, globals);
+        var armed = new ArmedRun(frame, ui);
         _armed = armed;
         PanelArmed = true;
-        if (pressed_button is { Length: > 0 } && globals.Ui.HandledButtons.Contains(pressed_button, StringComparer.OrdinalIgnoreCase))
+        if (pressed_button is { Length: > 0 } && ui.HandledButtons.Contains(pressed_button, StringComparer.OrdinalIgnoreCase))
             FireHandler(armed, pressed_button);
         return true;
     }
 
     bool FireHandler(ArmedRun armed, string button)
     {
-        if (armed.Frame.StartHandlerAsync(() => armed.Globals.Ui.Invoke(button) ?? Task.CompletedTask) is not { } work)
+        if (armed.Frame.StartHandlerAsync(() => armed.Ui.Invoke(button) ?? Task.CompletedTask) is not { } work)
             return false;
         BusyHandlers++;
         _panel.SetButtonBusy(button, true);
@@ -431,10 +433,10 @@ public sealed partial class ScriptRunController : ObservableObject
         }
     }
 
-    sealed class ArmedRun(RunFrame frame, ScriptGlobals globals)
+    sealed class ArmedRun(RunFrame frame, ScriptUiHost ui)
     {
         public RunFrame Frame { get; } = frame;
 
-        public ScriptGlobals Globals { get; } = globals;
+        public ScriptUiHost Ui { get; } = ui;
     }
 }

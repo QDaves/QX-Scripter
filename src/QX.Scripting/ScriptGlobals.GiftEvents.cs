@@ -61,7 +61,6 @@ public partial class ScriptGlobals
     /// Registers a handler that runs when the hotel reports that the receiver of a gift does not
     /// exist.
     /// </summary>
-    /// <remarks>Only the Flash client receives this message.</remarks>
     /// <param name="handler">The handler to call with no arguments.</param>
     /// <returns>A handle that removes the handler when disposed.</returns>
     /// <exception cref="ObjectDisposedException">Thrown when the script globals have already been disposed.</exception>
@@ -72,7 +71,6 @@ public partial class ScriptGlobals
     /// <summary>
     /// Registers a handler that runs when a club gift notification arrives.
     /// </summary>
-    /// <remarks>Only the Flash client receives this notification.</remarks>
     /// <param name="handler">The handler to call with the notification.</param>
     /// <returns>A handle that removes the handler when disposed.</returns>
     /// <exception cref="ObjectDisposedException">Thrown when the script globals have already been disposed.</exception>
@@ -83,7 +81,6 @@ public partial class ScriptGlobals
     /// <summary>
     /// Registers a handler that runs when the hotel answers whether an offer can be gifted.
     /// </summary>
-    /// <remarks>Only the Flash client receives this answer.</remarks>
     /// <param name="handler">The handler to call with the answer.</param>
     /// <returns>A handle that removes the handler when disposed.</returns>
     /// <exception cref="ObjectDisposedException">Thrown when the script globals have already been disposed.</exception>
@@ -94,7 +91,6 @@ public partial class ScriptGlobals
     /// <summary>
     /// Registers a handler that runs when the new user gift offer arrives.
     /// </summary>
-    /// <remarks>Only the Flash client receives this offer.</remarks>
     /// <param name="handler">The handler to call with the offer.</param>
     /// <returns>A handle that removes the handler when disposed.</returns>
     /// <exception cref="ObjectDisposedException">Thrown when the script globals have already been disposed.</exception>

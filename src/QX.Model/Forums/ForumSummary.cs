@@ -1,6 +1,6 @@
 using Qx.Messages;
 
-namespace Qx.Model.Forums;
+namespace Qx.Model;
 
 /// <summary>Specifies which forum directory list to request.</summary>
 public enum ForumListCode

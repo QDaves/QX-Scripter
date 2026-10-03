@@ -15,11 +15,11 @@ public interface IWorkspaceSession : IWorkspacePresence
 
     void StopAutosave();
 
-    Task SaveDraftsAsync(bool include_modified_files, CancellationToken cancellation_token);
+    Task SaveDraftsAsync(bool includeModifiedFiles, CancellationToken cancellationToken);
 
-    Task ClearDraftsAsync(CancellationToken cancellation_token);
+    Task ClearDraftsAsync(CancellationToken cancellationToken);
 
-    bool SaveDraftsNow(bool include_modified_files, TimeSpan budget);
+    bool SaveDraftsNow(bool includeModifiedFiles, TimeSpan budget);
 
     void SealDrafts();
 }

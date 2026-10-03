@@ -1,6 +1,5 @@
 using System.Globalization;
 using System.Runtime.InteropServices;
-using Qx.Diagnostics;
 using Qx.Presentation.Services.Status;
 
 namespace Qx.Presentation.Services.BugReports;

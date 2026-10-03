@@ -658,20 +658,20 @@ public sealed record PlaceRoomItemRequest : IParserComposer<PlaceRoomItemRequest
     public WallLocation? WallLocation { get; }
 
     /// <summary>Creates a request that places a floor item on a tile.</summary>
-    /// <param name="item_id">The id of the inventory item to place.</param>
+    /// <param name="itemId">The id of the inventory item to place.</param>
     /// <param name="x">The tile x coordinate.</param>
     /// <param name="y">The tile y coordinate.</param>
-    /// <param name="direction">The direction the item faces, as a <see cref="Directions"/> value.</param>
+    /// <param name="direction">The direction the item faces, as a <see cref="Qx.Model.Direction"/> value.</param>
     /// <returns>The floor placement request.</returns>
-    public static PlaceRoomItemRequest Floor(Id item_id, int x, int y, int direction) =>
-        new(RoomItemPlacementKind.Floor, item_id, x, y, direction, null);
+    public static PlaceRoomItemRequest Floor(Id itemId, int x, int y, int direction) =>
+        new(RoomItemPlacementKind.Floor, itemId, x, y, direction, null);
 
     /// <summary>Creates a request that places a wall item at a wall location.</summary>
-    /// <param name="item_id">The id of the inventory item to place.</param>
-    /// <param name="wall_location">The wall location to place the item at.</param>
+    /// <param name="itemId">The id of the inventory item to place.</param>
+    /// <param name="wallLocation">The wall location to place the item at.</param>
     /// <returns>The wall placement request.</returns>
-    public static PlaceRoomItemRequest Wall(Id item_id, WallLocation wall_location) =>
-        new(RoomItemPlacementKind.Wall, item_id, 0, 0, 0, wall_location);
+    public static PlaceRoomItemRequest Wall(Id itemId, WallLocation wallLocation) =>
+        new(RoomItemPlacementKind.Wall, itemId, 0, 0, 0, wallLocation);
 
     /// <summary>Parses the message from a packet.</summary>
     /// <param name="p">The packet reader.</param>
@@ -757,7 +757,7 @@ public sealed record PlaceRoomItemRequest : IParserComposer<PlaceRoomItemRequest
 /// <param name="ItemId">The id of the floor item.</param>
 /// <param name="X">The tile x coordinate.</param>
 /// <param name="Y">The tile y coordinate.</param>
-/// <param name="Direction">The direction the item faces, as a <see cref="Directions"/> value.</param>
+/// <param name="Direction">The direction the item faces, as a <see cref="Qx.Model.Direction"/> value.</param>
 public sealed record MoveFloorItemRequest(Id ItemId, int X, int Y, int Direction)
     : IParserComposer<MoveFloorItemRequest>
 {

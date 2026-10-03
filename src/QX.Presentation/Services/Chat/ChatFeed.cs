@@ -33,14 +33,14 @@ public sealed class ChatFeed : IDisposable
 
     public void Start() => Schedule(signal: false);
 
-    public async Task ClearAsync(CancellationToken cancellation_token)
+    public async Task ClearAsync(CancellationToken cancellationToken)
     {
         try
         {
             RoomChatHistoryPage? latest = await _gateway.QueryAsync<RoomChatHistoryRequest, RoomChatHistoryPage>(
                 ApplicationMemberIds.RoomChatHistory,
                 new RoomChatHistoryRequest(long.MaxValue, 1),
-                cancellation_token);
+                cancellationToken);
             if (latest is not null)
             {
                 _hidden = latest.Latest;

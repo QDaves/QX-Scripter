@@ -28,27 +28,27 @@ public static class WindowPlacementMath
         return new PixelPlacement(x, y, Math.Max(MinimumWidth, stored.Width), Math.Max(MinimumHeight, stored.Height), stored.Maximized);
     }
 
-    public static WindowPlacement? Capture(PixelPlacement normal_bounds, bool maximized, IReadOnlyList<ScreenArea> screens)
+    public static WindowPlacement? Capture(PixelPlacement normalBounds, bool maximized, IReadOnlyList<ScreenArea> screens)
     {
         ArgumentNullException.ThrowIfNull(screens);
-        if (screens.Count == 0 || !double.IsFinite(normal_bounds.Width) || !double.IsFinite(normal_bounds.Height))
+        if (screens.Count == 0 || !double.IsFinite(normalBounds.Width) || !double.IsFinite(normalBounds.Height))
             return null;
-        if (normal_bounds.Width < 1 || normal_bounds.Height < 1)
+        if (normalBounds.Width < 1 || normalBounds.Height < 1)
             return null;
         double scaling = Primary(screens).Scaling;
         return new WindowPlacement
         {
-            Left = normal_bounds.X / scaling,
-            Top = normal_bounds.Y / scaling,
-            Width = normal_bounds.Width,
-            Height = normal_bounds.Height,
+            Left = normalBounds.X / scaling,
+            Top = normalBounds.Y / scaling,
+            Width = normalBounds.Width,
+            Height = normalBounds.Height,
             Maximized = maximized
         };
     }
 
-    public static (double Width, double Height) DefaultSize(ScreenArea work_area) =>
-        (Math.Clamp(work_area.Width / work_area.Scaling * 0.80, MinimumWidth, 1400),
-         Math.Clamp(work_area.Height / work_area.Scaling * 0.86, MinimumHeight, 950));
+    public static (double Width, double Height) DefaultSize(ScreenArea workArea) =>
+        (Math.Clamp(workArea.Width / workArea.Scaling * 0.80, MinimumWidth, 1400),
+         Math.Clamp(workArea.Height / workArea.Scaling * 0.86, MinimumHeight, 950));
 
     static bool IsReachable(int x, int y, int width, int height, IReadOnlyList<ScreenArea> screens)
     {

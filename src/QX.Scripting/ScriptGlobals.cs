@@ -8,7 +8,9 @@ using Qx.Messages;
 using Qx.Model;
 using Qx.Model.Messages.Incoming;
 using Qx.Model.Messages.Outgoing;
+using Qx.Platform;
 using Qx.Protocol;
+using Qx.Scripting.Hosting;
 
 namespace Qx.Scripting;
 
@@ -18,17 +20,30 @@ namespace Qx.Scripting;
 /// <remarks>
 /// <para>
 /// All public members are in scope unqualified inside a <c>.csx</c> script, so
-/// <c>Say("hi")</c> and <c>Room.RoomId</c> work without any receiver.
+/// <c>Talk("hi")</c> and <c>Room.RoomId</c> work without any receiver.
 /// </para>
 /// <para>
 /// <b>State properties</b> such as <see cref="Users"/>, <see cref="FloorItems"/> or
 /// <see cref="Credits"/> read whatever the interceptor has observed on the wire so far.
 /// Nothing on this class polls the server on its own: if the game client never asked for a
 /// piece of state, the corresponding property stays empty or zero rather than blocking. The
-/// <c>Is...Loaded</c> flags distinguish "empty" from "not yet received", and the
-/// <c>Ensure...Loaded</c> / <c>Get...</c> methods are the ones that actually go to the server.
-/// Collections are snapshots taken per read, while the objects inside them are live and keep
-/// updating.
+/// <c>Is...Loaded</c> flags distinguish "empty" from "not yet received". Collections are
+/// snapshots taken per read, while the objects inside them are live and keep updating.
+/// </para>
+/// <para>
+/// <b>The signature tells what a method does.</b> A method with a plain return value, such as
+/// <see cref="GetUser(string)"/> or <see cref="GetFloorItem"/>, reads local state and sends
+/// nothing. A method that returns a <see cref="Task"/> and takes a <c>timeoutMs</c> waits: a
+/// request such as <see cref="GetProfile"/> or <see cref="SearchRooms"/> sends a message and
+/// awaits the reply, while <c>Wait...</c> and <c>Receive...</c> wait for the room or for a
+/// packet. A <c>Request...</c> method sends a request and returns at once; the answer arrives as
+/// an event and in the state properties. An <c>Ensure...Loaded</c> method requests a piece of
+/// state only when it is not complete yet, and returns it. A method named <c>...Async</c> awaits
+/// what the method without the suffix only sends or blocks for: <see cref="EnterRoomAsync"/> and
+/// <see cref="BuyMarketplaceOfferAsync"/> await the hotel's answer to
+/// <see cref="EnterRoom(Id)"/> and <see cref="BuyMarketplaceOffer"/>, and
+/// <see cref="ReceiveAsync(string, int)"/> awaits the packet <see cref="Receive(string[])"/>
+/// blocks for.
 /// </para>
 /// <para>
 /// <b>Events.</b> Every <c>On...</c> method returns an <see cref="IDisposable"/> handle.
@@ -41,17 +56,17 @@ namespace Qx.Scripting;
 /// previous value, then the new one.
 /// </para>
 /// <para>
-/// <b>Requests</b> (<c>Get...</c>, <c>Search...</c>) send a message and await the matching reply.
-/// Their <c>timeoutMs</c> is milliseconds and, for requests that retry, a total budget across the
-/// automatic retry. Whether the reply is also delivered to the game client depends on the
-/// request and is stated on each member. Every call goes to the server again. They throw
+/// <b>Requests</b> give up after <c>timeoutMs</c> milliseconds, which for requests that retry is a
+/// total budget across the automatic retry. Whether the reply is also delivered to the game client
+/// depends on the request and is stated on each member. Every call goes to the server again, except
+/// where a member says it answers from a cache. They throw
 /// <see cref="Qx.Game.RequestTimeoutException"/> on timeout,
 /// <see cref="Qx.Game.RequestDisconnectedException"/> when the connection drops while waiting,
 /// <see cref="OperationCanceledException"/> when the script is stopped, and
-/// <see cref="NotSupportedException"/> where the active client cannot express the request.
+/// <see cref="NotSupportedException"/> where the connected client build cannot express the request.
 /// </para>
 /// <para>
-/// <b>Actions</b> (<see cref="Walk(int, int)"/>, <see cref="Say"/>, <see cref="PickupFurni(FloorItem, bool)"/>
+/// <b>Actions</b> (<see cref="Walk(int, int)"/>, <see cref="Talk"/>, <see cref="PickupFurni(FloorItem, bool)"/>
 /// and the rest) are fire-and-forget: they compose one packet and return. They never confirm
 /// success, and the server silently ignores requests that fail on rights, flood limits or a
 /// missing target. Observe the matching event instead. Actions do check their local
@@ -62,7 +77,9 @@ namespace Qx.Scripting;
 /// <b>Raw messages.</b> Message names are plain strings resolved against the catalog loaded for
 /// the active session; the compile-checked constants live on <see cref="Msg"/> in
 /// <c>QX.Protocol</c>. A name that cannot be resolved throws when sending, but binds nothing
-/// and stays silent when intercepting.
+/// when intercepting. A constant name that is neither in the message registry nor in the
+/// catalog is reported as warning QX1001 when the script compiles, and any such name writes one
+/// warning line to the script output when a handler or a wait is registered for it.
 /// </para>
 /// </remarks>
 public partial class ScriptGlobals : IDisposable
@@ -71,7 +88,9 @@ public partial class ScriptGlobals : IDisposable
     private readonly CancellationToken _cancellationToken;
     private readonly Action<Exception>? _backgroundError;
     private readonly Action? _backgroundFinishedCallback;
-    private readonly Qx.Platform.Keyboard _hostKeyboard;
+    private readonly KeyboardReader _hostKeyboard;
+    private readonly IInterceptor _interceptor;
+    private readonly IApplicationRuntime _application;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ScriptGlobals"/> class.
@@ -113,12 +132,15 @@ public partial class ScriptGlobals : IDisposable
         CancellationToken cancellationToken,
         Action<Exception>? backgroundError,
         Action? backgroundFinished,
-        Qx.Platform.Keyboard? keyboard)
+        KeyboardReader? keyboard)
     {
-        Ext = extension;
+        _interceptor = extension;
+        _application = application;
+        Ext = new ScopedInterceptor(extension, this);
+        Application = new ScopedApplication(application, this);
+        Ui = new ScriptUi(Guarded);
         _hostKeyboard = keyboard ?? NoKeyboard;
         Game = game;
-        Application = application;
         _log = log;
         _cancellationToken = cancellationToken;
         _backgroundError = backgroundError;
@@ -126,12 +148,28 @@ public partial class ScriptGlobals : IDisposable
     }
 
     /// <summary>
-    /// Gets the interceptor the script is attached to.
+    /// Gets the interceptor the script is attached to, scoped to this run.
     /// </summary>
     /// <remarks>
-    /// Use it for packet sending and interception that the higher-level helpers on this class do
-    /// not cover, and for <see cref="IInterceptor.Messages"/> when a message name has to be
-    /// resolved by hand.
+    /// <para>
+    /// Prefer <see cref="OnIn(string, Action{Intercept})"/>,
+    /// <see cref="OnOut(string, Action{Intercept})"/>,
+    /// <see cref="OnIntercept(Header, Action{Intercept})"/>, <see cref="OnSessionStarted"/> and
+    /// <see cref="OnSessionEnded"/>. Use this property for what they do not cover: intercepting by
+    /// <see cref="MessageKey"/>, observing every packet through
+    /// <see cref="IInterceptor.Intercepted"/>, and sends that must not cross into another session or
+    /// catalog.
+    /// </para>
+    /// <para>
+    /// Every callback and event handler registered through it is removed when the script stops, and
+    /// an exception it throws is reported as a script error, the same as for the <c>On...</c>
+    /// methods. A wait for the catalog that is given no cancelable token ends when the script stops.
+    /// </para>
+    /// <para>
+    /// <see cref="IInterceptor.Messages"/> is a read-only resolver over the host's message manager,
+    /// shared with the UI and every other script. It resolves names, keys and headers, and cannot bind
+    /// or clear a catalog.
+    /// </para>
     /// </remarks>
     public IInterceptor Ext { get; }
 
@@ -139,23 +177,40 @@ public partial class ScriptGlobals : IDisposable
     /// Gets the shared game state tracker that backs the state properties on this class.
     /// </summary>
     /// <remarks>
+    /// <para>
     /// It is owned by the host and survives across script runs, so state observed before the
     /// script started is already present.
+    /// </para>
+    /// <para>
+    /// Each of its feature properties, such as <see cref="GameState.Marketplace"/> or
+    /// <see cref="GameState.Achievements"/>, is the live manager of that feature. A property of the
+    /// same name on this class usually returns that same manager, as <see cref="Room"/> and
+    /// <see cref="Quests"/> do. The exceptions are <see cref="Marketplace"/>, <see cref="Wired"/>
+    /// and <see cref="Navigator"/>, which return a snapshot of the feature's state, and
+    /// <see cref="Friends"/> and <see cref="Achievements"/>, which return the items themselves.
+    /// </para>
     /// </remarks>
     public GameState Game { get; }
 
     /// <summary>
     /// Gets the application runtime that serves the state views, requests and commands behind
-    /// the higher-level helpers.
+    /// the higher-level helpers, scoped to this run.
     /// </summary>
     /// <remarks>
-    /// Members are addressed by their string id, as listed in
-    /// <see cref="IApplicationRuntime.Members"/>.
+    /// <para>
+    /// Members are addressed by their string id, as listed in <see cref="ApplicationMemberIds"/>
+    /// and <see cref="IApplicationRuntime.Members"/>.
+    /// </para>
+    /// <para>
+    /// Every subscription made through it is removed when the script stops, and an exception its
+    /// receiver throws is reported as a script error. An invocation that is given no cancelable
+    /// token uses <see cref="Ct"/>, so it is canceled when the script stops.
+    /// </para>
     /// </remarks>
     public IApplicationRuntime Application { get; }
 
     private ProfileStateView ReadProfileState() =>
-        Application.Invoke<ProfileStateRequest, ProfileStateView>(
+        _application.Invoke<ProfileStateRequest, ProfileStateView>(
             ApplicationMemberIds.ProfileState,
             new ProfileStateRequest(),
             Ct);
@@ -187,13 +242,13 @@ public partial class ScriptGlobals : IDisposable
             };
 
     private InventoryStateView ReadInventoryState() =>
-        Application.Invoke<InventoryStateRequest, InventoryStateView>(
+        _application.Invoke<InventoryStateRequest, InventoryStateView>(
             ApplicationMemberIds.InventoryState,
             new InventoryStateRequest(),
             Ct);
 
     private TradeStateView ReadTradeState() =>
-        Application.Invoke<TradeStateRequest, TradeStateView>(
+        _application.Invoke<TradeStateRequest, TradeStateView>(
             ApplicationMemberIds.TradeState,
             new TradeStateRequest(),
             Ct);
@@ -201,7 +256,7 @@ public partial class ScriptGlobals : IDisposable
     private void SendTradeCommand(string member_id)
     {
         TradeStateView trade = ReadTradeState();
-        Application.Invoke<TradeCommandRequest, TradeDispatchResult>(
+        _application.Invoke<TradeCommandRequest, TradeDispatchResult>(
             member_id,
             new TradeCommandRequest(
                 trade.SessionGeneration,
@@ -216,7 +271,7 @@ public partial class ScriptGlobals : IDisposable
         Array.AsReadOnly(
             InventoryApplicationPages.ReadFurni(
                     application,
-                    cancellation_token: cancellation_token)
+                    cancellationToken: cancellation_token)
                 .Items
                 .Select(LegacyInventoryItem)
                 .ToArray());
@@ -227,7 +282,7 @@ public partial class ScriptGlobals : IDisposable
         Array.AsReadOnly(
             InventoryApplicationPages.ReadPets(
                     application,
-                    cancellation_token: cancellation_token)
+                    cancellationToken: cancellation_token)
                 .Pets
                 .Select(LegacyInventoryPet)
                 .ToArray());
@@ -367,14 +422,14 @@ public partial class ScriptGlobals : IDisposable
     /// Gets the panel a tab declares with <c>//@ui:</c> directives.
     /// </summary>
     /// <remarks>
-    /// It holds the values the user entered, the button that started the run, the click handlers
-    /// that keep the script alive after its body returns, and the sinks that write output boxes,
-    /// tables, progress bars, status lines and toasts back to it. Outside panel mode every getter
-    /// returns its fallback, <see cref="ScriptUi.Clicked"/> is always <see langword="false"/>, the
-    /// writers do nothing and <see cref="ScriptUi.Confirm"/> and <see cref="ScriptUi.Prompt"/>
-    /// answer at once rather than wait.
+    /// It holds the values the user entered, the button that started the run, the click and change
+    /// handlers that keep the script alive after its body returns, and the sinks that write output
+    /// boxes, tables, progress bars, status lines and toasts back to it. Outside panel mode every
+    /// getter returns its fallback, <see cref="ScriptUi.Clicked"/> is always <see langword="false"/>,
+    /// the writers do nothing, the handlers are never called and <see cref="ScriptUi.Confirm"/> and
+    /// <see cref="ScriptUi.Prompt"/> answer at once rather than wait.
     /// </remarks>
-    public ScriptUi Ui { get; } = new();
+    public ScriptUi Ui { get; }
 
     /// <summary>
     /// Gets the live tracker of the current room session.
@@ -431,7 +486,6 @@ public partial class ScriptGlobals : IDisposable
     /// <summary>
     /// Gets the tracker of group forum state such as thread lists, threads and moderation results.
     /// </summary>
-    /// <remarks>Group forums exist only on the Flash client.</remarks>
     public ForumManager Forums => Game.Forums;
 
     /// <summary>
@@ -530,10 +584,12 @@ public partial class ScriptGlobals : IDisposable
     /// Unsubscribes every handler this instance is still holding.
     /// </summary>
     /// <remarks>
-    /// The host calls it when the script run ends; a script does not need to call it. After
-    /// disposal no new subscriptions or background tasks are accepted.
+    /// The host calls it when the script run ends. After disposal no new subscriptions or
+    /// background tasks are accepted.
     /// </remarks>
-    public void Dispose()
+    void IDisposable.Dispose() => Close();
+
+    internal void Close()
     {
         lock (_subscriptions)
         {
@@ -622,25 +678,16 @@ public partial class ScriptGlobals : IDisposable
     /// Sending a raw packet while it is <see langword="false"/> throws
     /// <see cref="InvalidOperationException"/>.
     /// </remarks>
-    public bool IsConnected => Ext.IsConnected;
+    public bool IsConnected => _interceptor.IsConnected;
 
     /// <summary>
     /// Gets the active hotel session, or <see langword="null"/> when there is none.
     /// </summary>
     /// <remarks>
-    /// The session carries the host, port, hotel version, client identifier and client type of
-    /// the intercepted connection.
+    /// The session carries the host, port, hotel version and client identifier of the intercepted
+    /// connection.
     /// </remarks>
-    public Session? Session => Ext.Session;
-
-    /// <summary>
-    /// Gets the client type that packets are built for.
-    /// </summary>
-    /// <remarks>
-    /// It is the client of the active session, otherwise the active client of the message
-    /// catalog, and <see cref="ClientType.Flash"/> when neither is known.
-    /// </remarks>
-    public ClientType Client => CurrentClient;
+    public Session? Session => _interceptor.Session;
 
     /// <summary>
     /// Gets the local user's account data, or <see langword="null"/> until the server has sent it.
@@ -662,53 +709,6 @@ public partial class ScriptGlobals : IDisposable
     /// place as packets arrive.
     /// </remarks>
     public User? SelfAvatar => Room.Self as User;
-
-    /// <summary>Gets the local user's account data.</summary>
-    /// <remarks>Alias of <see cref="SelfProfile"/>.</remarks>
-    public UserData? Self => SelfProfile;
-
-    /// <summary>Gets the local user's avatar in the current room.</summary>
-    /// <remarks>Alias of <see cref="SelfAvatar"/>.</remarks>
-    public User? Me => SelfAvatar;
-
-    /// <summary>
-    /// Gets whether a room session is open.
-    /// </summary>
-    /// <remarks>
-    /// It becomes <see langword="true"/> while entering, so it does not mean that the entry has
-    /// completed; use <see cref="IsRoomReady"/> for that. Avatars and furni arrive in separate
-    /// messages, so check <see cref="RoomManager.AvatarsAreLoaded"/> and
-    /// <see cref="RoomManager.FloorItemsAreLoaded"/> before relying on them.
-    /// </remarks>
-    public bool InRoom => Room.IsInRoom;
-
-    /// <summary>
-    /// Gets how the last room session ended, or <see langword="null"/> when no room has been left
-    /// yet.
-    /// </summary>
-    /// <remarks>
-    /// It holds the room id, whether the room had been fully entered, the native reason and the
-    /// kick, if any.
-    /// </remarks>
-    public RoomExitState? LastRoomExit => Room.LastExit;
-
-    /// <summary>Gets whether the last room exit was caused by the local user being kicked.</summary>
-    public bool WasKickedFromRoom => Room.WasKicked;
-
-    /// <summary>
-    /// Gets the most recent kick observed in the current or a previous room session.
-    /// </summary>
-    /// <remarks>
-    /// It is cleared when a new room session begins, and is <see langword="null"/> when no kick
-    /// has been observed.
-    /// </remarks>
-    public RoomKick? LastRoomKick => Room.LastKick;
-
-    /// <summary>
-    /// Gets the kick that caused <see cref="LastRoomExit"/>, or <see langword="null"/> when the
-    /// last room exit was not caused by a kick.
-    /// </summary>
-    public RoomKick? LastRoomExitKick => Room.LastExitKick;
 
     /// <summary>
     /// Gets every avatar currently in the room, including users, bots and pets.
@@ -769,6 +769,13 @@ public partial class ScriptGlobals : IDisposable
     public IEnumerable<WallItem> WallItems => Room.WallItems;
 
     /// <summary>
+    /// Gets every item in the room, floor items followed by wall items, as one sequence of the
+    /// shared base type.
+    /// </summary>
+    /// <remarks>Concatenates <see cref="FloorItems"/> and <see cref="WallItems"/>.</remarks>
+    public IEnumerable<Furni> Furni => FloorItems.Cast<Furni>().Concat(WallItems);
+
+    /// <summary>
     /// Gets the furni currently held in the inventory.
     /// </summary>
     /// <remarks>
@@ -776,7 +783,7 @@ public partial class ScriptGlobals : IDisposable
     /// <see cref="EnsureInventoryLoaded"/> first, or check <see cref="IsInventoryLoaded"/>. Every
     /// read builds a new snapshot.
     /// </remarks>
-    public IEnumerable<InventoryItem> InventoryItems => ReadInventoryItems(Application, Ct);
+    public IEnumerable<InventoryItem> InventoryItems => ReadInventoryItems(_application, Ct);
 
     /// <summary>
     /// Gets the pets currently held in the inventory.
@@ -786,7 +793,7 @@ public partial class ScriptGlobals : IDisposable
     /// <see cref="EnsurePetInventoryLoaded"/> first, or check <see cref="IsPetInventoryLoaded"/>.
     /// Every read builds a new snapshot.
     /// </remarks>
-    public IEnumerable<InventoryPet> InventoryPets => ReadInventoryPetModels(Application, Ct);
+    public IEnumerable<InventoryPet> InventoryPets => ReadInventoryPetModels(_application, Ct);
 
     /// <summary>
     /// Gets the friend list.
@@ -797,13 +804,6 @@ public partial class ScriptGlobals : IDisposable
     /// snapshot is taken on each read.
     /// </remarks>
     public IEnumerable<Friend> Friends => Game.Friends.Friends;
-
-    /// <summary>
-    /// Finds a user in the current room by name, ignoring case.
-    /// </summary>
-    /// <param name="name">The user name to look for.</param>
-    /// <returns>The matching user, or <see langword="null"/> when nobody in the room matches.</returns>
-    public User? FindUser(string name) => Room.UserByName(name);
 
     /// <summary>
     /// Gets the first avatar standing on the given tile.
@@ -839,6 +839,24 @@ public partial class ScriptGlobals : IDisposable
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="name"/> is <see langword="null"/>.</exception>
     public bool IsFriend(string name) => Game.Friends.IsFriend(name);
 
+    /// <summary>Gets whether a user is on the local user's friend list.</summary>
+    /// <param name="id">The user's account id.</param>
+    /// <returns>
+    /// <see langword="true"/> when the friend list holds that id. The friend list has to have been
+    /// received; before that the result is always <see langword="false"/>.
+    /// </returns>
+    public bool IsFriend(Id id) => Game.Friends.FriendById(id) is not null;
+
+    /// <summary>Gets whether a user in the room is on the local user's friend list.</summary>
+    /// <param name="user">The user; only its id is used.</param>
+    /// <returns><see langword="true"/> when the friend list holds that user.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="user"/> is <see langword="null"/>.</exception>
+    public bool IsFriend(User user)
+    {
+        ArgumentNullException.ThrowIfNull(user);
+        return IsFriend(user.Id);
+    }
+
     /// <summary>
     /// Writes a line to the script's output log.
     /// </summary>
@@ -858,21 +876,19 @@ public partial class ScriptGlobals : IDisposable
     public Task Delay(int milliseconds) => Task.Delay(milliseconds, Ct);
 
     /// <summary>
+    /// Waits asynchronously for the given interval, observing script cancellation.
+    /// </summary>
+    /// <param name="duration">The time to wait.</param>
+    /// <returns>A task that completes after the delay.</returns>
+    /// <exception cref="OperationCanceledException">Thrown when the script was stopped while waiting.</exception>
+    public Task Delay(TimeSpan duration) => Task.Delay(duration, Ct);
+
+    /// <summary>
     /// Sends a raw packet to the server or the client, depending on the direction of its header.
     /// </summary>
     /// <param name="packet">The packet to send.</param>
-    /// <exception cref="NotSupportedException">
-    /// Thrown when the packet was built for a different client than the active session uses.
-    /// </exception>
     /// <exception cref="InvalidOperationException">Thrown when there is no active hotel session.</exception>
-    public void Send(IPacket packet)
-    {
-
-        if (packet.Client is not ClientType.None && packet.Client != CurrentClient)
-            throw new NotSupportedException($"A {packet.Client} packet cannot be sent through a {CurrentClient} session.");
-
-        Ext.Send(packet);
-    }
+    public void Send(IPacket packet) => _interceptor.Send(packet);
 
     /// <summary>
     /// Sends an outgoing message to the server by its message name.
@@ -889,22 +905,24 @@ public partial class ScriptGlobals : IDisposable
     /// Thrown when the message name cannot be resolved, or there is no active hotel session.
     /// </exception>
     /// <exception cref="ArgumentException">Thrown when a value has an unsupported type.</exception>
-    public void SendToServer(string name, params object[] values) => SendNamed(Direction.Out, name, values);
+    public void SendToServer(string name, params object[] values) => SendNamed(MessageDirection.Out, name, values);
 
     /// <summary>
     /// Sends an outgoing message to the server by its semantic message key.
     /// </summary>
     /// <remarks>
-    /// The key is mapped to the message name of the active client, and the values are written
-    /// as in <see cref="SendToServer(string, object[])"/>.
+    /// The key resolves to a single header in the active catalog, as in
+    /// <see cref="SendToServer{T}(MessageKey, T)"/>, and the values are written as in
+    /// <see cref="SendToServer(string, object[])"/>.
     /// </remarks>
     /// <param name="key">The semantic key of an outgoing message.</param>
     /// <param name="values">The values to write into the packet body.</param>
     /// <exception cref="InvalidOperationException">
-    /// Thrown when the key is empty, unknown or not an outgoing message, or there is no active hotel session.
+    /// Thrown when the key is empty, unknown, not an outgoing message, or has no header in the active catalog,
+    /// or there is no active hotel session.
     /// </exception>
-    /// <exception cref="NotSupportedException">Thrown when the message does not exist for the active client.</exception>
-    public void SendToServer(MessageKey key, params object[] values) => SendNamed(Direction.Out, key, values);
+    /// <exception cref="ArgumentException">Thrown when a value has an unsupported type.</exception>
+    public void SendToServer(MessageKey key, params object[] values) => SendNamed(MessageDirection.Out, key, values);
 
     /// <summary>
     /// Sends an outgoing message to the server, composed from a message model.
@@ -912,29 +930,13 @@ public partial class ScriptGlobals : IDisposable
     /// <typeparam name="T">The message model type.</typeparam>
     /// <param name="key">The semantic key of an outgoing message.</param>
     /// <param name="message">The message model that writes the packet body.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="message"/> is <see langword="null"/>.</exception>
     /// <exception cref="InvalidOperationException">
     /// Thrown when the key is empty, unknown, not an outgoing message, or has no header in the active catalog,
     /// or there is no active hotel session.
     /// </exception>
-    public void SendToServer<T>(MessageKey key, T message) where T : IComposer
-    {
-        if (key.IsEmpty ||
-            !Ext.Messages.Registry.TryGet(key, out MessageDescriptor? descriptor) ||
-            descriptor.Direction != Direction.Out ||
-            !Ext.Messages.TryGetHeader(key, out Header header))
-        {
-            throw new InvalidOperationException($"Unknown outgoing semantic message '{key.Value}'.");
-        }
-
-        using var packet = new Packet(header, CurrentClient)
-        {
-            Context = new ParserContext(
-                Ext.Messages,
-                Ext.Messages.GetWireProfile(CurrentClient))
-        };
-        packet.Writer().Compose(message);
-        Send(packet);
-    }
+    public void SendToServer<T>(MessageKey key, T message) where T : IComposer =>
+        SendComposed(MessageDirection.Out, key, message);
 
     /// <summary>
     /// Sends an incoming message to the game client by its message name, as if the server had
@@ -949,7 +951,43 @@ public partial class ScriptGlobals : IDisposable
     /// Thrown when the message name cannot be resolved, or there is no active hotel session.
     /// </exception>
     /// <exception cref="ArgumentException">Thrown when a value has an unsupported type.</exception>
-    public void SendToClient(string name, params object[] values) => SendNamed(Direction.In, name, values);
+    public void SendToClient(string name, params object[] values) => SendNamed(MessageDirection.In, name, values);
+
+    /// <summary>
+    /// Sends an incoming message to the game client by its semantic message key, as if the server
+    /// had sent it.
+    /// </summary>
+    /// <remarks>
+    /// The key resolves to a single header in the active catalog, as in
+    /// <see cref="SendToClient{T}(MessageKey, T)"/>, and the values are written as in
+    /// <see cref="SendToServer(string, object[])"/>. The server does not receive the message.
+    /// </remarks>
+    /// <param name="key">The semantic key of an incoming message.</param>
+    /// <param name="values">The values to write into the packet body.</param>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when the key is empty, unknown, not an incoming message, or has no header in the active catalog,
+    /// or there is no active hotel session.
+    /// </exception>
+    /// <exception cref="ArgumentException">Thrown when a value has an unsupported type.</exception>
+    public void SendToClient(MessageKey key, params object[] values) => SendNamed(MessageDirection.In, key, values);
+
+    /// <summary>
+    /// Sends an incoming message to the game client, composed from a message model, as if the
+    /// server had sent it.
+    /// </summary>
+    /// <remarks>
+    /// The server does not receive the message.
+    /// </remarks>
+    /// <typeparam name="T">The message model type.</typeparam>
+    /// <param name="key">The semantic key of an incoming message.</param>
+    /// <param name="message">The message model that writes the packet body.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="message"/> is <see langword="null"/>.</exception>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when the key is empty, unknown, not an incoming message, or has no header in the active catalog,
+    /// or there is no active hotel session.
+    /// </exception>
+    public void SendToClient<T>(MessageKey key, T message) where T : IComposer =>
+        SendComposed(MessageDirection.In, key, message);
 
     private void SendToClient<T>(MessageContract<T> contract, T message)
         where T : IParserComposer<T>
@@ -957,21 +995,13 @@ public partial class ScriptGlobals : IDisposable
         ArgumentNullException.ThrowIfNull(contract);
         ArgumentNullException.ThrowIfNull(message);
 
-        ClientType client = CurrentClient;
-        if (!contract.Supports(client))
-            throw new UnsupportedClientException(client);
-        if (!Ext.Messages.TryGetHeader(contract.Key, out Header header))
+        if (!_interceptor.Messages.TryGetHeader(contract.Key, out Header header))
             throw new InvalidOperationException($"Unknown incoming semantic message '{contract.Key.Value}'.");
 
-        using var packet = new Packet(header, client)
-        {
-            Context = new ParserContext(
-                Ext.Messages,
-                Ext.Messages.GetWireProfile(client))
-        };
+        using Packet packet = _interceptor.Messages.CreatePacket(header);
         PacketWriter writer = packet.Writer();
         contract.Compose(message, in writer);
-        Ext.Send(packet);
+        _interceptor.Send(packet);
     }
 
     /// <summary>
@@ -992,7 +1022,7 @@ public partial class ScriptGlobals : IDisposable
     public IDisposable OnIntercept(Header header, Action<Intercept> handler)
     {
         ArgumentNullException.ThrowIfNull(handler);
-        return Track(Ext.Intercept(
+        return Track(_interceptor.Intercept(
             header,
             Guarded(handler)));
     }
@@ -1004,19 +1034,18 @@ public partial class ScriptGlobals : IDisposable
     /// <remarks>
     /// While the identifier cannot be resolved against the active message catalog, the handler
     /// is bound to nothing and does not fire. It is resolved again whenever the catalog changes.
+    /// A name that is neither in the message registry nor in the active catalog writes one warning
+    /// line to the script output.
     /// </remarks>
-    /// <param name="identifier">The client, direction and message name to intercept.</param>
+    /// <param name="identifier">The direction and message name to intercept.</param>
     /// <param name="handler">
     /// The handler to call with each matching intercept. It can block or rewrite the packet.
     /// </param>
     /// <returns>A handle that removes the handler when disposed.</returns>
     /// <exception cref="ArgumentException">Thrown when <paramref name="identifier"/> has no message name or no direction.</exception>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="handler"/> is <see langword="null"/>.</exception>
-    public IDisposable OnIntercept(Identifier identifier, Action<Intercept> handler)
-    {
-        ArgumentNullException.ThrowIfNull(handler);
-        return Track(Ext.Intercept(identifier, Guarded(handler)));
-    }
+    public IDisposable OnIntercept(Identifier identifier, Action<Intercept> handler) =>
+        InterceptMessage(identifier, handler);
 
     /// <summary>
     /// Registers a handler that runs for every incoming packet of the named message.
@@ -1024,6 +1053,8 @@ public partial class ScriptGlobals : IDisposable
     /// <remarks>
     /// While the name cannot be resolved against the active message catalog, the handler is
     /// bound to nothing and does not fire. It is resolved again whenever the catalog changes.
+    /// A name that is neither in the message registry nor in the active catalog writes one warning
+    /// line to the script output.
     /// </remarks>
     /// <param name="name">The incoming message name.</param>
     /// <param name="handler">
@@ -1033,24 +1064,7 @@ public partial class ScriptGlobals : IDisposable
     /// <exception cref="ArgumentException">Thrown when <paramref name="name"/> is empty.</exception>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="handler"/> is <see langword="null"/>.</exception>
     public IDisposable OnIn(string name, Action<Intercept> handler) =>
-    Track(InterceptIncomingEvent(name, ClientType.None, handler));
-
-    /// <summary>
-    /// Registers a handler that runs for every incoming packet of the named Flash message.
-    /// </summary>
-    /// <remarks>
-    /// The name is resolved for the Flash client only, and the handler does not fire while the
-    /// name cannot be resolved against the active message catalog.
-    /// </remarks>
-    /// <param name="name">The incoming Flash message name.</param>
-    /// <param name="handler">
-    /// The handler to call with each matching intercept. It can block or rewrite the packet.
-    /// </param>
-    /// <returns>A handle that removes the handler when disposed.</returns>
-    /// <exception cref="ArgumentException">Thrown when <paramref name="name"/> is empty.</exception>
-    /// <exception cref="ArgumentNullException">Thrown when <paramref name="handler"/> is <see langword="null"/>.</exception>
-    public IDisposable OnFlashIn(string name, Action<Intercept> handler) =>
-    Track(InterceptIncomingEvent(name, ClientType.Flash, handler));
+        InterceptMessage(new Identifier(MessageDirection.In, name), handler);
 
     /// <summary>
     /// Registers a handler that runs for every outgoing packet of the named message.
@@ -1058,6 +1072,8 @@ public partial class ScriptGlobals : IDisposable
     /// <remarks>
     /// While the name cannot be resolved against the active message catalog, the handler is
     /// bound to nothing and does not fire. It is resolved again whenever the catalog changes.
+    /// A name that is neither in the message registry nor in the active catalog writes one warning
+    /// line to the script output.
     /// </remarks>
     /// <param name="name">The outgoing message name.</param>
     /// <param name="handler">
@@ -1067,24 +1083,7 @@ public partial class ScriptGlobals : IDisposable
     /// <exception cref="ArgumentException">Thrown when <paramref name="name"/> is empty.</exception>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="handler"/> is <see langword="null"/>.</exception>
     public IDisposable OnOut(string name, Action<Intercept> handler) =>
-    Track(InterceptOutgoingEvent(name, ClientType.None, handler));
-
-    /// <summary>
-    /// Registers a handler that runs for every outgoing packet of the named Flash message.
-    /// </summary>
-    /// <remarks>
-    /// The name is resolved for the Flash client only, and the handler does not fire while the
-    /// name cannot be resolved against the active message catalog.
-    /// </remarks>
-    /// <param name="name">The outgoing Flash message name.</param>
-    /// <param name="handler">
-    /// The handler to call with each matching intercept. It can block or rewrite the packet.
-    /// </param>
-    /// <returns>A handle that removes the handler when disposed.</returns>
-    /// <exception cref="ArgumentException">Thrown when <paramref name="name"/> is empty.</exception>
-    /// <exception cref="ArgumentNullException">Thrown when <paramref name="handler"/> is <see langword="null"/>.</exception>
-    public IDisposable OnFlashOut(string name, Action<Intercept> handler) =>
-    Track(InterceptOutgoingEvent(name, ClientType.Flash, handler));
+        InterceptMessage(new Identifier(MessageDirection.Out, name), handler);
 
     /// <summary>
     /// Registers a handler that runs for every incoming packet of the named message, parsed into
@@ -1096,18 +1095,24 @@ public partial class ScriptGlobals : IDisposable
     /// <see cref="OnIn{T}(string, Action{T, Intercept})"/> for that. A packet that does not
     /// parse cleanly into <typeparamref name="T"/>, or leaves trailing bytes, raises an
     /// <see cref="InvalidOperationException"/> inside the dispatch, which is reported as a script
-    /// error.
+    /// error. A name is handled as in <see cref="OnIn(string, Action{Intercept})"/>.
     /// </remarks>
     /// <typeparam name="T">The message model to parse the packet as.</typeparam>
     /// <param name="name">The incoming message name.</param>
     /// <param name="handler">The handler to call with each parsed message.</param>
     /// <returns>A handle that removes the handler when disposed.</returns>
-    /// <exception cref="ArgumentException">Thrown when <paramref name="name"/> is empty.</exception>
-    public IDisposable OnIn<T>(string name, Action<T> handler) where T : IParserComposer<T> =>
-        Track(InterceptIncomingEvent(
-            name,
-            ClientType.None,
-            intercept => handler(ParseCopy<T>(name, intercept.Packet))));
+    /// <exception cref="ArgumentException">
+    /// Thrown when <paramref name="name"/> is empty, or <typeparamref name="T"/> is a QX model and the
+    /// message's contract parses it into another model.
+    /// </exception>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="handler"/> is <see langword="null"/>.</exception>
+    public IDisposable OnIn<T>(string name, Action<T> handler) where T : IParserComposer<T>
+    {
+        ArgumentNullException.ThrowIfNull(handler);
+        return InterceptMessage(
+            new Identifier(ModelDirections<T>(MessageDirection.In, name), name),
+            intercept => handler(ParseCopy<T>(name, intercept.Packet)));
+    }
 
     /// <summary>
     /// Registers a handler that runs for every incoming packet of the named message, with both
@@ -1115,26 +1120,29 @@ public partial class ScriptGlobals : IDisposable
     /// </summary>
     /// <remarks>
     /// The handler can read the typed message and still block the packet with
-    /// <see cref="Intercept.Block"/>. The message is parsed from a copy of the packet.
+    /// <see cref="Intercept.Block"/>. The message is parsed from a copy of the packet. A name is
+    /// handled as in <see cref="OnIn(string, Action{Intercept})"/>.
     /// </remarks>
     /// <typeparam name="T">The message model to parse the packet as.</typeparam>
     /// <param name="name">The incoming message name.</param>
     /// <param name="handler">The handler to call with each parsed message and its intercept.</param>
     /// <returns>A handle that removes the handler when disposed.</returns>
-    /// <exception cref="ArgumentException">Thrown when <paramref name="name"/> is empty.</exception>
+    /// <exception cref="ArgumentException">
+    /// Thrown when <paramref name="name"/> is empty, or <typeparamref name="T"/> is a QX model and the
+    /// message's contract parses it into another model.
+    /// </exception>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="handler"/> is <see langword="null"/>.</exception>
     public IDisposable OnIn<T>(string name, Action<T, Intercept> handler) where T : IParserComposer<T>
     {
         ArgumentNullException.ThrowIfNull(handler);
-        return Track(InterceptIncomingEvent(
-            name,
-            ClientType.None,
-            intercept => handler(ParseCopy<T>(name, intercept.Packet), intercept)));
+        return InterceptMessage(
+            new Identifier(ModelDirections<T>(MessageDirection.In, name), name),
+            intercept => handler(ParseCopy<T>(name, intercept.Packet), intercept));
     }
 
     private IDisposable OnIn<T>(MessageContract<T> contract, Action<T> handler)
         where T : IParserComposer<T> =>
-        Track(Ext.Intercept(
+        Track(_interceptor.Intercept(
             contract.Key,
             Guarded<Intercept>(intercept => handler(ParseCopy(contract, intercept.Packet)))));
 
@@ -1146,18 +1154,25 @@ public partial class ScriptGlobals : IDisposable
     /// The packet is copied before parsing, so the original cannot be blocked or rewritten from
     /// this overload. A packet that does not parse cleanly into <typeparamref name="T"/>, or
     /// leaves trailing bytes, raises an <see cref="InvalidOperationException"/> inside the
-    /// dispatch, which is reported as a script error.
+    /// dispatch, which is reported as a script error. A name is handled as in
+    /// <see cref="OnOut(string, Action{Intercept})"/>.
     /// </remarks>
     /// <typeparam name="T">The message model to parse the packet as.</typeparam>
     /// <param name="name">The outgoing message name.</param>
     /// <param name="handler">The handler to call with each parsed message.</param>
     /// <returns>A handle that removes the handler when disposed.</returns>
-    /// <exception cref="ArgumentException">Thrown when <paramref name="name"/> is empty.</exception>
-    public IDisposable OnOut<T>(string name, Action<T> handler) where T : IParserComposer<T> =>
-        Track(InterceptOutgoingEvent(
-            name,
-            ClientType.None,
-            intercept => handler(ParseCopy<T>(name, intercept.Packet))));
+    /// <exception cref="ArgumentException">
+    /// Thrown when <paramref name="name"/> is empty, or <typeparamref name="T"/> is a QX model and the
+    /// message's contract parses it into another model.
+    /// </exception>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="handler"/> is <see langword="null"/>.</exception>
+    public IDisposable OnOut<T>(string name, Action<T> handler) where T : IParserComposer<T>
+    {
+        ArgumentNullException.ThrowIfNull(handler);
+        return InterceptMessage(
+            new Identifier(ModelDirections<T>(MessageDirection.Out, name), name),
+            intercept => handler(ParseCopy<T>(name, intercept.Packet)));
+    }
 
     /// <summary>
     /// Registers a handler that runs for every outgoing packet of the named message, with both
@@ -1166,36 +1181,49 @@ public partial class ScriptGlobals : IDisposable
     /// <remarks>
     /// The handler can read the typed message and still block the packet with
     /// <see cref="Intercept.Block"/>. This is how a click in the room can be turned into a tile
-    /// pick instead of a walk.
+    /// pick instead of a walk. A name is handled as in <see cref="OnOut(string, Action{Intercept})"/>.
     /// </remarks>
     /// <typeparam name="T">The message model to parse the packet as.</typeparam>
     /// <param name="name">The outgoing message name.</param>
     /// <param name="handler">The handler to call with each parsed message and its intercept.</param>
     /// <returns>A handle that removes the handler when disposed.</returns>
-    /// <exception cref="ArgumentException">Thrown when <paramref name="name"/> is empty.</exception>
+    /// <exception cref="ArgumentException">
+    /// Thrown when <paramref name="name"/> is empty, or <typeparamref name="T"/> is a QX model and the
+    /// message's contract parses it into another model.
+    /// </exception>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="handler"/> is <see langword="null"/>.</exception>
     public IDisposable OnOut<T>(string name, Action<T, Intercept> handler) where T : IParserComposer<T>
     {
         ArgumentNullException.ThrowIfNull(handler);
-        return Track(InterceptOutgoingEvent(
-            name,
-            ClientType.None,
-            intercept => handler(ParseCopy<T>(name, intercept.Packet), intercept)));
+        return InterceptMessage(
+            new Identifier(ModelDirections<T>(MessageDirection.Out, name), name),
+            intercept => handler(ParseCopy<T>(name, intercept.Packet), intercept));
     }
 
     /// <summary>
-    /// Waits for the next packet with the given message name, in either direction, and parses
-    /// it into <typeparamref name="T"/>.
+    /// Waits for the next packet with the given message name and parses it into
+    /// <typeparamref name="T"/>.
     /// </summary>
     /// <remarks>
+    /// <para>
     /// The packet is not blocked and still reaches its destination.
+    /// </para>
+    /// <para>
+    /// When <typeparamref name="T"/> is a QX model, only the directions whose contract parses the
+    /// message into <typeparamref name="T"/> are watched, so
+    /// <c>ReceiveAsync&lt;AvatarChat&gt;("Chat")</c> waits for the incoming chat and never for the
+    /// script's own outgoing one; when no contract does, the directions without a contract are
+    /// watched. A model the script defines watches both directions. An unknown name never matches
+    /// and writes a warning line to the script output.
+    /// </para>
     /// </remarks>
     /// <typeparam name="T">The message model to parse the packet as.</typeparam>
-    /// <param name="name">The message name, resolved against both directions.</param>
+    /// <param name="name">The message name.</param>
     /// <param name="timeoutMs">The timeout in milliseconds.</param>
     /// <returns>The parsed message.</returns>
     /// <exception cref="ArgumentException">
-    /// Thrown when <paramref name="name"/> is empty or carries an <c>in:</c>, <c>out:</c> or <c>flash:</c> prefix.
+    /// Thrown when <paramref name="name"/> is empty or carries an <c>in:</c> or <c>out:</c> prefix,
+    /// or <typeparamref name="T"/> is a QX model and the message's contracts parse it into other models.
     /// </exception>
     /// <exception cref="OperationCanceledException">
     /// Thrown when the timeout elapsed, or the script was stopped, before a matching packet arrived.
@@ -1205,7 +1233,11 @@ public partial class ScriptGlobals : IDisposable
     /// </exception>
     public async Task<T> ReceiveAsync<T>(string name, int timeoutMs = 10000) where T : IParserComposer<T>
     {
-        using IPacket packet = await ReceiveAsync(name, timeoutMs);
+        Identifier identifier = ReceiveIdentifier(name);
+        using IPacket packet = await Capture(
+            [identifier with { Direction = ModelDirections<T>(MessageDirection.Both, name) }],
+            timeoutMs,
+            false);
         PacketReader reader = packet.Reader();
         T message = reader.Parse<T>();
         if (reader.Available != 0)
@@ -1227,7 +1259,7 @@ public partial class ScriptGlobals : IDisposable
     {
         ArgumentNullException.ThrowIfNull(handler);
         Action<RoomChatEntry> guarded = Guarded<RoomChatEntry>(entry => handler(entry.Chat));
-        return Track(Application.Subscribe(
+        return Track(_application.Subscribe(
             ApplicationMemberIds.RoomChatReceived,
             guarded));
     }
@@ -1253,7 +1285,7 @@ public partial class ScriptGlobals : IDisposable
                         ? room.AvatarByIndex(entry.SpeakerIndex)
                         : null),
                 entry.Chat));
-        return Track(Application.Subscribe(
+        return Track(_application.Subscribe(
             ApplicationMemberIds.RoomChatReceived,
             guarded));
     }
@@ -1263,7 +1295,8 @@ public partial class ScriptGlobals : IDisposable
     /// a copy of it.
     /// </summary>
     /// <remarks>
-    /// The original is not blocked and still reaches its destination.
+    /// The original is not blocked and still reaches its destination. An unknown name never
+    /// matches and writes a warning line to the script output.
     /// </remarks>
     /// <param name="name">The message name, resolved against both directions.</param>
     /// <param name="timeoutMs">The timeout in milliseconds.</param>
@@ -1271,7 +1304,7 @@ public partial class ScriptGlobals : IDisposable
     /// A copy of the packet, positioned at the start. The caller owns it and should dispose it.
     /// </returns>
     /// <exception cref="ArgumentException">
-    /// Thrown when <paramref name="name"/> is empty or carries an <c>in:</c>, <c>out:</c> or <c>flash:</c> prefix.
+    /// Thrown when <paramref name="name"/> is empty or carries an <c>in:</c> or <c>out:</c> prefix.
     /// </exception>
     /// <exception cref="OperationCanceledException">
     /// Thrown when the timeout elapsed, or the script was stopped, before a matching packet arrived.
@@ -1296,16 +1329,10 @@ public partial class ScriptGlobals : IDisposable
     /// <exception cref="ArgumentException">Thrown when <paramref name="message"/> is empty or white space.</exception>
     /// <exception cref="InvalidOperationException">Thrown when there is no active hotel session or no ready room.</exception>
     public void Talk(string message, int bubble = 0) =>
-        Application.Invoke<RoomChatTalkRequest, RoomChatSendResult>(
+        _application.Invoke<RoomChatTalkRequest, RoomChatSendResult>(
             ApplicationMemberIds.RoomChatTalk,
             new RoomChatTalkRequest(message, bubble),
             Ct);
-
-    /// <summary>Says a message in the room.</summary>
-    /// <remarks>Alias of <see cref="Talk"/>.</remarks>
-    /// <param name="message">The text to say.</param>
-    /// <param name="bubble">The chat bubble style id; 0 is the account's default bubble.</param>
-    public void Say(string message, int bubble = 0) => Talk(message, bubble);
 
     /// <summary>
     /// Shouts a message, which reaches the whole room instead of only nearby avatars.
@@ -1318,7 +1345,7 @@ public partial class ScriptGlobals : IDisposable
     /// <exception cref="ArgumentException">Thrown when <paramref name="message"/> is empty or white space.</exception>
     /// <exception cref="InvalidOperationException">Thrown when there is no active hotel session or no ready room.</exception>
     public void Shout(string message, int bubble = 0) =>
-        Application.Invoke<RoomChatShoutRequest, RoomChatSendResult>(
+        _application.Invoke<RoomChatShoutRequest, RoomChatSendResult>(
             ApplicationMemberIds.RoomChatShout,
             new RoomChatShoutRequest(message, bubble),
             Ct);
@@ -1338,7 +1365,7 @@ public partial class ScriptGlobals : IDisposable
     /// </exception>
     /// <exception cref="InvalidOperationException">Thrown when there is no active hotel session or no ready room.</exception>
     public void Whisper(string recipient, string message, int bubble = 0) =>
-    Application.Invoke<RoomChatWhisperRequest, RoomChatWhisperResult>(
+    _application.Invoke<RoomChatWhisperRequest, RoomChatWhisperResult>(
         ApplicationMemberIds.RoomChatWhisper,
         new RoomChatWhisperRequest(recipient, message, bubble),
         Ct);
@@ -1354,10 +1381,31 @@ public partial class ScriptGlobals : IDisposable
     /// <param name="y">The target tile y coordinate.</param>
     /// <exception cref="InvalidOperationException">Thrown when there is no active hotel session.</exception>
     public void Walk(int x, int y) =>
-        Application.Invoke<RoomAvatarWalkRequest, RoomAvatarDispatchResult>(
+        _application.Invoke<RoomAvatarWalkRequest, RoomAvatarDispatchResult>(
             ApplicationMemberIds.RoomAvatarWalk,
             new RoomAvatarWalkRequest(x, y),
             Ct);
+
+    /// <summary>Requests a walk to the given tile, as <see cref="Walk(int, int)"/> does.</summary>
+    /// <remarks>A <see cref="Tile"/> converts to its point, so its height is ignored.</remarks>
+    /// <param name="location">The target tile.</param>
+    /// <exception cref="InvalidOperationException">Thrown when there is no active hotel session.</exception>
+    public void Walk(Point location) => Walk(location.X, location.Y);
+
+    /// <summary>
+    /// Requests a walk toward the tile the given avatar currently occupies.
+    /// </summary>
+    /// <remarks>
+    /// Since that tile is taken, the server normally stops on an adjacent tile.
+    /// </remarks>
+    /// <param name="avatar">The avatar to walk toward.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="avatar"/> is <see langword="null"/>.</exception>
+    /// <exception cref="InvalidOperationException">Thrown when there is no active hotel session.</exception>
+    public void Walk(Avatar avatar)
+    {
+        ArgumentNullException.ThrowIfNull(avatar);
+        Walk(avatar.X, avatar.Y);
+    }
 
     /// <summary>
     /// Turns the avatar to face the given tile without moving.
@@ -1369,10 +1417,60 @@ public partial class ScriptGlobals : IDisposable
     /// <param name="y">The tile y coordinate to face.</param>
     /// <exception cref="InvalidOperationException">Thrown when there is no active hotel session.</exception>
     public void LookTo(int x, int y) =>
-        Application.Invoke<RoomAvatarLookRequest, RoomAvatarDispatchResult>(
+        _application.Invoke<RoomAvatarLookRequest, RoomAvatarDispatchResult>(
             ApplicationMemberIds.RoomAvatarLook,
             new RoomAvatarLookRequest(x, y),
             Ct);
+
+    /// <summary>Turns the avatar to face the given tile, as <see cref="LookTo(int, int)"/> does.</summary>
+    /// <param name="location">The tile to face.</param>
+    /// <exception cref="InvalidOperationException">Thrown when there is no active hotel session.</exception>
+    public void LookTo(Point location) => LookTo(location.X, location.Y);
+
+    /// <summary>Turns the avatar to face the tile the given avatar currently occupies.</summary>
+    /// <param name="avatar">The avatar to face.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="avatar"/> is <see langword="null"/>.</exception>
+    /// <exception cref="InvalidOperationException">Thrown when there is no active hotel session.</exception>
+    public void LookTo(Avatar avatar)
+    {
+        ArgumentNullException.ThrowIfNull(avatar);
+        LookTo(avatar.X, avatar.Y);
+    }
+
+    /// <summary>
+    /// Turns the avatar to one of the eight compass directions.
+    /// </summary>
+    /// <remarks>
+    /// The hotel has no "face direction" message, so the call aims at a far-off tile in that
+    /// direction with <see cref="LookTo(int, int)"/> and lets the server work the facing out.
+    /// </remarks>
+    /// <param name="direction">
+    /// 0 north, 1 north-east, 2 east, 3 south-east, 4 south, 5 south-west, 6 west, 7 north-west.
+    /// Values outside 0-7 wrap, including negative ones.
+    /// </param>
+    /// <exception cref="InvalidOperationException">Thrown when there is no active hotel session.</exception>
+    public void Turn(int direction) => LookTo(DirectionTarget(direction));
+
+    /// <summary>Turns the avatar to one of the eight compass directions.</summary>
+    /// <param name="direction">The compass direction.</param>
+    /// <exception cref="InvalidOperationException">Thrown when there is no active hotel session.</exception>
+    public void Turn(Direction direction) => Turn((int)direction);
+
+    private static Point DirectionTarget(int direction)
+    {
+        int normalized = ((direction % 8) + 8) % 8;
+        return normalized switch
+        {
+            0 => new Point(-1000, -10000),
+            1 => new Point(1000, -10000),
+            2 => new Point(10000, -1000),
+            3 => new Point(10000, 1000),
+            4 => new Point(1000, 10000),
+            5 => new Point(-1000, 10000),
+            6 => new Point(-10000, 1000),
+            _ => new Point(-10000, -1000)
+        };
+    }
 
     /// <summary>
     /// Starts dancing.
@@ -1387,7 +1485,7 @@ public partial class ScriptGlobals : IDisposable
     /// </param>
     /// <exception cref="InvalidOperationException">Thrown when there is no active hotel session.</exception>
     public void Dance(int style = 1) =>
-        Application.Invoke<RoomAvatarDanceRequest, RoomAvatarDispatchResult>(
+        _application.Invoke<RoomAvatarDanceRequest, RoomAvatarDispatchResult>(
             ApplicationMemberIds.RoomAvatarDance,
             new RoomAvatarDanceRequest(style),
             Ct);
@@ -1406,7 +1504,7 @@ public partial class ScriptGlobals : IDisposable
     /// </param>
     /// <exception cref="InvalidOperationException">Thrown when there is no active hotel session.</exception>
     public void Expression(int type) =>
-        Application.Invoke<RoomAvatarExpressionRequest, RoomAvatarDispatchResult>(
+        _application.Invoke<RoomAvatarExpressionRequest, RoomAvatarDispatchResult>(
             ApplicationMemberIds.RoomAvatarExpression,
             new RoomAvatarExpressionRequest(type),
             Ct);
@@ -1424,7 +1522,7 @@ public partial class ScriptGlobals : IDisposable
     /// </remarks>
     /// <exception cref="InvalidOperationException">Thrown when there is no active hotel session.</exception>
     public void Sit() =>
-        Application.Invoke<RoomAvatarPostureRequest, RoomAvatarDispatchResult>(
+        _application.Invoke<RoomAvatarPostureRequest, RoomAvatarDispatchResult>(
             ApplicationMemberIds.RoomAvatarPosture,
             new RoomAvatarPostureRequest(1),
             Ct);
@@ -1432,7 +1530,7 @@ public partial class ScriptGlobals : IDisposable
     /// <summary>Stands up from a sitting or lying posture.</summary>
     /// <exception cref="InvalidOperationException">Thrown when there is no active hotel session.</exception>
     public void Stand() =>
-        Application.Invoke<RoomAvatarPostureRequest, RoomAvatarDispatchResult>(
+        _application.Invoke<RoomAvatarPostureRequest, RoomAvatarDispatchResult>(
             ApplicationMemberIds.RoomAvatarPosture,
             new RoomAvatarPostureRequest(0),
             Ct);
@@ -1451,7 +1549,7 @@ public partial class ScriptGlobals : IDisposable
     /// </param>
     /// <exception cref="InvalidOperationException">Thrown when there is no active hotel session.</exception>
     public void UseFloorItem(Id id, int state = 0) =>
-        Application.Invoke<RoomFloorItemUseRequest, RoomItemDispatchResult>(
+        _application.Invoke<RoomFloorItemUseRequest, RoomItemDispatchResult>(
             ApplicationMemberIds.RoomItemFloorUse,
             new RoomFloorItemUseRequest(id, state),
             Ct);
@@ -1466,10 +1564,54 @@ public partial class ScriptGlobals : IDisposable
     /// <param name="state">The interaction slot to trigger; 0 is the normal click action.</param>
     /// <exception cref="InvalidOperationException">Thrown when there is no active hotel session.</exception>
     public void UseWallItem(Id id, int state = 0) =>
-        Application.Invoke<RoomWallItemUseRequest, RoomItemDispatchResult>(
+        _application.Invoke<RoomWallItemUseRequest, RoomItemDispatchResult>(
             ApplicationMemberIds.RoomItemWallUse,
             new RoomWallItemUseRequest(id, state),
             Ct);
+
+    /// <summary>Uses (clicks) a floor item, as <see cref="UseFloorItem(Id, int)"/> does.</summary>
+    /// <param name="item">The item; only its id is used.</param>
+    /// <param name="state">The interaction slot to trigger; 0 is the normal click action.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="item"/> is <see langword="null"/>.</exception>
+    /// <exception cref="InvalidOperationException">Thrown when there is no active hotel session.</exception>
+    public void UseFloorItem(FloorItem item, int state = 0)
+    {
+        ArgumentNullException.ThrowIfNull(item);
+        UseFloorItem(item.Id, state);
+    }
+
+    /// <summary>Uses (clicks) a wall item, as <see cref="UseWallItem(Id, int)"/> does.</summary>
+    /// <param name="item">The item; only its id is used.</param>
+    /// <param name="state">The interaction slot to trigger; 0 is the normal click action.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="item"/> is <see langword="null"/>.</exception>
+    /// <exception cref="InvalidOperationException">Thrown when there is no active hotel session.</exception>
+    public void UseWallItem(WallItem item, int state = 0)
+    {
+        ArgumentNullException.ThrowIfNull(item);
+        UseWallItem(item.Id, state);
+    }
+
+    /// <summary>
+    /// Uses (clicks) a room item, picking the floor or wall message from the item's runtime type.
+    /// </summary>
+    /// <param name="item">The item to use.</param>
+    /// <param name="state">
+    /// The interaction slot to trigger. 0 is the item's normal click action; multi-state furni
+    /// use higher values to switch to a specific state instead of cycling.
+    /// </param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="item"/> is <see langword="null"/>.</exception>
+    /// <exception cref="ArgumentException">Thrown when the item is neither a floor nor a wall item.</exception>
+    /// <exception cref="InvalidOperationException">Thrown when there is no active hotel session.</exception>
+    public void UseFurni(Furni item, int state = 0)
+    {
+        ArgumentNullException.ThrowIfNull(item);
+        if (item is FloorItem floor_item)
+            UseFloorItem(floor_item.Id, state);
+        else if (item is WallItem wall_item)
+            UseWallItem(wall_item.Id, state);
+        else
+            throw new ArgumentException("Unsupported furniture type.", nameof(item));
+    }
 
     /// <summary>
     /// Moves a floor item that is already placed in the room to a new tile and rotation.
@@ -1489,12 +1631,45 @@ public partial class ScriptGlobals : IDisposable
     /// Thrown when there is no active hotel session or ready room, or the item is not in the room.
     /// </exception>
     public void MoveFloorItem(Id id, int x, int y, int direction) =>
-        Application.Invoke<RoomPlacementFloorMoveRequest, RoomPlacementDispatchReceipt>(
+        _application.Invoke<RoomPlacementFloorMoveRequest, RoomPlacementDispatchReceipt>(
             ApplicationMemberIds.RoomPlacementFloorMove,
             new RoomPlacementFloorMoveRequest(
                 id,
                 new RoomPlacementFloorPosition(x, y, direction)),
             Ct);
+
+    /// <summary>Moves a floor item in the room to another tile and rotation.</summary>
+    /// <param name="id">The item's room id.</param>
+    /// <param name="location">The target tile.</param>
+    /// <param name="direction">The rotation, in eighths of a turn (0 to 7).</param>
+    /// <exception cref="ArgumentOutOfRangeException">
+    /// Thrown when a coordinate is negative or <paramref name="direction"/> is outside 0 to 7.
+    /// </exception>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when there is no active hotel session or ready room, or the item is not in the room.
+    /// </exception>
+    public void MoveFloorItem(Id id, Point location, int direction) =>
+        MoveFloorItem(id, location.X, location.Y, direction);
+
+    /// <summary>Moves a floor item already in the room to another tile, keeping or changing its rotation.</summary>
+    /// <param name="item">The item to move.</param>
+    /// <param name="location">The target tile.</param>
+    /// <param name="direction">
+    /// The item's new rotation, 0-7, or <see langword="null"/> to keep the rotation
+    /// <paramref name="item"/> holds.
+    /// </param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="item"/> is <see langword="null"/>.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">
+    /// Thrown when a coordinate is negative or <paramref name="direction"/> is outside 0 to 7.
+    /// </exception>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when there is no active hotel session or ready room, or the item is not in the room.
+    /// </exception>
+    public void MoveFloorItem(FloorItem item, Point location, int? direction = null)
+    {
+        ArgumentNullException.ThrowIfNull(item);
+        MoveFloorItem(item.Id, location, direction ?? item.Direction);
+    }
 
     /// <summary>
     /// Holds up a sign above the avatar for a few seconds.
@@ -1505,50 +1680,21 @@ public partial class ScriptGlobals : IDisposable
     /// </param>
     /// <exception cref="InvalidOperationException">Thrown when there is no active hotel session.</exception>
     public void Sign(int type) =>
-        Application.Invoke<RoomAvatarSignRequest, RoomAvatarDispatchResult>(
+        _application.Invoke<RoomAvatarSignRequest, RoomAvatarDispatchResult>(
             ApplicationMemberIds.RoomAvatarSign,
             new RoomAvatarSignRequest(type),
             Ct);
-
-    /// <summary>Requests a walk to the given tile.</summary>
-    /// <remarks>Alias of <see cref="Walk(int, int)"/>.</remarks>
-    /// <param name="x">The target tile x coordinate.</param>
-    /// <param name="y">The target tile y coordinate.</param>
-    public void WalkTo(int x, int y) => Walk(x, y);
-
-    /// <summary>Requests a walk to the given tile, as <see cref="Walk(int, int)"/> does.</summary>
-    /// <param name="tile">The target tile; its height is ignored.</param>
-    public void WalkTo(Tile tile) => Walk(tile.X, tile.Y);
-
-    /// <summary>
-    /// Requests a walk toward the tile the given avatar currently occupies.
-    /// </summary>
-    /// <remarks>
-    /// Since that tile is taken, the server normally stops on an adjacent tile.
-    /// </remarks>
-    /// <param name="avatar">The avatar to walk toward.</param>
-    public void WalkTo(Avatar avatar) => Walk(avatar.X, avatar.Y);
-
-    /// <summary>Turns to face the given tile.</summary>
-    /// <remarks>Alias of <see cref="LookTo(int, int)"/>.</remarks>
-    /// <param name="x">The tile x coordinate to face.</param>
-    /// <param name="y">The tile y coordinate to face.</param>
-    public void FaceTo(int x, int y) => LookTo(x, y);
-
-    /// <summary>Turns to face the given avatar's current tile.</summary>
-    /// <param name="avatar">The avatar to face.</param>
-    public void FaceTo(Avatar avatar) => LookTo(avatar.X, avatar.Y);
 
     /// <summary>
     /// Leaves the current room.
     /// </summary>
     /// <remarks>
-    /// Subscribe to <see cref="OnLeftRoom"/> or <see cref="OnRoomExited"/> to know when the room
-    /// session has actually ended.
+    /// Subscribe to <see cref="OnLeftRoom(Action)"/> to know when the room session has actually
+    /// ended.
     /// </remarks>
     /// <exception cref="InvalidOperationException">Thrown when there is no active hotel session.</exception>
     public void LeaveRoom() =>
-        Application.Invoke<RoomLeaveRequest, RoomLifecycleDispatchResult>(
+        _application.Invoke<RoomLeaveRequest, RoomLifecycleDispatchResult>(
             ApplicationMemberIds.RoomLeave,
             new RoomLeaveRequest(),
             Ct);
@@ -1571,7 +1717,7 @@ public partial class ScriptGlobals : IDisposable
     private void OpenTrade(int user_index, Id? expected_user_id)
     {
         TradeStateView trade = ReadTradeState();
-        Application.Invoke<TradeOpenRequest, TradeDispatchResult>(
+        _application.Invoke<TradeOpenRequest, TradeDispatchResult>(
             ApplicationMemberIds.TradeOpen,
             new TradeOpenRequest(
                 user_index,
@@ -1600,7 +1746,7 @@ public partial class ScriptGlobals : IDisposable
     /// <param name="itemId">The inventory item id.</param>
     /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="itemId"/> is 0 or outside the 32-bit range.</exception>
     /// <exception cref="InvalidOperationException">Thrown when no trade is open in the offer phase.</exception>
-    public void OfferTradeItem(long itemId) => OfferTradeItems(itemId);
+    public void OfferTradeItem(Id itemId) => OfferTradeItems(itemId);
 
     /// <summary>
     /// Adds several inventory items to the open trade offer in one message.
@@ -1615,14 +1761,14 @@ public partial class ScriptGlobals : IDisposable
     /// </exception>
     /// <exception cref="ArgumentException">Thrown when the list contains the same id twice.</exception>
     /// <exception cref="InvalidOperationException">Thrown when no trade is open in the offer phase.</exception>
-    public void OfferTradeItems(params long[] itemIds)
+    public void OfferTradeItems(params Id[] itemIds)
     {
         ArgumentNullException.ThrowIfNull(itemIds);
         TradeStateView trade = ReadTradeState();
-        Application.Invoke<TradeItemsAddRequest, TradeDispatchResult>(
+        _application.Invoke<TradeItemsAddRequest, TradeDispatchResult>(
             ApplicationMemberIds.TradeItemsAdd,
             new TradeItemsAddRequest(
-                itemIds.Select(item_id => (Id)item_id).ToArray(),
+                itemIds,
                 trade.SessionGeneration,
                 trade.Revision,
                 trade.LatestEpoch),
@@ -1636,7 +1782,7 @@ public partial class ScriptGlobals : IDisposable
     public void RemoveTradeItem(Id itemId)
     {
         TradeStateView trade = ReadTradeState();
-        Application.Invoke<TradeItemRemoveRequest, TradeDispatchResult>(
+        _application.Invoke<TradeItemRemoveRequest, TradeDispatchResult>(
             ApplicationMemberIds.TradeItemRemove,
             new TradeItemRemoveRequest(
                 itemId,
@@ -1644,6 +1790,45 @@ public partial class ScriptGlobals : IDisposable
                 trade.Revision,
                 trade.LatestEpoch),
             Ct);
+    }
+
+    /// <summary>Adds a single inventory item to the open trade offer.</summary>
+    /// <param name="item">The inventory item; only its item id is used.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="item"/> is <see langword="null"/>.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when the item id is 0 or outside the 32-bit range.</exception>
+    /// <exception cref="InvalidOperationException">Thrown when no trade is open in the offer phase.</exception>
+    public void OfferTradeItem(InventoryItem item)
+    {
+        ArgumentNullException.ThrowIfNull(item);
+        OfferTradeItem(item.ItemId);
+    }
+
+    /// <summary>Adds several inventory items to the open trade offer in one message, skipping null entries.</summary>
+    /// <param name="items">The inventory items; only their item ids are used.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="items"/> is <see langword="null"/>.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">
+    /// Thrown when no item is left to offer, or an item id is 0 or outside the 32-bit range.
+    /// </exception>
+    /// <exception cref="ArgumentException">Thrown when the same item is listed twice.</exception>
+    /// <exception cref="InvalidOperationException">Thrown when no trade is open in the offer phase.</exception>
+    public void OfferTradeItems(IEnumerable<InventoryItem> items)
+    {
+        ArgumentNullException.ThrowIfNull(items);
+        OfferTradeItems(items
+            .Where(item => item is not null)
+            .Select(item => item.ItemId)
+            .ToArray());
+    }
+
+    /// <summary>Removes an item from the own trade offer, resetting both sides' acceptance.</summary>
+    /// <param name="item">The inventory item; only its item id is used.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="item"/> is <see langword="null"/>.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when the item id is 0 or outside the 32-bit range.</exception>
+    /// <exception cref="InvalidOperationException">Thrown when no trade is open in the offer phase.</exception>
+    public void RemoveTradeItem(InventoryItem item)
+    {
+        ArgumentNullException.ThrowIfNull(item);
+        RemoveTradeItem(item.ItemId);
     }
 
     /// <summary>
@@ -1679,43 +1864,48 @@ public partial class ScriptGlobals : IDisposable
     /// <exception cref="InvalidOperationException">Thrown when no trade is open.</exception>
     public void CancelTrade() => SendTradeCommand(ApplicationMemberIds.TradeClose);
 
-    private Packet NewPacket(Direction direction, string name)
+    private Packet NewPacket(MessageDirection direction, string name)
     {
-        var identifier = new Identifier(ClientType.None, direction, name);
-        if (!Ext.Messages.TryGetHeader(identifier, out Header header))
-            throw new InvalidOperationException($"Unknown {(direction == Direction.Out ? "outgoing" : "incoming")} message '{name}'.");
-        return new Packet(header, CurrentClient);
+        var identifier = new Identifier(direction, name);
+        if (!_interceptor.Messages.TryGetHeader(identifier, out Header header))
+            throw new InvalidOperationException($"Unknown {(direction == MessageDirection.Out ? "outgoing" : "incoming")} message '{name}'.");
+        return _interceptor.Messages.CreatePacket(header);
     }
 
-    private void SendNamed(Direction direction, string name, object[] values, Header? preferred_header = null)
+    private void SendNamed(MessageDirection direction, string name, object[] values)
     {
-
         using Packet packet = NewPacket(direction, name);
         packet.Writer().WriteValues(values);
-        Ext.Send(packet);
+        _interceptor.Send(packet);
     }
 
-    private void SendNamed(Direction direction, MessageKey key, object[] values)
+    private void SendNamed(MessageDirection direction, MessageKey key, object[] values)
+    {
+        using Packet packet = NewPacket(direction, key);
+        packet.Writer().WriteValues(values);
+        _interceptor.Send(packet);
+    }
+
+    private void SendComposed<T>(MessageDirection direction, MessageKey key, T message) where T : IComposer
+    {
+        ArgumentNullException.ThrowIfNull(message);
+        using Packet packet = NewPacket(direction, key);
+        packet.Writer().Compose(message);
+        _interceptor.Send(packet);
+    }
+
+    private Packet NewPacket(MessageDirection direction, MessageKey key)
     {
         if (key.IsEmpty ||
-            !Ext.Messages.Registry.TryGet(key, out MessageDescriptor? descriptor) ||
+            !_interceptor.Messages.Registry.TryGet(key, out MessageDescriptor? descriptor) ||
             descriptor.Direction != direction)
         {
-            throw new InvalidOperationException($"Unknown semantic message '{key.Value}'.");
+            throw new InvalidOperationException(
+                $"Unknown {(direction == MessageDirection.Out ? "outgoing" : "incoming")} semantic message '{key.Value}'.");
         }
-
-        string name = descriptor.NameFor(CurrentClient) ??
-            throw new NotSupportedException($"Message '{key.Value}' is unavailable for {CurrentClient}.");
-        SendNamed(direction, name, values);
-    }
-
-    private ClientType CurrentClient
-    {
-        get
-        {
-            ClientType client = Session?.Client ?? Ext.Messages.ActiveClient;
-            return client is ClientType.None ? ClientType.Flash : client;
-        }
+        if (!_interceptor.Messages.TryGetHeader(key, out Header header))
+            throw new InvalidOperationException($"Message '{key.Value}' has no header in the active catalog.");
+        return _interceptor.Messages.CreatePacket(header);
     }
 
     private static T ParseCopy<T>(string name, IPacket packet) where T : IParserComposer<T>
@@ -1742,19 +1932,6 @@ public partial class ScriptGlobals : IDisposable
                 $"Message '{contract.Key}' contains {reader.Available} unparsed bytes for model '{typeof(T).Name}'.");
         }
         return message;
-    }
-
-    private IDisposable InterceptIncomingEvent(string name, ClientType requested, Action<Intercept> handler)
-    {
-        ArgumentNullException.ThrowIfNull(handler);
-        var identifier = new Identifier(requested, Direction.In, name);
-        return Ext.Intercept(identifier, Guarded(handler));
-    }
-
-    private IDisposable InterceptOutgoingEvent(string name, ClientType requested, Action<Intercept> handler)
-    {
-        ArgumentNullException.ThrowIfNull(handler);
-        return Ext.Intercept(new Identifier(requested, Direction.Out, name), Guarded(handler));
     }
 
     private sealed class Unsubscriber(Action dispose) : IDisposable

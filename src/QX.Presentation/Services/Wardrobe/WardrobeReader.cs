@@ -8,13 +8,13 @@ public static class WardrobeReader
 {
     public const int PageSize = 500;
 
-    public static async Task<IReadOnlyList<WardrobeOutfit>> ReadAsync(IGameGateway gateway, CancellationToken cancellation_token = default)
+    public static async Task<IReadOnlyList<WardrobeOutfit>> ReadAsync(IGameGateway gateway, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(gateway);
         ProfileWardrobePage first = await gateway.InvokeAsync<ProfileWardrobeRequest, ProfileWardrobePage>(
             ApplicationMemberIds.ProfileWardrobeGet,
             new ProfileWardrobeRequest(Limit: PageSize),
-            cancellation_token);
+            cancellationToken);
         var outfits = new List<WardrobeOutfit>(first.Outfits);
         ProfileWardrobePage page = first;
         int offset = first.Offset;
@@ -26,7 +26,7 @@ public static class WardrobeReader
             page = await gateway.InvokeAsync<ProfileWardrobeRequest, ProfileWardrobePage>(
                 ApplicationMemberIds.ProfileWardrobeGet,
                 new ProfileWardrobeRequest(offset, PageSize, SnapshotRevision: first.SnapshotRevision),
-                cancellation_token);
+                cancellationToken);
             if (!Continues(first, page, offset))
                 throw new InvalidOperationException(WardrobeText.SnapshotChanged);
             outfits.AddRange(page.Outfits);
@@ -36,14 +36,13 @@ public static class WardrobeReader
         ProfileStateView state = await gateway.QueryAsync<ProfileStateRequest, ProfileStateView>(
             ApplicationMemberIds.ProfileState,
             new ProfileStateRequest(),
-            cancellation_token);
-        if (!state.Connected || state.Client != first.Client || state.Generation != first.Generation)
+            cancellationToken);
+        if (!state.Connected || state.Generation != first.Generation)
             throw new InvalidOperationException(WardrobeText.SessionChanged);
         return outfits;
     }
 
     static bool Continues(ProfileWardrobePage first, ProfileWardrobePage page, int offset) =>
-        page.Client == first.Client &&
         page.Generation == first.Generation &&
         page.Revision == first.Revision &&
         page.SnapshotRevision == first.SnapshotRevision &&

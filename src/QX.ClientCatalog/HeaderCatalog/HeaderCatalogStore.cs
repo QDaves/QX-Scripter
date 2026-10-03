@@ -2,7 +2,6 @@ using System.Collections.Concurrent;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
-using Qx;
 using Qx.Messages;
 
 namespace Qx.ClientCatalog;
@@ -10,6 +9,7 @@ namespace Qx.ClientCatalog;
 public sealed class HeaderCatalogStore
 {
     public const int FormatVersion = 3;
+    internal const string ClientName = "flash";
     const long MaximumCacheBytes = 64L * 1024 * 1024;
 
     readonly ConcurrentDictionary<string, Lazy<Task<HeaderCatalogCacheResult>>> _operations =
@@ -19,8 +19,8 @@ public sealed class HeaderCatalogStore
     readonly long _maximum_cache_bytes;
     readonly CancellationToken _lifetime_token;
 
-    public HeaderCatalogStore(string root, CancellationToken lifetime_token = default)
-        : this(root, MaximumCacheBytes, lifetime_token)
+    public HeaderCatalogStore(string root, CancellationToken lifetimeToken = default)
+        : this(root, MaximumCacheBytes, lifetimeToken)
     {
     }
 
@@ -54,17 +54,17 @@ public sealed class HeaderCatalogStore
 
     public async Task<HeaderCatalogCacheResult> GetOrCreateAsync(
         HeaderCatalogKey key,
-        Func<CancellationToken, Task<HeaderCatalogSnapshot>> create_catalog,
-        CancellationToken cancellation_token = default)
+        Func<CancellationToken, Task<HeaderCatalogSnapshot>> createCatalog,
+        CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(key);
-        ArgumentNullException.ThrowIfNull(create_catalog);
-        cancellation_token.ThrowIfCancellationRequested();
+        ArgumentNullException.ThrowIfNull(createCatalog);
+        cancellationToken.ThrowIfCancellationRequested();
         string path = CachePath(key);
         Lazy<Task<HeaderCatalogCacheResult>> operation = _operations.GetOrAdd(
             path,
             _ => new Lazy<Task<HeaderCatalogCacheResult>>(
-                () => LoadOrCreateAsync(path, key, create_catalog, _lifetime_token),
+                () => LoadOrCreateAsync(path, key, createCatalog, _lifetime_token),
                 LazyThreadSafetyMode.ExecutionAndPublication));
         Task<HeaderCatalogCacheResult> task = operation.Value;
         _ = task.ContinueWith(
@@ -81,7 +81,7 @@ public sealed class HeaderCatalogStore
             CancellationToken.None,
             TaskContinuationOptions.ExecuteSynchronously,
             TaskScheduler.Default);
-        return await task.WaitAsync(cancellation_token).ConfigureAwait(false);
+        return await task.WaitAsync(cancellationToken).ConfigureAwait(false);
     }
 
     async Task<HeaderCatalogCacheResult> LoadOrCreateAsync(
@@ -192,13 +192,8 @@ public sealed class HeaderCatalogStore
             "clientBuildIds",
             "flashMarketplaceLayout",
             "entries");
-        if (!Enum.TryParse(
-                ReadString(value, "client"),
-                true,
-                out ClientType client))
-        {
+        if (ReadString(value, "client") != ClientName)
             throw new InvalidDataException("The cached client type is invalid.");
-        }
         JsonElement provenance_value = value.GetProperty("provenance");
         RequireProperties(provenance_value, "clientVersion", "source", "sourceRevision");
         var provenance = new HeaderCatalogProvenance(
@@ -206,7 +201,6 @@ public sealed class HeaderCatalogStore
             ReadString(provenance_value, "source"),
             ReadNullableString(provenance_value, "sourceRevision"));
         var key = new HeaderCatalogKey(
-            client,
             ReadString(value, "sourceSha256"),
             ReadString(value, "nameDatabaseSha256"),
             ReadString(value, "extractorRevision"),
@@ -233,10 +227,10 @@ public sealed class HeaderCatalogStore
             if (entries.Count >= 131072)
                 throw new InvalidDataException("The cached header entry limit was exceeded.");
             RequireProperties(entry_value, "direction", "headerId", "name", "aliases");
-            Direction direction = ReadString(entry_value, "direction") switch
+            MessageDirection direction = ReadString(entry_value, "direction") switch
             {
-                "in" => Direction.In,
-                "out" => Direction.Out,
+                "in" => MessageDirection.In,
+                "out" => MessageDirection.Out,
                 _ => throw new InvalidDataException("The cached header direction is invalid.")
             };
             if (!entry_value.GetProperty("headerId").TryGetUInt16(out ushort header_id))
@@ -301,7 +295,7 @@ public sealed class HeaderCatalogStore
         using (var writer = new Utf8JsonWriter(output))
         {
             writer.WriteStartObject();
-            writer.WriteString("client", key.Client.ToString().ToLowerInvariant());
+            writer.WriteString("client", ClientName);
             writer.WriteString("sourceSha256", key.SourceSha256);
             writer.WriteString("nameDatabaseSha256", key.NameDatabaseSha256);
             writer.WriteString("extractorRevision", key.ExtractorRevision);
@@ -333,7 +327,7 @@ public sealed class HeaderCatalogStore
             foreach (HeaderCatalogEntry entry in catalog.Entries)
             {
                 writer.WriteStartObject();
-                writer.WriteString("direction", entry.Direction == Direction.In ? "in" : "out");
+                writer.WriteString("direction", entry.Direction == MessageDirection.In ? "in" : "out");
                 writer.WriteNumber("headerId", entry.HeaderId);
                 if (entry.Name is null)
                     writer.WriteNull("name");
@@ -412,11 +406,10 @@ public sealed class HeaderCatalogStore
 
     string CachePath(HeaderCatalogKey key)
     {
-        string client = key.Client.ToString().ToLowerInvariant();
         string path = Path.GetFullPath(Path.Combine(
             _root,
             $"v{FormatVersion}",
-            client,
+            ClientName,
             key.Fingerprint[..2],
             $"{key.Fingerprint}.json"));
         EnsureContained(path);

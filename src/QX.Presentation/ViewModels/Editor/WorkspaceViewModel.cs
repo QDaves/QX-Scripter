@@ -13,7 +13,7 @@ using Qx.Presentation.Services.Workspace;
 using Qx.Presentation.Threading;
 using Qx.Presentation.ViewModels.ApiBrowser;
 using Qx.Presentation.ViewModels.ScriptPanels;
-using Qx.Scripting;
+using Qx.Scripting.Hosting;
 
 namespace Qx.Presentation.ViewModels.Editor;
 
@@ -143,16 +143,16 @@ public sealed partial class WorkspaceViewModel : PageViewModel, IApiInsertTarget
         ? title
         : FileCrumb;
 
-    public void InsertFromApi(string text, int caret_offset)
+    public void InsertFromApi(string text, int caretOffset)
     {
         ArgumentNullException.ThrowIfNull(text);
         if (Active?.Buffer is not { } buffer)
             return;
-        buffer.Insert(text, caret_offset);
+        buffer.Insert(text, caretOffset);
         buffer.Focus();
     }
 
-    void IApiInsertTarget.Insert(string text, int caret_offset) => InsertFromApi(text, caret_offset);
+    void IApiInsertTarget.Insert(string text, int caretOffset) => InsertFromApi(text, caretOffset);
 
     void IApiInsertTarget.CloseApiBrowser() => IsApiBrowserOpen = false;
 
@@ -272,7 +272,7 @@ public sealed partial class WorkspaceViewModel : PageViewModel, IApiInsertTarget
         }
         if (document.PanelRequired && !document.PanelMode)
             SelectPanelMode();
-        document.Run.Start(null, panel_mode: document.PanelMode);
+        document.Run.Start(null, panelMode: document.PanelMode);
     }
 
     [RelayCommand]

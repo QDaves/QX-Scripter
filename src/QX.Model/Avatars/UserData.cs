@@ -3,6 +3,7 @@ using Qx.Messages;
 namespace Qx.Model;
 
 /// <summary>Represents the local user's own account data.</summary>
+/// <remarks>Received as the Flash <c>UserObject</c> message.</remarks>
 public sealed class UserData : IParserComposer<UserData>
 {
     /// <summary>Gets or sets the user identifier.</summary>
@@ -61,7 +62,6 @@ public sealed class UserData : IParserComposer<UserData>
 
     /// <summary>Reads the user data from a packet.</summary>
     /// <param name="p">The packet to read from.</param>
-    /// <exception cref="UnsupportedClientException">Thrown when the packet is not from the Flash client.</exception>
     /// <exception cref="InvalidDataException">Thrown when bytes remain after the last known field.</exception>
     public static UserData Parse(in PacketReader p) =>
         FlashWire.Parse(in p, ParseFlash);
@@ -114,7 +114,6 @@ public sealed class UserData : IParserComposer<UserData>
 
     /// <summary>Writes the user data to a packet, including as many trailing fields as <see cref="TrailingFields"/> says.</summary>
     /// <param name="p">The packet to write to.</param>
-    /// <exception cref="UnsupportedClientException">Thrown when the packet is not for the Flash client.</exception>
     /// <exception cref="InvalidDataException">Thrown when <see cref="TrailingFields"/> is outside 0 to 4.</exception>
     public void Compose(in PacketWriter p) =>
         FlashWire.Compose(this, in p, ComposeFlash);

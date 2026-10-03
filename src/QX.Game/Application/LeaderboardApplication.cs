@@ -231,7 +231,7 @@ internal sealed partial class LeaderboardApplication : IApplicationFeature, ILea
                 new LeaderboardChanged(
                     kind,
                     time_provider.GetUtcNow(),
-                    update.State.Session?.Client,
+                    update.State.Session is not null,
                     update.State.SessionGeneration,
                     update.State.Revision,
                     update.Kind is LeaderboardStateChangeKind.Settings

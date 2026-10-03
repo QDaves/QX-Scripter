@@ -1,6 +1,6 @@
 using Qx.Messages;
 
-namespace Qx.Model.Quests;
+namespace Qx.Model;
 
 /// <summary>Represents a quest with its campaign, progress and reward.</summary>
 public sealed record QuestData : IParserComposer<QuestData>
@@ -13,62 +13,62 @@ public sealed record QuestData : IParserComposer<QuestData>
     private string chain_code = "";
 
     /// <summary>Initializes a new instance of the <see cref="QuestData"/> record.</summary>
-    /// <param name="CampaignCode">The code of the campaign the quest belongs to.</param>
-    /// <param name="CompletedQuestsInCampaign">The number of quests completed in the campaign.</param>
-    /// <param name="QuestCountInCampaign">The number of quests in the campaign.</param>
-    /// <param name="ActivityPointType">The activity point type the reward is paid in, 0 for duckets.</param>
-    /// <param name="Id">The quest id, less than 1 when the campaign is completed.</param>
-    /// <param name="IsAccepted">Whether the local user has accepted the quest.</param>
-    /// <param name="Type">The quest type code.</param>
-    /// <param name="ImageVersion">The image version of the quest.</param>
-    /// <param name="RewardCurrencyAmount">The amount of activity points the quest rewards.</param>
-    /// <param name="LocalizationCode">The localization code of the quest texts.</param>
-    /// <param name="CompletedSteps">The number of steps completed.</param>
-    /// <param name="TotalSteps">The number of steps the quest has.</param>
-    /// <param name="SortOrder">The sort order of the quest.</param>
-    /// <param name="CatalogPageName">The name of the catalog page linked to the quest.</param>
-    /// <param name="ChainCode">The code of the quest chain.</param>
-    /// <param name="IsEasy">Whether the quest is an easy quest.</param>
-    /// <param name="IsSeasonal">Whether the quest belongs to a seasonal campaign.</param>
-    /// <param name="SeasonalSecondsLeft">The seconds left before the seasonal campaign closes, or <see langword="null"/> for a quest that is not seasonal.</param>
+    /// <param name="campaignCode">The code of the campaign the quest belongs to.</param>
+    /// <param name="completedQuestsInCampaign">The number of quests completed in the campaign.</param>
+    /// <param name="questCountInCampaign">The number of quests in the campaign.</param>
+    /// <param name="activityPointType">The activity point type the reward is paid in, 0 for duckets.</param>
+    /// <param name="id">The quest id, less than 1 when the campaign is completed.</param>
+    /// <param name="isAccepted">Whether the local user has accepted the quest.</param>
+    /// <param name="type">The quest type code.</param>
+    /// <param name="imageVersion">The image version of the quest.</param>
+    /// <param name="rewardCurrencyAmount">The amount of activity points the quest rewards.</param>
+    /// <param name="localizationCode">The localization code of the quest texts.</param>
+    /// <param name="completedSteps">The number of steps completed.</param>
+    /// <param name="totalSteps">The number of steps the quest has.</param>
+    /// <param name="sortOrder">The sort order of the quest.</param>
+    /// <param name="catalogPageName">The name of the catalog page linked to the quest.</param>
+    /// <param name="chainCode">The code of the quest chain.</param>
+    /// <param name="isEasy">Whether the quest is an easy quest.</param>
+    /// <param name="isSeasonal">Whether the quest belongs to a seasonal campaign.</param>
+    /// <param name="seasonalSecondsLeft">The seconds left before the seasonal campaign closes, or <see langword="null"/> for a quest that is not seasonal.</param>
     public QuestData(
-        string CampaignCode,
-        int CompletedQuestsInCampaign,
-        int QuestCountInCampaign,
-        int ActivityPointType,
-        int Id,
-        bool IsAccepted,
-        string Type,
-        string ImageVersion,
-        int RewardCurrencyAmount,
-        string LocalizationCode,
-        int CompletedSteps,
-        int TotalSteps,
-        int SortOrder,
-        string CatalogPageName,
-        string ChainCode,
-        bool IsEasy,
-        bool IsSeasonal,
-        int? SeasonalSecondsLeft)
+        string campaignCode,
+        int completedQuestsInCampaign,
+        int questCountInCampaign,
+        int activityPointType,
+        int id,
+        bool isAccepted,
+        string type,
+        string imageVersion,
+        int rewardCurrencyAmount,
+        string localizationCode,
+        int completedSteps,
+        int totalSteps,
+        int sortOrder,
+        string catalogPageName,
+        string chainCode,
+        bool isEasy,
+        bool isSeasonal,
+        int? seasonalSecondsLeft)
     {
-        this.CampaignCode = CampaignCode;
-        this.CompletedQuestsInCampaign = CompletedQuestsInCampaign;
-        this.QuestCountInCampaign = QuestCountInCampaign;
-        this.ActivityPointType = ActivityPointType;
-        this.Id = Id;
-        this.IsAccepted = IsAccepted;
-        this.Type = Type;
-        this.ImageVersion = ImageVersion;
-        this.RewardCurrencyAmount = RewardCurrencyAmount;
-        this.LocalizationCode = LocalizationCode;
-        this.CompletedSteps = CompletedSteps;
-        this.TotalSteps = TotalSteps;
-        this.SortOrder = SortOrder;
-        this.CatalogPageName = CatalogPageName;
-        this.ChainCode = ChainCode;
-        this.IsEasy = IsEasy;
-        this.IsSeasonal = IsSeasonal;
-        this.SeasonalSecondsLeft = SeasonalSecondsLeft;
+        CampaignCode = campaignCode;
+        CompletedQuestsInCampaign = completedQuestsInCampaign;
+        QuestCountInCampaign = questCountInCampaign;
+        ActivityPointType = activityPointType;
+        Id = id;
+        IsAccepted = isAccepted;
+        Type = type;
+        ImageVersion = imageVersion;
+        RewardCurrencyAmount = rewardCurrencyAmount;
+        LocalizationCode = localizationCode;
+        CompletedSteps = completedSteps;
+        TotalSteps = totalSteps;
+        SortOrder = sortOrder;
+        CatalogPageName = catalogPageName;
+        ChainCode = chainCode;
+        IsEasy = isEasy;
+        IsSeasonal = isSeasonal;
+        SeasonalSecondsLeft = seasonalSecondsLeft;
     }
 
     /// <summary>Gets the code of the campaign the quest belongs to.</summary>
@@ -177,62 +177,62 @@ public sealed record QuestData : IParserComposer<QuestData>
         : CampaignCode;
 
     /// <summary>Deconstructs the quest into its fields.</summary>
-    /// <param name="CampaignCode">The code of the campaign the quest belongs to.</param>
-    /// <param name="CompletedQuestsInCampaign">The number of quests completed in the campaign.</param>
-    /// <param name="QuestCountInCampaign">The number of quests in the campaign.</param>
-    /// <param name="ActivityPointType">The activity point type the reward is paid in.</param>
-    /// <param name="Id">The quest id.</param>
-    /// <param name="IsAccepted">Whether the local user has accepted the quest.</param>
-    /// <param name="Type">The quest type code.</param>
-    /// <param name="ImageVersion">The image version of the quest.</param>
-    /// <param name="RewardCurrencyAmount">The amount of activity points the quest rewards.</param>
-    /// <param name="LocalizationCode">The localization code of the quest texts.</param>
-    /// <param name="CompletedSteps">The number of steps completed.</param>
-    /// <param name="TotalSteps">The number of steps the quest has.</param>
-    /// <param name="SortOrder">The sort order of the quest.</param>
-    /// <param name="CatalogPageName">The name of the catalog page linked to the quest.</param>
-    /// <param name="ChainCode">The code of the quest chain.</param>
-    /// <param name="IsEasy">Whether the quest is an easy quest.</param>
-    /// <param name="IsSeasonal">Whether the quest belongs to a seasonal campaign.</param>
-    /// <param name="SeasonalSecondsLeft">The seconds left before the seasonal campaign closes, or <see langword="null"/>.</param>
+    /// <param name="campaignCode">The code of the campaign the quest belongs to.</param>
+    /// <param name="completedQuestsInCampaign">The number of quests completed in the campaign.</param>
+    /// <param name="questCountInCampaign">The number of quests in the campaign.</param>
+    /// <param name="activityPointType">The activity point type the reward is paid in.</param>
+    /// <param name="id">The quest id.</param>
+    /// <param name="isAccepted">Whether the local user has accepted the quest.</param>
+    /// <param name="type">The quest type code.</param>
+    /// <param name="imageVersion">The image version of the quest.</param>
+    /// <param name="rewardCurrencyAmount">The amount of activity points the quest rewards.</param>
+    /// <param name="localizationCode">The localization code of the quest texts.</param>
+    /// <param name="completedSteps">The number of steps completed.</param>
+    /// <param name="totalSteps">The number of steps the quest has.</param>
+    /// <param name="sortOrder">The sort order of the quest.</param>
+    /// <param name="catalogPageName">The name of the catalog page linked to the quest.</param>
+    /// <param name="chainCode">The code of the quest chain.</param>
+    /// <param name="isEasy">Whether the quest is an easy quest.</param>
+    /// <param name="isSeasonal">Whether the quest belongs to a seasonal campaign.</param>
+    /// <param name="seasonalSecondsLeft">The seconds left before the seasonal campaign closes, or <see langword="null"/>.</param>
     public void Deconstruct(
-        out string CampaignCode,
-        out int CompletedQuestsInCampaign,
-        out int QuestCountInCampaign,
-        out int ActivityPointType,
-        out int Id,
-        out bool IsAccepted,
-        out string Type,
-        out string ImageVersion,
-        out int RewardCurrencyAmount,
-        out string LocalizationCode,
-        out int CompletedSteps,
-        out int TotalSteps,
-        out int SortOrder,
-        out string CatalogPageName,
-        out string ChainCode,
-        out bool IsEasy,
-        out bool IsSeasonal,
-        out int? SeasonalSecondsLeft)
+        out string campaignCode,
+        out int completedQuestsInCampaign,
+        out int questCountInCampaign,
+        out int activityPointType,
+        out int id,
+        out bool isAccepted,
+        out string type,
+        out string imageVersion,
+        out int rewardCurrencyAmount,
+        out string localizationCode,
+        out int completedSteps,
+        out int totalSteps,
+        out int sortOrder,
+        out string catalogPageName,
+        out string chainCode,
+        out bool isEasy,
+        out bool isSeasonal,
+        out int? seasonalSecondsLeft)
     {
-        CampaignCode = this.CampaignCode;
-        CompletedQuestsInCampaign = this.CompletedQuestsInCampaign;
-        QuestCountInCampaign = this.QuestCountInCampaign;
-        ActivityPointType = this.ActivityPointType;
-        Id = this.Id;
-        IsAccepted = this.IsAccepted;
-        Type = this.Type;
-        ImageVersion = this.ImageVersion;
-        RewardCurrencyAmount = this.RewardCurrencyAmount;
-        LocalizationCode = this.LocalizationCode;
-        CompletedSteps = this.CompletedSteps;
-        TotalSteps = this.TotalSteps;
-        SortOrder = this.SortOrder;
-        CatalogPageName = this.CatalogPageName;
-        ChainCode = this.ChainCode;
-        IsEasy = this.IsEasy;
-        IsSeasonal = this.IsSeasonal;
-        SeasonalSecondsLeft = this.SeasonalSecondsLeft;
+        campaignCode = CampaignCode;
+        completedQuestsInCampaign = CompletedQuestsInCampaign;
+        questCountInCampaign = QuestCountInCampaign;
+        activityPointType = ActivityPointType;
+        id = Id;
+        isAccepted = IsAccepted;
+        type = Type;
+        imageVersion = ImageVersion;
+        rewardCurrencyAmount = RewardCurrencyAmount;
+        localizationCode = LocalizationCode;
+        completedSteps = CompletedSteps;
+        totalSteps = TotalSteps;
+        sortOrder = SortOrder;
+        catalogPageName = CatalogPageName;
+        chainCode = ChainCode;
+        isEasy = IsEasy;
+        isSeasonal = IsSeasonal;
+        seasonalSecondsLeft = SeasonalSecondsLeft;
     }
 
     /// <summary>Parses quest data from a packet.</summary>

@@ -10,7 +10,8 @@ namespace Qx.Interception.GEarth;
 /// <summary>Represents a G-Earth extension that intercepts the hotel traffic G-Earth relays.</summary>
 /// <remarks>
 /// The extension connects to G-Earth on <c>127.0.0.1</c> and answers every intercepted packet, passing it
-/// through unchanged when it cannot be parsed or a callback fails.
+/// through unchanged when it cannot be parsed or a callback fails. An event subscriber that throws is logged
+/// and skipped, so the other subscribers still run and the connection stays up.
 /// </remarks>
 public class GEarthExtension : IInterceptor, IDisposable
 {
@@ -47,15 +48,17 @@ public class GEarthExtension : IInterceptor, IDisposable
         if (_options.HandshakeTimeout <= TimeSpan.Zero)
             throw new ArgumentOutOfRangeException(nameof(options), "The G-Earth handshake timeout is invalid.");
         Messages = messages ?? MessageManager.CreateWithEmbeddedMap();
-        _dispatcher.CallbackFailed += (intercept, error) => InterceptFailed?.Invoke(intercept, error);
+        _dispatcher.CallbackFailed += (intercept, error) =>
+            Publish(InterceptFailed, intercept, error, nameof(InterceptFailed));
     }
 
-    /// <inheritdoc/>
+    /// <summary>Gets the message manager that maps message names to headers for the session.</summary>
     public MessageManager Messages { get; }
+    IMessageResolver IInterceptor.Messages => Messages;
     /// <summary>Gets or sets the selector that picks the message catalog when a session starts.</summary>
     /// <remarks>
-    /// When no selector is set, or it returns <see langword="null"/>, throws or picks a catalog for another
-    /// client, the catalog G-Earth sent in its handshake is used, if there was one.
+    /// When no selector is set, or it returns <see langword="null"/> or throws, the catalog G-Earth sent in its
+    /// handshake is used, if there was one.
     /// </remarks>
     public ISessionCatalogSelector? SessionCatalogSelector { get; set; }
     /// <summary>Gets or sets the readiness source that is awaited before a session's catalog is selected.</summary>
@@ -121,19 +124,19 @@ public class GEarthExtension : IInterceptor, IDisposable
     public void RebindInterceptors() => _dispatcher.Rebind(Messages, HasActiveCatalog());
 
     private bool HasActiveCatalog() =>
-        Messages.ActiveClient != ClientType.None && Messages.HasCatalog(Messages.ActiveClient);
+        Messages.ActiveCatalogBinding is not null && Messages.HasCatalog();
 
     /// <summary>Waits until <see cref="CatalogReadiness"/> reports that the message catalog is ready.</summary>
     /// <remarks>Completes immediately when <see cref="CatalogReadiness"/> is <see langword="null"/>.</remarks>
-    /// <param name="cancellation_token">A token that cancels the wait.</param>
+    /// <param name="cancellationToken">A token that cancels the wait.</param>
     /// <returns>A task that completes when the catalog is ready.</returns>
-    /// <exception cref="OperationCanceledException">Thrown when <paramref name="cancellation_token"/> is canceled.</exception>
-    public async Task WaitForCatalogBuildAsync(CancellationToken cancellation_token = default)
+    /// <exception cref="OperationCanceledException">Thrown when <paramref name="cancellationToken"/> is canceled.</exception>
+    public async Task WaitForCatalogBuildAsync(CancellationToken cancellationToken = default)
     {
-        cancellation_token.ThrowIfCancellationRequested();
+        cancellationToken.ThrowIfCancellationRequested();
         if (CatalogReadiness is not { } readiness)
             return;
-        await readiness.WaitUntilReadyAsync(cancellation_token).ConfigureAwait(false);
+        await readiness.WaitUntilReadyAsync(cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>Connects to G-Earth and runs the extension until the connection closes.</summary>
@@ -233,7 +236,7 @@ public class GEarthExtension : IInterceptor, IDisposable
             Volatile.Write(ref _connected_port, port);
             IsInterceptorConnected = true;
             connected = true;
-            InterceptorConnected?.Invoke();
+            Publish(InterceptorConnected, nameof(InterceptorConnected));
             await read_loop.ConfigureAwait(false);
             Diag.Info("Read loop ended; G-Earth closed the connection", Category);
         }
@@ -272,7 +275,7 @@ public class GEarthExtension : IInterceptor, IDisposable
                 stream?.Dispose();
                 client.Dispose();
                 if (connected)
-                    PublishDisconnected(InterceptorDisconnected);
+                    Publish(InterceptorDisconnected, nameof(InterceptorDisconnected));
             }
         }
     }
@@ -354,7 +357,7 @@ public class GEarthExtension : IInterceptor, IDisposable
                 return Task.CompletedTask;
             case GControl.Outgoing.Init:
                 Diag.Trace("Init received", Category);
-                Initialized?.Invoke();
+                Publish(Initialized, nameof(Initialized));
                 return Task.CompletedTask;
             case GControl.Outgoing.ConnectionStart:
                 return StartConnectionAsync(body, cancellation_token);
@@ -366,7 +369,7 @@ public class GEarthExtension : IInterceptor, IDisposable
                 return Task.CompletedTask;
             case GControl.Outgoing.OnDoubleClick:
                 Interlocked.Increment(ref _activations);
-                Activated?.Invoke();
+                Publish(Activated, nameof(Activated));
                 return Task.CompletedTask;
             default:
                 Diag.Trace($"Unhandled control header {header}", Category);
@@ -407,19 +410,18 @@ public class GEarthExtension : IInterceptor, IDisposable
             return Task.CompletedTask;
         }
 
-        if (!HClientType.TryFromName(start.ClientType, out ClientType client))
+        if (!string.Equals(start.ClientType, "FLASH", StringComparison.OrdinalIgnoreCase))
         {
             Diag.Warn("Rejected a connection start for an unsupported client type.", Category);
             EndSession();
             return Task.CompletedTask;
         }
 
-        return StartConnectionCoreAsync(start, client, cancellation_token);
+        return StartConnectionCoreAsync(start, cancellation_token);
     }
 
     private async Task StartConnectionCoreAsync(
         ConnectionStartInfo start,
-        ClientType client,
         CancellationToken cancellation_token)
     {
         Exception? preparation_error = null;
@@ -439,7 +441,7 @@ public class GEarthExtension : IInterceptor, IDisposable
             }
         }
 
-        var session = new Session(start.Host, start.Port, start.HotelVersion, start.ClientIdentifier, client);
+        var session = new Session(start.Host, start.Port, start.HotelVersion, start.ClientIdentifier);
         SessionCatalogBinding fallback = CreateFallbackBinding(session, start.Catalog);
         SessionCatalogBinding binding;
 
@@ -456,7 +458,7 @@ public class GEarthExtension : IInterceptor, IDisposable
         if (binding.Provenance.Origin == CatalogOrigin.ClientExtraction && binding.Catalog is { } extracted)
         {
             Diag.Info(
-                $"Activated {binding.Client} catalog for build {binding.Provenance.ClientVersion} with {extracted.HeaderCount} headers",
+                $"Activated catalog for build {binding.Provenance.ClientVersion} with {extracted.HeaderCount} headers",
                 "protocol");
             if (binding.Supplement is { } supplement)
             {
@@ -483,7 +485,7 @@ public class GEarthExtension : IInterceptor, IDisposable
             }
         }
         Diag.Info($"Session started: {start.ClientType} {start.HotelVersion}", Category);
-        Connected?.Invoke(Session!);
+        Publish(Connected, session, nameof(Connected));
     }
 
     private SessionCatalogBinding SelectCatalog(
@@ -495,7 +497,6 @@ public class GEarthExtension : IInterceptor, IDisposable
         try
         {
             selected = SessionCatalogSelector?.Select(new SessionCatalogRequest(
-                session.Client,
                 session.HotelVersion,
                 session.ClientIdentifier,
                 fallback,
@@ -506,32 +507,21 @@ public class GEarthExtension : IInterceptor, IDisposable
             Diag.Warn($"Unable to select the session catalog: {error.Message}", Category);
             return fallback;
         }
-        if (selected is null)
-            return fallback;
-        if (selected.Client != session.Client || selected.Provenance.Client != session.Client)
-        {
-            Diag.Warn("The selected catalog does not match the session client.", Category);
-            return fallback;
-        }
-        return selected;
+        return selected ?? fallback;
     }
 
     private static SessionCatalogBinding CreateFallbackBinding(Session session, MessageCatalog? catalog) =>
         catalog is null
             ? new SessionCatalogBinding(
-                session.Client,
                 null,
                 new CatalogProvenance(
                     CatalogOrigin.Unavailable,
-                    session.Client,
                     "G-Earth",
                     session.HotelVersion))
             : new SessionCatalogBinding(
-                session.Client,
                 catalog,
                 new CatalogProvenance(
                     CatalogOrigin.GEarthHandshake,
-                    session.Client,
                     "G-Earth",
                     session.HotelVersion));
 
@@ -558,7 +548,7 @@ public class GEarthExtension : IInterceptor, IDisposable
                 _ = reader.ReadString();
                 bool isOutgoing = reader.ReadBool();
                 _ = reader.ReadString();
-                Direction direction = isOutgoing ? Direction.Out : Direction.In;
+                MessageDirection direction = isOutgoing ? MessageDirection.Out : MessageDirection.In;
                 if (name != "NULL")
                     loaded.Add(direction, headerId, name);
             }
@@ -594,39 +584,50 @@ public class GEarthExtension : IInterceptor, IDisposable
             Session = null;
             _dispatcher.Rebind(Messages, false);
         }
-        PublishDisconnected(Disconnected);
+        Publish(Disconnected, nameof(Disconnected));
     }
 
-    private static void PublishDisconnected(Action? subscribers)
+    private static void Publish(Action? subscribers, string event_name) =>
+        PublishSubscribers(subscribers, default(ValueTuple), static (subscriber, _) => subscriber(), event_name);
+
+    private static void Publish<T>(Action<T>? subscribers, T value, string event_name) =>
+        PublishSubscribers(subscribers, value, static (subscriber, argument) => subscriber(argument), event_name);
+
+    private static void Publish<T1, T2>(Action<T1, T2>? subscribers, T1 first, T2 second, string event_name) =>
+        PublishSubscribers(
+            subscribers,
+            (first, second),
+            static (subscriber, arguments) => subscriber(arguments.first, arguments.second),
+            event_name);
+
+    private static void PublishSubscribers<TSubscriber, TState>(
+        TSubscriber? subscribers,
+        TState state,
+        Action<TSubscriber, TState> invoke,
+        string event_name)
+        where TSubscriber : Delegate
     {
         if (subscribers is null)
             return;
 
-        List<Exception>? errors = null;
-        foreach (Action subscriber in subscribers.GetInvocationList())
+        foreach (TSubscriber subscriber in subscribers.GetInvocationList())
         {
             try
             {
-                subscriber();
+                invoke(subscriber, state);
             }
             catch (Exception error)
             {
-                (errors ??= []).Add(error);
+                ReportSubscriberError(event_name, error);
             }
         }
+    }
 
-        if (errors is null)
-            return;
-
-        string details = string.Join(
-            " | ",
-            errors.Select(error =>
-                $"{error.GetType().Name}: {error.Message}"));
+    private static void ReportSubscriberError(string event_name, Exception error)
+    {
         try
         {
-            Diag.Error(
-                $"Disconnected subscribers threw {errors.Count} error(s): {details}",
-                Category);
+            Diag.Error($"{event_name} subscriber threw: {error}", Category);
         }
         catch
         {
@@ -697,10 +698,8 @@ public class GEarthExtension : IInterceptor, IDisposable
 
     private bool ForwardBoundIntercept(string messageString, int formatId)
     {
-        HMessage message = HMessage.Parse(messageString, Messages.ActiveClient);
-        message.Packet.Context = new ParserContext(
-            Messages,
-            Messages.GetWireProfile(Messages.ActiveClient));
+        HMessage message = HMessage.Parse(messageString);
+        message.Packet.Context = Messages.GetParserContext();
         Packet originalPacket = message.Packet;
         Packet? serializedPacket = null;
         bool replied = false;
@@ -712,7 +711,7 @@ public class GEarthExtension : IInterceptor, IDisposable
 
             try
             {
-                PublishIntercepted(intercept);
+                Publish(Intercepted, intercept, nameof(Intercepted));
                 _dispatcher.Dispatch(intercept);
             }
             catch (Exception error)
@@ -741,24 +740,6 @@ public class GEarthExtension : IInterceptor, IDisposable
         return replied;
     }
 
-    private void PublishIntercepted(Intercept intercept)
-    {
-        if (Intercepted is not { } subscribers)
-            return;
-
-        foreach (Action<Intercept> subscriber in subscribers.GetInvocationList())
-        {
-            try
-            {
-                subscriber(intercept);
-            }
-            catch (Exception error)
-            {
-                Diag.Error($"Intercepted subscriber threw: {error}", Category);
-            }
-        }
-    }
-
     /// <summary>Sends a packet to the client or the server within the current session.</summary>
     /// <param name="packet">The packet to send.</param>
     /// <exception cref="InvalidOperationException">Thrown when no session is active.</exception>
@@ -777,34 +758,34 @@ public class GEarthExtension : IInterceptor, IDisposable
             return new InterceptorSessionCatalog(Session, Messages.ActiveCatalogBinding);
     }
 
-    /// <summary>Sends a packet only when <paramref name="expected_session"/> is still the active session.</summary>
+    /// <summary>Sends a packet only when <paramref name="expectedSession"/> is still the active session.</summary>
     /// <param name="packet">The packet to send.</param>
-    /// <param name="expected_session">The session the packet belongs to.</param>
+    /// <param name="expectedSession">The session the packet belongs to.</param>
     /// <exception cref="InvalidOperationException">
-    /// Thrown when <paramref name="expected_session"/> is <see langword="null"/> or not the active session.
+    /// Thrown when <paramref name="expectedSession"/> is <see langword="null"/> or not the active session.
     /// </exception>
-    public void Send(IPacket packet, Session? expected_session)
+    public void Send(IPacket packet, Session? expectedSession)
     {
-        Send(packet, expected_session, null, false, null);
+        Send(packet, expectedSession, null, false, null);
     }
 
     /// <inheritdoc/>
     public void Send(
         IPacket packet,
-        Session? expected_session,
-        SessionCatalogBinding? expected_catalog)
+        Session? expectedSession,
+        SessionCatalogBinding? expectedCatalog)
     {
-        Send(packet, expected_session, expected_catalog, true, null);
+        Send(packet, expectedSession, expectedCatalog, true, null);
     }
 
     /// <inheritdoc/>
     public void Send(
         IPacket packet,
-        Session? expected_session,
-        SessionCatalogBinding? expected_catalog,
-        Action? dispatch_guard)
+        Session? expectedSession,
+        SessionCatalogBinding? expectedCatalog,
+        Action? dispatchGuard)
     {
-        Send(packet, expected_session, expected_catalog, true, dispatch_guard);
+        Send(packet, expectedSession, expectedCatalog, true, dispatchGuard);
     }
 
     private void Send(
@@ -830,7 +811,7 @@ public class GEarthExtension : IInterceptor, IDisposable
             }
             dispatch_guard?.Invoke();
 
-            byte side = packet.Header.Direction == Direction.In ? (byte)0 : (byte)1;
+            byte side = packet.Header.Direction == MessageDirection.In ? (byte)0 : (byte)1;
             byte[] raw = EvaWire.FromPacket(packet);
 
             var writer = new GControlWriter(GControl.Incoming.SendMessage);

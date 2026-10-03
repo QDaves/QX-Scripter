@@ -72,10 +72,10 @@ public sealed class UniformTilePanel : VirtualizingPanel
 
     public int PooledCount => _pool.Values.Sum(pool => pool.Count);
 
-    protected override Size MeasureOverride(Size available_size)
+    protected override Size MeasureOverride(Size availableSize)
     {
         IReadOnlyList<object?> items = Items;
-        double width = double.IsFinite(available_size.Width) ? available_size.Width : Math.Max(_viewport.Width, ItemWidth);
+        double width = double.IsFinite(availableSize.Width) ? availableSize.Width : Math.Max(_viewport.Width, ItemWidth);
         _columns = Math.Max(1, (int)Math.Floor(width / ItemWidth));
         LayoutSlots(items, width);
         (int first, int last) = VisibleRange();
@@ -88,11 +88,11 @@ public sealed class UniformTilePanel : VirtualizingPanel
         return new Size(width, _extent_height);
     }
 
-    protected override Size ArrangeOverride(Size final_size)
+    protected override Size ArrangeOverride(Size finalSize)
     {
         foreach ((int index, Control container) in _realized)
             container.Arrange(_slots[index]);
-        return final_size;
+        return finalSize;
     }
 
     protected override Control? ScrollIntoView(int index)

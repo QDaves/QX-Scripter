@@ -27,7 +27,7 @@ public sealed class HabboImageService : IImageService, IDisposable
         _http.DefaultRequestHeaders.UserAgent.ParseAdd("QX");
     }
 
-    public async Task<byte[]?> LoadBytesAsync(string? url, CancellationToken cancellation_token = default)
+    public async Task<byte[]?> LoadBytesAsync(string? url, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(url))
             return null;
@@ -41,11 +41,11 @@ public sealed class HabboImageService : IImageService, IDisposable
         Task<byte[]?> loading = _loading.GetOrAdd(url, created.Task);
         if (ReferenceEquals(loading, created.Task))
             FillAsync(url, created).Observe("images");
-        return await loading.WaitAsync(cancellation_token).ConfigureAwait(false);
+        return await loading.WaitAsync(cancellationToken).ConfigureAwait(false);
     }
 
-    public async Task<bool> PreloadAsync(string? url, CancellationToken cancellation_token = default) =>
-        await LoadBytesAsync(url, cancellation_token).ConfigureAwait(false) is not null;
+    public async Task<bool> PreloadAsync(string? url, CancellationToken cancellationToken = default) =>
+        await LoadBytesAsync(url, cancellationToken).ConfigureAwait(false) is not null;
 
     public void Dispose()
     {

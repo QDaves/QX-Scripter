@@ -18,50 +18,50 @@ public sealed class DeferredEditorBridge : IEditorBridge
 
     public void Detach() => Volatile.Write(ref _target, null);
 
-    public Task<string> ListTabsAsync(CancellationToken cancellation_token) =>
-        Target?.ListTabsAsync(cancellation_token) ?? MissingAsync();
+    public Task<string> ListTabsAsync(CancellationToken cancellationToken) =>
+        Target?.ListTabsAsync(cancellationToken) ?? MissingAsync();
 
-    public Task<string> OpenTabAsync(string name, CancellationToken cancellation_token) =>
-        Target?.OpenTabAsync(name, cancellation_token) ?? MissingAsync();
+    public Task<string> OpenTabAsync(string name, CancellationToken cancellationToken) =>
+        Target?.OpenTabAsync(name, cancellationToken) ?? MissingAsync();
 
-    public Task<string> CreateTabAsync(string name, string code, CancellationToken cancellation_token) =>
-        Target?.CreateTabAsync(name, code, cancellation_token) ?? MissingAsync();
+    public Task<string> CreateTabAsync(string name, string code, CancellationToken cancellationToken) =>
+        Target?.CreateTabAsync(name, code, cancellationToken) ?? MissingAsync();
 
-    public Task<string> EditActiveTabAsync(string code, CancellationToken cancellation_token) =>
-        Target?.EditActiveTabAsync(code, cancellation_token) ?? MissingAsync();
+    public Task<string> EditActiveTabAsync(string code, CancellationToken cancellationToken) =>
+        Target?.EditActiveTabAsync(code, cancellationToken) ?? MissingAsync();
 
-    public Task<string> SelectTabAsync(string name, CancellationToken cancellation_token) =>
-        Target?.SelectTabAsync(name, cancellation_token) ?? MissingAsync();
+    public Task<string> SelectTabAsync(string name, CancellationToken cancellationToken) =>
+        Target?.SelectTabAsync(name, cancellationToken) ?? MissingAsync();
 
-    public Task<string> CloseTabAsync(string name, bool discard, CancellationToken cancellation_token) =>
-        Target?.CloseTabAsync(name, discard, cancellation_token) ?? MissingAsync();
+    public Task<string> CloseTabAsync(string name, bool discard, CancellationToken cancellationToken) =>
+        Target?.CloseTabAsync(name, discard, cancellationToken) ?? MissingAsync();
 
-    public Task<string> RunActiveTabAsync(string name, CancellationToken cancellation_token) =>
-        Target?.RunActiveTabAsync(name, cancellation_token) ?? MissingAsync();
+    public Task<string> RunActiveTabAsync(string name, CancellationToken cancellationToken) =>
+        Target?.RunActiveTabAsync(name, cancellationToken) ?? MissingAsync();
 
-    public Task<string> StopActiveTabAsync(string name, CancellationToken cancellation_token) =>
-        Target?.StopActiveTabAsync(name, cancellation_token) ?? MissingAsync();
+    public Task<string> StopActiveTabAsync(string name, CancellationToken cancellationToken) =>
+        Target?.StopActiveTabAsync(name, cancellationToken) ?? MissingAsync();
 
-    public Task<string> GetTabOutputAsync(string name, CancellationToken cancellation_token) =>
-        Target?.GetTabOutputAsync(name, cancellation_token) ?? MissingAsync();
+    public Task<string> GetTabOutputAsync(string name, CancellationToken cancellationToken) =>
+        Target?.GetTabOutputAsync(name, cancellationToken) ?? MissingAsync();
 
-    public Task<string> GetTabStatusAsync(string name, CancellationToken cancellation_token) =>
-        Target?.GetTabStatusAsync(name, cancellation_token) ?? MissingAsync();
+    public Task<string> GetTabStatusAsync(string name, CancellationToken cancellationToken) =>
+        Target?.GetTabStatusAsync(name, cancellationToken) ?? MissingAsync();
 
-    public Task<string> GetTabErrorsAsync(string name, CancellationToken cancellation_token) =>
-        Target?.GetTabErrorsAsync(name, cancellation_token) ?? MissingAsync();
+    public Task<string> GetTabErrorsAsync(string name, CancellationToken cancellationToken) =>
+        Target?.GetTabErrorsAsync(name, cancellationToken) ?? MissingAsync();
 
-    public Task<string?> ReadOpenScriptAsync(string name, CancellationToken cancellation_token) =>
-        Target?.ReadOpenScriptAsync(name, cancellation_token) ?? Task.FromResult<string?>(null);
+    public Task<string?> ReadOpenScriptAsync(string name, CancellationToken cancellationToken) =>
+        Target?.ReadOpenScriptAsync(name, cancellationToken) ?? Task.FromResult<string?>(null);
 
-    public Task<string?> EditOpenScriptAsync(string name, Func<string, string> edit, CancellationToken cancellation_token) =>
-        Target?.EditOpenScriptAsync(name, edit, cancellation_token) ?? Task.FromResult<string?>(null);
+    public Task<string?> EditOpenScriptAsync(string name, Func<string, string> edit, CancellationToken cancellationToken) =>
+        Target?.EditOpenScriptAsync(name, edit, cancellationToken) ?? Task.FromResult<string?>(null);
 
-    public Task<string?> RenameScriptAsync(string name, string newName, CancellationToken cancellation_token) =>
-        Target?.RenameScriptAsync(name, newName, cancellation_token) ?? Task.FromResult<string?>(null);
+    public Task<string?> RenameScriptAsync(string name, string newName, CancellationToken cancellationToken) =>
+        Target?.RenameScriptAsync(name, newName, cancellationToken) ?? Task.FromResult<string?>(null);
 
-    public Task<string?> DeleteScriptAsync(string name, CancellationToken cancellation_token) =>
-        Target?.DeleteScriptAsync(name, cancellation_token) ?? Task.FromResult<string?>(null);
+    public Task<string?> DeleteScriptAsync(string name, CancellationToken cancellationToken) =>
+        Target?.DeleteScriptAsync(name, cancellationToken) ?? Task.FromResult<string?>(null);
 
     IEditorBridge? Target => Volatile.Read(ref _target);
 

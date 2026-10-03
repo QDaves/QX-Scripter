@@ -281,15 +281,11 @@ internal sealed class ProfileManager : GameStateManager
         }
     }
 
-    private void ApplyBlockResult(BlockUserUpdate message, long generation)
-    {
-        ClientType client = CurrentClient;
-        Store(
-            generation,
-            ProfileStateChangeKind.BlockResult,
-            message,
-            current => current);
-    }
+    private void ApplyBlockResult(BlockUserUpdate message, long generation) => Store(
+        generation,
+        ProfileStateChangeKind.BlockResult,
+        message,
+        current => current);
 
     private void ApplyFigureSetAdded(FigureSetIdAdded message, long generation) => Store(
         generation,

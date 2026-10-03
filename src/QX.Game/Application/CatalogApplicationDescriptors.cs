@@ -17,10 +17,10 @@ internal static class CatalogApplicationDescriptors
         typeof(CatalogStateRequest),
         typeof(CatalogStateView),
         [CatalogTypeParameter()],
-        state_effects: [CacheEffect(ApplicationStateEffectKind.Reads)],
+        stateEffects: [CacheEffect(ApplicationStateEffectKind.Reads)],
         messages: [PublishedMessage(false)],
-        tool_hints: new(true, false, true, false),
-        invocation_scope: ApplicationInvocationScope.Persistent);
+        toolHints: new(true, false, true, false),
+        invocationScope: ApplicationInvocationScope.Persistent);
 
     public static ApplicationDescriptor IndexGet { get; } = new(
         ApplicationMemberIds.CatalogIndexGet,
@@ -38,11 +38,11 @@ internal static class CatalogApplicationDescriptors
         ],
         messages:
         [
-            new(MessageKeys.Catalog.IndexRequest, Direction.Out, ApplicationMessageRole.Send),
-            new(MessageKeys.Catalog.IndexSnapshot, Direction.In, ApplicationMessageRole.Observe),
+            new(MessageKeys.Catalog.IndexRequest, MessageDirection.Out, ApplicationMessageRole.Send),
+            new(MessageKeys.Catalog.IndexSnapshot, MessageDirection.In, ApplicationMessageRole.Observe),
             PublishedMessage(false)
         ],
-        tool_hints: new(true, false, true, true));
+        toolHints: new(true, false, true, true));
 
     public static ApplicationDescriptor PageGet { get; } = new(
         ApplicationMemberIds.CatalogPageGet,
@@ -64,11 +64,11 @@ internal static class CatalogApplicationDescriptors
         [CacheEffect(ApplicationStateEffectKind.Changes)],
         messages:
         [
-            new(MessageKeys.Catalog.PageRequest, Direction.Out, ApplicationMessageRole.Send),
-            new(MessageKeys.Catalog.PageSnapshot, Direction.In, ApplicationMessageRole.Observe),
+            new(MessageKeys.Catalog.PageRequest, MessageDirection.Out, ApplicationMessageRole.Send),
+            new(MessageKeys.Catalog.PageSnapshot, MessageDirection.In, ApplicationMessageRole.Observe),
             PublishedMessage(false)
         ],
-        tool_hints: new(true, false, true, true));
+        toolHints: new(true, false, true, true));
 
     public static ApplicationDescriptor PagesLoad { get; } = new(
         ApplicationMemberIds.CatalogPagesLoad,
@@ -93,13 +93,13 @@ internal static class CatalogApplicationDescriptors
         ],
         messages:
         [
-            new(MessageKeys.Catalog.IndexRequest, Direction.Out, ApplicationMessageRole.Send),
-            new(MessageKeys.Catalog.IndexSnapshot, Direction.In, ApplicationMessageRole.Observe),
-            new(MessageKeys.Catalog.PageRequest, Direction.Out, ApplicationMessageRole.Send),
-            new(MessageKeys.Catalog.PageSnapshot, Direction.In, ApplicationMessageRole.Observe),
+            new(MessageKeys.Catalog.IndexRequest, MessageDirection.Out, ApplicationMessageRole.Send),
+            new(MessageKeys.Catalog.IndexSnapshot, MessageDirection.In, ApplicationMessageRole.Observe),
+            new(MessageKeys.Catalog.PageRequest, MessageDirection.Out, ApplicationMessageRole.Send),
+            new(MessageKeys.Catalog.PageSnapshot, MessageDirection.In, ApplicationMessageRole.Observe),
             PublishedMessage(false)
         ],
-        tool_hints: new(true, false, true, true));
+        toolHints: new(true, false, true, true));
 
     public static ApplicationDescriptor PagesList { get; } = new(
         ApplicationMemberIds.CatalogPagesList,
@@ -110,10 +110,10 @@ internal static class CatalogApplicationDescriptors
         typeof(CatalogPagesRequest),
         typeof(CatalogPageListView),
         [CatalogTypeParameter(), .. PagingParameters(), .. GenerationParameters()],
-        state_effects: [CacheEffect(ApplicationStateEffectKind.Reads)],
+        stateEffects: [CacheEffect(ApplicationStateEffectKind.Reads)],
         messages: [PublishedMessage(false)],
-        tool_hints: new(true, false, true, false),
-        invocation_scope: ApplicationInvocationScope.Persistent);
+        toolHints: new(true, false, true, false),
+        invocationScope: ApplicationInvocationScope.Persistent);
 
     public static ApplicationDescriptor OffersSearch { get; } = new(
         ApplicationMemberIds.CatalogOffersSearch,
@@ -129,10 +129,10 @@ internal static class CatalogApplicationDescriptors
             .. PagingParameters(),
             .. GenerationParameters()
         ],
-        state_effects: [CacheEffect(ApplicationStateEffectKind.Reads)],
+        stateEffects: [CacheEffect(ApplicationStateEffectKind.Reads)],
         messages: [PublishedMessage(false)],
-        tool_hints: new(true, false, true, false),
-        invocation_scope: ApplicationInvocationScope.Persistent);
+        toolHints: new(true, false, true, false),
+        invocationScope: ApplicationInvocationScope.Persistent);
 
     public static ApplicationDescriptor CacheClear { get; } = new(
         ApplicationMemberIds.CatalogCacheClear,
@@ -143,10 +143,10 @@ internal static class CatalogApplicationDescriptors
         typeof(CatalogCacheClearRequest),
         typeof(CatalogCacheClearView),
         [NullableCatalogTypeParameter(), .. GenerationParameters()],
-        state_effects: [CacheEffect(ApplicationStateEffectKind.Invalidates)],
+        stateEffects: [CacheEffect(ApplicationStateEffectKind.Invalidates)],
         messages: [PublishedMessage(false)],
-        tool_hints: new(false, true, true, false),
-        invocation_scope: ApplicationInvocationScope.Persistent);
+        toolHints: new(false, true, true, false),
+        invocationScope: ApplicationInvocationScope.Persistent);
 
     public static ApplicationDescriptor PurchaseState { get; } = new(
         ApplicationMemberIds.CatalogPurchaseState,
@@ -156,13 +156,13 @@ internal static class CatalogApplicationDescriptors
         ApplicationExposure.All,
         typeof(CatalogPurchaseStateRequest),
         typeof(CatalogPurchaseStateView),
-        state_effects:
+        stateEffects:
         [
             new(ApplicationStateKey.CatalogPurchase, ApplicationStateEffectKind.Reads)
         ],
         messages: PurchaseOutcomeMessages(false),
-        tool_hints: new(true, false, true, false),
-        invocation_scope: ApplicationInvocationScope.Persistent);
+        toolHints: new(true, false, true, false),
+        invocationScope: ApplicationInvocationScope.Persistent);
 
     public static ApplicationDescriptor PurchaseSend { get; } = new(
         ApplicationMemberIds.CatalogPurchaseSend,
@@ -182,9 +182,9 @@ internal static class CatalogApplicationDescriptors
         [ApplicationStateKey.HotelConnected],
         messages:
         [
-            new(MessageKeys.Catalog.Purchase, Direction.Out, ApplicationMessageRole.Send)
+            new(MessageKeys.Catalog.Purchase, MessageDirection.Out, ApplicationMessageRole.Send)
         ],
-        tool_hints: new(false, true, false, true));
+        toolHints: new(false, true, false, true));
 
     public static ApplicationDescriptor PurchaseOutcome { get; } = new(
         ApplicationMemberIds.CatalogPurchaseOutcome,
@@ -194,12 +194,12 @@ internal static class CatalogApplicationDescriptors
         event_exposure,
         null,
         typeof(CatalogPurchaseOutcomeEvent),
-        state_effects:
+        stateEffects:
         [
             new(ApplicationStateKey.CatalogPurchase, ApplicationStateEffectKind.Changes)
         ],
         messages: PurchaseOutcomeMessages(),
-        invocation_scope: ApplicationInvocationScope.Persistent);
+        invocationScope: ApplicationInvocationScope.Persistent);
 
     public static ApplicationDescriptor Published { get; } = new(
         ApplicationMemberIds.CatalogPublished,
@@ -209,7 +209,7 @@ internal static class CatalogApplicationDescriptors
         event_exposure,
         null,
         typeof(CatalogPublishedEvent),
-        state_effects: [CacheEffect(ApplicationStateEffectKind.Invalidates)],
+        stateEffects: [CacheEffect(ApplicationStateEffectKind.Invalidates)],
         messages: [PublishedMessage()]);
 
     private static ApplicationParameterDescriptor CatalogTypeParameter() => new(
@@ -259,16 +259,16 @@ internal static class CatalogApplicationDescriptors
 
     private static ApplicationMessageRequirement PublishedMessage(bool required = true) => new(
         MessageKeys.Catalog.Published,
-        Direction.In,
+        MessageDirection.In,
         ApplicationMessageRole.Observe,
         required);
 
     private static IReadOnlyList<ApplicationMessageRequirement> PurchaseOutcomeMessages(
         bool required = true) =>
     [
-        new(MessageKeys.Catalog.PurchaseAccepted, Direction.In, ApplicationMessageRole.Observe, required),
-        new(MessageKeys.Catalog.PurchaseFailed, Direction.In, ApplicationMessageRole.Observe, required),
-        new(MessageKeys.Catalog.PurchaseForbidden, Direction.In, ApplicationMessageRole.Observe, required)
+        new(MessageKeys.Catalog.PurchaseAccepted, MessageDirection.In, ApplicationMessageRole.Observe, required),
+        new(MessageKeys.Catalog.PurchaseFailed, MessageDirection.In, ApplicationMessageRole.Observe, required),
+        new(MessageKeys.Catalog.PurchaseForbidden, MessageDirection.In, ApplicationMessageRole.Observe, required)
     ];
 
     private static ApplicationStateEffect CacheEffect(ApplicationStateEffectKind kind) =>

@@ -29,7 +29,7 @@ public sealed class Intercept
     public int Sequence { get; init; }
 
     /// <summary>Gets the direction of the packet, taken from its header.</summary>
-    public Direction Direction => Packet.Header.Direction;
+    public MessageDirection Direction => Packet.Header.Direction;
 
     /// <summary>Gets whether the packet is blocked and will not be forwarded.</summary>
     public bool IsBlocked { get; private set; }

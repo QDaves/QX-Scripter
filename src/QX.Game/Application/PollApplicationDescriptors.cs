@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Qx.Messages;
 using Qx.Model;
 using Qx.Protocol;
@@ -17,10 +18,10 @@ internal static class PollApplicationDescriptors
         ApplicationExposure.All,
         typeof(PollStateRequest),
         typeof(PollStateView),
-        state_effects: [],
+        stateEffects: [],
         messages: ObservedMessages(),
-        tool_hints: new(true, false, true, false),
-        invocation_scope: ApplicationInvocationScope.Persistent);
+        toolHints: new(true, false, true, false),
+        invocationScope: ApplicationInvocationScope.Persistent);
 
     public static ApplicationDescriptor Start { get; } = Dispatch(
         ApplicationMemberIds.PollsStart,
@@ -50,11 +51,11 @@ internal static class PollApplicationDescriptors
             Observe(MessageKeys.Polls.Contents),
             new(
                 MessageKeys.Polls.Error,
-                Direction.In,
+                MessageDirection.In,
                 ApplicationMessageRole.Observe,
                 false)
         ],
-        tool_hints: new(true, false, true, true));
+        toolHints: new(false, false, false, true));
 
     public static ApplicationDescriptor Reject { get; } = Dispatch(
         ApplicationMemberIds.PollsReject,
@@ -85,7 +86,7 @@ internal static class PollApplicationDescriptors
         ],
         [ApplicationStateKey.HotelConnected],
         messages: [Send(MessageKeys.Polls.Answer)],
-        tool_hints: new(false, false, false, true));
+        toolHints: new(false, false, false, true));
 
     public static ApplicationDescriptor Changed { get; } = new(
         ApplicationMemberIds.PollsChanged,
@@ -96,13 +97,13 @@ internal static class PollApplicationDescriptors
         null,
         typeof(PollChanged),
         messages: ObservedMessages(),
-        invocation_scope: ApplicationInvocationScope.Persistent);
+        invocationScope: ApplicationInvocationScope.Persistent);
 
     private static ApplicationDescriptor Dispatch(
         string id,
         string title,
         string description,
-        Type request_type,
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] Type request_type,
         MessageKey key,
         bool destructive) => new(
         id,
@@ -115,7 +116,7 @@ internal static class PollApplicationDescriptors
         [PollId(), SessionGeneration()],
         [ApplicationStateKey.HotelConnected],
         messages: [Send(key)],
-        tool_hints: new(false, destructive, false, true));
+        toolHints: new(false, destructive, false, true));
 
     private static ApplicationParameterDescriptor PollId() => new(
         "poll_id",
@@ -142,10 +143,10 @@ internal static class PollApplicationDescriptors
         new(Minimum: 0));
 
     private static ApplicationMessageRequirement Send(MessageKey key) =>
-        new(key, Direction.Out, ApplicationMessageRole.Send);
+        new(key, MessageDirection.Out, ApplicationMessageRole.Send);
 
     private static ApplicationMessageRequirement Observe(MessageKey key) =>
-        new(key, Direction.In, ApplicationMessageRole.Observe);
+        new(key, MessageDirection.In, ApplicationMessageRole.Observe);
 
     private static IReadOnlyList<ApplicationMessageRequirement> ObservedMessages() =>
     [

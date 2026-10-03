@@ -42,7 +42,7 @@ public sealed class GeneralViewModel : PageViewModel
 
     public IReadOnlyList<GeneralSectionViewModel> SecondColumn { get; }
 
-    protected override Task OnActivatedAsync(CancellationToken cancellation_token)
+    protected override Task OnActivatedAsync(CancellationToken cancellationToken)
     {
         Refresh();
         return Task.CompletedTask;

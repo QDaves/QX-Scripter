@@ -12,16 +12,11 @@ public interface IMessageContract
     /// <summary>Gets the model type the message is parsed into and composed from.</summary>
     Type MessageType { get; }
 
-    /// <summary>Gets whether the contract supports the specified client.</summary>
-    /// <param name="client">The client type.</param>
-    bool Supports(ClientType client);
-
-    /// <summary>Gets the capability of the message for the specified client, message manager and header.</summary>
-    /// <param name="client">The client type.</param>
-    /// <param name="messages">The message manager that holds the client's message set and wire profile.</param>
+    /// <summary>Gets the capability of the message for the specified message resolver and header.</summary>
+    /// <param name="messages">The message resolver that holds the client's message set and wire profile.</param>
     /// <param name="header">The header the message resolves to.</param>
     /// <returns>The capability of the message for that header.</returns>
-    MessageCapability Capability(ClientType client, MessageManager messages, Header header);
+    MessageCapability Capability(IMessageResolver messages, Header header);
 
     /// <summary>Parses the message from a packet into its model.</summary>
     /// <param name="reader">The packet reader.</param>
@@ -35,7 +30,7 @@ public interface IMessageContract
     void Compose(object message, in PacketWriter writer);
 }
 
-/// <summary>Represents the contract for one message and its model type on the Flash client.</summary>
+/// <summary>Represents the contract for one message and its model type.</summary>
 /// <typeparam name="T">The message model type.</typeparam>
 public sealed class MessageContract<T> : IMessageContract where T : IParserComposer<T>
 {
@@ -62,39 +57,23 @@ public sealed class MessageContract<T> : IMessageContract where T : IParserCompo
     /// <summary>Gets the model type the message is parsed into and composed from, which is <typeparamref name="T"/>.</summary>
     public Type MessageType => typeof(T);
 
-    /// <summary>Gets whether the contract supports the specified client.</summary>
-    /// <param name="client">The client type.</param>
-    /// <returns><see langword="true"/> for <see cref="ClientType.Flash"/>; otherwise, <see langword="false"/>.</returns>
-    public bool Supports(ClientType client) => client is ClientType.Flash;
-
-    /// <summary>Gets the capability of the message for the specified client, message manager and header.</summary>
-    /// <param name="client">The client type.</param>
-    /// <param name="messages">The message manager that holds the client's message set and wire profile.</param>
+    /// <summary>Gets the capability of the message for the specified message resolver and header.</summary>
+    /// <param name="messages">The message resolver that holds the client's message set and wire profile.</param>
     /// <param name="header">The header the message resolves to.</param>
     /// <returns>The capability of the message for that header.</returns>
-    /// <exception cref="UnsupportedClientException">Thrown when <paramref name="client"/> is not the Flash client.</exception>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="messages"/> is <see langword="null"/>.</exception>
-    public MessageCapability Capability(
-        ClientType client,
-        MessageManager messages,
-        Header header)
-    {
-        if (!Supports(client))
-            throw new UnsupportedClientException(client);
-        return _codec.Capability(messages, header);
-    }
+    public MessageCapability Capability(IMessageResolver messages, Header header) =>
+        _codec.Capability(messages, header);
 
     /// <summary>Parses the message from a packet.</summary>
     /// <param name="reader">The packet reader.</param>
     /// <returns>The parsed message.</returns>
-    /// <exception cref="UnsupportedClientException">Thrown when the reader's client is not the Flash client.</exception>
     public T Parse(in PacketReader reader) => _codec.Parse(in reader);
 
     /// <summary>Writes the message to a packet.</summary>
     /// <param name="message">The message to write.</param>
     /// <param name="writer">The packet writer.</param>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="message"/> is <see langword="null"/>.</exception>
-    /// <exception cref="UnsupportedClientException">Thrown when the writer's client is not the Flash client.</exception>
     public void Compose(T message, in PacketWriter writer) =>
         _codec.Compose(message, in writer);
 

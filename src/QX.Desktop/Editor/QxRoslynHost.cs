@@ -2,8 +2,11 @@ using System.Reflection;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Classification;
 using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Text;
+using Qx.Protocol;
 using Qx.Scripting;
+using Qx.Scripting.Hosting;
 using RoslynPad.Roslyn;
 using RoslynPad.Roslyn.BraceMatching;
 using RoslynPad.Roslyn.Formatting;
@@ -14,19 +17,21 @@ namespace Qx.Desktop.Editor;
 
 public sealed class QxRoslynHost : RoslynHost
 {
-    public QxRoslynHost()
+    readonly AnalyzerReference _script_analyzer;
+
+    public QxRoslynHost(IMessageResolver messages)
         : base(
             additionalAssemblies:
             [
                 Assembly.Load("RoslynPad.Roslyn.Avalonia"),
                 Assembly.Load("RoslynPad.Editor.Avalonia")
             ],
-            references: RoslynHostReferences.NamespaceDefault.With(
+            references: RoslynHostReferences.Empty.With(
                 assemblyPathReferences: FrameworkReferencePaths(),
                 assemblyReferences: ScriptEngine.ReferenceAssemblies,
-                imports: ScriptEngine.Imports,
-                typeNamespaceImports: [typeof(ScriptGlobals)]))
+                imports: ScriptEngine.Imports))
     {
+        _script_analyzer = new AnalyzerImageReference([ScriptEngine.CreateAnalyzer(messages)]);
     }
 
     /// <summary>
@@ -34,12 +39,12 @@ public sealed class QxRoslynHost : RoslynHost
     /// composition parts, the reference metadata and the compiler paths are built here, off the UI
     /// thread, rather than while the first real tab stalls it.
     /// </summary>
-    public async Task WarmUpAsync(string working_directory)
+    public async Task WarmUpAsync(string workingDirectory)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(working_directory);
+        ArgumentException.ThrowIfNullOrWhiteSpace(workingDirectory);
         DocumentId id = AddDocument(new DocumentCreationArgs(
             SourceText.From("var items = FloorItems.Where(item => item.Id > 0).ToList();\nLog(items.Count);\n").Container,
-            working_directory,
+            workingDirectory,
             SourceCodeKind.Script));
         try
         {
@@ -59,6 +64,9 @@ public sealed class QxRoslynHost : RoslynHost
         }
     }
 
+    protected override IEnumerable<AnalyzerReference> GetSolutionAnalyzerReferences() =>
+        base.GetSolutionAnalyzerReferences().Append(_script_analyzer);
+
     protected override Project CreateProject(Solution solution, DocumentCreationArgs args, CompilationOptions compilationOptions, Project? previousProject = null)
     {
         ArgumentNullException.ThrowIfNull(solution);
@@ -71,7 +79,10 @@ public sealed class QxRoslynHost : RoslynHost
             compilationOptions = csharp.WithNullableContextOptions(NullableContextOptions.Disable);
         compilationOptions = compilationOptions
             .WithScriptClassName(name)
-            .WithSpecificDiagnosticOptions(compilationOptions.SpecificDiagnosticOptions.SetItem("IDE1006", ReportDiagnostic.Suppress));
+            .WithSpecificDiagnosticOptions(compilationOptions.SpecificDiagnosticOptions.SetItems(
+                ScriptEngine.SuppressedDiagnostics
+                    .Append("IDE1006")
+                    .Select(diagnostic_id => KeyValuePair.Create(diagnostic_id, ReportDiagnostic.Suppress))));
         solution = solution.AddProject(ProjectInfo.Create(
             id,
             VersionStamp.Create(),

@@ -18,11 +18,11 @@ internal static class WalletApplicationDescriptors
         typeof(WalletStateRequest),
         typeof(WalletStateView),
         StateParameters(),
-        state_effects:
+        stateEffects:
         [new(ApplicationStateKey.WalletLoaded, ApplicationStateEffectKind.Reads)],
         messages: ObservedMessages(),
-        tool_hints: new(true, false, true, false),
-        invocation_scope: ApplicationInvocationScope.Persistent);
+        toolHints: new(true, false, true, false),
+        invocationScope: ApplicationInvocationScope.Persistent);
 
     public static ApplicationDescriptor Refresh { get; } = new(
         ApplicationMemberIds.WalletRefresh,
@@ -36,12 +36,12 @@ internal static class WalletApplicationDescriptors
         [ApplicationStateKey.HotelConnected],
         [new(ApplicationStateKey.WalletLoaded, ApplicationStateEffectKind.Changes)],
         [
-            new(MessageKeys.Wallet.CreditsRequest, Direction.Out, ApplicationMessageRole.Send),
-            new(MessageKeys.Wallet.CreditsBalance, Direction.In, ApplicationMessageRole.Observe),
-            new(MessageKeys.Wallet.ActivityPoints, Direction.In, ApplicationMessageRole.Observe),
+            new(MessageKeys.Wallet.CreditsRequest, MessageDirection.Out, ApplicationMessageRole.Send),
+            new(MessageKeys.Wallet.CreditsBalance, MessageDirection.In, ApplicationMessageRole.Observe),
+            new(MessageKeys.Wallet.ActivityPoints, MessageDirection.In, ApplicationMessageRole.Observe),
             new(
                 MessageKeys.Wallet.ActivityPointUpdated,
-                Direction.In,
+                MessageDirection.In,
                 ApplicationMessageRole.Observe,
                 false)
         ],
@@ -55,7 +55,7 @@ internal static class WalletApplicationDescriptors
         event_exposure,
         null,
         typeof(WalletChanged),
-        state_effects:
+        stateEffects:
         [new(ApplicationStateKey.WalletLoaded, ApplicationStateEffectKind.Changes)],
         messages: ObservedMessages());
 
@@ -86,9 +86,9 @@ internal static class WalletApplicationDescriptors
 
     private static IReadOnlyList<ApplicationMessageRequirement> ObservedMessages() =>
     [
-        new(MessageKeys.Wallet.CreditsBalance, Direction.In, ApplicationMessageRole.Observe),
-        new(MessageKeys.Wallet.ActivityPoints, Direction.In, ApplicationMessageRole.Observe),
-        new(MessageKeys.Wallet.ActivityPointUpdated, Direction.In, ApplicationMessageRole.Observe)
+        new(MessageKeys.Wallet.CreditsBalance, MessageDirection.In, ApplicationMessageRole.Observe),
+        new(MessageKeys.Wallet.ActivityPoints, MessageDirection.In, ApplicationMessageRole.Observe),
+        new(MessageKeys.Wallet.ActivityPointUpdated, MessageDirection.In, ApplicationMessageRole.Observe)
     ];
 
     private static ApplicationParameterDescriptor PointLimitParameter() => new(

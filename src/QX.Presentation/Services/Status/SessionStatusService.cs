@@ -8,7 +8,6 @@ using Qx.Presentation.Runtime;
 using Qx.Presentation.Services.Game;
 using Qx.Presentation.Services.Runs;
 using Qx.Presentation.Threading;
-using ClientKind = Qx.ClientType;
 using GameSession = Qx.Interception.Session;
 
 namespace Qx.Presentation.Services.Status;
@@ -227,7 +226,7 @@ public sealed class SessionStatusService : ISessionStatusService, IAlwaysOn, IDi
             extension.IsInterceptorConnected,
             gearth_port,
             extension.IsConnected,
-            ClientName(session?.Client),
+            session is null ? "" : "Flash",
             session?.HotelVersion ?? "",
             room.InRoom,
             room.Id,
@@ -278,13 +277,6 @@ public sealed class SessionStatusService : ISessionStatusService, IAlwaysOn, IDi
         string name = room.Name.Length > 0 ? room.Name : id > 0 ? "Room" : "";
         return new RoomFacts(room.IsInRoom, id, name, users, bots, pets, room.FloorItems.Count, room.WallItems.Count);
     }
-
-    static string ClientName(ClientKind? client) => client switch
-    {
-        null or ClientKind.None => "",
-        ClientKind.Flash => "Flash",
-        _ => client.Value.ToString()
-    };
 
     readonly record struct RoomFacts(bool InRoom, long Id, string Name, int Users, int Bots, int Pets, int FloorItems, int WallItems);
 }

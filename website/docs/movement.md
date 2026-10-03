@@ -1,5 +1,8 @@
 # Movement
 
+Movement events report every move of avatars and furni together with its cause, and the geometry
+helpers measure tiles and directions.
+
 ## Movement events
 
 `OnAvatarMovement`, `OnSelfMovement` and `OnFloorItemMovement` report every move together with its
@@ -35,7 +38,7 @@ bool arrived = await WaitUntil(() => SelfAvatar is { X: 10, Y: 4 } && Room.Revis
 `Timestamp` is a <xref:System.Diagnostics.Stopwatch> timestamp taken when the packet arrived:
 
 ```csharp
-OnSelfMovement(move => Log($"{System.Diagnostics.Stopwatch.GetElapsedTime(move.Timestamp).TotalMilliseconds} ms ago"));
+OnSelfMovement(move => Log($"{Stopwatch.GetElapsedTime(move.Timestamp).TotalMilliseconds} ms ago"));
 ```
 
 ## Avatar state

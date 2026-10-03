@@ -2,7 +2,7 @@ using Qx.Messages;
 
 namespace Qx.Model.Messages.Incoming;
 
-/// <summary>Represents the <c>FavouriteMembershipUpdate</c> message, received when a room avatar's favorite group badge changes.</summary>
+/// <summary>Represents the <c>FavouriteMembershipUpdate</c> message, also named <c>FavoriteMembershipUpdate</c>, received when a room avatar's favorite group badge changes.</summary>
 /// <remarks>
 /// The avatar is named by its room index rather than its user id, so it resolves through the room's
 /// avatar list rather than the friend list.
@@ -12,7 +12,11 @@ namespace Qx.Model.Messages.Incoming;
 /// The group now shown, or zero when the badge was cleared. Flash transmits this as a fixed signed
 /// 32 bit value.
 /// </param>
-/// <param name="Status">The hotel's membership status value for that group.</param>
+/// <param name="Status">
+/// The hotel's membership status value for that group.
+/// <c>RoomUsersHandler.onFavoriteMembershipUpdate</c> forwards it on the dispatched event only and
+/// never stores it on the avatar, so it is not mirrored onto <see cref="User.GroupStatus"/>.
+/// </param>
 /// <param name="GroupName">The group's name.</param>
 public sealed record FavouriteMembershipUpdate(
     int RoomIndex,

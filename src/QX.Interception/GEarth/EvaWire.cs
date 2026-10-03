@@ -8,17 +8,16 @@ namespace Qx.Interception.GEarth;
 /// A raw packet is a big-endian 32-bit length that counts the header and body, a big-endian 16-bit
 /// header and the body.
 /// </remarks>
-public static class EvaWire
+internal static class EvaWire
 {
     /// <summary>Parses raw wire bytes into a packet.</summary>
     /// <param name="raw">The complete raw packet, including its length prefix.</param>
-    /// <param name="client">The client type the packet belongs to.</param>
     /// <param name="direction">The direction of the packet.</param>
     /// <returns>A packet with a copy of the body.</returns>
     /// <exception cref="InvalidDataException">
     /// Thrown when <paramref name="raw"/> is shorter than six bytes or its declared length does not match.
     /// </exception>
-    public static Packet ToPacket(ReadOnlySpan<byte> raw, ClientType client, Direction direction)
+    public static Packet ToPacket(ReadOnlySpan<byte> raw, MessageDirection direction)
     {
         if (raw.Length < 6)
             throw new InvalidDataException("The intercepted packet is shorter than its wire header.");
@@ -30,7 +29,7 @@ public static class EvaWire
         }
         short header = BinaryPrimitives.ReadInt16BigEndian(raw.Slice(4, 2));
         ReadOnlySpan<byte> body = raw[6..];
-        return new Packet(new Header(direction, header), client, new PacketBuffer(body));
+        return new Packet(new Header(direction, header), new PacketBuffer(body));
     }
 
     /// <summary>Encodes a packet into raw wire bytes.</summary>

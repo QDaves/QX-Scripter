@@ -1,4 +1,4 @@
-using Qx.Scripting;
+using Qx.Scripting.Hosting;
 
 namespace Qx.Presentation.Services.ScriptPanels;
 
@@ -15,13 +15,13 @@ public readonly record struct PanelRowSlot(double Offset, double Width);
 
 public static class PanelRowLayout
 {
-    public static PanelRowFit FitOf(double? width, double? grow, UiRowAlign align, bool nested_row)
+    public static PanelRowFit FitOf(double? width, double? grow, UiRowAlign align, bool nestedRow)
     {
         if (width is { } fixed_width && double.IsFinite(fixed_width) && fixed_width > 0)
             return PanelRowFit.Fixed;
         if (grow is { } share && double.IsFinite(share) && share > 0)
             return PanelRowFit.Grow;
-        if (align == UiRowAlign.Stretch && !nested_row)
+        if (align == UiRowAlign.Stretch && !nestedRow)
             return PanelRowFit.Grow;
         return PanelRowFit.Auto;
     }

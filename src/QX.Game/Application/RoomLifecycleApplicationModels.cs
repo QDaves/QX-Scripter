@@ -32,7 +32,6 @@ public sealed record RoomLeaveRequest;
 /// Returned by <see cref="ApplicationMemberIds.RoomEnter"/> and <see cref="ApplicationMemberIds.RoomLeave"/>.
 /// A leave request is only sent while the room generation is unchanged, and the hotel's response is not awaited.
 /// </remarks>
-/// <param name="Client">The client type of the hotel session.</param>
 /// <param name="RoomId">
 /// The requested room id when entering, or the id of the room being left, which is <see langword="null"/>
 /// when no room is loaded.
@@ -42,7 +41,6 @@ public sealed record RoomLeaveRequest;
 /// <param name="ServerConfirmed">Whether the hotel confirmed the request, which is always <see langword="false"/>.</param>
 /// <param name="DispatchedAtUtc">The time the request was sent.</param>
 public sealed record RoomLifecycleDispatchResult(
-    ClientType Client,
     Id? RoomId,
     long RoomGeneration,
     bool Dispatched,

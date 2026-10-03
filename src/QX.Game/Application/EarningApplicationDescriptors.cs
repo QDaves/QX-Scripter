@@ -18,10 +18,10 @@ internal static class EarningApplicationDescriptors
         typeof(EarningStateRequest),
         typeof(EarningStateView),
         [SnapshotRevisionParameter(false)],
-        state_effects: [ReadEffect()],
+        stateEffects: [ReadEffect()],
         messages: ObservedMessages(),
-        tool_hints: QueryHints(),
-        invocation_scope: ApplicationInvocationScope.Persistent);
+        toolHints: QueryHints(),
+        invocationScope: ApplicationInvocationScope.Persistent);
 
     public static ApplicationDescriptor Entries { get; } = new(
         ApplicationMemberIds.EarningsEntriesList,
@@ -32,19 +32,19 @@ internal static class EarningApplicationDescriptors
         typeof(EarningEntryPageRequest),
         typeof(EarningEntryPage),
         PageParameters(),
-        state_effects: [ReadEffect()],
+        stateEffects: [ReadEffect()],
         messages:
         [
             Observe(MessageKeys.Earnings.StatusSnapshot),
             Observe(MessageKeys.Earnings.Claimed)
         ],
-        tool_hints: QueryHints(),
-        invocation_scope: ApplicationInvocationScope.Persistent);
+        toolHints: QueryHints(),
+        invocationScope: ApplicationInvocationScope.Persistent);
 
     public static ApplicationDescriptor Refresh { get; } = new(
         ApplicationMemberIds.EarningsRefresh,
         "Refresh earnings",
-        "Shares one trusted status request within a hotel session after earlier passive requests drain and returns only its correlated full snapshot. Caller cancellation and timeout detach only that waiter.",
+        "Reloads the earnings vault from the server. Shares one trusted status request within a hotel session after earlier passive requests drain and returns only its correlated full snapshot. Caller cancellation and timeout detach only that waiter.",
         ApplicationMemberKind.Operation,
         ApplicationExposure.All,
         typeof(EarningRefreshRequest),
@@ -56,7 +56,7 @@ internal static class EarningApplicationDescriptors
             Send(MessageKeys.Earnings.StatusRequest),
             Observe(MessageKeys.Earnings.StatusSnapshot)
         ],
-        new ApplicationToolHints(false, false, true, true));
+        new ApplicationToolHints(true, false, true, true));
 
     public static ApplicationDescriptor Claim { get; } = new(
         ApplicationMemberIds.EarningsClaim,
@@ -83,9 +83,9 @@ internal static class EarningApplicationDescriptors
         event_exposure,
         null,
         typeof(EarningChanged),
-        state_effects: [ChangeEffect()],
+        stateEffects: [ChangeEffect()],
         messages: ObservedMessages(),
-        invocation_scope: ApplicationInvocationScope.Persistent);
+        invocationScope: ApplicationInvocationScope.Persistent);
 
     private static IReadOnlyList<ApplicationParameterDescriptor> PageParameters() =>
     [
@@ -163,12 +163,12 @@ internal static class EarningApplicationDescriptors
     ];
 
     private static ApplicationMessageRequirement Send(MessageKey key) =>
-        new(key, Direction.Out, ApplicationMessageRole.Send);
+        new(key, MessageDirection.Out, ApplicationMessageRole.Send);
 
     private static ApplicationMessageRequirement Observe(
         MessageKey key,
         bool required = true) =>
-        new(key, Direction.In, ApplicationMessageRole.Observe, required);
+        new(key, MessageDirection.In, ApplicationMessageRole.Observe, required);
 
     private static ApplicationStateEffect ReadEffect() =>
         new(ApplicationStateKey.Earnings, ApplicationStateEffectKind.Reads);

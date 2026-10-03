@@ -125,7 +125,7 @@ public partial class ScriptGlobals
             EarningClaimActionResult result;
             try
             {
-                result = await Application
+                result = await _application
                     .InvokeAsync<EarningClaimActionRequest, EarningClaimActionResult>(
                         ApplicationMemberIds.EarningsClaim,
                         new EarningClaimActionRequest(
@@ -164,51 +164,39 @@ public partial class ScriptGlobals
     public void RefreshEarnings() => Game.Earnings.Request();
 
     /// <summary>Registers a handler that runs whenever the vault arrives or is changed by a successful claim.</summary>
-    /// <remarks>
-    /// No handle is returned, so the handler stays registered until the script stops.
-    /// </remarks>
     /// <param name="handler">The handler to call with the vault as it now stands.</param>
+    /// <returns>A handle that removes the handler when disposed.</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="handler"/> is <see langword="null"/>.</exception>
-    public void OnEarningsChanged(Action<EarningStatus> handler)
-    {
-        _ = Subscribe(
+    public IDisposable OnEarningsChanged(Action<EarningStatus> handler)
+        => Subscribe(
             handler,
             value => Game.Earnings.StatusChanged += value,
             value => Game.Earnings.StatusChanged -= value);
-    }
 
     /// <summary>Registers a handler that runs whenever the hotel answers a claim, whether it succeeded or not.</summary>
-    /// <remarks>
-    /// No handle is returned, so the handler stays registered until the script stops.
-    /// </remarks>
     /// <param name="handler">The handler to call with the category and whether the claim went through.</param>
+    /// <returns>A handle that removes the handler when disposed.</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="handler"/> is <see langword="null"/>.</exception>
-    public void OnEarningsClaimed(Action<EarningClaimResult> handler)
-    {
-        _ = Subscribe(
+    public IDisposable OnEarningsClaimed(Action<EarningClaimResult> handler)
+        => Subscribe(
             handler,
             value => Game.Earnings.Claimed += value,
             value => Game.Earnings.Claimed -= value);
-    }
 
     /// <summary>Registers a handler that runs whenever the hotel reports that a category has a new reward.</summary>
-    /// <remarks>
-    /// No handle is returned, so the handler stays registered until the script stops.
-    /// </remarks>
     /// <param name="handler">The handler to call with the category.</param>
+    /// <returns>A handle that removes the handler when disposed.</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="handler"/> is <see langword="null"/>.</exception>
-    public void OnEarningAvailable(Action<EarningCategory> handler)
-    {
-        _ = Subscribe(
+    public IDisposable OnEarningAvailable(Action<EarningCategory> handler)
+        => Subscribe(
             handler,
             value => Game.Earnings.RewardAvailable += value,
             value => Game.Earnings.RewardAvailable -= value);
-    }
 
     private async Task<EarningReadSnapshot> ReadEarningsSnapshot(int timeout_ms)
     {
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(timeout_ms, "timeoutMs");
-        EarningStateView state = await Application
+        EarningStateView state = await _application
             .InvokeAsync<EarningStateRequest, EarningStateView>(
                 ApplicationMemberIds.EarningsState,
                 new EarningStateRequest(),
@@ -219,7 +207,7 @@ public partial class ScriptGlobals
         EarningEntryPage first_page;
         if (state.Vault.Loaded)
         {
-            first_page = await Application
+            first_page = await _application
                 .InvokeAsync<EarningEntryPageRequest, EarningEntryPage>(
                     ApplicationMemberIds.EarningsEntriesList,
                     new EarningEntryPageRequest(
@@ -231,7 +219,7 @@ public partial class ScriptGlobals
         }
         else
         {
-            EarningRefreshResult refreshed = await Application
+            EarningRefreshResult refreshed = await _application
                 .InvokeAsync<EarningRefreshRequest, EarningRefreshResult>(
                     ApplicationMemberIds.EarningsRefresh,
                     new EarningRefreshRequest(
@@ -250,7 +238,7 @@ public partial class ScriptGlobals
         AddEarningEntries(page, entries);
         while (page.NextOffset is int offset)
         {
-            page = await Application
+            page = await _application
                 .InvokeAsync<EarningEntryPageRequest, EarningEntryPage>(
                     ApplicationMemberIds.EarningsEntriesList,
                     new EarningEntryPageRequest(offset, 500, first_page.SnapshotRevision),
@@ -292,7 +280,6 @@ public partial class ScriptGlobals
     private static void ValidateEarningState(EarningStateView state)
     {
         if (!state.Connected ||
-            state.Client is null ||
             state.SessionGeneration <= 0 ||
             state.SnapshotRevision <= 0 ||
             state.Vault.EntryCount < 0 ||
@@ -308,7 +295,6 @@ public partial class ScriptGlobals
         EarningEntryPage page)
     {
         if (page.Connected != state.Connected ||
-            page.Client != state.Client ||
             page.SessionGeneration != state.SessionGeneration ||
             page.StateRevision != state.Revision ||
             page.StatusRevision != state.StatusRevision ||
@@ -330,7 +316,6 @@ public partial class ScriptGlobals
             refreshed.MessagesDispatched is < 0 or > 1 ||
             refreshed.SessionGeneration != expected_session_generation ||
             !page.Connected ||
-            page.Client != refreshed.Client ||
             page.SessionGeneration != refreshed.SessionGeneration ||
             page.StateRevision != refreshed.StateRevision ||
             page.StatusRevision != refreshed.StatusRevision ||
@@ -351,10 +336,8 @@ public partial class ScriptGlobals
         int? expected_next = consumed < page.Total ? consumed : null;
         if (first_page.SnapshotRevision <= 0 ||
             !first_page.Connected ||
-            first_page.Client is null ||
             !first_page.Vault.Loaded ||
             page.Connected != first_page.Connected ||
-            page.Client != first_page.Client ||
             page.SessionGeneration != first_page.SessionGeneration ||
             page.StateRevision != first_page.StateRevision ||
             page.StatusRevision != first_page.StatusRevision ||

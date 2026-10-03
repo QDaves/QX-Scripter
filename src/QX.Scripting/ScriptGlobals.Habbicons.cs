@@ -74,7 +74,7 @@ public partial class ScriptGlobals
         return Array.AsReadOnly(snapshot.Habbicons.Where(icon => icon.IsClaimable).ToArray());
     }
 
-    /// <summary>Finds a habbicon by name, ignoring case.</summary>
+    /// <summary>Gets a habbicon by name, ignoring case.</summary>
     /// <remarks>
     /// The shop is requested from the hotel only when it has not been loaded yet.
     /// </remarks>
@@ -84,7 +84,7 @@ public partial class ScriptGlobals
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="name"/> is <see langword="null"/>.</exception>
     /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="timeoutMs"/> is zero or negative.</exception>
     /// <exception cref="InvalidOperationException">Thrown when there is no hotel session, or the habbicon state changed while it was read.</exception>
-    public async Task<Habbicon?> FindHabbicon(string name, int timeoutMs = 10000)
+    public async Task<Habbicon?> GetHabbicon(string name, int timeoutMs = 10000)
     {
         ArgumentNullException.ThrowIfNull(name);
         IReadOnlyList<Habbicon> icons = await GetHabbicons(timeoutMs);
@@ -135,7 +135,7 @@ public partial class ScriptGlobals
         Habbicon[] claimable = snapshot.Habbicons.Where(icon => icon.IsClaimable).ToArray();
         foreach (Habbicon icon in claimable)
         {
-            HabbiconDispatchResult result = await Application
+            HabbiconDispatchResult result = await _application
                 .InvokeAsync<HabbiconClaimActionRequest, HabbiconDispatchResult>(
                     ApplicationMemberIds.HabbiconClaim,
                     new HabbiconClaimActionRequest(
@@ -164,53 +164,43 @@ public partial class ScriptGlobals
     public void UnfavoriteHabbicon(int habbiconId) => Game.Habbicons.Unfavorite(habbiconId);
 
     /// <summary>Registers a handler that runs whenever the state of one of the local user's habbicons changes.</summary>
-    /// <remarks>
-    /// No handle is returned, so the handler stays registered until the script stops.
-    /// </remarks>
     /// <param name="handler">The handler to call with the icon's id and its new state.</param>
+    /// <returns>A handle that removes the handler when disposed.</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="handler"/> is <see langword="null"/>.</exception>
-    public void OnHabbiconStatusChanged(Action<UserHabbiconStatusChanged> handler)
-    {
-        _ = Subscribe(
+    public IDisposable OnHabbiconStatusChanged(Action<UserHabbiconStatusChanged> handler)
+        => Subscribe(
             handler,
             value => Game.Habbicons.StatusChanged += value,
             value => Game.Habbicons.StatusChanged -= value);
-    }
 
     /// <summary>Registers a handler that runs whenever the local user gains a habbicon.</summary>
     /// <remarks>
     /// It runs for an icon that is new to the inventory and for a claimable icon that became
-    /// owned, but not for the first inventory snapshot of a session. No handle is returned, so the
-    /// handler stays registered until the script stops.
+    /// owned, but not for the first inventory snapshot of a session.
     /// </remarks>
     /// <param name="handler">The handler to call with the icon's id.</param>
+    /// <returns>A handle that removes the handler when disposed.</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="handler"/> is <see langword="null"/>.</exception>
-    public void OnHabbiconGained(Action<int> handler)
-    {
-        _ = Subscribe(
+    public IDisposable OnHabbiconGained(Action<int> handler)
+        => Subscribe(
             handler,
             value => Game.Habbicons.IconGained += value,
             value => Game.Habbicons.IconGained -= value);
-    }
 
     /// <summary>Registers a handler that runs whenever an avatar in the room uses a habbicon.</summary>
-    /// <remarks>
-    /// No handle is returned, so the handler stays registered until the script stops.
-    /// </remarks>
     /// <param name="handler">The handler to call with the room index of the user and the icon's id.</param>
+    /// <returns>A handle that removes the handler when disposed.</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="handler"/> is <see langword="null"/>.</exception>
-    public void OnHabbiconUsed(Action<RoomUseHabbicon> handler)
-    {
-        _ = Subscribe(
+    public IDisposable OnHabbiconUsed(Action<RoomUseHabbicon> handler)
+        => Subscribe(
             handler,
             value => Game.Habbicons.UsedInRoom += value,
             value => Game.Habbicons.UsedInRoom -= value);
-    }
 
     private async Task<HabbiconReadSnapshot> ReadHabbiconSnapshot(int timeout_ms)
     {
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(timeout_ms, "timeoutMs");
-        HabbiconStateView state = await Application
+        HabbiconStateView state = await _application
             .InvokeAsync<HabbiconStateRequest, HabbiconStateView>(
                 ApplicationMemberIds.HabbiconsState,
                 new HabbiconStateRequest(),
@@ -222,7 +212,7 @@ public partial class ScriptGlobals
         HabbiconEntryPage first_entries;
         if (state.Vault.ShopLoaded)
         {
-            first_collections = await Application
+            first_collections = await _application
                 .InvokeAsync<HabbiconCollectionPageRequest, HabbiconCollectionPage>(
                     ApplicationMemberIds.HabbiconCollectionsList,
                     new HabbiconCollectionPageRequest(
@@ -230,7 +220,7 @@ public partial class ScriptGlobals
                         SnapshotRevision: state.SnapshotRevision),
                     Ct)
                 .ConfigureAwait(false);
-            first_entries = await Application
+            first_entries = await _application
                 .InvokeAsync<HabbiconEntryPageRequest, HabbiconEntryPage>(
                     ApplicationMemberIds.HabbiconEntriesList,
                     new HabbiconEntryPageRequest(
@@ -243,7 +233,7 @@ public partial class ScriptGlobals
         }
         else
         {
-            HabbiconShopRefreshResult refreshed = await Application
+            HabbiconShopRefreshResult refreshed = await _application
                 .InvokeAsync<HabbiconShopRefreshRequest, HabbiconShopRefreshResult>(
                     ApplicationMemberIds.HabbiconShopRefresh,
                     new HabbiconShopRefreshRequest(
@@ -286,7 +276,7 @@ public partial class ScriptGlobals
             }
             if (page.NextOffset is not int offset)
                 break;
-            page = await Application
+            page = await _application
                 .InvokeAsync<HabbiconCollectionPageRequest, HabbiconCollectionPage>(
                     ApplicationMemberIds.HabbiconCollectionsList,
                     new HabbiconCollectionPageRequest(offset, 500, first_page.SnapshotRevision),
@@ -318,7 +308,7 @@ public partial class ScriptGlobals
             }
             if (page.NextOffset is not int offset)
                 break;
-            page = await Application
+            page = await _application
                 .InvokeAsync<HabbiconEntryPageRequest, HabbiconEntryPage>(
                     ApplicationMemberIds.HabbiconEntriesList,
                     new HabbiconEntryPageRequest(offset, 500, first_page.SnapshotRevision),
@@ -333,7 +323,6 @@ public partial class ScriptGlobals
     private static void ValidateHabbiconState(HabbiconStateView state)
     {
         if (!state.Connected ||
-            state.Client is null ||
             state.SessionGeneration <= 0 ||
             state.SnapshotRevision <= 0 ||
             state.Vault.CollectionCount < 0 ||
@@ -349,7 +338,6 @@ public partial class ScriptGlobals
         HabbiconCollectionPage page)
     {
         if (page.Connected != state.Connected ||
-            page.Client != state.Client ||
             page.SessionGeneration != state.SessionGeneration ||
             page.StateRevision != state.Revision ||
             page.ShopRevision != state.ShopRevision ||
@@ -367,7 +355,6 @@ public partial class ScriptGlobals
         HabbiconEntryPage page)
     {
         if (page.Connected != state.Connected ||
-            page.Client != state.Client ||
             page.SessionGeneration != state.SessionGeneration ||
             page.StateRevision != state.Revision ||
             page.ShopRevision != state.ShopRevision ||
@@ -390,14 +377,12 @@ public partial class ScriptGlobals
             refreshed.SessionGeneration != expected_session_generation ||
             refreshed.SnapshotRevision <= 0 ||
             !collections.Connected ||
-            collections.Client != refreshed.Client ||
             collections.SessionGeneration != refreshed.SessionGeneration ||
             collections.StateRevision != refreshed.StateRevision ||
             collections.ShopRevision != refreshed.ShopRevision ||
             collections.UserRevision != refreshed.UserRevision ||
             collections.SnapshotRevision != refreshed.SnapshotRevision ||
             entries.Connected != collections.Connected ||
-            entries.Client != collections.Client ||
             entries.SessionGeneration != collections.SessionGeneration ||
             entries.StateRevision != collections.StateRevision ||
             entries.ShopRevision != collections.ShopRevision ||
@@ -419,10 +404,8 @@ public partial class ScriptGlobals
         int consumed = checked(offset + page.Collections.Count);
         int? expected_next = consumed < page.Total ? consumed : null;
         if (!first_page.Connected ||
-            first_page.Client is null ||
             first_page.SnapshotRevision <= 0 ||
             page.Connected != first_page.Connected ||
-            page.Client != first_page.Client ||
             page.SessionGeneration != first_page.SessionGeneration ||
             page.StateRevision != first_page.StateRevision ||
             page.ShopRevision != first_page.ShopRevision ||
@@ -450,10 +433,8 @@ public partial class ScriptGlobals
         int consumed = checked(offset + page.Entries.Count);
         int? expected_next = consumed < page.Total ? consumed : null;
         if (!first_page.Connected ||
-            first_page.Client is null ||
             first_page.SnapshotRevision <= 0 ||
             page.Connected != first_page.Connected ||
-            page.Client != first_page.Client ||
             page.SessionGeneration != first_page.SessionGeneration ||
             page.StateRevision != first_page.StateRevision ||
             page.ShopRevision != first_page.ShopRevision ||

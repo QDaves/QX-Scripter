@@ -8,11 +8,11 @@ public sealed record Draft(string Name, string Code, string? Path = null);
 
 public interface IDraftStore
 {
-    Task<IReadOnlyList<Draft>> LoadAsync(CancellationToken cancellation_token);
+    Task<IReadOnlyList<Draft>> LoadAsync(CancellationToken cancellationToken);
 
-    Task SaveAsync(IReadOnlyList<Draft> drafts, CancellationToken cancellation_token);
+    Task SaveAsync(IReadOnlyList<Draft> drafts, CancellationToken cancellationToken);
 
-    Task ClearAsync(CancellationToken cancellation_token);
+    Task ClearAsync(CancellationToken cancellationToken);
 
     bool SaveNow(IReadOnlyList<Draft> drafts, TimeSpan budget);
 
@@ -36,13 +36,13 @@ public sealed class DraftStore(IAppPaths paths) : IDraftStore, IDisposable
 
     public bool IsSealed => Volatile.Read(ref _sealed) != 0;
 
-    public async Task<IReadOnlyList<Draft>> LoadAsync(CancellationToken cancellation_token)
+    public async Task<IReadOnlyList<Draft>> LoadAsync(CancellationToken cancellationToken)
     {
         try
         {
             if (!File.Exists(_path))
                 return [];
-            string json = await File.ReadAllTextAsync(_path, cancellation_token).ConfigureAwait(false);
+            string json = await File.ReadAllTextAsync(_path, cancellationToken).ConfigureAwait(false);
             List<Draft>? drafts = JsonSerializer.Deserialize(json, DraftJson.Default.ListDraft);
             return drafts is null ? [] : [.. drafts.Where(draft => draft.Code is not null && draft.Name is not null)];
         }
@@ -52,25 +52,25 @@ public sealed class DraftStore(IAppPaths paths) : IDraftStore, IDisposable
         }
     }
 
-    public async Task SaveAsync(IReadOnlyList<Draft> drafts, CancellationToken cancellation_token)
+    public async Task SaveAsync(IReadOnlyList<Draft> drafts, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(drafts);
         if (IsSealed)
             return;
         if (drafts.Count == 0)
         {
-            await ClearAsync(cancellation_token).ConfigureAwait(false);
+            await ClearAsync(cancellationToken).ConfigureAwait(false);
             return;
         }
         string json = JsonSerializer.Serialize([.. drafts], DraftJson.Default.ListDraft);
-        await _gate.WaitAsync(cancellation_token).ConfigureAwait(false);
+        await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
             if (!IsSealed && !string.Equals(json, _last_written, StringComparison.Ordinal))
             {
                 string staging = _path + ".tmp";
                 Directory.CreateDirectory(Path.GetDirectoryName(_path)!);
-                await File.WriteAllTextAsync(staging, json, cancellation_token).ConfigureAwait(false);
+                await File.WriteAllTextAsync(staging, json, cancellationToken).ConfigureAwait(false);
                 File.Move(staging, _path, overwrite: true);
                 _last_written = json;
             }
@@ -84,11 +84,11 @@ public sealed class DraftStore(IAppPaths paths) : IDraftStore, IDisposable
         }
     }
 
-    public async Task ClearAsync(CancellationToken cancellation_token)
+    public async Task ClearAsync(CancellationToken cancellationToken)
     {
         if (IsSealed)
             return;
-        await _gate.WaitAsync(cancellation_token).ConfigureAwait(false);
+        await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
             if (!IsSealed)

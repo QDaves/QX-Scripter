@@ -1,5 +1,6 @@
 using Qx.Model;
 using Qx.Model.Messages.Incoming;
+using Qx.Model.Messages.Outgoing;
 
 namespace Qx.Game.Application;
 
@@ -55,11 +56,9 @@ public sealed record GiftNewUserOfferSummaryView(
 /// <remarks>
 /// Returned by the <c>gifts.state</c> query. The view is read from the current state and is not
 /// retained as a snapshot. Every revision increases when its part of the state is received or
-/// cleared. The club gift notification, offer giftability, new user offer and new user flow
-/// messages are only received on the Flash client.
+/// cleared.
 /// </remarks>
 /// <param name="Connected">Whether the state belongs to the active hotel session.</param>
-/// <param name="Client">The client type of the hotel session, or <see langword="null"/> when <paramref name="Connected"/> is <see langword="false"/>.</param>
 /// <param name="SessionGeneration">The generation of the hotel session the state belongs to.</param>
 /// <param name="Revision">The gift state revision, which increases with every change.</param>
 /// <param name="WrappingRevision">The revision of the gift wrapping configuration.</param>
@@ -81,7 +80,6 @@ public sealed record GiftNewUserOfferSummaryView(
 /// <param name="OfferGiftability">Whether each catalog offer can be sent as a gift, keyed by offer id, for up to 500 offers.</param>
 public sealed record GiftStateView(
     bool Connected,
-    ClientType? Client,
     long SessionGeneration,
     long Revision,
     long WrappingRevision,
@@ -134,7 +132,6 @@ public sealed record GiftWrappingPageRequest(
 /// <summary>Represents a page of one gift wrapping list, read from one snapshot.</summary>
 /// <remarks>Returned by the <c>gifts.wrapping.list</c> query.</remarks>
 /// <param name="Connected">Whether the snapshot belongs to the active hotel session.</param>
-/// <param name="Client">The client type of the hotel session, or <see langword="null"/> when <paramref name="Connected"/> is <see langword="false"/>.</param>
 /// <param name="SessionGeneration">The generation of the hotel session the snapshot belongs to.</param>
 /// <param name="WrappingRevision">The revision of the gift wrapping configuration.</param>
 /// <param name="SnapshotRevision">The revision of the retained snapshot, to pass when reading the next page.</param>
@@ -148,7 +145,6 @@ public sealed record GiftWrappingPageRequest(
 /// <param name="Values">The values in the page.</param>
 public sealed record GiftWrappingPage(
     bool Connected,
-    ClientType? Client,
     long SessionGeneration,
     long WrappingRevision,
     long SnapshotRevision,
@@ -218,13 +214,13 @@ public sealed record GiftClubOfferView(
 /// <summary>Represents the eligibility of a club gift offer.</summary>
 /// <param name="EligibilityOrdinal">The zero-based position of the entry in the club gift information.</param>
 /// <param name="OfferId">The id of the catalog offer the entry applies to.</param>
-/// <param name="IsVip">Whether the gift is a VIP club gift, or <see langword="null"/> when the hotel did not send it.</param>
+/// <param name="IsVip">Whether the gift is a VIP club gift.</param>
 /// <param name="DaysRequired">The number of club days the gift requires.</param>
 /// <param name="IsSelectable">Whether the gift can be selected.</param>
 public sealed record GiftClubEligibilityView(
     int EligibilityOrdinal,
     int OfferId,
-    bool? IsVip,
+    bool IsVip,
     int DaysRequired,
     bool IsSelectable);
 
@@ -243,7 +239,6 @@ public sealed record GiftClubProductView(
 /// <paramref name="Collection"/> holds rows, and the other lists are empty.
 /// </remarks>
 /// <param name="Connected">Whether the snapshot belongs to the active hotel session.</param>
-/// <param name="Client">The client type of the hotel session, or <see langword="null"/> when <paramref name="Connected"/> is <see langword="false"/>.</param>
 /// <param name="SessionGeneration">The generation of the hotel session the snapshot belongs to.</param>
 /// <param name="ClubInfoRevision">The revision of the club gift information.</param>
 /// <param name="SnapshotRevision">The revision of the retained snapshot, to pass when reading the next page.</param>
@@ -262,7 +257,6 @@ public sealed record GiftClubProductView(
 /// <param name="Products">The products in the page when <paramref name="Collection"/> is <see cref="GiftClubInfoCollection.Products"/>.</param>
 public sealed record GiftClubInfoPage(
     bool Connected,
-    ClientType? Client,
     long SessionGeneration,
     long ClubInfoRevision,
     long SnapshotRevision,
@@ -302,7 +296,6 @@ public sealed record GiftClubSelectedPageRequest(
 /// <summary>Represents a page of the last confirmed club gift selection, read from one snapshot.</summary>
 /// <remarks>Returned by the <c>gifts.club_selected.list</c> query.</remarks>
 /// <param name="Connected">Whether the snapshot belongs to the active hotel session.</param>
-/// <param name="Client">The client type of the hotel session, or <see langword="null"/> when <paramref name="Connected"/> is <see langword="false"/>.</param>
 /// <param name="SessionGeneration">The generation of the hotel session the snapshot belongs to.</param>
 /// <param name="ClubSelectedRevision">The revision of the last confirmed club gift selection.</param>
 /// <param name="SnapshotRevision">The revision of the retained snapshot, to pass when reading the next page.</param>
@@ -316,7 +309,6 @@ public sealed record GiftClubSelectedPageRequest(
 /// <param name="Products">The products in the page.</param>
 public sealed record GiftClubSelectedPage(
     bool Connected,
-    ClientType? Client,
     long SessionGeneration,
     long ClubSelectedRevision,
     long SnapshotRevision,
@@ -341,7 +333,7 @@ public enum GiftNewUserOfferCollection
 }
 
 /// <summary>Represents a request for a page of one new user gift offer list.</summary>
-/// <remarks>Used by the <c>gifts.new_user_offer.list</c> query. Only the Flash client receives the new user gift offer.</remarks>
+/// <remarks>Used by the <c>gifts.new_user_offer.list</c> query.</remarks>
 /// <param name="Collection">The list to read.</param>
 /// <param name="Offset">The zero-based index of the first row to return.</param>
 /// <param name="Limit">The maximum number of rows to return, from 1 to 500.</param>
@@ -393,7 +385,6 @@ public sealed record GiftNewUserProductView(
 /// <paramref name="Collection"/> holds rows, and the other lists are empty.
 /// </remarks>
 /// <param name="Connected">Whether the snapshot belongs to the active hotel session.</param>
-/// <param name="Client">The client type of the hotel session, or <see langword="null"/> when <paramref name="Connected"/> is <see langword="false"/>.</param>
 /// <param name="SessionGeneration">The generation of the hotel session the snapshot belongs to.</param>
 /// <param name="NewUserOfferRevision">The revision of the new user gift offer.</param>
 /// <param name="SnapshotRevision">The revision of the retained snapshot, to pass when reading the next page.</param>
@@ -410,7 +401,6 @@ public sealed record GiftNewUserProductView(
 /// <param name="Products">The products in the page when <paramref name="Collection"/> is <see cref="GiftNewUserOfferCollection.Products"/>.</param>
 public sealed record GiftNewUserOfferPage(
     bool Connected,
-    ClientType? Client,
     long SessionGeneration,
     long NewUserOfferRevision,
     long SnapshotRevision,
@@ -442,7 +432,6 @@ public sealed record GiftRefreshRequest(
 
 /// <summary>Represents the result of a gift configuration refresh.</summary>
 /// <remarks>Returned by the <c>gifts.refresh</c> operation.</remarks>
-/// <param name="Client">The client type of the hotel session.</param>
 /// <param name="SessionGeneration">The generation of the hotel session the refresh ran in.</param>
 /// <param name="CompletedAtUtc">The UTC time the refresh completed.</param>
 /// <param name="WrappingObservedAtUtc">The UTC time the gift wrapping configuration was observed.</param>
@@ -454,7 +443,6 @@ public sealed record GiftRefreshRequest(
 /// <param name="ClubInfo">The summary of the received club gift information.</param>
 /// <param name="ClubInfoPage">The first page of club gift offers from the refreshed snapshot.</param>
 public sealed record GiftRefreshResult(
-    ClientType Client,
     long SessionGeneration,
     DateTimeOffset CompletedAtUtc,
     DateTimeOffset WrappingObservedAtUtc,
@@ -482,7 +470,6 @@ public sealed record GiftPresentOpenRequest(
 
 /// <summary>Represents the receipt for a present open request that was sent.</summary>
 /// <remarks>Returned by the <c>gifts.present.open</c> operation.</remarks>
-/// <param name="Client">The client type of the hotel session.</param>
 /// <param name="DispatchedAtUtc">The UTC time the request was sent.</param>
 /// <param name="SessionGeneration">The generation of the hotel session the request was sent in.</param>
 /// <param name="RoomId">The id of the room the request was sent in.</param>
@@ -491,7 +478,6 @@ public sealed record GiftPresentOpenRequest(
 /// <param name="FurniId">The room id of the present.</param>
 /// <param name="MessagesDispatched">The number of messages sent.</param>
 public sealed record GiftPresentOpenDispatchReceipt(
-    ClientType Client,
     DateTimeOffset DispatchedAtUtc,
     long SessionGeneration,
     Id RoomId,
@@ -534,7 +520,6 @@ public sealed record GiftPurchaseRequest(
 
 /// <summary>Represents the receipt for a gift purchase that was sent.</summary>
 /// <remarks>Returned by the <c>gifts.purchase</c> operation.</remarks>
-/// <param name="Client">The client type of the hotel session.</param>
 /// <param name="DispatchedAtUtc">The UTC time the purchase was sent.</param>
 /// <param name="SessionGeneration">The generation of the hotel session the purchase was sent in.</param>
 /// <param name="CatalogGeneration">The catalog generation the purchase was sent in.</param>
@@ -544,7 +529,6 @@ public sealed record GiftPurchaseRequest(
 /// <param name="ShowPurchaserName">Whether the purchaser name is shown to the receiver.</param>
 /// <param name="MessagesDispatched">The number of messages sent.</param>
 public sealed record GiftPurchaseDispatchReceipt(
-    ClientType Client,
     DateTimeOffset DispatchedAtUtc,
     long SessionGeneration,
     long CatalogGeneration,
@@ -570,14 +554,12 @@ public sealed record GiftClubSelectRequest(
 
 /// <summary>Represents the receipt for a club gift selection that was sent.</summary>
 /// <remarks>Returned by the <c>gifts.club.select</c> operation.</remarks>
-/// <param name="Client">The client type of the hotel session.</param>
 /// <param name="DispatchedAtUtc">The UTC time the selection was sent.</param>
 /// <param name="SessionGeneration">The generation of the hotel session the selection was sent in.</param>
 /// <param name="ClubInfoRevision">The club gift information revision when the selection was sent.</param>
 /// <param name="ProductCode">The product code that was sent.</param>
 /// <param name="MessagesDispatched">The number of messages sent.</param>
 public sealed record GiftClubSelectDispatchReceipt(
-    ClientType Client,
     DateTimeOffset DispatchedAtUtc,
     long SessionGeneration,
     long ClubInfoRevision,
@@ -588,7 +570,7 @@ public sealed record GiftClubSelectDispatchReceipt(
 /// <remarks>
 /// Used by the <c>gifts.offer_giftability.refresh</c> operation. The call waits for the answer for
 /// the same offer id. A request that times out is sent once more, and the timeout is split across
-/// both attempts. Only the Flash client receives the answer.
+/// both attempts.
 /// </remarks>
 /// <param name="OfferId">The id of the catalog offer.</param>
 /// <param name="TimeoutMilliseconds">The maximum time to wait for the answer, in milliseconds, from 1 to 120000.</param>
@@ -600,7 +582,6 @@ public sealed record GiftOfferGiftabilityRefreshRequest(
 
 /// <summary>Represents the result of an offer giftability request.</summary>
 /// <remarks>Returned by the <c>gifts.offer_giftability.refresh</c> operation.</remarks>
-/// <param name="Client">The client type of the hotel session.</param>
 /// <param name="SessionGeneration">The generation of the hotel session the request ran in.</param>
 /// <param name="Revision">The gift state revision after the answer was received.</param>
 /// <param name="OfferGiftabilityRevision">The revision of the offer giftability answers after the answer was received.</param>
@@ -608,7 +589,6 @@ public sealed record GiftOfferGiftabilityRefreshRequest(
 /// <param name="OfferId">The id of the catalog offer.</param>
 /// <param name="IsGiftable">Whether the offer can be sent as a gift.</param>
 public sealed record GiftOfferGiftabilityRefreshResult(
-    ClientType Client,
     long SessionGeneration,
     long Revision,
     long OfferGiftabilityRevision,
@@ -631,14 +611,12 @@ public sealed record GiftNewUserSelectRequest(
 
 /// <summary>Represents the receipt for a new user gift selection that was sent.</summary>
 /// <remarks>Returned by the <c>gifts.new_user.select</c> operation.</remarks>
-/// <param name="Client">The client type of the hotel session.</param>
 /// <param name="DispatchedAtUtc">The UTC time the selection was sent.</param>
 /// <param name="SessionGeneration">The generation of the hotel session the selection was sent in.</param>
 /// <param name="NewUserOfferRevision">The new user offer revision when the selection was sent.</param>
 /// <param name="SelectionCount">The number of selections that were sent.</param>
 /// <param name="MessagesDispatched">The number of messages sent.</param>
 public sealed record GiftNewUserSelectDispatchReceipt(
-    ClientType Client,
     DateTimeOffset DispatchedAtUtc,
     long SessionGeneration,
     long NewUserOfferRevision,
@@ -658,7 +636,6 @@ public sealed record GiftNewUserAdvanceRequest(
 
 /// <summary>Represents the receipt for a new user flow advance that was sent.</summary>
 /// <remarks>Returned by the <c>gifts.new_user.advance</c> operation.</remarks>
-/// <param name="Client">The client type of the hotel session.</param>
 /// <param name="DispatchedAtUtc">The UTC time the request was sent.</param>
 /// <param name="SessionGeneration">The generation of the hotel session the request was sent in.</param>
 /// <param name="RoomId">The id of the room the request was sent in.</param>
@@ -666,7 +643,6 @@ public sealed record GiftNewUserAdvanceRequest(
 /// <param name="RoomRevision">The room state revision when the request was prepared.</param>
 /// <param name="MessagesDispatched">The number of messages sent.</param>
 public sealed record GiftNewUserAdvanceDispatchReceipt(
-    ClientType Client,
     DateTimeOffset DispatchedAtUtc,
     long SessionGeneration,
     Id RoomId,
@@ -703,7 +679,7 @@ public enum GiftChangeKind
 /// <remarks>Published by the <c>gifts.changed</c> event. Only the value that matches <paramref name="Kind"/> is set.</remarks>
 /// <param name="Kind">The kind of change.</param>
 /// <param name="ChangedAtUtc">The UTC time the change was published.</param>
-/// <param name="Client">The client type of the hotel session, or <see langword="null"/> when there is no session.</param>
+/// <param name="Connected">Whether a hotel session is active.</param>
 /// <param name="SessionGeneration">The generation of the hotel session the change belongs to.</param>
 /// <param name="Revision">The gift state revision after the change.</param>
 /// <param name="SourceRevision">The revision of the part that changed, or <paramref name="Revision"/> for <see cref="GiftChangeKind.Reset"/>.</param>
@@ -720,7 +696,7 @@ public enum GiftChangeKind
 public sealed record GiftChanged(
     GiftChangeKind Kind,
     DateTimeOffset ChangedAtUtc,
-    ClientType? Client,
+    bool Connected,
     long SessionGeneration,
     long Revision,
     long SourceRevision,

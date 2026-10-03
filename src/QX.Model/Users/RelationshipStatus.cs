@@ -34,7 +34,6 @@ public sealed record RelationshipEntry(
 {
     /// <summary>Reads a relationship entry from a packet.</summary>
     /// <param name="p">The packet to read from.</param>
-    /// <exception cref="UnsupportedClientException">Thrown when the packet is not from the Flash client.</exception>
     public static RelationshipEntry Parse(in PacketReader p) =>
         FlashWire.Parse(in p, ParseFlash);
 
@@ -43,7 +42,6 @@ public sealed record RelationshipEntry(
 
     /// <summary>Writes the relationship entry to a packet.</summary>
     /// <param name="p">The packet to write to.</param>
-    /// <exception cref="UnsupportedClientException">Thrown when the packet is not for the Flash client.</exception>
     /// <exception cref="InvalidDataException">Thrown when <see cref="RandomFriendId"/> does not fit in 32 bits or a string is too long.</exception>
     public void Compose(in PacketWriter p) =>
         FlashWire.Compose(this, in p, ComposeFlash);
@@ -68,19 +66,20 @@ public sealed record RelationshipEntry(
 }
 
 /// <summary>Represents the relationships shown on a user's profile.</summary>
+/// <remarks>Received as the Flash <c>RelationshipStatusInfo</c> message.</remarks>
 public sealed record RelationshipStatus : IParserComposer<RelationshipStatus>
 {
     private IReadOnlyList<RelationshipEntry> _entries =
         Array.AsReadOnly(Array.Empty<RelationshipEntry>());
 
     /// <summary>Initializes a new instance of the <see cref="RelationshipStatus"/> class.</summary>
-    /// <param name="UserId">The user whose relationships these are.</param>
-    /// <param name="Entries">The relationship entries; the list is copied.</param>
-    /// <exception cref="ArgumentNullException">Thrown when <paramref name="Entries"/> or any entry is <see langword="null"/>.</exception>
-    public RelationshipStatus(Id UserId, IReadOnlyList<RelationshipEntry> Entries)
+    /// <param name="userId">The user whose relationships these are.</param>
+    /// <param name="entries">The relationship entries; the list is copied.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="entries"/> or any entry is <see langword="null"/>.</exception>
+    public RelationshipStatus(Id userId, IReadOnlyList<RelationshipEntry> entries)
     {
-        this.UserId = UserId;
-        this.Entries = Entries;
+        UserId = userId;
+        Entries = entries;
     }
 
     /// <summary>Gets the user whose relationships these are.</summary>
@@ -95,17 +94,16 @@ public sealed record RelationshipStatus : IParserComposer<RelationshipStatus>
     }
 
     /// <summary>Deconstructs the status into its user and entries.</summary>
-    /// <param name="UserId">The user whose relationships these are.</param>
-    /// <param name="Entries">The relationship entries.</param>
-    public void Deconstruct(out Id UserId, out IReadOnlyList<RelationshipEntry> Entries)
+    /// <param name="userId">The user whose relationships these are.</param>
+    /// <param name="entries">The relationship entries.</param>
+    public void Deconstruct(out Id userId, out IReadOnlyList<RelationshipEntry> entries)
     {
-        UserId = this.UserId;
-        Entries = this.Entries;
+        userId = UserId;
+        entries = Entries;
     }
 
     /// <summary>Reads the relationship status from a packet.</summary>
     /// <param name="p">The packet to read from.</param>
-    /// <exception cref="UnsupportedClientException">Thrown when the packet is not from the Flash client.</exception>
     /// <exception cref="InvalidDataException">Thrown when the entry count is invalid or bytes remain after the entries.</exception>
     public static RelationshipStatus Parse(in PacketReader p) =>
         FlashWire.Parse(in p, ParseFlash);
@@ -126,7 +124,6 @@ public sealed record RelationshipStatus : IParserComposer<RelationshipStatus>
 
     /// <summary>Writes the relationship status to a packet.</summary>
     /// <param name="p">The packet to write to.</param>
-    /// <exception cref="UnsupportedClientException">Thrown when the packet is not for the Flash client.</exception>
     /// <exception cref="InvalidDataException">Thrown when an identifier does not fit in 32 bits or a string is too long.</exception>
     public void Compose(in PacketWriter p) =>
         FlashWire.Compose(this, in p, ComposeFlash);

@@ -535,8 +535,6 @@ public static class Msg
         public const string HeightMap = "HeightMap";
         /// <summary>The incoming Flash message <c>HeightMapUpdate</c>.</summary>
         public const string HeightMapUpdate = "HeightMapUpdate";
-        /// <summary>An older spelling of <see cref="HeightMap"/>.</summary>
-        public const string Heightmap = "Heightmap";
         /// <summary>The incoming Flash message <c>HotLooks</c>.</summary>
         public const string HotLooks = "HotLooks";
         /// <summary>The incoming Flash message <c>IdentityAccounts</c>.</summary>
@@ -669,8 +667,6 @@ public static class Msg
         public const string ModeratorUserInfo = "ModeratorUserInfo";
         /// <summary>The incoming Flash message <c>ModifyCustomFilterResult</c>.</summary>
         public const string ModifyCustomFilterResult = "ModifyCustomFilterResult";
-        /// <summary>An older spelling of <see cref="MOTDNotification"/>.</summary>
-        public const string Motdnotification = "Motdnotification";
         /// <summary>The incoming Flash message <c>MuteAllInRoom</c>.</summary>
         public const string MuteAllInRoom = "MuteAllInRoom";
         /// <summary>The incoming Flash message <c>MyCfhReportStatus</c>.</summary>
@@ -1201,6 +1197,8 @@ public static class Msg
         public const string WiredValidationError = "WiredValidationError";
         /// <summary>The incoming Flash message <c>WiredVariablesForObject</c>.</summary>
         public const string WiredVariablesForObject = "WiredVariablesForObject";
+        /// <summary>The incoming Flash message <c>WiredWebApiKeyResult</c>.</summary>
+        public const string WiredWebApiKeyResult = "WiredWebApiKeyResult";
         /// <summary>The incoming Flash message <c>YouAreController</c>.</summary>
         public const string YouAreController = "YouAreController";
         /// <summary>The incoming Flash message <c>YouAreNotController</c>.</summary>
@@ -1450,12 +1448,6 @@ public static class Msg
         public const string ForwardToARandomPromotedRoom = "ForwardToARandomPromotedRoom";
         /// <summary>The outgoing Flash message <c>ForwardToASubmittableRoom</c>.</summary>
         public const string ForwardToASubmittableRoom = "ForwardToASubmittableRoom";
-        /// <summary>An older spelling of <see cref="ForwardToACompetitionRoom"/>.</summary>
-        public const string ForwardToAcompetitionRoom = "ForwardToAcompetitionRoom";
-        /// <summary>An older spelling of <see cref="ForwardToARandomPromotedRoom"/>.</summary>
-        public const string ForwardToArandomPromotedRoom = "ForwardToArandomPromotedRoom";
-        /// <summary>An older spelling of <see cref="ForwardToASubmittableRoom"/>.</summary>
-        public const string ForwardToAsubmittableRoom = "ForwardToAsubmittableRoom";
         /// <summary>The outgoing Flash message <c>ForwardToRandomCompetitionRoom</c>.</summary>
         public const string ForwardToRandomCompetitionRoom = "ForwardToRandomCompetitionRoom";
         /// <summary>The outgoing Flash message <c>ForwardToSomeRoom</c>.</summary>
@@ -2338,6 +2330,8 @@ public static class Msg
         public const string WiredClickUser = "WiredClickUser";
         /// <summary>The outgoing Flash message <c>WiredDeleteAllVariableHolders</c>.</summary>
         public const string WiredDeleteAllVariableHolders = "WiredDeleteAllVariableHolders";
+        /// <summary>The outgoing Flash message <c>WiredGenerateWebApiKey</c>.</summary>
+        public const string WiredGenerateWebApiKey = "WiredGenerateWebApiKey";
         /// <summary>The outgoing Flash message <c>WiredGetAllVariableHolders</c>.</summary>
         public const string WiredGetAllVariableHolders = "WiredGetAllVariableHolders";
         /// <summary>The outgoing Flash message <c>WiredGetAllVariablesDiffs</c>.</summary>

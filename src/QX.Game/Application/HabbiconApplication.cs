@@ -286,7 +286,7 @@ internal sealed partial class HabbiconApplication : IApplicationFeature, IHabbic
                 new HabbiconChanged(
                     kind,
                     time_provider.GetUtcNow(),
-                    update.State.Session?.Client,
+                    update.State.Session is not null,
                     update.State.SessionGeneration,
                     update.State.Revision,
                     SourceRevision(update),

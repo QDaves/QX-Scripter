@@ -3,7 +3,7 @@ using Qx.Game.Protocol;
 using Qx.Interception;
 using Qx.Model;
 using Qx.Model.Messages.Incoming;
-using Qx.Model.Subscriptions;
+using Qx.Model.Messages.Outgoing;
 
 namespace Qx.Game.Application;
 
@@ -139,7 +139,6 @@ internal sealed class SubscriptionApplication : IApplicationFeature, ISubscripti
             ReferenceEquals(connection.Session, state.Session);
         var view = new SubscriptionStateView(
             connected,
-            connected ? state.Session!.Client : null,
             state.SessionGeneration,
             state.Revision,
             state.UserInfoRevision,
@@ -327,7 +326,6 @@ internal sealed class SubscriptionApplication : IApplicationFeature, ISubscripti
         }
         ScrSendUserInfo value = (ScrSendUserInfo)observed.Update.Value!;
         return new SubscriptionUserInfoRefreshResult(
-            scope.Session.Client,
             scope.SessionGeneration,
             observed.Update.State.Revision,
             observed.Update.State.UserInfoRevision,
@@ -408,7 +406,6 @@ internal sealed class SubscriptionApplication : IApplicationFeature, ISubscripti
         }
         ScrSendKickbackInfo value = (ScrSendKickbackInfo)observed.Update.Value!;
         return new SubscriptionKickbackRefreshResult(
-            scope.Session.Client,
             scope.SessionGeneration,
             observed.Update.State.Revision,
             observed.Update.State.KickbackRevision,
@@ -491,7 +488,6 @@ internal sealed class SubscriptionApplication : IApplicationFeature, ISubscripti
         }
         BuildersClubFurniCount value = (BuildersClubFurniCount)observed.Update.Value!;
         return new SubscriptionBuildersClubFurniCountRefreshResult(
-            scope.Session.Client,
             scope.SessionGeneration,
             observed.Update.State.Revision,
             observed.Update.State.BuildersClubFurniCountRevision,
@@ -739,7 +735,7 @@ internal sealed class SubscriptionApplication : IApplicationFeature, ISubscripti
                 new SubscriptionChanged(
                     ChangeKind(update.Kind),
                     time_provider.GetUtcNow(),
-                    state.Session?.Client,
+                    state.Session is not null,
                     state.SessionGeneration,
                     state.Revision,
                     SourceRevision(update),
@@ -1012,7 +1008,6 @@ internal sealed class SubscriptionApplication : IApplicationFeature, ISubscripti
             ReferenceEquals(connection.Session, state.Session);
         var page = new SubscriptionClubOffersPage(
             connected,
-            connected ? state.Session!.Client : null,
             state.SessionGeneration,
             state.Revision,
             state.ClubOffersRevision,
@@ -1268,7 +1263,6 @@ internal sealed class SubscriptionApplication : IApplicationFeature, ISubscripti
         int offer_id,
         bool is_retry) => new(
         placement_kind,
-        scope.Session.Client,
         time_provider.GetUtcNow(),
         scope.SessionGeneration,
         scope.RoomId,

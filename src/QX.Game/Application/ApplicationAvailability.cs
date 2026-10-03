@@ -5,13 +5,13 @@ using Qx.Protocol;
 
 namespace Qx.Game.Application;
 
-/// <summary>Represents whether one message of an application member can be used with a client.</summary>
+/// <summary>Represents whether one message of an application member can be used.</summary>
 /// <param name="Key">The semantic key of the message.</param>
 /// <param name="Direction">The direction the message travels.</param>
 /// <param name="Role">Whether the member sends or observes the message.</param>
 /// <param name="Required">Whether the member needs the message to be available.</param>
 /// <param name="Registered">Whether the message registry knows the message key.</param>
-/// <param name="Supported">Whether the client has the message in the required direction and a message contract supports it.</param>
+/// <param name="Supported">Whether the message registry declares the message in the required direction and a message contract exists for it.</param>
 /// <param name="Resolved">Whether the message resolved to headers in the active session: exactly one header for a message the member sends, at least one for a message it observes.</param>
 /// <param name="ModelType">The model type of the message contract, or <see langword="null"/> when there is no contract.</param>
 /// <param name="Headers">The resolved header values in ascending order, or an empty list when the message was not resolved.</param>
@@ -21,7 +21,7 @@ namespace Qx.Game.Application;
 /// <param name="HeaderCapabilities">The wire capability of each resolved header, ordered by header value.</param>
 public sealed record ApplicationMessageAvailability(
     MessageKey Key,
-    Direction Direction,
+    MessageDirection Direction,
     ApplicationMessageRole Role,
     bool Required,
     bool Registered,
@@ -45,16 +45,6 @@ public sealed record ApplicationMessageHeaderCapability(
     bool Available,
     string? Reason);
 
-/// <summary>Represents whether an application member is supported by one client type.</summary>
-/// <remarks>The messages are checked against the message registry and contracts only, without resolving headers.</remarks>
-/// <param name="Client">The client type.</param>
-/// <param name="Supported">Whether every required message of the member is supported by the client.</param>
-/// <param name="Messages">The support of each message of the member.</param>
-public sealed record ApplicationClientAvailability(
-    ClientType Client,
-    bool Supported,
-    IReadOnlyList<ApplicationMessageAvailability> Messages);
-
 /// <summary>Represents whether an application member can be invoked in the active session.</summary>
 /// <remarks>
 /// A member is available when every required state is satisfied and, for an operation, every
@@ -62,17 +52,15 @@ public sealed record ApplicationClientAvailability(
 /// only the required messages it observes, and a query checks no messages.
 /// </remarks>
 /// <param name="Available">Whether the member can be invoked.</param>
-/// <param name="Client">The client type of the active session, or <see cref="ClientType.None"/> when there is no session.</param>
+/// <param name="Connected">Whether a hotel session is active.</param>
 /// <param name="MissingStates">The required states that are not satisfied.</param>
-/// <param name="ActiveMessages">The availability of each message of the member for the active client.</param>
-/// <param name="Clients">The support of the member for each client type.</param>
-/// <param name="CatalogProvenance">The origin of the message catalog bound to the active session, or <see langword="null"/> when no catalog matches the active client.</param>
+/// <param name="ActiveMessages">The availability of each message of the member in the active session.</param>
+/// <param name="CatalogProvenance">The origin of the message catalog bound to the active session, or <see langword="null"/> when there is no session or no catalog is bound.</param>
 public sealed record ApplicationAvailability(
     bool Available,
-    ClientType Client,
+    bool Connected,
     IReadOnlyList<ApplicationStateKey> MissingStates,
     IReadOnlyList<ApplicationMessageAvailability> ActiveMessages,
-    IReadOnlyList<ApplicationClientAvailability> Clients,
     CatalogProvenance? CatalogProvenance);
 
 /// <summary>Represents an application member together with its current availability.</summary>
@@ -166,14 +154,13 @@ internal sealed class ApplicationAvailabilityResolver(
         WalletAvailability wallet,
         TradeAvailability trade)
     {
-        ClientType active_client = session?.Client ?? ClientType.None;
-        bool catalog_matches = session is not null && binding?.Client == active_client;
+        bool catalog_bound = session is not null && binding is not null;
         ApplicationStateKey[] missing_states = descriptor.RequiredStates
             .Where(state => !StateAvailable(state, session, room, room_bans, room_settings, profile, friends, navigator, marketplace, inventory, wallet, trade))
             .ToArray();
-        ApplicationMessageAvailability[] active_messages = ClientTypes.IsSupported(active_client)
-            ? descriptor.Messages.Select(message => Message(active_client, message, catalog_matches)).ToArray()
-            : descriptor.Messages.Select(message => Message(ClientType.None, message, false)).ToArray();
+        ApplicationMessageAvailability[] active_messages = descriptor.Messages
+            .Select(message => Message(message, catalog_bound))
+            .ToArray();
         bool messages_available = descriptor.Kind switch
         {
             ApplicationMemberKind.Operation => active_messages
@@ -192,35 +179,15 @@ internal sealed class ApplicationAvailabilityResolver(
                     message.WireAvailable is not false),
             _ => true
         };
-        ApplicationClientAvailability[] clients =
-        [
-            Client(descriptor, ClientType.Flash)        ];
         return new ApplicationAvailability(
             missing_states.Length == 0 && messages_available,
-            active_client,
+            session is not null,
             Array.AsReadOnly(missing_states),
             Array.AsReadOnly(active_messages),
-            Array.AsReadOnly(clients),
-            catalog_matches ? binding!.Provenance : null);
-    }
-
-    private ApplicationClientAvailability Client(
-        ApplicationDescriptor descriptor,
-        ClientType client)
-    {
-        ApplicationMessageAvailability[] messages = descriptor.Messages
-            .Select(message => Message(client, message, false))
-            .ToArray();
-        return new ApplicationClientAvailability(
-            client,
-            messages
-                .Where(message => message.Required)
-                .All(message => message.Supported),
-            Array.AsReadOnly(messages));
+            catalog_bound ? binding!.Provenance : null);
     }
 
     private ApplicationMessageAvailability Message(
-        ClientType client,
         ApplicationMessageRequirement requirement,
         bool resolve)
     {
@@ -228,16 +195,13 @@ internal sealed class ApplicationAvailabilityResolver(
             requirement.Key,
             out MessageDescriptor descriptor);
         bool registry_support = registered &&
-            ClientTypes.IsSupported(client) &&
-            descriptor.Direction == requirement.Direction &&
-            descriptor.NamesFor(client).Count != 0;
-        bool contracted = contracts.TryGet(requirement.Key, out IMessageContract contract) &&
-            contract.Supports(client);
+            descriptor.Direction == requirement.Direction;
+        bool contracted = contracts.TryGet(requirement.Key, out IMessageContract contract);
         int[] headers = [];
         MessageCapability capability = MessageCapability.Ready();
         ApplicationMessageHeaderCapability[] header_capabilities = [];
         if (resolve && registry_support && contracted &&
-            interceptor.Messages.TryGetHeaders(client, requirement.Key, out IReadOnlyList<Header> resolved))
+            interceptor.Messages.TryGetHeaders(requirement.Key, out IReadOnlyList<Header> resolved))
         {
             Header[] matching_headers = resolved
                 .Where(header => header.Direction == requirement.Direction)
@@ -247,7 +211,6 @@ internal sealed class ApplicationAvailabilityResolver(
             foreach (Header header in matching_headers)
             {
                 MessageCapability current = contract.Capability(
-                    client,
                     interceptor.Messages,
                     header);
                 capabilities.Add(new ApplicationMessageHeaderCapability(

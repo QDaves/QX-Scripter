@@ -31,10 +31,10 @@ public sealed class AtomicJsonFile : IDisposable
 
     public void Schedule() => _save.Trigger();
 
-    public Task FlushAsync(CancellationToken cancellation_token)
+    public Task FlushAsync(CancellationToken cancellationToken)
     {
         _save.Cancel();
-        return WriteAsync(_render(), cancellation_token);
+        return WriteAsync(_render(), cancellationToken);
     }
 
     public bool FlushNow(TimeSpan budget)

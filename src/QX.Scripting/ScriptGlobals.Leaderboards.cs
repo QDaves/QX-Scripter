@@ -10,7 +10,6 @@ public partial class ScriptGlobals
     /// Gets the game leaderboard manager, which tracks the all-time and weekly boards for players,
     /// friends and groups.
     /// </summary>
-    /// <remarks>Flash only.</remarks>
     public LeaderboardManager Leaderboards => Game.Leaderboards;
 
     /// <summary>
@@ -38,7 +37,7 @@ public partial class ScriptGlobals
     {
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(timeoutMs);
         LeaderboardStateView state = await ReadLeaderboardState(scope, weekly).ConfigureAwait(false);
-        LeaderboardRefreshResult result = await Application
+        LeaderboardRefreshResult result = await _application
             .InvokeAsync<LeaderboardRefreshRequest, LeaderboardRefreshResult>(
                 ApplicationMemberIds.LeaderboardsRefresh,
                 new LeaderboardRefreshRequest(
@@ -87,7 +86,7 @@ public partial class ScriptGlobals
             scope,
             weekly).ConfigureAwait(false);
         int start_rank = page.Entries.Count > 0 ? page.Entries[^1].Rank + 1 : -1;
-        LeaderboardRefreshResult result = await Application
+        LeaderboardRefreshResult result = await _application
             .InvokeAsync<LeaderboardRefreshRequest, LeaderboardRefreshResult>(
                 ApplicationMemberIds.LeaderboardsRefresh,
                 new LeaderboardRefreshRequest(
@@ -138,7 +137,7 @@ public partial class ScriptGlobals
         int start_rank = page.Entries.Count > 0
             ? Math.Max(1, page.Entries[0].Rank - state.WindowSize)
             : -1;
-        LeaderboardRefreshResult result = await Application
+        LeaderboardRefreshResult result = await _application
             .InvokeAsync<LeaderboardRefreshRequest, LeaderboardRefreshResult>(
                 ApplicationMemberIds.LeaderboardsRefresh,
                 new LeaderboardRefreshRequest(
@@ -232,7 +231,7 @@ public partial class ScriptGlobals
     /// </param>
     /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="offset"/> is negative.</exception>
     public void SetLeaderboardWeek(int offset) =>
-        Application.Invoke<LeaderboardWeekOffsetRequest, LeaderboardWeekOffsetResult>(
+        _application.Invoke<LeaderboardWeekOffsetRequest, LeaderboardWeekOffsetResult>(
             ApplicationMemberIds.LeaderboardsWeekOffsetSet,
             new LeaderboardWeekOffsetRequest(offset),
             Ct);
@@ -243,30 +242,26 @@ public partial class ScriptGlobals
     public WeeklyLeaderboardPeriod? LeaderboardWeek => Game.Leaderboards.Period;
 
     /// <summary>Registers a handler that runs whenever any leaderboard window arrives.</summary>
-    /// <remarks>
-    /// No handle is returned, so the handler stays registered until the script stops.
-    /// </remarks>
     /// <param name="handler">The handler to call with the slice, whether it was weekly, and the window.</param>
+    /// <returns>A handle that removes the handler when disposed.</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="handler"/> is <see langword="null"/>.</exception>
-    public void OnLeaderboard(Action<LeaderboardScope, bool, Leaderboard> handler)
-    {
-        _ = Subscribe(
+    public IDisposable OnLeaderboard(Action<LeaderboardScope, bool, Leaderboard> handler)
+        => Subscribe(
             handler,
             value => Game.Leaderboards.BoardReceived += value,
             value => Game.Leaderboards.BoardReceived -= value);
-    }
 
     private async Task<LeaderboardStateView> ReadLeaderboardState(
         LeaderboardScope scope,
         bool weekly)
     {
-        LeaderboardStateView state = await Application
+        LeaderboardStateView state = await _application
             .InvokeAsync<LeaderboardStateRequest, LeaderboardStateView>(
                 ApplicationMemberIds.LeaderboardsState,
                 new LeaderboardStateRequest(scope, weekly),
                 Ct)
             .ConfigureAwait(false);
-        if (!state.Connected || state.Client is null || state.SessionGeneration <= 0)
+        if (!state.Connected || state.SessionGeneration <= 0)
             throw new InvalidOperationException("An active leaderboard session is required.");
         return state;
     }
@@ -276,7 +271,7 @@ public partial class ScriptGlobals
         LeaderboardScope scope,
         bool weekly)
     {
-        LeaderboardEntryPage page = await Application
+        LeaderboardEntryPage page = await _application
             .InvokeAsync<LeaderboardEntryPageRequest, LeaderboardEntryPage>(
                 ApplicationMemberIds.LeaderboardsEntriesList,
                 new LeaderboardEntryPageRequest(
@@ -325,7 +320,7 @@ public partial class ScriptGlobals
         int? next_offset = first.NextOffset;
         while (next_offset is int offset)
         {
-            LeaderboardEntryPage page = await Application
+            LeaderboardEntryPage page = await _application
                 .InvokeAsync<LeaderboardEntryPageRequest, LeaderboardEntryPage>(
                     ApplicationMemberIds.LeaderboardsEntriesList,
                     new LeaderboardEntryPageRequest(
@@ -365,7 +360,6 @@ public partial class ScriptGlobals
         int end_offset = checked(page.Offset + page.Entries.Count);
         int? expected_next = end_offset < page.Total ? end_offset : null;
         if (!page.Connected ||
-            page.Client is null ||
             page.SessionGeneration != session_generation ||
             page.StateRevision != first.StateRevision ||
             page.BoardsRevision != first.BoardsRevision ||

@@ -1,3 +1,5 @@
+using Qx.Scripting.Hosting;
+
 namespace Qx.Scripting;
 
 public partial class ScriptGlobals

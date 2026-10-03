@@ -188,43 +188,43 @@ public partial class ScriptGlobals
     /// value.
     /// </summary>
     /// <param name="target">
-    /// The kind of holder to inspect: 0 furni, 1 user, -10 global. Only those three are used by
-    /// this request.
+    /// The kind of holder to inspect: furni, user or global. Only those three are used by this
+    /// request.
     /// </param>
     /// <param name="objectId">
-    /// The furni id for target 0, the user's room index for target 1, and 0 for global.
+    /// The furni id for a furni, the user's room index for a user, and 0 for global.
     /// </param>
     /// <param name="timeoutMs">The timeout in milliseconds.</param>
     /// <returns>The inspection snapshot: variable id to value, plus which wireds reference them.</returns>
     /// <exception cref="ArgumentOutOfRangeException">
-    /// Thrown when <paramref name="target"/> is not 0, 1 or -10, or <paramref name="objectId"/> does not fit the
-    /// target.
+    /// Thrown when <paramref name="target"/> is not furni, user or global, or <paramref name="objectId"/> does
+    /// not fit the target.
     /// </exception>
     /// <exception cref="Qx.Game.RequestTimeoutException">Thrown when no reply arrived in time.</exception>
     public Task<WiredVariablesObjectSnapshot> GetVariablesForObject(
-        int target,
+        WiredTarget target,
         int objectId,
         int timeoutMs = 10000) =>
         wired_call<WiredVariablesObjectRequest, WiredVariablesObjectSnapshot>(
             ApplicationMemberIds.WiredVariablesObjectGet,
-            new WiredVariablesObjectRequest((WiredTarget)target, objectId, timeoutMs));
+            new WiredVariablesObjectRequest(target, objectId, timeoutMs));
 
     /// <summary>
     /// Inspects the wired variable values held by one object, taking the object id as a native id.
     /// </summary>
-    /// <param name="target">The kind of holder to inspect: 0 furni, 1 user, -10 global.</param>
+    /// <param name="target">The kind of holder to inspect: furni, user or global.</param>
     /// <param name="objectId">
-    /// The furni id for target 0, the user's room index for target 1, and 0 for global.
+    /// The furni id for a furni, the user's room index for a user, and 0 for global.
     /// </param>
     /// <param name="timeoutMs">The timeout in milliseconds.</param>
     /// <returns>
     /// The inspection snapshot. The list of wireds that reference the variables is only present
-    /// for target 0.
+    /// for a furni.
     /// </returns>
     /// <exception cref="OverflowException">Thrown when <paramref name="objectId"/> does not fit in 32 bits.</exception>
     /// <exception cref="Qx.Game.RequestTimeoutException">Thrown when no reply arrived in time.</exception>
     public Task<WiredVariablesObjectSnapshot> GetVariablesForObject(
-        int target,
+        WiredTarget target,
         Id objectId,
         int timeoutMs = 10000) =>
         GetVariablesForObject(target, checked((int)(long)objectId), timeoutMs);
@@ -235,7 +235,7 @@ public partial class ScriptGlobals
     /// <returns>The inspection snapshot for that furni.</returns>
     /// <exception cref="Qx.Game.RequestTimeoutException">Thrown when no reply arrived in time.</exception>
     public Task<WiredVariablesObjectSnapshot> GetFurniVariables(Id furniId, int timeoutMs = 10000) =>
-        GetVariablesForObject(WiredVariableTarget.Furni, furniId, timeoutMs);
+        GetVariablesForObject(WiredTarget.Furni, furniId, timeoutMs);
 
     /// <summary>Inspects the wired variable values held by one user in the room.</summary>
     /// <param name="userIndex">
@@ -245,14 +245,14 @@ public partial class ScriptGlobals
     /// <returns>The inspection snapshot for that user.</returns>
     /// <exception cref="Qx.Game.RequestTimeoutException">Thrown when no reply arrived in time.</exception>
     public Task<WiredVariablesObjectSnapshot> GetUserWiredVariables(int userIndex, int timeoutMs = 10000) =>
-        GetVariablesForObject(WiredVariableTarget.User, userIndex, timeoutMs);
+        GetVariablesForObject(WiredTarget.User, userIndex, timeoutMs);
 
     /// <summary>Inspects the room's global wired variable values.</summary>
     /// <param name="timeoutMs">The timeout in milliseconds.</param>
     /// <returns>The inspection snapshot for the global scope.</returns>
     /// <exception cref="Qx.Game.RequestTimeoutException">Thrown when no reply arrived in time.</exception>
     public Task<WiredVariablesObjectSnapshot> GetGlobalVariables(int timeoutMs = 10000) =>
-        GetVariablesForObject(WiredVariableTarget.Global, 0, timeoutMs);
+        GetVariablesForObject(WiredTarget.Global, 0, timeoutMs);
 
     /// <summary>
     /// Requests which objects currently hold a value for one variable, and what those values are.
@@ -333,7 +333,7 @@ public partial class ScriptGlobals
     /// create and delete capability flags, so an unauthorized call is dropped silently.
     /// </para>
     /// </remarks>
-    /// <param name="target">The holder kind: 0 furni, 1 user, -10 global.</param>
+    /// <param name="target">The holder kind: furni, user or global.</param>
     /// <param name="objectId">The furni id, the user's room index, or 0 for global.</param>
     /// <param name="variableId">The variable's id string, not its display name.</param>
     /// <param name="value">The integer value to store; ignored for a delete.</param>
@@ -342,11 +342,11 @@ public partial class ScriptGlobals
     /// Thrown when <paramref name="target"/>, <paramref name="objectId"/> or <paramref name="operation"/> is out
     /// of range.
     /// </exception>
-    public void SetObjectVariable(int target, int objectId, string variableId, int value, int operation = WiredVariableOperation.Write) =>
+    public void SetObjectVariable(WiredTarget target, int objectId, string variableId, int value, int operation = WiredVariableOperation.Write) =>
         wired_send(
             ApplicationMemberIds.WiredVariablesObjectSet,
             new WiredObjectVariableSetRequest(
-                (WiredTarget)target,
+                target,
                 objectId,
                 variableId,
                 value,
@@ -359,13 +359,13 @@ public partial class ScriptGlobals
     /// <remarks>
     /// The request is sent without waiting; the server sends no acknowledgement.
     /// </remarks>
-    /// <param name="target">The holder kind: 0 furni, 1 user, -10 global.</param>
+    /// <param name="target">The holder kind: furni, user or global.</param>
     /// <param name="objectId">The furni id, the user's room index, or 0 for global.</param>
     /// <param name="variableId">The variable's id string, not its display name.</param>
     /// <param name="value">The integer value to store; ignored for a delete.</param>
     /// <param name="operation">The operation: 0 write, 1 create, 2 delete.</param>
     /// <exception cref="OverflowException">Thrown when <paramref name="objectId"/> does not fit in 32 bits.</exception>
-    public void SetObjectVariable(int target, Id objectId, string variableId, int value, int operation = WiredVariableOperation.Write) =>
+    public void SetObjectVariable(WiredTarget target, Id objectId, string variableId, int value, int operation = WiredVariableOperation.Write) =>
         SetObjectVariable(
             target,
             checked((int)(long)objectId),
@@ -381,7 +381,7 @@ public partial class ScriptGlobals
     /// <param name="variableId">The variable's id string.</param>
     /// <param name="value">The integer value to store.</param>
     public void SetFurniVariable(Id furniId, string variableId, int value) =>
-        SetObjectVariable(WiredVariableTarget.Furni, furniId, variableId, value);
+        SetObjectVariable(WiredTarget.Furni, furniId, variableId, value);
 
     /// <summary>
     /// Writes a global wired variable value in the room.
@@ -390,48 +390,48 @@ public partial class ScriptGlobals
     /// <param name="variableId">The variable's id string.</param>
     /// <param name="value">The integer value to store.</param>
     public void SetGlobalVariable(string variableId, int value) =>
-        SetObjectVariable(WiredVariableTarget.Global, 0, variableId, value);
+        SetObjectVariable(WiredTarget.Global, 0, variableId, value);
 
     /// <summary>
     /// Creates a wired variable on one object, taking the object id as a 32-bit value.
     /// </summary>
     /// <remarks>The request is sent without waiting; no acknowledgement is sent.</remarks>
-    /// <param name="target">The holder kind: 0 furni, 1 user, -10 global.</param>
+    /// <param name="target">The holder kind: furni, user or global.</param>
     /// <param name="objectId">The furni id, the user's room index, or 0 for global.</param>
     /// <param name="variableId">The id string for the new variable.</param>
     /// <param name="value">The initial value; the game client sends 0 when none is given.</param>
-    public void CreateObjectVariable(int target, int objectId, string variableId, int value = 0) =>
+    public void CreateObjectVariable(WiredTarget target, int objectId, string variableId, int value = 0) =>
         CreateObjectVariable(target, (Id)(long)objectId, variableId, value);
 
     /// <summary>
     /// Creates a wired variable on one object.
     /// </summary>
     /// <remarks>The request is sent without waiting; no acknowledgement is sent.</remarks>
-    /// <param name="target">The holder kind: 0 furni, 1 user, -10 global.</param>
+    /// <param name="target">The holder kind: furni, user or global.</param>
     /// <param name="objectId">The furni id, the user's room index, or 0 for global.</param>
     /// <param name="variableId">The id string for the new variable.</param>
     /// <param name="value">The initial value.</param>
-    public void CreateObjectVariable(int target, Id objectId, string variableId, int value = 0) =>
+    public void CreateObjectVariable(WiredTarget target, Id objectId, string variableId, int value = 0) =>
         SetObjectVariable(target, objectId, variableId, value, WiredVariableOperation.Create);
 
     /// <summary>
     /// Deletes a wired variable from one object, taking the object id as a 32-bit value.
     /// </summary>
     /// <remarks>The request is sent without waiting; no acknowledgement is sent.</remarks>
-    /// <param name="target">The holder kind: 0 furni, 1 user, -10 global.</param>
+    /// <param name="target">The holder kind: furni, user or global.</param>
     /// <param name="objectId">The furni id, the user's room index, or 0 for global.</param>
     /// <param name="variableId">The variable's id string.</param>
-    public void DeleteObjectVariable(int target, int objectId, string variableId) =>
+    public void DeleteObjectVariable(WiredTarget target, int objectId, string variableId) =>
         DeleteObjectVariable(target, (Id)(long)objectId, variableId);
 
     /// <summary>
     /// Deletes a wired variable from one object.
     /// </summary>
     /// <remarks>The request is sent without waiting; no acknowledgement is sent.</remarks>
-    /// <param name="target">The holder kind: 0 furni, 1 user, -10 global.</param>
+    /// <param name="target">The holder kind: furni, user or global.</param>
     /// <param name="objectId">The furni id, the user's room index, or 0 for global.</param>
     /// <param name="variableId">The variable's id string.</param>
-    public void DeleteObjectVariable(int target, Id objectId, string variableId) =>
+    public void DeleteObjectVariable(WiredTarget target, Id objectId, string variableId) =>
         SetObjectVariable(target, objectId, variableId, 0, WiredVariableOperation.Delete);
 
     /// <summary>
@@ -481,8 +481,17 @@ public partial class ScriptGlobals
     /// they change.
     /// </summary>
     /// <remarks>
-    /// Same as <see cref="WatchVariables(Action{WiredVariableCollectionSnapshot}, int)"/>, which
-    /// describes the polling in detail.
+    /// <para>
+    /// Every <paramref name="intervalMs"/> milliseconds, while the room is ready, the cheap
+    /// all-variables hash is requested; the full definitions are fetched only when the hash or the
+    /// room changed since the last poll. The handler runs on the polling task, first with the
+    /// initial definitions and then after each change.
+    /// </para>
+    /// <para>
+    /// Timeouts, disconnects and leaving the room are skipped over and polling continues. An
+    /// exception thrown by <paramref name="onChange"/>, or any other request error, ends the watch
+    /// and is reported as a background error.
+    /// </para>
     /// </remarks>
     /// <param name="onChange">The handler to call with the complete definitions after each change.</param>
     /// <param name="intervalMs">The delay between polls in milliseconds.</param>
@@ -742,22 +751,22 @@ public partial class ScriptGlobals
     private Task<TResult> wired_call<TRequest, TResult>(
         string member_id,
         TRequest request) =>
-        Application.InvokeAsync<TRequest, TResult>(member_id, request, Ct).AsTask();
+        _application.InvokeAsync<TRequest, TResult>(member_id, request, Ct).AsTask();
 
     private void wired_send<TRequest>(string member_id, TRequest request) =>
-        Application.Invoke<TRequest, WiredDispatchResult>(member_id, request, Ct);
+        _application.Invoke<TRequest, WiredDispatchResult>(member_id, request, Ct);
 
     private void wired_background<TRequest, TResult>(
         string member_id,
         TRequest request) =>
         StartObservedTask(
-            () => Application.InvokeAsync<TRequest, TResult>(member_id, request, Ct).AsTask(),
+            () => _application.InvokeAsync<TRequest, TResult>(member_id, request, Ct).AsTask(),
             Ct);
 
     private IDisposable wired_event<T>(string member_id, Action<T> handler)
     {
         ArgumentNullException.ThrowIfNull(handler);
-        return Track(Application.Subscribe<WiredEvent<T>>(
+        return Track(_application.Subscribe<WiredEvent<T>>(
             member_id,
             Guarded<WiredEvent<T>>(value => handler(value.Value))));
     }
@@ -767,7 +776,7 @@ public partial class ScriptGlobals
         Action<WiredConfigurationSnapshot> handler)
     {
         ArgumentNullException.ThrowIfNull(handler);
-        return Track(Application.Subscribe<WiredEvent<WiredConfigurationSnapshot>>(
+        return Track(_application.Subscribe<WiredEvent<WiredConfigurationSnapshot>>(
             ApplicationMemberIds.WiredConfigurationReceived,
             Guarded<WiredEvent<WiredConfigurationSnapshot>>(value =>
             {
@@ -781,7 +790,7 @@ public partial class ScriptGlobals
         Action<WiredConfigurationSaveResult> handler)
     {
         ArgumentNullException.ThrowIfNull(handler);
-        return Track(Application.Subscribe<WiredEvent<WiredConfigurationSaveResult>>(
+        return Track(_application.Subscribe<WiredEvent<WiredConfigurationSaveResult>>(
             ApplicationMemberIds.WiredConfigurationSaveResult,
             Guarded<WiredEvent<WiredConfigurationSaveResult>>(value =>
             {

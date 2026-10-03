@@ -294,7 +294,7 @@ internal sealed partial class AchievementApplication :
         var value = new AchievementChanged(
             kind,
             time_provider.GetUtcNow(),
-            state.Session?.Client,
+            state.Session is not null,
             state.SessionGeneration,
             state.Revision,
             source_revision,
@@ -365,7 +365,7 @@ internal sealed partial class AchievementApplication :
         var value = new BadgeChanged(
             kind,
             time_provider.GetUtcNow(),
-            state.Session?.Client,
+            state.Session is not null,
             state.SessionGeneration,
             state.Revision,
             update.Kind is BadgeInventoryStateChangeKind.Selected
@@ -407,7 +407,7 @@ internal sealed partial class AchievementApplication :
         var value = new BadgeChanged(
             kind,
             time_provider.GetUtcNow(),
-            state.Session?.Client,
+            state.Session is not null,
             state.SessionGeneration,
             state.Revision,
             state.InventoryRevision,

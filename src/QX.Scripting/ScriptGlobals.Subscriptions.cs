@@ -1,7 +1,7 @@
 using System.Collections.ObjectModel;
 using Qx.Game.Application;
+using Qx.Model;
 using Qx.Model.Messages.Incoming;
-using Qx.Model.Subscriptions;
 
 namespace Qx.Scripting;
 
@@ -100,7 +100,7 @@ public partial class ScriptGlobals
     }
 
     /// <summary>Finds one cached subscription by product name.</summary>
-    /// <param name="product_name">
+    /// <param name="productName">
     /// The subscription product, for example <c>habbo_club</c> or <c>builders_club</c>, matched
     /// ignoring case.
     /// </param>
@@ -108,14 +108,14 @@ public partial class ScriptGlobals
     /// The subscription info, or <see langword="null"/> when the server has not sent info for this
     /// product.
     /// </returns>
-    /// <exception cref="ArgumentNullException">Thrown when <paramref name="product_name"/> is <see langword="null"/>.</exception>
-    public ScrSendUserInfo? FindSubscription(string product_name)
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="productName"/> is <see langword="null"/>.</exception>
+    public ScrSendUserInfo? FindSubscription(string productName)
     {
-        ArgumentNullException.ThrowIfNull(product_name);
+        ArgumentNullException.ThrowIfNull(productName);
         SubscriptionProductView? product = ReadSubscriptionState().Products.FirstOrDefault(
             value => string.Equals(
                 value.ProductName,
-                product_name,
+                productName,
                 StringComparison.OrdinalIgnoreCase));
         return product is null ? null : LegacySubscriptionProduct(product);
     }
@@ -127,15 +127,15 @@ public partial class ScriptGlobals
     /// It returns immediately. The answer lands in <see cref="SubscriptionInfo"/>, keyed by the
     /// product name the server echoes back, and raises <see cref="OnSubscriptionInfoChanged"/>.
     /// </remarks>
-    /// <param name="product_name">
+    /// <param name="productName">
     /// The subscription product to ask about. Defaults to <c>habbo_club</c>; <c>builders_club</c>
     /// is the other product the hotel uses.
     /// </param>
-    /// <exception cref="ArgumentNullException">Thrown when <paramref name="product_name"/> is <see langword="null"/>.</exception>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="productName"/> is <see langword="null"/>.</exception>
     /// <exception cref="InvalidOperationException">Thrown when there is no active hotel session.</exception>
     public void RequestSubscriptionInfo(
-        string product_name = "habbo_club") =>
-        Subscriptions.RequestUserInfo(product_name);
+        string productName = "habbo_club") =>
+        Subscriptions.RequestUserInfo(productName);
 
     /// <summary>
     /// Requests the Habbo Club kickback summary from the server.
@@ -160,7 +160,7 @@ public partial class ScriptGlobals
         Subscriptions.RequestBuildersClubFurniCount();
 
     private SubscriptionStateView ReadSubscriptionState() =>
-        Application.Invoke<SubscriptionStateRequest, SubscriptionStateView>(
+        _application.Invoke<SubscriptionStateRequest, SubscriptionStateView>(
             ApplicationMemberIds.SubscriptionsState,
             new SubscriptionStateRequest(Limit: 500),
             Ct);

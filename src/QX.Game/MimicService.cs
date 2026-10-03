@@ -181,11 +181,11 @@ public sealed class MimicService(GameState game)
             new Application.RoomAvatarExpressionRequest(expression));
 
     /// <summary>Sends a request to follow a friend into the room they are in.</summary>
-    /// <param name="friend_id">The id of the friend.</param>
+    /// <param name="friendId">The id of the friend.</param>
     /// <exception cref="InvalidOperationException">Thrown when the friend operations are not bound.</exception>
-    public void Follow(Id friend_id) =>
+    public void Follow(Id friendId) =>
         RequireFriendOperations().Follow(
-            new Application.FriendFollowRequest(friend_id),
+            new Application.FriendFollowRequest(friendId),
             default);
 
     /// <summary>

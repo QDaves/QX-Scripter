@@ -390,26 +390,22 @@ internal sealed partial class CraftingApplication : IApplicationFeature, ICrafti
             throw new ArgumentOutOfRangeException(nameof(timeout_milliseconds));
     }
 
-    private static void ValidateTypedId(Id value, ClientType client, string argument_name)
+    private static void ValidateTypedId(Id value, string argument_name)
     {
         long id = value;
-        bool valid = ClientTypes.IsFlash(client)
-            ? id is > 0 and <= int.MaxValue
-            : false;
-        if (!valid)
+        if (id is <= 0 or > int.MaxValue)
             throw new ArgumentOutOfRangeException(argument_name);
     }
 
     private static void ValidateTypedItems(
         IReadOnlyList<Id> item_ids,
-        ClientType client,
         string argument_name)
     {
         ArgumentNullException.ThrowIfNull(item_ids, argument_name);
         if (item_ids.Count > ushort.MaxValue)
             throw new ArgumentOutOfRangeException(argument_name);
         foreach (Id item_id in item_ids)
-            ValidateTypedId(item_id, client, argument_name);
+            ValidateTypedId(item_id, argument_name);
     }
 
     private static void ValidateWireString(string value, string argument_name)

@@ -120,21 +120,21 @@ public enum UserIdentityKind
 public sealed record UnignoreUserRequest : IParserComposer<UnignoreUserRequest>
 {
     /// <summary>Initializes a new instance of the <see cref="UnignoreUserRequest"/> record that identifies the user by id.</summary>
-    /// <param name="user_id">The id of the user to stop ignoring.</param>
-    public UnignoreUserRequest(Id user_id)
+    /// <param name="userId">The id of the user to stop ignoring.</param>
+    public UnignoreUserRequest(Id userId)
     {
         Kind = UserIdentityKind.Id;
-        UserId = user_id;
+        UserId = userId;
     }
 
     /// <summary>Initializes a new instance of the <see cref="UnignoreUserRequest"/> record that identifies the user by name.</summary>
-    /// <param name="user_name">The name of the user to stop ignoring.</param>
-    /// <exception cref="ArgumentException">Thrown when <paramref name="user_name"/> is <see langword="null"/> or empty.</exception>
-    public UnignoreUserRequest(string user_name)
+    /// <param name="userName">The name of the user to stop ignoring.</param>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="userName"/> is <see langword="null"/> or empty.</exception>
+    public UnignoreUserRequest(string userName)
     {
-        ArgumentException.ThrowIfNullOrEmpty(user_name);
+        ArgumentException.ThrowIfNullOrEmpty(userName);
         Kind = UserIdentityKind.Name;
-        UserName = user_name;
+        UserName = userName;
     }
 
     /// <summary>Gets how the request identifies the user.</summary>

@@ -109,7 +109,6 @@ public sealed record FriendMessageHistoryRequest(
 /// <remarks>Returned in <see cref="FriendMessageHistoryPage"/> and published by the <c>friends.message.received</c> event.</remarks>
 /// <param name="Sequence">The sequence number of the message in the journal, starting at 1.</param>
 /// <param name="ReceivedAtUtc">The UTC time the message was received.</param>
-/// <param name="Client">The client type of the hotel session the message was received in.</param>
 /// <param name="ChatId">The id of the conversation the message belongs to.</param>
 /// <param name="ContentType">The content type, 0 for text and 1 for a habbicon.</param>
 /// <param name="Text">The message text, or an empty string for a habbicon message.</param>
@@ -125,7 +124,6 @@ public sealed record FriendMessageHistoryRequest(
 public sealed record FriendMessageEntry(
     long Sequence,
     DateTimeOffset ReceivedAtUtc,
-    ClientType Client,
     Id ChatId,
     int ContentType,
     string Text,
@@ -222,12 +220,10 @@ public sealed record FriendRelationshipSetRequest(
 /// Returned by the friend operations that send a message without waiting for an answer. A hotel
 /// rejection is published later by the <c>friends.operation.failed</c> event.
 /// </remarks>
-/// <param name="Client">The client type of the hotel session.</param>
 /// <param name="DispatchedAtUtc">The UTC time the operation was sent.</param>
 /// <param name="TargetIds">The ids the operation was sent for, without duplicates, or an empty list when it targets a name or every request.</param>
 /// <param name="TargetName">The user name the operation was sent for, or <see langword="null"/> when it targets ids.</param>
 public sealed record FriendOperationResult(
-    ClientType Client,
     DateTimeOffset DispatchedAtUtc,
     IReadOnlyList<Id> TargetIds,
     string? TargetName = null);

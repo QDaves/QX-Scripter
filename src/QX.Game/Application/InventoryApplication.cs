@@ -159,7 +159,6 @@ internal sealed class InventoryApplication : IApplicationFeature
             () => RequireScope(scope));
         RequireScope(scope);
         return ValueTask.FromResult(new InventoryDispatchResult(
-            scope.Session.Client,
             time_provider.GetUtcNow(),
             scope.Generation,
             inventory.State.Revision,
@@ -681,7 +680,6 @@ internal sealed class InventoryApplication : IApplicationFeature
         bool connected = lease.Session is not null && ReferenceEquals(connection.Session, lease.Session);
         return new InventoryFurniPage(
             connected,
-            connected ? lease.Session!.Client : null,
             lease.SessionGeneration,
             lease.StateRevision,
             lease.Revision,
@@ -706,7 +704,6 @@ internal sealed class InventoryApplication : IApplicationFeature
         bool connected = lease.Session is not null && ReferenceEquals(connection.Session, lease.Session);
         return new InventoryPetPage(
             connected,
-            connected ? lease.Session!.Client : null,
             lease.SessionGeneration,
             lease.StateRevision,
             lease.Revision,
@@ -730,7 +727,6 @@ internal sealed class InventoryApplication : IApplicationFeature
         bool connected = state.Session is not null && ReferenceEquals(connection.Session, state.Session);
         return new InventoryStateView(
             connected,
-            connected ? state.Session!.Client : null,
             state.Generation,
             state.Revision,
             Summary(state.Furni),

@@ -1,6 +1,6 @@
 using Qx.Messages;
 
-namespace Qx.Model.Forums;
+namespace Qx.Model;
 
 internal static class ForumProtocol
 {

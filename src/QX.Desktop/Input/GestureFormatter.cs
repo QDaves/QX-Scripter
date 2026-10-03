@@ -22,7 +22,7 @@ public sealed class GestureFormatter : IGestureFormatter
 
     public bool PrimaryIsControl => Primary == KeyModifiers.Control;
 
-    public string Describe(KeyChord chord) => GestureText.Describe(chord, apple_glyphs: Primary == KeyModifiers.Meta);
+    public string Describe(KeyChord chord) => GestureText.Describe(chord, appleGlyphs: Primary == KeyModifiers.Meta);
 
     public KeyChord? ToChord(Key key, KeyModifiers modifiers)
     {

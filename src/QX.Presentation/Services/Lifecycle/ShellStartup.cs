@@ -33,7 +33,7 @@ public sealed class ShellStartup
         DesktopRuntime runtime,
         ISessionStatusService status,
         DeferredEditorBridge bridge,
-        IEnumerable<IEditorBridge> bridge_targets,
+        IEnumerable<IEditorBridge> bridgeTargets,
         IEnumerable<IEditorWarmup> warmups,
         UpdateNoticeCoordinator updates,
         HostedLifecyclePolicy hosted,
@@ -46,9 +46,9 @@ public sealed class ShellStartup
         _runtime = runtime ?? throw new ArgumentNullException(nameof(runtime));
         _status = status ?? throw new ArgumentNullException(nameof(status));
         _bridge = bridge ?? throw new ArgumentNullException(nameof(bridge));
-        ArgumentNullException.ThrowIfNull(bridge_targets);
+        ArgumentNullException.ThrowIfNull(bridgeTargets);
         ArgumentNullException.ThrowIfNull(warmups);
-        _bridge_targets = [.. bridge_targets];
+        _bridge_targets = [.. bridgeTargets];
         _warmups = [.. warmups];
         _updates = updates ?? throw new ArgumentNullException(nameof(updates));
         _hosted = hosted ?? throw new ArgumentNullException(nameof(hosted));

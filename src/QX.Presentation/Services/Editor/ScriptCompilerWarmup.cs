@@ -1,5 +1,5 @@
 using Qx.Presentation.Threading;
-using Qx.Scripting;
+using Qx.Scripting.Hosting;
 
 namespace Qx.Presentation.Services.Editor;
 

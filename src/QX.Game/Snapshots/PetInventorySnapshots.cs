@@ -2,7 +2,10 @@ using Qx.Model;
 
 namespace Qx.Game.Snapshots;
 
-/// <summary>Represents one custom part of a pet's figure.</summary>
+/// <summary>
+/// Represents the JSON projection of one custom part of a pet's figure used by the MCP read tools
+/// and the application-layer results; scripts that read live state use <see cref="PetCustomPart"/>.
+/// </summary>
 /// <param name="LayerId">The figure layer the part is drawn on.</param>
 /// <param name="PartId">The part identifier.</param>
 /// <param name="PaletteId">The palette the part is colored with.</param>
@@ -11,7 +14,10 @@ public sealed record InventoryPetPartSnapshot(
     int PartId,
     int PaletteId);
 
-/// <summary>Represents a pet in the local user's inventory.</summary>
+/// <summary>
+/// Represents the JSON projection of a pet in the local user's inventory used by the MCP read tools
+/// and the application-layer results; scripts that read live state use <see cref="InventoryPet"/>.
+/// </summary>
 /// <param name="Id">The pet identifier.</param>
 /// <param name="Name">The pet name.</param>
 /// <param name="TypeId">The pet type identifier.</param>
@@ -38,7 +44,10 @@ public sealed record InventoryPetSnapshot(
     int RarityLevel,
     string FigureString);
 
-/// <summary>Represents the local user's pet inventory, together with its fragmented load state.</summary>
+/// <summary>
+/// Represents the JSON projection of the local user's pet inventory and its load state for the MCP
+/// read tools; scripts use the <c>InventoryPets</c> global.
+/// </summary>
 /// <param name="IsLoading">Whether a load is in flight right now.</param>
 /// <param name="IsStale">
 /// Whether the listed pets are left over from a previous load that has been invalidated. They are

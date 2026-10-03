@@ -578,7 +578,7 @@ internal sealed class RoomSettingsApplication : IApplicationFeature
             request.ExpectedRoomGeneration,
             request.ExpectedOperationRevision,
             request.ExpectedSnapshotRevision);
-        ValidateWireValues(initial_scope.Session.Client, values);
+        ValidateWireValues(values);
         SaveRoomSettingsRequest message = SaveMessage(values, request.Password);
         using CancellationTokenSource caller = LinkCancellation(cancellation_token);
         RoomSettingsLaneKey key = new(initial_scope.SessionGeneration, values.RoomId);
@@ -647,7 +647,6 @@ internal sealed class RoomSettingsApplication : IApplicationFeature
                 RoomSettingsCacheEntry entry = terminal.Entry
                     ?? throw new InvalidOperationException("The room-settings save acknowledgement was not committed.");
                 return new RoomSettingsSaveReceipt(
-                    operation.Scope.Session.Client,
                     time_provider.GetUtcNow(),
                     operation.Scope.SessionGeneration,
                     terminal.State.Revision,
@@ -1065,7 +1064,7 @@ internal sealed class RoomSettingsApplication : IApplicationFeature
         changed.Publish(new RoomSettingsChanged(
             ChangeKind(update.Kind),
             time_provider.GetUtcNow(),
-            update.State.Session?.Client,
+            update.State.Session is not null,
             update.State.SessionGeneration,
             update.State.Revision,
             update.RoomId,
@@ -1245,7 +1244,6 @@ internal sealed class RoomSettingsApplication : IApplicationFeature
                 : null;
         return new RoomSettingsStateView(
             connected,
-            connected ? state.Session!.Client : null,
             state.SessionGeneration,
             state.Revision,
             room_id,
@@ -1439,11 +1437,11 @@ internal sealed class RoomSettingsApplication : IApplicationFeature
         ValidateEnum(values.WhoCanBan, nameof(values.WhoCanBan));
     }
 
-    private static void ValidateWireValues(ClientType client, RoomSettingsValues values)
+    private static void ValidateWireValues(RoomSettingsValues values)
     {
-        ValidateWireId(client, values.RoomId, nameof(values.RoomId));
+        ValidateWireId(values.RoomId, nameof(values.RoomId));
         foreach (Id id in values.NftGroupIds)
-            ValidateWireId(client, id, nameof(values.NftGroupIds));
+            ValidateWireId(id, nameof(values.NftGroupIds));
     }
 
     private static void ValidateText(string value, string name)
@@ -1482,10 +1480,10 @@ internal sealed class RoomSettingsApplication : IApplicationFeature
             throw new ArgumentOutOfRangeException(name);
     }
 
-    private static void ValidateWireId(ClientType client, Id id, string name)
+    private static void ValidateWireId(Id id, string name)
     {
         ValidateId(id, name);
-        if (client is ClientType.Flash && (long)id > int.MaxValue)
+        if ((long)id > int.MaxValue)
             throw new ArgumentOutOfRangeException(name, "The identifier does not fit the Flash wire format.");
     }
 

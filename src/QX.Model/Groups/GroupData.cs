@@ -3,6 +3,7 @@ using Qx.Messages;
 namespace Qx.Model;
 
 /// <summary>Represents the details of a group.</summary>
+/// <remarks>Received as the Flash <c>HabboGroupDetails</c> message.</remarks>
 /// <param name="Id">The group identifier.</param>
 /// <param name="IsGuild">The guild flag the hotel sends with the group.</param>
 /// <param name="Type">The group type as the hotel numbers it.</param>
@@ -48,7 +49,6 @@ public sealed record GroupData(
     /// <summary>Reads group details from a packet.</summary>
     /// <remarks><see cref="MemberLimit"/> is read only when at least 4 bytes remain after the fixed fields.</remarks>
     /// <param name="p">The packet to read from.</param>
-    /// <exception cref="UnsupportedClientException">Thrown when the packet is not from the Flash client.</exception>
     /// <exception cref="InvalidDataException">Thrown when bytes remain after the last field.</exception>
     public static GroupData Parse(in PacketReader p) =>
         FlashWire.Parse(in p, ParseFlash);
@@ -83,7 +83,6 @@ public sealed record GroupData(
 
     /// <summary>Writes the group details to a packet, including <see cref="MemberLimit"/> when it has a value.</summary>
     /// <param name="p">The packet to write to.</param>
-    /// <exception cref="UnsupportedClientException">Thrown when the packet is not for the Flash client.</exception>
     /// <exception cref="InvalidDataException">Thrown when an identifier does not fit in 32 bits or a string is too long.</exception>
     public void Compose(in PacketWriter p) =>
         FlashWire.Compose(this, in p, ComposeFlash);

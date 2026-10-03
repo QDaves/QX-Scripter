@@ -36,11 +36,11 @@ public sealed class HabboAirClientResolver
     readonly string _launcher_data;
     readonly string _cache_root;
 
-    public HabboAirClientResolver(HttpClient http, string? launcher_data = null, string? cache_root = null)
+    public HabboAirClientResolver(HttpClient http, string? launcherData = null, string? cacheRoot = null)
     {
         _http = http ?? throw new ArgumentNullException(nameof(http));
-        _launcher_data = launcher_data ?? DefaultLauncherDataPath();
-        _cache_root = cache_root ?? DefaultCachePath();
+        _launcher_data = launcherData ?? DefaultLauncherDataPath();
+        _cache_root = cacheRoot ?? DefaultCachePath();
     }
 
     public static string DefaultLauncherDataPath() =>
@@ -51,16 +51,16 @@ public sealed class HabboAirClientResolver
 
     public async Task<HabboAirManifest> GetLatestManifestAsync(
         Uri? hotel = null,
-        CancellationToken cancellation_token = default)
+        CancellationToken cancellationToken = default)
     {
         hotel ??= new Uri("https://www.habbo.com/", UriKind.Absolute);
         if (!hotel.IsAbsoluteUri)
             throw new ArgumentException("Hotel URL must be absolute.", nameof(hotel));
 
         Uri manifest_uri = new(hotel, ClientUrlsPath);
-        using HttpResponseMessage response = await SendWithRetryAsync(manifest_uri, cancellation_token).ConfigureAwait(false);
-        await using Stream content = await response.Content.ReadAsStreamAsync(cancellation_token).ConfigureAwait(false);
-        using JsonDocument json = await JsonDocument.ParseAsync(content, cancellationToken: cancellation_token).ConfigureAwait(false);
+        using HttpResponseMessage response = await SendWithRetryAsync(manifest_uri, cancellationToken).ConfigureAwait(false);
+        await using Stream content = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
+        using JsonDocument json = await JsonDocument.ParseAsync(content, cancellationToken: cancellationToken).ConfigureAwait(false);
         return ParseManifest(json.RootElement);
     }
 
@@ -85,13 +85,13 @@ public sealed class HabboAirClientResolver
 
     public async Task<HabboAirRelease> ResolveLatestAsync(
         Uri? hotel = null,
-        CancellationToken cancellation_token = default)
+        CancellationToken cancellationToken = default)
     {
         HabboAirRelease? fallback = FindInstalled();
         HabboAirManifest manifest;
         try
         {
-            manifest = await GetLatestManifestAsync(hotel, cancellation_token).ConfigureAwait(false);
+            manifest = await GetLatestManifestAsync(hotel, cancellationToken).ConfigureAwait(false);
         }
         catch (Exception error) when (fallback is not null && error is not OperationCanceledException)
         {
@@ -102,7 +102,7 @@ public sealed class HabboAirClientResolver
         if (installed is not null)
             return installed with { IsCurrent = true, DownloadUrl = manifest.DownloadUrl };
 
-        string swf_path = await DownloadAsync(manifest, cancellation_token).ConfigureAwait(false);
+        string swf_path = await DownloadAsync(manifest, cancellationToken).ConfigureAwait(false);
         return new HabboAirRelease(
             manifest.Version,
             swf_path,

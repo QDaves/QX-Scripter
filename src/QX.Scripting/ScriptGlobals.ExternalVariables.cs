@@ -13,7 +13,7 @@ public partial class ScriptGlobals
     /// which ever appear on the wire. The typed helpers on this class tolerate a missing file;
     /// direct use does not.
     /// </remarks>
-    public ExternalVariables? Variables => Game.GameData.Variables;
+    public ExternalVariables? ExternalVariables => Game.GameData.Variables;
 
     /// <summary>
     /// Gets a configuration value, resolved the way the client resolves it.
@@ -24,7 +24,7 @@ public partial class ScriptGlobals
     /// </remarks>
     /// <param name="key">The key to read, such as <c>wired.timezones</c>.</param>
     /// <returns>The value, or an empty string when unset or not downloaded yet.</returns>
-    public string Config(string key) => Variables?.Get(key) ?? "";
+    public string Config(string key) => ExternalVariables?.Get(key) ?? "";
 
     /// <summary>
     /// Gets whether a configuration switch, such as <c>wired.menu.enabled</c> or
@@ -39,7 +39,7 @@ public partial class ScriptGlobals
     /// <see langword="true"/> when the switch is on; <see langword="false"/> when it is off, unset
     /// or not downloaded yet.
     /// </returns>
-    public bool ConfigFlag(string key) => Variables?.Flag(key) ?? false;
+    public bool ConfigFlag(string key) => ExternalVariables?.Flag(key) ?? false;
 
     /// <summary>
     /// Gets a numeric configuration value, such as <c>marketplace.bulkOfferLimit</c>.
@@ -52,7 +52,7 @@ public partial class ScriptGlobals
     /// <param name="key">The key to read.</param>
     /// <param name="fallback">The value to use when the key is unset or the data has not downloaded.</param>
     /// <returns>The configured number, 0 when it cannot be parsed, or <paramref name="fallback"/>.</returns>
-    public int ConfigNumber(string key, int fallback = 0) => Variables?.Number(key, fallback) ?? fallback;
+    public int ConfigNumber(string key, int fallback = 0) => ExternalVariables?.Number(key, fallback) ?? fallback;
 
     /// <summary>
     /// Gets a comma separated configuration value, such as <c>wired.timezones</c>, split into its
@@ -63,7 +63,7 @@ public partial class ScriptGlobals
     /// The trimmed, non-empty entries, or an empty list when the key is unset or the data has not
     /// downloaded.
     /// </returns>
-    public IReadOnlyList<string> ConfigList(string key) => Variables?.List(key) ?? [];
+    public IReadOnlyList<string> ConfigList(string key) => ExternalVariables?.List(key) ?? [];
 
     /// <summary>
     /// Gets every configuration key that starts with a prefix, with the values resolved.
@@ -81,7 +81,7 @@ public partial class ScriptGlobals
     public IReadOnlyDictionary<string, string> ConfigGroup(string prefix)
     {
         ArgumentNullException.ThrowIfNull(prefix);
-        if (Variables is not { } variables)
+        if (ExternalVariables is not { } variables)
             return new Dictionary<string, string>();
 
         var matches = new Dictionary<string, string>(StringComparer.Ordinal);

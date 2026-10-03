@@ -1,3 +1,5 @@
+using Qx.Scripting.Hosting;
+
 namespace Qx.Scripting;
 
 internal sealed class ScriptSynchronizationContext(

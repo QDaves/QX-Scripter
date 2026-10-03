@@ -1,5 +1,6 @@
+using System.Diagnostics.CodeAnalysis;
 using Qx.Game.Protocol;
-using Qx.Model.Forums;
+using Qx.Model;
 using Qx.Model.Messages.Outgoing;
 using Qx.Protocol;
 
@@ -19,12 +20,13 @@ internal static class ForumApplicationDescriptors
         typeof(ForumStateRequest),
         typeof(ForumStateView),
         [SnapshotRevisionParameter()],
-        state_effects: [ReadEffect()],
-        tool_hints: QueryHints());
+        stateEffects: [ReadEffect()],
+        toolHints: QueryHints());
 
     public static readonly ApplicationDescriptor ListRefresh = Refresh(
         ApplicationMemberIds.ForumsListRefresh,
         "Refresh forum list",
+        "Requests a page of the forum directory and waits for it.",
         typeof(ForumListRefreshRequest),
         typeof(ForumListRefreshResult),
         MessageKeys.Forums.ListRequest,
@@ -76,6 +78,7 @@ internal static class ForumApplicationDescriptors
     public static readonly ApplicationDescriptor ThreadsRefresh = Refresh(
         ApplicationMemberIds.ForumThreadsRefresh,
         "Refresh forum threads",
+        "Requests a page of forum threads and waits for it.",
         typeof(ForumThreadsRefreshRequest),
         typeof(ForumThreadsRefreshResult),
         MessageKeys.Forums.ThreadsRequest,
@@ -85,6 +88,7 @@ internal static class ForumApplicationDescriptors
     public static readonly ApplicationDescriptor MessagesRefresh = Refresh(
         ApplicationMemberIds.ForumMessagesRefresh,
         "Refresh forum messages",
+        "Requests a page of thread messages and waits for it.",
         typeof(ForumMessagesRefreshRequest),
         typeof(ForumMessagesRefreshResult),
         MessageKeys.Forums.MessagesRequest,
@@ -94,6 +98,7 @@ internal static class ForumApplicationDescriptors
     public static readonly ApplicationDescriptor DetailsRefresh = Refresh(
         ApplicationMemberIds.ForumDetailsRefresh,
         "Refresh forum details",
+        "Requests the details of a group forum and waits for them.",
         typeof(ForumDetailsRefreshRequest),
         typeof(ForumDetailsRefreshResult),
         MessageKeys.Forums.StatsRequest,
@@ -103,6 +108,7 @@ internal static class ForumApplicationDescriptors
     public static readonly ApplicationDescriptor ThreadRefresh = Refresh(
         ApplicationMemberIds.ForumThreadRefresh,
         "Refresh forum thread",
+        "Requests a single forum thread and waits for it.",
         typeof(ForumThreadRefreshRequest),
         typeof(ForumThreadRefreshResult),
         MessageKeys.Forums.ThreadRequest,
@@ -112,6 +118,7 @@ internal static class ForumApplicationDescriptors
     public static readonly ApplicationDescriptor UnreadRefresh = Refresh(
         ApplicationMemberIds.ForumsUnreadRefresh,
         "Refresh unread forum count",
+        "Requests the number of forums with unread messages and waits for it.",
         typeof(ForumUnreadRefreshRequest),
         typeof(ForumUnreadRefreshResult),
         MessageKeys.Forums.UnreadCountRequest,
@@ -121,6 +128,7 @@ internal static class ForumApplicationDescriptors
     public static readonly ApplicationDescriptor Post = Action(
         ApplicationMemberIds.ForumsPost,
         "Post forum message",
+        "Posts a forum message or starts a new thread.",
         typeof(ForumPostActionRequest),
         MessageKeys.Forums.Post,
         [
@@ -135,6 +143,7 @@ internal static class ForumApplicationDescriptors
     public static readonly ApplicationDescriptor ThreadModerate = Action(
         ApplicationMemberIds.ForumThreadModerate,
         "Moderate forum thread",
+        "Hides or restores a forum thread.",
         typeof(ForumThreadModerationRequest),
         MessageKeys.Forums.ThreadModerate,
         [GroupParameter(), ThreadParameter(), StateParameter(), GenerationParameter()],
@@ -143,6 +152,7 @@ internal static class ForumApplicationDescriptors
     public static readonly ApplicationDescriptor MessageModerate = Action(
         ApplicationMemberIds.ForumMessageModerate,
         "Moderate forum message",
+        "Hides or restores a forum message.",
         typeof(ForumMessageModerationRequest),
         MessageKeys.Forums.MessageModerate,
         [
@@ -157,6 +167,7 @@ internal static class ForumApplicationDescriptors
     public static readonly ApplicationDescriptor SettingsUpdate = Action(
         ApplicationMemberIds.ForumSettingsUpdate,
         "Update forum settings",
+        "Changes the permission levels of a group forum.",
         typeof(ForumSettingsUpdateRequest),
         MessageKeys.Forums.SettingsUpdate,
         [
@@ -172,6 +183,7 @@ internal static class ForumApplicationDescriptors
     public static readonly ApplicationDescriptor ReadMarkersUpdate = Action(
         ApplicationMemberIds.ForumReadMarkersUpdate,
         "Update forum read markers",
+        "Updates the read markers of group forums.",
         typeof(ForumReadMarkersUpdateRequest),
         MessageKeys.Forums.ReadMarkersUpdate,
         [
@@ -184,6 +196,7 @@ internal static class ForumApplicationDescriptors
     public static readonly ApplicationDescriptor ThreadUpdate = Action(
         ApplicationMemberIds.ForumThreadUpdate,
         "Update forum thread",
+        "Changes the sticky and locked flags of a forum thread.",
         typeof(ForumThreadUpdateRequest),
         MessageKeys.Forums.ThreadUpdate,
         [
@@ -198,6 +211,7 @@ internal static class ForumApplicationDescriptors
     public static readonly ApplicationDescriptor ThreadReport = Action(
         ApplicationMemberIds.ForumThreadReport,
         "Report forum thread",
+        "Reports a forum thread to the moderators.",
         typeof(ForumThreadReportRequest),
         MessageKeys.Forums.ThreadReport,
         [
@@ -214,6 +228,7 @@ internal static class ForumApplicationDescriptors
     public static readonly ApplicationDescriptor MessageReport = Action(
         ApplicationMemberIds.ForumMessageReport,
         "Report forum message",
+        "Reports a forum message to the moderators.",
         typeof(ForumMessageReportRequest),
         MessageKeys.Forums.MessageReport,
         [
@@ -236,21 +251,22 @@ internal static class ForumApplicationDescriptors
         ApplicationExposure.Ui | ApplicationExposure.Cli | ApplicationExposure.Scripting,
         null,
         typeof(ForumChanged),
-        state_effects: [ReadEffect()],
+        stateEffects: [ReadEffect()],
         messages: ObservedMessages(),
-        tool_hints: QueryHints());
+        toolHints: QueryHints());
 
     private static ApplicationDescriptor Refresh(
         string id,
         string title,
-        Type request_type,
+        string summary,
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] Type request_type,
         Type result_type,
         MessageKey request,
         MessageKey response,
         IReadOnlyList<ApplicationParameterDescriptor> parameters) => new(
             id,
             title,
-            "Sends one session-pinned request and accepts only the matching forum response.",
+            summary + " Sends one session-pinned request and accepts only the matching forum response.",
             ApplicationMemberKind.Operation,
             ApplicationExposure.All,
             request_type,
@@ -264,27 +280,28 @@ internal static class ForumApplicationDescriptors
     private static ApplicationDescriptor Action(
         string id,
         string title,
-        Type request_type,
+        string summary,
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] Type request_type,
         MessageKey request,
         IReadOnlyList<ApplicationParameterDescriptor> parameters,
         bool destructive) => new(
             id,
             title,
-            "Dispatches exactly one forum action in the pinned active session.",
+            summary + " Dispatches exactly one forum action in the pinned active session.",
             ApplicationMemberKind.Operation,
             ApplicationExposure.All,
         request_type,
         typeof(ForumDispatchResult),
         parameters,
-        required_states: [ApplicationStateKey.HotelConnected],
-            state_effects: [ChangeEffect()],
+        requiredStates: [ApplicationStateKey.HotelConnected],
+            stateEffects: [ChangeEffect()],
             messages: [Send(request)],
-            tool_hints: new(false, destructive, false, true));
+            toolHints: new(false, destructive, false, true));
 
     private static ApplicationDescriptor Request(
         string id,
         string title,
-        Type request_type,
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] Type request_type,
         MessageKey request,
         IReadOnlyList<ApplicationParameterDescriptor> parameters) => new(
             id,
@@ -295,10 +312,10 @@ internal static class ForumApplicationDescriptors
         request_type,
         typeof(ForumDispatchResult),
         parameters,
-        required_states: [ApplicationStateKey.HotelConnected],
-            state_effects: [ReadEffect()],
+        requiredStates: [ApplicationStateKey.HotelConnected],
+            stateEffects: [ReadEffect()],
             messages: [Send(request)],
-            tool_hints: new(true, false, false, true));
+            toolHints: new(true, false, false, true));
 
     private static IReadOnlyList<ApplicationParameterDescriptor> ListParameters() =>
     [
@@ -329,13 +346,13 @@ internal static class ForumApplicationDescriptors
     ];
 
     private static ApplicationParameterDescriptor GroupParameter() =>
-        new("group_id", typeof(long), true, null, "Forum-owning group identifier.");
+        new("group_id", typeof(Id), true, null, "Forum-owning group identifier.");
 
     private static ApplicationParameterDescriptor ThreadParameter() =>
-        new("thread_id", typeof(long), true, null, "Forum thread identifier.");
+        new("thread_id", typeof(Id), true, null, "Forum thread identifier.");
 
     private static ApplicationParameterDescriptor MessageParameter() =>
-        new("message_id", typeof(long), true, null, "Forum message identifier.");
+        new("message_id", typeof(Id), true, null, "Forum message identifier.");
 
     private static ApplicationParameterDescriptor StateParameter() =>
         IntegerParameter("state", "Forum moderation state.");
@@ -389,10 +406,10 @@ internal static class ForumApplicationDescriptors
     ];
 
     private static ApplicationMessageRequirement Send(MessageKey key) =>
-        new(key, Direction.Out, ApplicationMessageRole.Send);
+        new(key, MessageDirection.Out, ApplicationMessageRole.Send);
 
     private static ApplicationMessageRequirement Observe(MessageKey key, bool required = true) =>
-        new(key, Direction.In, ApplicationMessageRole.Observe, required);
+        new(key, MessageDirection.In, ApplicationMessageRole.Observe, required);
 
     private static ApplicationStateEffect ReadEffect() =>
         new(ApplicationStateKey.Forums, ApplicationStateEffectKind.Reads);
@@ -402,5 +419,5 @@ internal static class ForumApplicationDescriptors
 
     private static ApplicationToolHints QueryHints() => new(true, false, true, false);
 
-    private static ApplicationToolHints RefreshHints() => new(false, false, true, true);
+    private static ApplicationToolHints RefreshHints() => new(true, false, true, true);
 }

@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Qx.Protocol;
 
 namespace Qx.Game.Application;
@@ -34,7 +35,7 @@ internal static class HabbiconApplicationDescriptors
     public static ApplicationDescriptor ShopRefresh { get; } = new(
         ApplicationMemberIds.HabbiconShopRefresh,
         "Refresh habbicon shop",
-        "Returns the first fresh shop snapshot after one uniquely correlated request.",
+        "Reloads the habbicon shop from the server. Returns the first fresh shop snapshot after one uniquely correlated request.",
         ApplicationMemberKind.Operation,
         ApplicationExposure.All,
         typeof(HabbiconShopRefreshRequest),
@@ -43,7 +44,7 @@ internal static class HabbiconApplicationDescriptors
         [ApplicationStateKey.HotelConnected],
         [ChangeEffect()],
         [Send(MessageKeys.Habbicons.ShopRequest), Observe(MessageKeys.Habbicons.ShopSnapshot)],
-        new ApplicationToolHints(false, false, true, true));
+        new ApplicationToolHints(true, false, true, true));
 
     public static ApplicationDescriptor InfoRefresh { get; } = new(
         ApplicationMemberIds.HabbiconInfoRefresh,
@@ -61,7 +62,7 @@ internal static class HabbiconApplicationDescriptors
         [ApplicationStateKey.HotelConnected],
         [ChangeEffect()],
         [Send(MessageKeys.Habbicons.InfoRequest), Observe(MessageKeys.Habbicons.InfoSnapshot)],
-        new ApplicationToolHints(false, false, true, true));
+        new ApplicationToolHints(true, false, true, true));
 
     public static ApplicationDescriptor Buy { get; } = Action<HabbiconBuyActionRequest>(
         ApplicationMemberIds.HabbiconBuy,
@@ -107,15 +108,15 @@ internal static class HabbiconApplicationDescriptors
         event_exposure,
         null,
         typeof(HabbiconChanged),
-        state_effects: [ChangeEffect()],
+        stateEffects: [ChangeEffect()],
         messages: ObservedMessages(),
-        invocation_scope: ApplicationInvocationScope.Persistent);
+        invocationScope: ApplicationInvocationScope.Persistent);
 
     private static ApplicationDescriptor Query(
         string id,
         string title,
         string description,
-        Type request,
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] Type request,
         Type result,
         IReadOnlyList<ApplicationParameterDescriptor> parameters) =>
         new(
@@ -127,12 +128,12 @@ internal static class HabbiconApplicationDescriptors
             request,
             result,
             parameters,
-            state_effects: [ReadEffect()],
+            stateEffects: [ReadEffect()],
             messages: ObservedMessages(),
-            tool_hints: new ApplicationToolHints(true, false, true, false),
-            invocation_scope: ApplicationInvocationScope.Persistent);
+            toolHints: new ApplicationToolHints(true, false, true, false),
+            invocationScope: ApplicationInvocationScope.Persistent);
 
-    private static ApplicationDescriptor Action<T>(
+    private static ApplicationDescriptor Action<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] T>(
         string id,
         string title,
         string description,
@@ -208,10 +209,10 @@ internal static class HabbiconApplicationDescriptors
     ];
 
     private static ApplicationMessageRequirement Send(MessageKey key) =>
-        new(key, Direction.Out, ApplicationMessageRole.Send);
+        new(key, MessageDirection.Out, ApplicationMessageRole.Send);
 
     private static ApplicationMessageRequirement Observe(MessageKey key) =>
-        new(key, Direction.In, ApplicationMessageRole.Observe);
+        new(key, MessageDirection.In, ApplicationMessageRole.Observe);
 
     private static ApplicationStateEffect ReadEffect() =>
         new(ApplicationStateKey.Habbicons, ApplicationStateEffectKind.Reads);

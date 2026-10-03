@@ -13,21 +13,19 @@ public interface IGameGateway
 
     GEarthExtension Extension { get; }
 
-    Qx.ClientType Client { get; }
-
     bool IsHotelConnected { get; }
 
     event Action? SessionChanged;
 
-    MemberGate Gate(string member_id);
+    MemberGate Gate(string memberId);
 
-    ValueTask<TResult> QueryAsync<TRequest, TResult>(string member_id, TRequest request, CancellationToken cancellation_token = default);
+    ValueTask<TResult> QueryAsync<TRequest, TResult>(string memberId, TRequest request, CancellationToken cancellationToken = default);
 
-    Task<TResult> ReadStableAsync<TResult>(Func<CancellationToken, ValueTask<TResult>> read, CancellationToken cancellation_token = default);
+    Task<TResult> ReadStableAsync<TResult>(Func<CancellationToken, ValueTask<TResult>> read, CancellationToken cancellationToken = default);
 
-    Task<TResult> InvokeAsync<TRequest, TResult>(string member_id, TRequest request, CancellationToken cancellation_token = default);
+    Task<TResult> InvokeAsync<TRequest, TResult>(string memberId, TRequest request, CancellationToken cancellationToken = default);
 
-    IDisposable Subscribe<TEvent>(string member_id, Action<TEvent> receiver);
+    IDisposable Subscribe<TEvent>(string memberId, Action<TEvent> receiver);
 
-    IDisposable SubscribeSignal(string member_id, CoalescingSignal signal);
+    IDisposable SubscribeSignal(string memberId, CoalescingSignal signal);
 }

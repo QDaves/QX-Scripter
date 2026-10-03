@@ -289,11 +289,10 @@ public interface IMcpHost
             : Task.FromException<string>(
                 new NotSupportedException("Snapshot gift paging is not supported by this host."));
 
-    /// <summary>Reads the central Flash and Unity message registry with active catalog provenance and header evidence.</summary>
+    /// <summary>Reads the Flash message registry with each message's model type, key and contract members, active catalog provenance and header evidence.</summary>
     Task<string> GetProtocolMessagesAsync(
         string query,
         string direction,
-        string client,
         bool explicitOnly,
         bool resolvedOnly,
         int limit,
@@ -305,6 +304,7 @@ public interface IMcpHost
     string GetScript(string name);
     string SaveScript(string name, string code);
 
+    /// <summary>Reads one room user by name as a read envelope whose data is null when no user of that name is in the room.</summary>
     string GetAvatar(string name);
 
     Task<string> GetPetInfoAsync(long petId, CancellationToken cancellationToken);
@@ -347,15 +347,11 @@ public interface IMcpHost
     Task<string> RenameScriptAsync(string name, string newName, CancellationToken cancellationToken);
     IReadOnlyList<string> SearchScripts(string query);
 
-    string ListApi(string filter);
+    string ListApi(string filter, int limit, int offset);
     string ListLibraries();
-    string SearchTypes(string query, string assembly, int limit);
-    string SearchTypes(string query, string assembly, int limit, int offset) =>
-        SearchTypes(query, assembly, limit);
-    string GetTypeInfo(string name);
-    string SearchMembers(string query, string kind, int limit);
-    string SearchMembers(string query, string kind, int limit, int offset) =>
-        SearchMembers(query, kind, limit);
+    string SearchTypes(string query, string assembly, int limit, int offset);
+    string GetTypeInfo(string name, string member);
+    string SearchMembers(string query, string kind, bool includeGenerated, int limit, int offset);
     string GetScriptingGuide(string topic);
     string CompileCheck(string code);
 

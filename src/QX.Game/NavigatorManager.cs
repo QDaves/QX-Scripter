@@ -339,11 +339,11 @@ public sealed class NavigatorManager : GameStateManager
     /// <summary>
     /// Sends a request to set the local user's home room.
     /// </summary>
-    /// <param name="room_id">The id of the room.</param>
-    public void SetHomeRoom(Id room_id) =>
+    /// <param name="roomId">The id of the room.</param>
+    public void SetHomeRoom(Id roomId) =>
         SendMessage(
             MessageContracts.Navigator.HomeRoomUpdate,
-            new SetHomeRoomRequest(room_id));
+            new SetHomeRoomRequest(roomId));
 
     /// <summary>
     /// Sends a request to create a room.
@@ -352,15 +352,15 @@ public sealed class NavigatorManager : GameStateManager
     /// <param name="description">The description of the room.</param>
     /// <param name="model">The name of the floor plan model.</param>
     /// <param name="category">The id of the room category.</param>
-    /// <param name="max_visitors">The maximum number of visitors.</param>
-    /// <param name="trade_mode">The trading mode of the room.</param>
+    /// <param name="maxVisitors">The maximum number of visitors.</param>
+    /// <param name="tradeMode">The trading mode of the room.</param>
     public void CreateRoom(
         string name,
         string description,
         string model,
         int category,
-        int max_visitors,
-        int trade_mode) =>
+        int maxVisitors,
+        int tradeMode) =>
         SendMessage(
             MessageContracts.Navigator.RoomCreate,
             new CreateRoomRequest(
@@ -368,17 +368,17 @@ public sealed class NavigatorManager : GameStateManager
                 description,
                 model,
                 category,
-                max_visitors,
-                trade_mode));
+                maxVisitors,
+                tradeMode));
 
     /// <summary>
     /// Sends a request to delete a room.
     /// </summary>
-    /// <param name="room_id">The id of the room.</param>
-    public void DeleteRoom(Id room_id) =>
+    /// <param name="roomId">The id of the room.</param>
+    public void DeleteRoom(Id roomId) =>
         SendMessage(
             MessageContracts.Navigator.RoomDelete,
-            new DeleteRoomRequest(room_id));
+            new DeleteRoomRequest(roomId));
 
     internal static NavigatorSearchSnapshot Snapshot(NavigatorSearchResult value)
     {

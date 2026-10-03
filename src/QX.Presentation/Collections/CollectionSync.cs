@@ -9,8 +9,8 @@ public static class CollectionSync
     public static void Sync<TRow, TSource, TKey>(
         ObservableCollection<TRow> rows,
         IReadOnlyList<TSource> source,
-        Func<TRow, TKey> row_key,
-        Func<TSource, TKey> source_key,
+        Func<TRow, TKey> rowKey,
+        Func<TSource, TKey> sourceKey,
         Func<TSource, TRow> create,
         Action<TRow, TSource> update)
         where TKey : notnull
@@ -18,25 +18,25 @@ public static class CollectionSync
     {
         ArgumentNullException.ThrowIfNull(rows);
         ArgumentNullException.ThrowIfNull(source);
-        ArgumentNullException.ThrowIfNull(row_key);
-        ArgumentNullException.ThrowIfNull(source_key);
+        ArgumentNullException.ThrowIfNull(rowKey);
+        ArgumentNullException.ThrowIfNull(sourceKey);
         ArgumentNullException.ThrowIfNull(create);
         ArgumentNullException.ThrowIfNull(update);
         var wanted = new HashSet<TKey>(source.Count);
         foreach (TSource item in source)
-            wanted.Add(source_key(item));
+            wanted.Add(sourceKey(item));
         for (int index = rows.Count - 1; index >= 0; index--)
         {
-            if (!wanted.Contains(row_key(rows[index])))
+            if (!wanted.Contains(rowKey(rows[index])))
                 rows.RemoveAt(index);
         }
         var existing = new Dictionary<TKey, TRow>(rows.Count);
         foreach (TRow row in rows)
-            existing.TryAdd(row_key(row), row);
+            existing.TryAdd(rowKey(row), row);
         for (int index = 0; index < source.Count; index++)
         {
             TSource item = source[index];
-            TKey key = source_key(item);
+            TKey key = sourceKey(item);
             if (existing.TryGetValue(key, out TRow? row))
             {
                 update(row, item);

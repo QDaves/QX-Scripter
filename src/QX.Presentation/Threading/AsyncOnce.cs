@@ -11,11 +11,11 @@ public sealed class AsyncOnce<T>
 
     public bool IsReady => Volatile.Read(ref _task) is { IsCompletedSuccessfully: true };
 
-    public Task<T> GetAsync(CancellationToken cancellation_token = default)
+    public Task<T> GetAsync(CancellationToken cancellationToken = default)
     {
         Task<T> task;
         lock (_gate)
             task = _task ??= Task.Run(_factory);
-        return task.WaitAsync(cancellation_token);
+        return task.WaitAsync(cancellationToken);
     }
 }

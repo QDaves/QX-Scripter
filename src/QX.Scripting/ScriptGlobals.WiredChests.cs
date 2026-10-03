@@ -114,8 +114,8 @@ public partial class ScriptGlobals
     /// <param name="locked"><see langword="true"/> to lock; <see langword="false"/> to unlock.</param>
     /// <param name="applyToAllInRoom">
     /// <see langword="true"/> to apply to every chest in the room, which the game client guards
-    /// behind a confirmation dialog; <see langword="false"/> to apply to the nearby or selected
-    /// chests only.
+    /// behind a confirmation dialog; <see langword="false"/> to apply only to the user's own
+    /// chests in the room.
     /// </param>
     public void LockChests(bool locked, bool applyToAllInRoom = false) =>
         wired_send(
@@ -396,9 +396,9 @@ public partial class ScriptGlobals
     /// <remarks>
     /// The request is sent without waiting; the new contents arrive as a trade items update.
     /// </remarks>
-    /// <param name="inventory_ids">The inventory item ids to offer, between 1 and 1000 unique non-zero ids.</param>
-    public void WiredTradeAddItems(IReadOnlyList<int> inventory_ids) =>
-        WiredTradeAddItems(inventory_ids.Select(value => (Id)(long)value).ToArray());
+    /// <param name="inventoryIds">The inventory item ids to offer, between 1 and 1000 unique non-zero ids.</param>
+    public void WiredTradeAddItems(IReadOnlyList<int> inventoryIds) =>
+        WiredTradeAddItems(inventoryIds.Select(value => (Id)(long)value).ToArray());
 
     /// <summary>
     /// Adds inventory items to the open wired trade, taking ids as <see cref="long"/> values.
@@ -406,9 +406,9 @@ public partial class ScriptGlobals
     /// <remarks>
     /// The request is sent without waiting; the new contents arrive as a trade items update.
     /// </remarks>
-    /// <param name="inventory_ids">The inventory item ids to offer, between 1 and 1000 unique non-zero 32-bit ids.</param>
-    public void WiredTradeAddItems(IReadOnlyList<long> inventory_ids) =>
-        WiredTradeAddItems(inventory_ids.Select(value => (Id)value).ToArray());
+    /// <param name="inventoryIds">The inventory item ids to offer, between 1 and 1000 unique non-zero 32-bit ids.</param>
+    public void WiredTradeAddItems(IReadOnlyList<long> inventoryIds) =>
+        WiredTradeAddItems(inventoryIds.Select(value => (Id)value).ToArray());
 
     /// <summary>
     /// Adds inventory items to the open wired trade.
@@ -416,29 +416,29 @@ public partial class ScriptGlobals
     /// <remarks>
     /// The request is sent without waiting; the new contents arrive as a trade items update.
     /// </remarks>
-    /// <param name="inventory_ids">The inventory item ids to offer, between 1 and 1000 unique non-zero 32-bit ids.</param>
+    /// <param name="inventoryIds">The inventory item ids to offer, between 1 and 1000 unique non-zero 32-bit ids.</param>
     /// <exception cref="ArgumentOutOfRangeException">Thrown when the list is empty, too long, or holds an id that is zero or does not fit 32 bits.</exception>
     /// <exception cref="ArgumentException">Thrown when the list holds the same id twice.</exception>
-    public void WiredTradeAddItems(IReadOnlyList<Id> inventory_ids) =>
+    public void WiredTradeAddItems(IReadOnlyList<Id> inventoryIds) =>
         wired_send(
             ApplicationMemberIds.WiredTradeItemsAdd,
-            new WiredTradeItemsRequest(inventory_ids));
+            new WiredTradeItemsRequest(inventoryIds));
 
     /// <summary>
     /// Takes inventory items back off the open wired trade, taking 32-bit ids.
     /// </summary>
     /// <remarks>The request is sent without waiting.</remarks>
-    /// <param name="inventory_ids">The inventory item ids to withdraw from the offer, between 1 and 1000 unique non-zero ids.</param>
-    public void WiredTradeRemoveItems(IReadOnlyList<int> inventory_ids) =>
-        WiredTradeRemoveItems(inventory_ids.Select(value => (Id)(long)value).ToArray());
+    /// <param name="inventoryIds">The inventory item ids to withdraw from the offer, between 1 and 1000 unique non-zero ids.</param>
+    public void WiredTradeRemoveItems(IReadOnlyList<int> inventoryIds) =>
+        WiredTradeRemoveItems(inventoryIds.Select(value => (Id)(long)value).ToArray());
 
     /// <summary>
     /// Takes inventory items back off the open wired trade, taking ids as <see cref="long"/> values.
     /// </summary>
     /// <remarks>The request is sent without waiting.</remarks>
-    /// <param name="inventory_ids">The inventory item ids to withdraw from the offer, between 1 and 1000 unique non-zero 32-bit ids.</param>
-    public void WiredTradeRemoveItems(IReadOnlyList<long> inventory_ids) =>
-        WiredTradeRemoveItems(inventory_ids.Select(value => (Id)value).ToArray());
+    /// <param name="inventoryIds">The inventory item ids to withdraw from the offer, between 1 and 1000 unique non-zero 32-bit ids.</param>
+    public void WiredTradeRemoveItems(IReadOnlyList<long> inventoryIds) =>
+        WiredTradeRemoveItems(inventoryIds.Select(value => (Id)value).ToArray());
 
     /// <summary>
     /// Takes inventory items back off the open wired trade.
@@ -447,13 +447,13 @@ public partial class ScriptGlobals
     /// The add and remove paths share one wire message, distinguished by a leading flag. The
     /// request is sent without waiting.
     /// </remarks>
-    /// <param name="inventory_ids">The inventory item ids to withdraw from the offer, between 1 and 1000 unique non-zero 32-bit ids.</param>
+    /// <param name="inventoryIds">The inventory item ids to withdraw from the offer, between 1 and 1000 unique non-zero 32-bit ids.</param>
     /// <exception cref="ArgumentOutOfRangeException">Thrown when the list is empty, too long, or holds an id that is zero or does not fit 32 bits.</exception>
     /// <exception cref="ArgumentException">Thrown when the list holds the same id twice.</exception>
-    public void WiredTradeRemoveItems(IReadOnlyList<Id> inventory_ids) =>
+    public void WiredTradeRemoveItems(IReadOnlyList<Id> inventoryIds) =>
         wired_send(
             ApplicationMemberIds.WiredTradeItemsRemove,
-            new WiredTradeItemsRequest(inventory_ids));
+            new WiredTradeItemsRequest(inventoryIds));
 
     /// <summary>
     /// Gets the wired chests standing in the room.
@@ -596,15 +596,15 @@ public partial class ScriptGlobals
     }
 
     /// <summary>
-    /// Confirms or withdraws the confirmation of the open wired trade.
+    /// Sends initial acceptance or final confirmation of the open wired trade.
     /// </summary>
     /// <remarks>
     /// The request is sent without waiting; the outcome arrives as a trade completion or
     /// cancellation.
     /// </remarks>
     /// <param name="confirm">
-    /// <see langword="true"/> to confirm; <see langword="false"/> to withdraw a previous
-    /// confirmation.
+    /// <see langword="false"/> for initial acceptance; <see langword="true"/> for final confirmation
+    /// after the three-second countdown. Prefer <see cref="CompleteWiredTrade(long, long, int)"/> for the full sequence.
     /// </param>
     public void WiredTradeConfirm(bool confirm = true) =>
         wired_send(
@@ -712,6 +712,26 @@ public partial class ScriptGlobals
     /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="upgrades"/> is negative.</exception>
     public (int Credits, int Diamonds) ChestUpgradeCostFor(int upgrades) =>
         WiredChestUpgradeCost(upgrades);
+
+    /// <summary>Accepts and completes the reviewed Wired offer if its state is still current.</summary>
+    /// <param name="expectedGeneration">The generation from the reviewed Wired state.</param>
+    /// <param name="expectedRevision">The revision from the reviewed Wired state.</param>
+    /// <param name="timeoutMs">The whole-operation timeout in milliseconds, from 1 to 120000.</param>
+    /// <returns>The completion result, including a cancellation or failure reason.</returns>
+    /// <remarks>The offer must already be acceptable. Changed offers are never confirmed.</remarks>
+    public Task<WiredTradeCompleteResult> CompleteWiredTrade(
+        long expectedGeneration,
+        long expectedRevision,
+        int timeoutMs = 30000) =>
+        _application.InvokeAsync<WiredTradeCompleteRequest, WiredTradeCompleteResult>(
+            ApplicationMemberIds.WiredTradeComplete,
+            new WiredTradeCompleteRequest(expectedGeneration, expectedRevision, timeoutMs),
+            Ct).AsTask();
+
+    /// <summary>Sends one explicitly named Wired confirmation stage without waiting.</summary>
+    /// <param name="stage">Accept first; Confirm only after the countdown.</param>
+    public void WiredTradeConfirm(WiredTradeConfirmationStage stage) =>
+        wired_send(ApplicationMemberIds.WiredTradeStageSend, new WiredTradeStageRequest(stage));
 
     private string FurniClassOf(FloorItem chest) =>
         FurniOf(chest)?.ClassName ?? "";

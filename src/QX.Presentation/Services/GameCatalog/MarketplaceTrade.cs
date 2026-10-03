@@ -1,7 +1,6 @@
 using Qx.Game;
 using Qx.Game.Application;
 using Qx.Model;
-using Qx.Model.Marketplace;
 using Qx.Model.Messages.Incoming;
 using Qx.Presentation.Services.Game;
 
@@ -17,7 +16,7 @@ public sealed class MarketplaceTrade
     public MarketplaceTrade(IGameGateway gateway) =>
         _gateway = gateway ?? throw new ArgumentNullException(nameof(gateway));
 
-    public async Task<MarketplaceOfferSnapshot?> FreshOfferAsync(string name, string identifier, FurniKey key, CancellationToken cancellation_token)
+    public async Task<MarketplaceOfferSnapshot?> FreshOfferAsync(string name, string identifier, FurniKey key, CancellationToken cancellationToken)
     {
         foreach (string query in Queries(name, identifier))
         {
@@ -29,7 +28,7 @@ public sealed class MarketplaceTrade
                         SearchQuery: query,
                         SortOrder: MarketplaceSortOrder.LowestPrice,
                         PageSize: SearchPageSize),
-                    cancellation_token);
+                    cancellationToken);
                 if (Cheapest(first, key) is { } found)
                     return found;
                 if (first.PageSize <= 0)
@@ -41,7 +40,7 @@ public sealed class MarketplaceTrade
                     MarketplaceStateView state = await _gateway.QueryAsync<MarketplaceStateRequest, MarketplaceStateView>(
                         ApplicationMemberIds.MarketplaceState,
                         new MarketplaceStateRequest(page, first.PageSize),
-                        cancellation_token);
+                        cancellationToken);
                     if (state.Generation != first.Generation || state.Revision != first.Revision ||
                         state.SearchResult is not { } current ||
                         current.Generation != first.Generation || current.Revision != first.Revision)
@@ -59,11 +58,11 @@ public sealed class MarketplaceTrade
         return null;
     }
 
-    public async Task<MarketplaceBuyResult> BuyAsync(Id offer_id, CancellationToken cancellation_token) =>
+    public async Task<MarketplaceBuyResult> BuyAsync(Id offerId, CancellationToken cancellationToken) =>
         await _gateway.InvokeAsync<MarketplaceBuyRequest, MarketplaceBuyResult>(
             ApplicationMemberIds.MarketplaceOfferBuy,
-            new MarketplaceBuyRequest(offer_id),
-            cancellation_token);
+            new MarketplaceBuyRequest(offerId),
+            cancellationToken);
 
     static IEnumerable<string> Queries(string name, string identifier) =>
         new[] { name, identifier }

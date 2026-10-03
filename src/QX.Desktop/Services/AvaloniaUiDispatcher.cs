@@ -20,40 +20,40 @@ internal sealed class AvaloniaUiDispatcher : IUiDispatcher
         Dispatcher.UIThread.Post(() => StartAsync(work).Observe("ui"), Map(priority));
     }
 
-    public Task InvokeAsync(Action work, CancellationToken cancellation_token = default)
+    public Task InvokeAsync(Action work, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(work);
         if (!Dispatcher.UIThread.CheckAccess())
-            return Dispatcher.UIThread.InvokeAsync(work, DispatcherPriority.Normal, cancellation_token).GetTask();
-        cancellation_token.ThrowIfCancellationRequested();
+            return Dispatcher.UIThread.InvokeAsync(work, DispatcherPriority.Normal, cancellationToken).GetTask();
+        cancellationToken.ThrowIfCancellationRequested();
         work();
         return Task.CompletedTask;
     }
 
-    public Task<T> InvokeAsync<T>(Func<T> work, CancellationToken cancellation_token = default)
+    public Task<T> InvokeAsync<T>(Func<T> work, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(work);
         if (!Dispatcher.UIThread.CheckAccess())
-            return Dispatcher.UIThread.InvokeAsync(work, DispatcherPriority.Normal, cancellation_token).GetTask();
-        cancellation_token.ThrowIfCancellationRequested();
+            return Dispatcher.UIThread.InvokeAsync(work, DispatcherPriority.Normal, cancellationToken).GetTask();
+        cancellationToken.ThrowIfCancellationRequested();
         return Task.FromResult(work());
     }
 
-    public Task InvokeAsync(Func<Task> work, CancellationToken cancellation_token = default)
+    public Task InvokeAsync(Func<Task> work, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(work);
         if (!Dispatcher.UIThread.CheckAccess())
-            return Dispatcher.UIThread.InvokeAsync(work, DispatcherPriority.Normal, cancellation_token).GetTask().Unwrap();
-        cancellation_token.ThrowIfCancellationRequested();
+            return Dispatcher.UIThread.InvokeAsync(work, DispatcherPriority.Normal, cancellationToken).GetTask().Unwrap();
+        cancellationToken.ThrowIfCancellationRequested();
         return work();
     }
 
-    public Task<T> InvokeAsync<T>(Func<Task<T>> work, CancellationToken cancellation_token = default)
+    public Task<T> InvokeAsync<T>(Func<Task<T>> work, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(work);
         if (!Dispatcher.UIThread.CheckAccess())
-            return Dispatcher.UIThread.InvokeAsync(work, DispatcherPriority.Normal, cancellation_token).GetTask().Unwrap();
-        cancellation_token.ThrowIfCancellationRequested();
+            return Dispatcher.UIThread.InvokeAsync(work, DispatcherPriority.Normal, cancellationToken).GetTask().Unwrap();
+        cancellationToken.ThrowIfCancellationRequested();
         return work();
     }
 

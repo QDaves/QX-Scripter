@@ -160,11 +160,11 @@ public sealed partial class InventoryViewModel : PageViewModel, IVisibleItemsSin
         Rearm();
     }
 
-    protected override async Task OnActivatedAsync(CancellationToken cancellation_token)
+    protected override async Task OnActivatedAsync(CancellationToken cancellationToken)
     {
-        await ReadAsync(cancellation_token);
-        await LoadAsync(cancellation_token);
-        await ReadAsync(cancellation_token);
+        await ReadAsync(cancellationToken);
+        await LoadAsync(cancellationToken);
+        await ReadAsync(cancellationToken);
     }
 
     protected override void OnDeactivated()

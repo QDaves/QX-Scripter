@@ -2,7 +2,7 @@ using System.Text.Json;
 using Qx.Presentation.Platform;
 using Qx.Presentation.Services.Files;
 using Qx.Presentation.Threading;
-using Qx.Scripting;
+using Qx.Scripting.Hosting;
 
 namespace Qx.Presentation.Services.Library;
 
@@ -167,7 +167,7 @@ public sealed class ScriptLibraryStore : IScriptLibrary, IDisposable
         Changed?.Invoke();
     }
 
-    public Task FlushAsync(CancellationToken cancellation_token) => _file.FlushAsync(cancellation_token);
+    public Task FlushAsync(CancellationToken cancellationToken) => _file.FlushAsync(cancellationToken);
 
     public bool FlushNow(TimeSpan budget) => _file.FlushNow(budget);
 

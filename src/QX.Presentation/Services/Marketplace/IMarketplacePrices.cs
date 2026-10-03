@@ -6,5 +6,5 @@ public interface IMarketplacePrices
 
     bool WasRead(MarketplaceKind kind);
 
-    Task<IReadOnlyDictionary<MarketplaceKind, MarketplacePrice>> FetchAsync(IEnumerable<MarketplaceKind> kinds, CancellationToken cancellation_token);
+    Task<IReadOnlyDictionary<MarketplaceKind, MarketplacePrice>> FetchAsync(IEnumerable<MarketplaceKind> kinds, CancellationToken cancellationToken);
 }

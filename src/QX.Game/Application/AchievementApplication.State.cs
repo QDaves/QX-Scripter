@@ -120,7 +120,6 @@ internal sealed partial class AchievementApplication
         bool connected = AchievementConnected(state);
         return new AchievementStateView(
             connected,
-            connected ? state.Session!.Client : null,
             state.SessionGeneration,
             state.Revision,
             state.ListRevision,
@@ -150,7 +149,6 @@ internal sealed partial class AchievementApplication
         bool connected = AchievementConnected(state);
         return new AchievementPage(
             connected,
-            connected ? state.Session!.Client : null,
             state.SessionGeneration,
             state.Revision,
             state.ListRevision,
@@ -179,7 +177,6 @@ internal sealed partial class AchievementApplication
         bool connected = AchievementConnected(state);
         return new AchievementPointLimitPage(
             connected,
-            connected ? state.Session!.Client : null,
             state.SessionGeneration,
             state.Revision,
             state.PointLimitsRevision,
@@ -197,7 +194,6 @@ internal sealed partial class AchievementApplication
         bool connected = BadgeConnected(state);
         return new BadgeStateView(
             connected,
-            connected ? state.Session!.Client : null,
             state.SessionGeneration,
             state.Revision,
             state.InventoryRevision,
@@ -220,7 +216,6 @@ internal sealed partial class AchievementApplication
         bool connected = BadgeConnected(state);
         return new OwnedBadgePage(
             connected,
-            connected ? state.Session!.Client : null,
             state.SessionGeneration,
             state.Revision,
             state.InventoryRevision,
@@ -249,7 +244,6 @@ internal sealed partial class AchievementApplication
         bool connected = BadgeConnected(state);
         return new BadgeSelectedSetPage(
             connected,
-            connected ? state.Session!.Client : null,
             state.SessionGeneration,
             state.Revision,
             state.SelectedRevision,
@@ -276,7 +270,6 @@ internal sealed partial class AchievementApplication
         bool connected = BadgeConnected(state);
         return new BadgeSelectedPage(
             connected,
-            connected ? state.Session!.Client : null,
             state.SessionGeneration,
             state.Revision,
             state.SelectedRevision,

@@ -136,7 +136,7 @@ public sealed partial class ChatViewModel : PageViewModel
         return true;
     }
 
-    protected override Task OnActivatedAsync(CancellationToken cancellation_token)
+    protected override Task OnActivatedAsync(CancellationToken cancellationToken)
     {
         Refresh(0);
         if (IsFollowing)

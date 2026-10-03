@@ -2,7 +2,11 @@ using Qx.Model.Messages.Incoming;
 
 namespace Qx.Game.Snapshots;
 
-/// <summary>Represents a badge the local user owns.</summary>
+/// <summary>
+/// Represents the JSON projection of a badge the local user owns used by the MCP read tools and the
+/// application-layer results; scripts that read live state use
+/// <see cref="Qx.Model.Messages.Incoming.OwnedBadge"/>.
+/// </summary>
 /// <param name="Id">The badge identifier.</param>
 /// <param name="Code">The badge code.</param>
 /// <param name="OwnerCount">The number of users who own the badge, or 0 when <paramref name="HasRarityData"/> is <see langword="false"/>.</param>
@@ -15,7 +19,10 @@ public sealed record OwnedBadgeSnapshot(
     int RarityId,
     bool HasRarityData);
 
-/// <summary>Represents the local user's badge inventory, together with its fragmented load state.</summary>
+/// <summary>
+/// Represents the JSON projection of the local user's badge inventory and its load state for the
+/// MCP read tools; scripts use <see cref="BadgeInventoryManager"/>.
+/// </summary>
 /// <param name="IsLoading">Whether a load is in flight right now.</param>
 /// <param name="IsStale">
 /// Whether the listed badges are left over from a previous load that has been invalidated. They are

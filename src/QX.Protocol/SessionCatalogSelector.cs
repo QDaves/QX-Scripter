@@ -1,5 +1,3 @@
-using Qx;
-
 namespace Qx.Protocol;
 
 /// <summary>Specifies why a session catalog is being selected.</summary>
@@ -12,13 +10,11 @@ public enum SessionCatalogSelectionIntent
 }
 
 /// <summary>Represents a request to select the message catalog for a hotel session.</summary>
-/// <param name="Client">The client type of the session.</param>
 /// <param name="HotelVersion">The client build version reported for the session.</param>
 /// <param name="ClientIdentifier">The client identifier reported for the session.</param>
 /// <param name="Fallback">The binding to use when no better catalog is selected, such as the G-Earth catalog.</param>
 /// <param name="Intent">Why the catalog is being selected.</param>
 public sealed record SessionCatalogRequest(
-    ClientType Client,
     string HotelVersion,
     string ClientIdentifier,
     SessionCatalogBinding Fallback,

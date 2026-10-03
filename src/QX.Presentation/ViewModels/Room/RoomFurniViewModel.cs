@@ -300,7 +300,7 @@ public sealed partial class RoomFurniViewModel : ViewModelBase
             "They go back into your inventory, one after another.",
             "Pick up",
             DialogTone.Destructive,
-            cancellation_token: cancellation_token))
+            cancellationToken: cancellation_token))
         {
             return;
         }
@@ -316,7 +316,7 @@ public sealed partial class RoomFurniViewModel : ViewModelBase
             "They go back to the people who own them, one after another.",
             "Eject",
             DialogTone.Destructive,
-            cancellation_token: cancellation_token))
+            cancellationToken: cancellation_token))
         {
             return;
         }

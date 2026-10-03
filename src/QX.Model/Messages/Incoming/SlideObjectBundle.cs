@@ -56,16 +56,16 @@ public sealed record SlideObjectBundle(
     /// <param name="To">The tile the objects move to.</param>
     /// <param name="Objects">The floor items that move.</param>
     /// <param name="RollerId">The ID of the roller that moves the objects.</param>
-    /// <param name="MoveType">The avatar move type as its <see cref="AvatarSlideType"/> integer value.</param>
+    /// <param name="moveType">The avatar move type as its <see cref="AvatarSlideType"/> integer value.</param>
     /// <param name="Avatar">The avatar that moves, or <see langword="null"/> when no avatar moves.</param>
     public SlideObjectBundle(
         Point From,
         Point To,
         IReadOnlyList<SlideObject> Objects,
         Id RollerId,
-        int MoveType,
+        int moveType,
         SlideAvatar? Avatar)
-        : this(From, To, Objects, RollerId, (AvatarSlideType)MoveType, Avatar)
+        : this(From, To, Objects, RollerId, (AvatarSlideType)moveType, Avatar)
     {
     }
 

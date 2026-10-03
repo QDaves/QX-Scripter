@@ -1,6 +1,6 @@
 using Qx.Messages;
 
-namespace Qx.Model.Forums;
+namespace Qx.Model;
 
 internal static class ForumRequestProtocol
 {
@@ -20,7 +20,6 @@ internal static class ForumRequestProtocol
         ForumProtocol.WriteFlashId(in p, group_id);
 
     public static void PrepareIds(
-        ClientType client,
         Id group_id,
         params Id[] int_ids)
     {

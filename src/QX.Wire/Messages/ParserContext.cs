@@ -71,19 +71,14 @@ public readonly record struct MessageWireProfile(
     /// <summary>Gets whether the profile is analyzed but not exact.</summary>
     public bool IsUnsupported => IsAnalyzed && !IsExact;
 
-    /// <summary>Gets whether every layout that incoming messages of a client need is known.</summary>
-    /// <param name="client">The client type to check.</param>
-    /// <returns><see langword="true"/> if <see cref="MissingIncomingCapabilities(ClientType)"/> returns an empty list; otherwise, <see langword="false"/>.</returns>
-    public bool HasExactIncomingLayout(ClientType client) =>
-        MissingIncomingCapabilities(client).Count == 0;
+    /// <summary>Gets whether every layout that incoming messages need is known.</summary>
+    /// <returns><see langword="true"/> if <see cref="MissingIncomingCapabilities"/> returns an empty list; otherwise, <see langword="false"/>.</returns>
+    public bool HasExactIncomingLayout() =>
+        MissingIncomingCapabilities().Count == 0;
 
-    /// <summary>Gets the names of the layouts that are still unknown for incoming messages of a client.</summary>
-    /// <param name="client">The client type to check.</param>
-    /// <returns>
-    /// Any of <c>analysis</c>, <c>wiredContext</c>, <c>wiredConditionInvert</c> and, for Flash,
-    /// <c>guestRoomResult</c>. Any other client type adds <c>client</c>.
-    /// </returns>
-    public IReadOnlyList<string> MissingIncomingCapabilities(ClientType client)
+    /// <summary>Gets the names of the layouts that are still unknown for incoming messages.</summary>
+    /// <returns>Any of <c>analysis</c>, <c>wiredContext</c>, <c>wiredConditionInvert</c> and <c>guestRoomResult</c>.</returns>
+    public IReadOnlyList<string> MissingIncomingCapabilities()
     {
         var missing = new List<string>();
         if (!IsAnalyzed)
@@ -92,18 +87,8 @@ public readonly record struct MessageWireProfile(
             missing.Add("wiredContext");
         if (WiredConditionHasSeparateInvert is null)
             missing.Add("wiredConditionInvert");
-
-        switch (client)
-        {
-            case ClientType.Flash:
-                if (FlashGuestRoomResultLayout is null)
-                    missing.Add("guestRoomResult");
-                break;
-            default:
-                missing.Add("client");
-                break;
-        }
-
+        if (FlashGuestRoomResultLayout is null)
+            missing.Add("guestRoomResult");
         return missing;
     }
 
@@ -136,35 +121,15 @@ public readonly record struct MessageWireProfile(
             throw new WireProfilePendingException(area);
     }
 
-    /// <summary>Gets the guest room result layout of a client and throws when it is not known.</summary>
-    /// <param name="client">The client type.</param>
+    /// <summary>Gets the guest room result layout and throws when it is not known.</summary>
     /// <returns>The guest room result layout.</returns>
     /// <exception cref="WireProfilePendingException">Thrown when the profile is not analyzed yet.</exception>
     /// <exception cref="NotSupportedException">Thrown when the Flash layout is not known.</exception>
-    /// <exception cref="UnsupportedClientException">Thrown when <paramref name="client"/> is not <see cref="ClientType.Flash"/>.</exception>
-    public GuestRoomResultWireLayout RequireGuestRoomResultLayout(ClientType client)
+    public GuestRoomResultWireLayout RequireGuestRoomResultLayout()
     {
         RequireAnalyzed("guest room result");
-        return client switch
-        {
-            ClientType.Flash => FlashGuestRoomResultLayout ??
-                throw new NotSupportedException("The active Flash build has no exact guest room result wire profile."),
-            _ => throw new UnsupportedClientException(client)
-        };
-    }
-
-    /// <summary>Deconstructs the profile into its wired context layout, wired condition invert flag and analysis state.</summary>
-    /// <param name="wired_context_layout">The wired context layout.</param>
-    /// <param name="wired_condition_has_separate_invert">Whether wired conditions carry a separate invert flag, or <see langword="null"/> when not known.</param>
-    /// <param name="is_analyzed">Whether the profile comes from an analysis of the client build.</param>
-    public void Deconstruct(
-        out MessageWiredContextLayout wired_context_layout,
-        out bool? wired_condition_has_separate_invert,
-        out bool is_analyzed)
-    {
-        wired_context_layout = WiredContextLayout;
-        wired_condition_has_separate_invert = WiredConditionHasSeparateInvert;
-        is_analyzed = IsAnalyzed;
+        return FlashGuestRoomResultLayout ??
+            throw new NotSupportedException("The active Flash build has no exact guest room result wire profile.");
     }
 }
 

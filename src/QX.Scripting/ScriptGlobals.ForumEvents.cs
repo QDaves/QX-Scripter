@@ -1,7 +1,6 @@
 using Qx.Game;
-using Qx.Model.Forums;
+using Qx.Model;
 using Qx.Model.Messages.Incoming;
-using ForumThreadData = Qx.Model.Forums.ForumThread;
 
 namespace Qx.Scripting;
 
@@ -87,7 +86,7 @@ public partial class ScriptGlobals
     /// </param>
     /// <returns>A handle that removes the handler when disposed.</returns>
     /// <exception cref="ObjectDisposedException">Thrown when the script globals have already been disposed.</exception>
-    public IDisposable OnForumThreadChanged(Action<Id, ForumThreadData> handler)
+    public IDisposable OnForumThreadChanged(Action<Id, ForumThread> handler)
         => Subscribe(handler, value => Forums.ThreadChanged += value,
             value => Forums.ThreadChanged -= value);
 

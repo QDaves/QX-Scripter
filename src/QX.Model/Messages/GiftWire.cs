@@ -1,0 +1,694 @@
+using Qx.Messages;
+using Qx.Model.Messages.Incoming;
+using Qx.Model.Messages.Outgoing;
+
+namespace Qx.Model;
+
+internal static class GiftWire
+{
+    internal const int MaximumCollectionCount = ushort.MaxValue;
+    internal const int MaximumNuxSteps = CatalogPageWire.MaximumOffers;
+    internal const int MaximumNuxOptions = ushort.MaxValue;
+    internal const int MaximumNuxProducts = ushort.MaxValue;
+    internal const int MaximumNuxSelections = ushort.MaxValue / 3;
+
+    private const int FlashEligibilityBytes = sizeof(int) + sizeof(byte) + sizeof(int) + sizeof(byte);
+    private const int NuxProductMinimumBytes = CatalogWire.StringMinimumBytes * 2;
+    private const int NuxOptionMinimumBytes = CatalogWire.StringMinimumBytes + sizeof(int);
+    private const int NuxStepMinimumBytes = sizeof(int) * 3;
+
+    public static IReadOnlyList<int> FreezeValues(IReadOnlyList<int> values, string name) =>
+        CatalogWire.FreezeValues(values, MaximumCollectionCount, name);
+
+    public static GiftWrappingConfiguration ParseWrappingConfiguration(in PacketReader p)
+    {
+        bool enabled = p.ReadBool();
+        int price = p.ReadInt();
+        int count_width = CatalogWire.CountWidth;
+        int[] stuff_types = ReadIntValues(
+            in p,
+            checked(count_width * 3),
+            nameof(GiftWrappingConfiguration.StuffTypes));
+        int[] box_types = ReadIntValues(
+            in p,
+            checked(count_width * 2),
+            nameof(GiftWrappingConfiguration.BoxTypes));
+        int[] ribbon_types = ReadIntValues(
+            in p,
+            count_width,
+            nameof(GiftWrappingConfiguration.RibbonTypes));
+        int[] default_stuff_types = ReadIntValues(
+            in p,
+            0,
+            nameof(GiftWrappingConfiguration.DefaultStuffTypes));
+        CatalogWire.RequireEmpty(in p, nameof(GiftWrappingConfiguration));
+        return new GiftWrappingConfiguration(
+            enabled,
+            price,
+            stuff_types,
+            box_types,
+            ribbon_types,
+            default_stuff_types);
+    }
+
+    public static void ComposeWrappingConfiguration(
+        GiftWrappingConfiguration value,
+        in PacketWriter p)
+    {
+        ArgumentNullException.ThrowIfNull(value);
+        int[] stuff_types = SnapshotValues(value.StuffTypes, nameof(value.StuffTypes));
+        int[] box_types = SnapshotValues(value.BoxTypes, nameof(value.BoxTypes));
+        int[] ribbon_types = SnapshotValues(value.RibbonTypes, nameof(value.RibbonTypes));
+        int[] default_stuff_types = SnapshotValues(
+            value.DefaultStuffTypes,
+            nameof(value.DefaultStuffTypes));
+
+        p.WriteBool(value.IsWrappingEnabled);
+        p.WriteInt(value.WrappingPrice);
+        WriteIntValues(stuff_types, in p);
+        WriteIntValues(box_types, in p);
+        WriteIntValues(ribbon_types, in p);
+        WriteIntValues(default_stuff_types, in p);
+    }
+
+    public static PresentOpened ParsePresentOpened(in PacketReader p)
+    {
+        var strings = NewStringBudget();
+        int id_width = sizeof(int);
+        string item_type = strings.Read(
+            in p,
+            nameof(PresentOpened.ItemType),
+            checked(sizeof(int) + CatalogWire.StringMinimumBytes + id_width +
+                CatalogWire.StringMinimumBytes + sizeof(byte) + CatalogWire.StringMinimumBytes));
+        int class_id = p.ReadInt();
+        string product_code = strings.Read(
+            in p,
+            nameof(PresentOpened.ProductCode),
+            checked(id_width + CatalogWire.StringMinimumBytes + sizeof(byte) +
+                CatalogWire.StringMinimumBytes));
+        Id placed_item_id = ReadFlashId(in p);
+        string placed_item_type = strings.Read(
+            in p,
+            nameof(PresentOpened.PlacedItemType),
+            checked(sizeof(byte) + CatalogWire.StringMinimumBytes));
+        bool placed_in_room = p.ReadBool();
+        string pet_figure = strings.Read(in p, nameof(PresentOpened.PetFigureString));
+        CatalogWire.RequireEmpty(in p, nameof(PresentOpened));
+        return new PresentOpened(
+            item_type,
+            class_id,
+            product_code,
+            placed_item_id,
+            placed_item_type,
+            placed_in_room,
+            pet_figure);
+    }
+
+    public static void ComposePresentOpened(PresentOpened value, in PacketWriter p)
+    {
+        ArgumentNullException.ThrowIfNull(value);
+        var strings = NewStringBudget();
+        strings.Require(value.ItemType, nameof(value.ItemType), in p);
+        strings.Require(value.ProductCode, nameof(value.ProductCode), in p);
+        strings.Require(value.PlacedItemType, nameof(value.PlacedItemType), in p);
+        strings.Require(value.PetFigureString, nameof(value.PetFigureString), in p);
+        RequireFlashId(value.PlacedItemId);
+
+        p.WriteString(value.ItemType);
+        p.WriteInt(value.ClassId);
+        p.WriteString(value.ProductCode);
+        WriteFlashId(in p, value.PlacedItemId);
+        p.WriteString(value.PlacedItemType);
+        p.WriteBool(value.PlacedInRoom);
+        p.WriteString(value.PetFigureString);
+    }
+
+    public static ClubGiftEligibility ParseEligibility(in PacketReader p) => new ClubGiftEligibility(p.ReadInt(), p.ReadBool(), p.ReadInt(), p.ReadBool());
+
+    public static void ComposeEligibility(ClubGiftEligibility value, in PacketWriter p)
+    {
+        ArgumentNullException.ThrowIfNull(value);
+        WriteEligibility(value, in p);
+    }
+
+    public static ClubGiftInfo ParseClubGiftInfo(in PacketReader p)
+    {
+        int days_until_next_gift = p.ReadInt();
+        int gifts_available = p.ReadInt();
+        int count_width = CatalogWire.CountWidth;
+        int minimum_offer_bytes = CatalogPageWire.MinimumOfferBytes();
+        var catalog_budget = new CatalogPageBudget();
+        var strings = NewStringBudget();
+        int offer_count = CatalogWire.ReadCount(
+            in p,
+            minimum_offer_bytes,
+            count_width,
+            CatalogPageWire.MaximumOffers,
+            nameof(ClubGiftInfo.Offers));
+        catalog_budget.TakeOffers(offer_count);
+        var offers = new CatalogPageOffer[offer_count];
+        for (int index = 0; index < offers.Length; index++)
+        {
+            int sibling_bytes = checked((offers.Length - index - 1) * minimum_offer_bytes);
+            offers[index] = CatalogPageWire.ParseOffer(
+                in p,
+                checked(count_width + sibling_bytes),
+                ref catalog_budget,
+                ref strings);
+        }
+
+        int eligibility_bytes = FlashEligibilityBytes;
+        int eligibility_count = CatalogWire.ReadCount(
+            in p,
+            eligibility_bytes,
+            0,
+            MaximumCollectionCount,
+            nameof(ClubGiftInfo.GiftEligibility));
+        var eligibility = new ClubGiftEligibility[eligibility_count];
+        for (int index = 0; index < eligibility.Length; index++)
+            eligibility[index] = ParseEligibility(in p);
+        CatalogWire.RequireEmpty(in p, nameof(ClubGiftInfo));
+        return new ClubGiftInfo(days_until_next_gift, gifts_available, offers, eligibility);
+    }
+
+    public static void ComposeClubGiftInfo(ClubGiftInfo value, in PacketWriter p)
+    {
+        ArgumentNullException.ThrowIfNull(value);
+        CatalogPageOffer[] offers = CatalogWire.SnapshotReferences(
+            value.Offers,
+            CatalogPageWire.MaximumOffers,
+            nameof(value.Offers));
+        ClubGiftEligibility[] eligibility = CatalogWire.SnapshotReferences(
+            value.GiftEligibility,
+            MaximumCollectionCount,
+            nameof(value.GiftEligibility));
+        var catalog_budget = new CatalogPageBudget();
+        catalog_budget.TakeOffers(offers.Length);
+        var strings = NewStringBudget();
+        for (int index = 0; index < offers.Length; index++)
+        {
+            offers[index] = CatalogPageWire.PrepareOffer(
+                offers[index],
+                true,
+                ref catalog_budget,
+                ref strings,
+                in p);
+        }
+
+        p.WriteInt(value.DaysUntilNextGift);
+        p.WriteInt(value.GiftsAvailable);
+        CatalogWire.WriteCount(offers.Length, in p);
+        foreach (CatalogPageOffer offer in offers)
+            CatalogPageWire.WriteOffer(offer, in p);
+        CatalogWire.WriteCount(eligibility.Length, in p);
+        foreach (ClubGiftEligibility item in eligibility)
+            WriteEligibility(item, in p);
+    }
+
+    public static ClubGiftSelected ParseClubGiftSelected(in PacketReader p)
+    {
+        var strings = NewStringBudget();
+        int count_width = CatalogWire.CountWidth;
+        string product_code = strings.Read(
+            in p,
+            nameof(ClubGiftSelected.ProductCode),
+            count_width);
+        int minimum_product_bytes = CatalogPageWire.FlashProductMinimumBytes;
+        int product_count = CatalogWire.ReadCount(
+            in p,
+            minimum_product_bytes,
+            0,
+            CatalogPageWire.MaximumProducts,
+            nameof(ClubGiftSelected.Products));
+        var catalog_budget = new CatalogPageBudget();
+        catalog_budget.TakeProducts(product_count);
+        var products = new CatalogProduct[product_count];
+        for (int index = 0; index < products.Length; index++)
+        {
+            int sibling_bytes = checked((products.Length - index - 1) * minimum_product_bytes);
+            products[index] = CatalogPageWire.ParseFlashProduct(
+                in p,
+                sibling_bytes,
+                ref strings);
+        }
+        CatalogWire.RequireEmpty(in p, nameof(ClubGiftSelected));
+        return new ClubGiftSelected(product_code, products);
+    }
+
+    public static void ComposeClubGiftSelected(
+        ClubGiftSelected value,
+        in PacketWriter p)
+    {
+        ArgumentNullException.ThrowIfNull(value);
+        var strings = NewStringBudget();
+        strings.Require(value.ProductCode, nameof(value.ProductCode), in p);
+        CatalogProduct[] products = CatalogWire.SnapshotReferences(
+            value.Products,
+            CatalogPageWire.MaximumProducts,
+            nameof(value.Products));
+        var catalog_budget = new CatalogPageBudget();
+        catalog_budget.TakeProducts(products.Length);
+        foreach (CatalogProduct product in products)
+            CatalogPageWire.PrepareFlashProduct(product, true, ref strings, in p);
+
+        p.WriteString(value.ProductCode);
+        CatalogWire.WriteCount(products.Length, in p);
+        foreach (CatalogProduct product in products)
+            CatalogPageWire.WriteFlashProduct(product, in p);
+    }
+
+    public static NuxGiftProduct ParseNuxProduct(in PacketReader p)
+    {
+        var strings = NewStringBudget();
+        return ParseNuxProduct(in p, 0, ref strings);
+    }
+
+    public static void ComposeNuxProduct(NuxGiftProduct value, in PacketWriter p)
+    {
+        var strings = NewStringBudget();
+        PrepareNuxProduct(value, ref strings, in p);
+        WriteNuxProduct(value, in p);
+    }
+
+    public static NuxGiftOption ParseNuxOption(in PacketReader p)
+    {
+        var budget = new GiftBudget();
+        budget.TakeOptions(1);
+        var strings = NewStringBudget();
+        return ParseNuxOption(in p, 0, ref budget, ref strings);
+    }
+
+    public static void ComposeNuxOption(NuxGiftOption value, in PacketWriter p)
+    {
+        var budget = new GiftBudget();
+        budget.TakeOptions(1);
+        var strings = NewStringBudget();
+        PrepareNuxOption(value, ref budget, ref strings, in p);
+        WriteNuxOption(value, in p);
+    }
+
+    public static NuxGiftStep ParseNuxStep(in PacketReader p)
+    {
+        var budget = new GiftBudget();
+        budget.TakeSteps(1);
+        var strings = NewStringBudget();
+        return ParseNuxStep(in p, 0, ref budget, ref strings);
+    }
+
+    public static void ComposeNuxStep(NuxGiftStep value, in PacketWriter p)
+    {
+        var budget = new GiftBudget();
+        budget.TakeSteps(1);
+        var strings = NewStringBudget();
+        PrepareNuxStep(value, ref budget, ref strings, in p);
+        WriteNuxStep(value, in p);
+    }
+
+    public static NuxGiftOffer ParseNuxOffer(in PacketReader p)
+    {
+        var budget = new GiftBudget();
+        var strings = NewStringBudget();
+        int step_count = CatalogWire.ReadCount(
+            in p,
+            NuxStepMinimumBytes,
+            0,
+            MaximumNuxSteps,
+            nameof(NuxGiftOffer.Steps));
+        budget.TakeSteps(step_count);
+        var steps = new NuxGiftStep[step_count];
+        for (int index = 0; index < steps.Length; index++)
+        {
+            int sibling_bytes = checked((steps.Length - index - 1) * NuxStepMinimumBytes);
+            steps[index] = ParseNuxStep(in p, sibling_bytes, ref budget, ref strings);
+        }
+        CatalogWire.RequireEmpty(in p, nameof(NuxGiftOffer));
+        return new NuxGiftOffer(steps);
+    }
+
+    public static void ComposeNuxOffer(NuxGiftOffer value, in PacketWriter p)
+    {
+        ArgumentNullException.ThrowIfNull(value);
+        int step_count = CatalogWire.RequireListCount(
+            value.Steps,
+            MaximumNuxSteps,
+            nameof(value.Steps));
+        var budget = new GiftBudget();
+        budget.TakeSteps(step_count);
+        var strings = NewStringBudget();
+        foreach (NuxGiftStep step in value.Steps)
+            PrepareNuxStep(step, ref budget, ref strings, in p);
+
+        CatalogWire.WriteCount(step_count, in p);
+        foreach (NuxGiftStep step in value.Steps)
+            WriteNuxStep(step, in p);
+    }
+
+    public static NuxGetGifts ParseNuxGetGifts(in PacketReader p)
+    {
+        int value_count = CatalogWire.ReadCount(
+            in p,
+            sizeof(int),
+            0,
+            MaximumCollectionCount,
+            nameof(NuxGetGifts.Selections));
+        if (value_count % 3 != 0)
+            throw new InvalidDataException("NUX gift selections must contain complete day, step and gift triples.");
+        var selections = new NuxGiftSelection[value_count / 3];
+        for (int index = 0; index < selections.Length; index++)
+            selections[index] = new NuxGiftSelection(p.ReadInt(), p.ReadInt(), p.ReadInt());
+        CatalogWire.RequireEmpty(in p, nameof(NuxGetGifts));
+        return new NuxGetGifts(selections);
+    }
+
+    public static void ComposeNuxGetGifts(NuxGetGifts value, in PacketWriter p)
+    {
+        ArgumentNullException.ThrowIfNull(value);
+        NuxGiftSelection[] selections = CatalogWire.SnapshotValues(
+            value.Selections,
+            MaximumNuxSelections,
+            nameof(value.Selections));
+        int value_count = checked(selections.Length * 3);
+        CatalogWire.RequireCount(value_count, MaximumCollectionCount, nameof(value.Selections));
+
+        CatalogWire.WriteCount(value_count, in p);
+        foreach (NuxGiftSelection selection in selections)
+            WriteSelection(selection, in p);
+    }
+
+    public static PresentOpen ParsePresentOpen(in PacketReader p)
+    {
+        var value = new PresentOpen(ReadFlashId(in p));
+        CatalogWire.RequireEmpty(in p, nameof(PresentOpen));
+        return value;
+    }
+
+    public static void ComposePresentOpen(PresentOpen value, in PacketWriter p)
+    {
+        ArgumentNullException.ThrowIfNull(value);
+        RequireFlashId(value.FurniId);
+        WriteFlashId(in p, value.FurniId);
+    }
+
+    public static PurchaseFromCatalogAsGift ParsePurchase(in PacketReader p)
+    {
+        var strings = NewStringBudget();
+        int page_id = p.ReadInt();
+        int offer_id = p.ReadInt();
+        string extra_data = strings.Read(
+            in p,
+            nameof(PurchaseFromCatalogAsGift.ExtraData),
+            checked(CatalogWire.StringMinimumBytes * 2 + sizeof(int) * 3 + sizeof(byte)));
+        string receiver_name = strings.Read(
+            in p,
+            nameof(PurchaseFromCatalogAsGift.ReceiverName),
+            checked(CatalogWire.StringMinimumBytes + sizeof(int) * 3 + sizeof(byte)));
+        string gift_message = strings.Read(
+            in p,
+            nameof(PurchaseFromCatalogAsGift.GiftMessage),
+            checked(sizeof(int) * 3 + sizeof(byte)));
+        var value = new PurchaseFromCatalogAsGift(
+            page_id,
+            offer_id,
+            extra_data,
+            receiver_name,
+            gift_message,
+            p.ReadInt(),
+            p.ReadInt(),
+            p.ReadInt(),
+            p.ReadBool());
+        CatalogWire.RequireEmpty(in p, nameof(PurchaseFromCatalogAsGift));
+        return value;
+    }
+
+    public static void ComposePurchase(
+        PurchaseFromCatalogAsGift value,
+        in PacketWriter p)
+    {
+        ArgumentNullException.ThrowIfNull(value);
+        var strings = NewStringBudget();
+        strings.Require(value.ExtraData, nameof(value.ExtraData), in p);
+        strings.Require(value.ReceiverName, nameof(value.ReceiverName), in p);
+        strings.Require(value.GiftMessage, nameof(value.GiftMessage), in p);
+
+        p.WriteInt(value.PageId);
+        p.WriteInt(value.OfferId);
+        p.WriteString(value.ExtraData);
+        p.WriteString(value.ReceiverName);
+        p.WriteString(value.GiftMessage);
+        p.WriteInt(value.SpriteId);
+        p.WriteInt(value.BoxType);
+        p.WriteInt(value.RibbonType);
+        p.WriteBool(value.ShowPurchaserName);
+    }
+
+    public static SelectClubGift ParseSelectClubGift(in PacketReader p)
+    {
+        var strings = NewStringBudget();
+        string product_code = strings.Read(in p, nameof(SelectClubGift.ProductCode));
+        CatalogWire.RequireEmpty(in p, nameof(SelectClubGift));
+        return new SelectClubGift(product_code);
+    }
+
+    public static void ComposeSelectClubGift(SelectClubGift value, in PacketWriter p)
+    {
+        ArgumentNullException.ThrowIfNull(value);
+        var strings = NewStringBudget();
+        strings.Require(value.ProductCode, nameof(value.ProductCode), in p);
+        p.WriteString(value.ProductCode);
+    }
+
+    public static GetIsOfferGiftable ParseOfferGiftabilityRequest(in PacketReader p)
+    {
+        var value = new GetIsOfferGiftable(p.ReadInt());
+        CatalogWire.RequireEmpty(in p, nameof(GetIsOfferGiftable));
+        return value;
+    }
+
+    public static T ParseEmpty<T>(in PacketReader p, Func<T> factory)
+    {
+        CatalogWire.RequireEmpty(in p, typeof(T).Name);
+        return factory();
+    }
+
+    public static void WriteSelection(NuxGiftSelection value, in PacketWriter p)
+    {
+        p.WriteInt(value.DayIndex);
+        p.WriteInt(value.StepIndex);
+        p.WriteInt(value.GiftIndex);
+    }
+
+    private static int[] ReadIntValues(in PacketReader p, int trailing_bytes, string name)
+    {
+        int count = CatalogWire.ReadCount(
+            in p,
+            sizeof(int),
+            trailing_bytes,
+            MaximumCollectionCount,
+            name);
+        var values = new int[count];
+        for (int index = 0; index < values.Length; index++)
+            values[index] = p.ReadInt();
+        return values;
+    }
+
+    private static int[] SnapshotValues(IReadOnlyList<int> values, string name) =>
+        CatalogWire.SnapshotValues(values, MaximumCollectionCount, name);
+
+    private static void WriteIntValues(IReadOnlyList<int> values, in PacketWriter p)
+    {
+        CatalogWire.WriteCount(values.Count, in p);
+        foreach (int value in values)
+            p.WriteInt(value);
+    }
+
+    private static void WriteEligibility(
+        ClubGiftEligibility value,
+        in PacketWriter p)
+    {
+        p.WriteInt(value.OfferId);
+        p.WriteBool(value.IsVip);
+        p.WriteInt(value.DaysRequired);
+        p.WriteBool(value.IsSelectable);
+    }
+
+    private static NuxGiftStep ParseNuxStep(
+        in PacketReader p,
+        int trailing_bytes,
+        ref GiftBudget budget,
+        ref CatalogStringBudget strings)
+    {
+        int day_index = p.ReadInt();
+        int step_index = p.ReadInt();
+        int option_count = CatalogWire.ReadCount(
+            in p,
+            NuxOptionMinimumBytes,
+            trailing_bytes,
+            MaximumNuxOptions,
+            nameof(NuxGiftStep.Options));
+        budget.TakeOptions(option_count);
+        var options = new NuxGiftOption[option_count];
+        for (int index = 0; index < options.Length; index++)
+        {
+            int sibling_bytes = checked((options.Length - index - 1) * NuxOptionMinimumBytes);
+            options[index] = ParseNuxOption(
+                in p,
+                checked(trailing_bytes + sibling_bytes),
+                ref budget,
+                ref strings);
+        }
+        return new NuxGiftStep(day_index, step_index, options);
+    }
+
+    private static NuxGiftOption ParseNuxOption(
+        in PacketReader p,
+        int trailing_bytes,
+        ref GiftBudget budget,
+        ref CatalogStringBudget strings)
+    {
+        int count_width = CatalogWire.CountWidth;
+        string thumbnail = strings.Read(
+            in p,
+            nameof(NuxGiftOption.ThumbnailUrl),
+            checked(trailing_bytes + count_width));
+        int product_count = CatalogWire.ReadCount(
+            in p,
+            NuxProductMinimumBytes,
+            trailing_bytes,
+            MaximumNuxProducts,
+            nameof(NuxGiftOption.Products));
+        budget.TakeProducts(product_count);
+        var products = new NuxGiftProduct[product_count];
+        for (int index = 0; index < products.Length; index++)
+        {
+            int sibling_bytes = checked((products.Length - index - 1) * NuxProductMinimumBytes);
+            products[index] = ParseNuxProduct(
+                in p,
+                checked(trailing_bytes + sibling_bytes),
+                ref strings);
+        }
+        return new NuxGiftOption(thumbnail.Length == 0 ? null : thumbnail, products);
+    }
+
+    private static NuxGiftProduct ParseNuxProduct(
+        in PacketReader p,
+        int trailing_bytes,
+        ref CatalogStringBudget strings)
+    {
+        string product_code = strings.Read(
+            in p,
+            nameof(NuxGiftProduct.ProductCode),
+            checked(trailing_bytes + CatalogWire.StringMinimumBytes));
+        string localization_key = strings.Read(
+            in p,
+            nameof(NuxGiftProduct.LocalizationKey),
+            trailing_bytes);
+        return new NuxGiftProduct(
+            product_code,
+            localization_key.Length == 0 ? null : localization_key);
+    }
+
+    private static void PrepareNuxStep(
+        NuxGiftStep value,
+        ref GiftBudget budget,
+        ref CatalogStringBudget strings,
+        in PacketWriter p)
+    {
+        ArgumentNullException.ThrowIfNull(value);
+        int option_count = CatalogWire.RequireListCount(
+            value.Options,
+            MaximumNuxOptions,
+            nameof(value.Options));
+        budget.TakeOptions(option_count);
+        foreach (NuxGiftOption option in value.Options)
+            PrepareNuxOption(option, ref budget, ref strings, in p);
+    }
+
+    private static void PrepareNuxOption(
+        NuxGiftOption value,
+        ref GiftBudget budget,
+        ref CatalogStringBudget strings,
+        in PacketWriter p)
+    {
+        ArgumentNullException.ThrowIfNull(value);
+        strings.Require(value.ThumbnailUrl ?? "", nameof(value.ThumbnailUrl), in p);
+        int product_count = CatalogWire.RequireListCount(
+            value.Products,
+            MaximumNuxProducts,
+            nameof(value.Products));
+        budget.TakeProducts(product_count);
+        foreach (NuxGiftProduct product in value.Products)
+            PrepareNuxProduct(product, ref strings, in p);
+    }
+
+    private static void PrepareNuxProduct(
+        NuxGiftProduct value,
+        ref CatalogStringBudget strings,
+        in PacketWriter p)
+    {
+        ArgumentNullException.ThrowIfNull(value);
+        strings.Require(value.ProductCode, nameof(value.ProductCode), in p);
+        strings.Require(value.LocalizationKey ?? "", nameof(value.LocalizationKey), in p);
+    }
+
+    private static void WriteNuxStep(NuxGiftStep value, in PacketWriter p)
+    {
+        p.WriteInt(value.DayIndex);
+        p.WriteInt(value.StepIndex);
+        CatalogWire.WriteCount(value.Options.Count, in p);
+        foreach (NuxGiftOption option in value.Options)
+            WriteNuxOption(option, in p);
+    }
+
+    private static void WriteNuxOption(NuxGiftOption value, in PacketWriter p)
+    {
+        p.WriteString(value.ThumbnailUrl ?? "");
+        CatalogWire.WriteCount(value.Products.Count, in p);
+        foreach (NuxGiftProduct product in value.Products)
+            WriteNuxProduct(product, in p);
+    }
+
+    private static void WriteNuxProduct(NuxGiftProduct value, in PacketWriter p)
+    {
+        p.WriteString(value.ProductCode);
+        p.WriteString(value.LocalizationKey ?? "");
+    }
+
+    private static CatalogStringBudget NewStringBudget() =>
+        CatalogPageWire.NewStringBudget();
+
+    private static Id ReadFlashId(in PacketReader p) => p.ReadInt();
+
+    private static void RequireFlashId(Id value)
+    {
+        long id = value;
+        if (id is < int.MinValue or > int.MaxValue)
+            throw new InvalidDataException(
+                "Flash cannot represent a gift furni identifier outside the signed 32-bit range.");
+    }
+
+    private static void WriteFlashId(in PacketWriter p, Id value) => p.WriteInt((int)(long)value);
+}
+
+internal struct GiftBudget
+{
+    private int _steps;
+    private int _options;
+    private int _products;
+
+    public void TakeSteps(int count) =>
+        Take(ref _steps, count, GiftWire.MaximumNuxSteps, "NUX gift steps");
+
+    public void TakeOptions(int count) =>
+        Take(ref _options, count, GiftWire.MaximumNuxOptions, "NUX gift options");
+
+    public void TakeProducts(int count) =>
+        Take(ref _products, count, GiftWire.MaximumNuxProducts, "NUX gift products");
+
+    private static void Take(ref int current, int count, int maximum, string name)
+    {
+        CatalogWire.RequireCount(count, maximum, name);
+        if (count > maximum - current)
+            throw new InvalidDataException($"{name} exceed the global limit {maximum}.");
+        current += count;
+    }
+}

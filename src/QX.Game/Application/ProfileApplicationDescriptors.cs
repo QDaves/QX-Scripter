@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Qx.Messages;
 using Qx.Model;
 using Qx.Model.Messages.Incoming;
@@ -158,7 +159,7 @@ internal static class ProfileApplicationDescriptors
             Send(MessageKeys.Wardrobe.Request),
             Observe(MessageKeys.Wardrobe.Snapshot)
         ],
-        tool_hints: new(true, false, true, true));
+        toolHints: new(true, false, true, true));
 
     public static ApplicationDescriptor MottoSet { get; } = Dispatch<ProfileMottoSetRequest>(
         ApplicationMemberIds.ProfileMottoSet,
@@ -237,7 +238,7 @@ internal static class ProfileApplicationDescriptors
         "Publishes hotel ignore results with the committed profile revision.",
         [Observe(MessageKeys.Users.Ignore.Updated)]);
 
-    private static ApplicationDescriptor Query<TRequest, TResult>(
+    private static ApplicationDescriptor Query<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TRequest, TResult>(
         string id,
         string title,
         string description,
@@ -251,9 +252,9 @@ internal static class ProfileApplicationDescriptors
             typeof(TRequest),
             typeof(TResult),
             parameters,
-            state_effects: effects,
-            tool_hints: new(true, false, true, false),
-            invocation_scope: ApplicationInvocationScope.Persistent);
+            stateEffects: effects,
+            toolHints: new(true, false, true, false),
+            invocationScope: ApplicationInvocationScope.Persistent);
 
     private static ApplicationDescriptor RefreshIds(
         string id,
@@ -288,7 +289,7 @@ internal static class ProfileApplicationDescriptors
             key,
             state);
 
-    private static ApplicationDescriptor Dispatch<TRequest>(
+    private static ApplicationDescriptor Dispatch<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TRequest>(
         string id,
         string title,
         string description,
@@ -363,12 +364,12 @@ internal static class ProfileApplicationDescriptors
         Pattern: allow_empty ? null : @".*\S.*");
 
     private static ApplicationMessageRequirement Send(MessageKey key) =>
-        new(key, Direction.Out, ApplicationMessageRole.Send);
+        new(key, MessageDirection.Out, ApplicationMessageRole.Send);
 
     private static ApplicationMessageRequirement Observe(
         MessageKey key,
         bool required = true) =>
-        new(key, Direction.In, ApplicationMessageRole.Observe, required);
+        new(key, MessageDirection.In, ApplicationMessageRole.Observe, required);
 }
 
 internal static class GroupMembershipApplicationDescriptors
@@ -411,7 +412,7 @@ internal static class GroupMembershipApplicationDescriptors
         ],
         MessageKeys.Groups.Membership.Reject);
 
-    private static ApplicationDescriptor Operation<TRequest>(
+    private static ApplicationDescriptor Operation<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TRequest>(
         string id,
         string title,
         string description,
@@ -426,8 +427,8 @@ internal static class GroupMembershipApplicationDescriptors
             typeof(GroupMembershipDispatchResult),
             parameters,
             [ApplicationStateKey.HotelConnected],
-            messages: [new(key, Direction.Out, ApplicationMessageRole.Send)],
-            tool_hints: new(false, true, false, true));
+            messages: [new(key, MessageDirection.Out, ApplicationMessageRole.Send)],
+            toolHints: new(false, true, false, true));
 
     private static ApplicationParameterDescriptor RequiredId(string name, string description) => new(
         name,
@@ -472,9 +473,9 @@ internal static class RemotePeopleApplicationDescriptors
         [UserId(), SessionGeneration()],
         [ApplicationStateKey.HotelConnected],
         messages: [Send(MessageKeys.Users.ExtendedProfileRequest)],
-        tool_hints: new(false, false, true, true));
+        toolHints: new(false, false, true, true));
 
-    private static ApplicationDescriptor Read<TRequest, TResult>(
+    private static ApplicationDescriptor Read<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TRequest, TResult>(
         string id,
         string title,
         string description,
@@ -490,7 +491,7 @@ internal static class RemotePeopleApplicationDescriptors
             [UserId(), Timeout(), SessionGeneration()],
             [ApplicationStateKey.HotelConnected],
             messages: [Send(request_key), Observe(snapshot_key)],
-            tool_hints: new(true, false, true, true));
+            toolHints: new(true, false, true, true));
 
     private static ApplicationParameterDescriptor UserId() => new(
         "user_id",
@@ -517,10 +518,10 @@ internal static class RemotePeopleApplicationDescriptors
         new(Minimum: 0));
 
     private static ApplicationMessageRequirement Send(MessageKey key) =>
-        new(key, Direction.Out, ApplicationMessageRole.Send);
+        new(key, MessageDirection.Out, ApplicationMessageRole.Send);
 
     private static ApplicationMessageRequirement Observe(MessageKey key) =>
-        new(key, Direction.In, ApplicationMessageRole.Observe);
+        new(key, MessageDirection.In, ApplicationMessageRole.Observe);
 }
 
 internal static class GroupReadsApplicationDescriptors
@@ -579,7 +580,7 @@ internal static class GroupReadsApplicationDescriptors
         MessageKeys.Groups.Memberships.Request,
         MessageKeys.Groups.Memberships.Snapshot);
 
-    private static ApplicationDescriptor Read<TRequest, TResult>(
+    private static ApplicationDescriptor Read<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TRequest, TResult>(
         string id,
         string title,
         string description,
@@ -596,7 +597,7 @@ internal static class GroupReadsApplicationDescriptors
             parameters,
             [ApplicationStateKey.HotelConnected],
             messages: [Send(request_key), Observe(snapshot_key)],
-            tool_hints: new(true, false, true, true));
+            toolHints: new(true, false, true, true));
 
     private static ApplicationParameterDescriptor GroupId() => new(
         "group_id",
@@ -623,8 +624,8 @@ internal static class GroupReadsApplicationDescriptors
         new(Minimum: 0));
 
     private static ApplicationMessageRequirement Send(MessageKey key) =>
-        new(key, Direction.Out, ApplicationMessageRole.Send);
+        new(key, MessageDirection.Out, ApplicationMessageRole.Send);
 
     private static ApplicationMessageRequirement Observe(MessageKey key) =>
-        new(key, Direction.In, ApplicationMessageRole.Observe);
+        new(key, MessageDirection.In, ApplicationMessageRole.Observe);
 }

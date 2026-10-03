@@ -187,16 +187,16 @@ public sealed class RoomActions : GameStateManager
 
 
     /// <summary>Sends a request to enter a room.</summary>
-    /// <param name="room_id">The id of the room.</param>
+    /// <param name="roomId">The id of the room.</param>
     /// <param name="password">The room password, or an empty string when the room has none.</param>
-    /// <param name="entry_point">The entry point sent with the request, or -1 for none.</param>
+    /// <param name="entryPoint">The entry point sent with the request, or -1 for none.</param>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="password"/> is <see langword="null"/>.</exception>
-    public void Enter(Id room_id, string password = "", long entry_point = -1)
+    public void Enter(Id roomId, string password = "", long entryPoint = -1)
     {
         ArgumentNullException.ThrowIfNull(password);
         SendMessage(
             MessageContracts.Room.Access.OpenRequest,
-            new OpenFlatConnection(room_id, password, entry_point));
+            new OpenFlatConnection(roomId, password, entryPoint));
     }
 
     internal void Enter(
@@ -232,12 +232,12 @@ public sealed class RoomActions : GameStateManager
             cancellation_token);
 
     /// <summary>Answers a user who is ringing the doorbell of the current room.</summary>
-    /// <param name="user_name">The name of the user at the door.</param>
+    /// <param name="userName">The name of the user at the door.</param>
     /// <param name="allow"><see langword="true"/> to let the user in, <see langword="false"/> to turn them away.</param>
-    public void AnswerDoorbell(string user_name, bool allow) =>
+    public void AnswerDoorbell(string userName, bool allow) =>
         SendMessage(
             MessageContracts.Room.Access.DoorbellAnswer,
-            new AnswerDoorbellRequest(user_name, allow));
+            new AnswerDoorbellRequest(userName, allow));
 
     internal void AnswerDoorbell(
         string user_name,
@@ -416,12 +416,12 @@ public sealed class RoomActions : GameStateManager
     /// The hotel toggles the staff pick, so the request states the current value as the opposite
     /// of <paramref name="pick"/>.
     /// </remarks>
-    /// <param name="room_id">The id of the room.</param>
+    /// <param name="roomId">The id of the room.</param>
     /// <param name="pick"><see langword="true"/> to make the room a staff pick, <see langword="false"/> to remove it.</param>
-    public void SetStaffPick(Id room_id, bool pick) =>
+    public void SetStaffPick(Id roomId, bool pick) =>
         SendMessage(
             MessageContracts.Room.StaffPickUpdateRequest,
-            new ToggleRoomStaffPickRequest(room_id, !pick));
+            new ToggleRoomStaffPickRequest(roomId, !pick));
 
     internal void SetStaffPick(
         Id room_id,
@@ -437,11 +437,11 @@ public sealed class RoomActions : GameStateManager
     /// <summary>Sends a chat message to the room.</summary>
     /// <param name="message">The message text.</param>
     /// <param name="bubble">The chat bubble style.</param>
-    /// <param name="tracking_id">The tracking id sent with the message, or -1 for none.</param>
-    public void Talk(string message, int bubble = 0, int tracking_id = -1) =>
+    /// <param name="trackingId">The tracking id sent with the message, or -1 for none.</param>
+    public void Talk(string message, int bubble = 0, int trackingId = -1) =>
         SendMessage(
             MessageContracts.Room.Chat.TalkSend,
-            new TalkRequest(message, bubble, tracking_id));
+            new TalkRequest(message, bubble, trackingId));
 
     internal void Talk(
         string message,
@@ -556,11 +556,11 @@ public sealed class RoomActions : GameStateManager
             cancellation_token);
 
     /// <summary>Gives the item the user's avatar is holding to another user.</summary>
-    /// <param name="user_id">The id of the user who receives the item.</param>
-    public void PassHandItem(Id user_id) =>
+    /// <param name="userId">The id of the user who receives the item.</param>
+    public void PassHandItem(Id userId) =>
         SendMessage(
             MessageContracts.Room.HandItem.Pass,
-            new PassHandItemRequest(user_id));
+            new PassHandItemRequest(userId));
 
     internal void PassHandItem(
         Id user_id,
@@ -705,12 +705,12 @@ public sealed class RoomActions : GameStateManager
     }
 
     /// <summary>Uses a floor item.</summary>
-    /// <param name="item_id">The id of the floor item.</param>
+    /// <param name="itemId">The id of the floor item.</param>
     /// <param name="state">The state value sent with the request.</param>
-    public void UseFloorItem(Id item_id, int state = 0) =>
+    public void UseFloorItem(Id itemId, int state = 0) =>
         SendMessage(
-            MessageContracts.Room.FloorItemUse,
-            new UseFloorItemRequest(item_id, state));
+            MessageContracts.Room.FloorItem.Use,
+            new UseFloorItemRequest(itemId, state));
 
     internal void UseFloorItem(
         Id item_id,
@@ -719,7 +719,7 @@ public sealed class RoomActions : GameStateManager
         long expected_room_generation,
         CancellationToken cancellation_token) =>
         SendGenerationGuardedMessage(
-            MessageContracts.Room.FloorItemUse,
+            MessageContracts.Room.FloorItem.Use,
             new UseFloorItemRequest(item_id, state),
             expected_session,
             expected_room_generation,
@@ -738,7 +738,7 @@ public sealed class RoomActions : GameStateManager
     {
         ArgumentNullException.ThrowIfNull(item);
         SendMessage(
-            MessageContracts.Room.ItemClick,
+            MessageContracts.Room.Item.Click,
             new ClickRoomItemRequest(item.Id, item is FloorItem ? ItemType.Floor : ItemType.Wall));
     }
 
@@ -749,18 +749,18 @@ public sealed class RoomActions : GameStateManager
         long expected_room_generation,
         CancellationToken cancellation_token) =>
         SendGenerationGuardedMessage(
-            MessageContracts.Room.ItemClick,
+            MessageContracts.Room.Item.Click,
             new ClickRoomItemRequest(item_id, type),
             expected_session,
             expected_room_generation,
             cancellation_token);
 
     /// <summary>Sends a request to enter a one-way door.</summary>
-    /// <param name="item_id">The id of the one-way door.</param>
-    public void EnterOneWayDoor(Id item_id) =>
+    /// <param name="itemId">The id of the one-way door.</param>
+    public void EnterOneWayDoor(Id itemId) =>
         SendMessage(
             MessageContracts.Room.FloorItem.OneWayDoorEnter,
-            new EnterOneWayDoorRequest(item_id));
+            new EnterOneWayDoorRequest(itemId));
 
     internal void EnterOneWayDoor(
         Id item_id,
@@ -775,11 +775,11 @@ public sealed class RoomActions : GameStateManager
             cancellation_token);
 
     /// <summary>Throws a dice.</summary>
-    /// <param name="item_id">The id of the dice.</param>
-    public void ThrowDice(Id item_id) =>
+    /// <param name="itemId">The id of the dice.</param>
+    public void ThrowDice(Id itemId) =>
         SendMessage(
             MessageContracts.Room.FloorItem.ThrowDice,
-            new ThrowDiceRequest(item_id));
+            new ThrowDiceRequest(itemId));
 
     internal void ThrowDice(
         Id item_id,
@@ -794,11 +794,11 @@ public sealed class RoomActions : GameStateManager
             cancellation_token);
 
     /// <summary>Turns a dice off.</summary>
-    /// <param name="item_id">The id of the dice.</param>
-    public void DiceOff(Id item_id) =>
+    /// <param name="itemId">The id of the dice.</param>
+    public void DiceOff(Id itemId) =>
         SendMessage(
             MessageContracts.Room.FloorItem.DiceOff,
-            new DiceOffRequest(item_id));
+            new DiceOffRequest(itemId));
 
     internal void DiceOff(
         Id item_id,
@@ -813,12 +813,12 @@ public sealed class RoomActions : GameStateManager
             cancellation_token);
 
     /// <summary>Uses a wall item.</summary>
-    /// <param name="item_id">The id of the wall item.</param>
+    /// <param name="itemId">The id of the wall item.</param>
     /// <param name="state">The state value sent with the request.</param>
-    public void UseWallItem(Id item_id, int state = 0) =>
+    public void UseWallItem(Id itemId, int state = 0) =>
         SendMessage(
-            MessageContracts.Room.WallItemUse,
-            new UseWallItemRequest(item_id, state));
+            MessageContracts.Room.WallItem.Use,
+            new UseWallItemRequest(itemId, state));
 
     internal void UseWallItem(
         Id item_id,
@@ -827,7 +827,7 @@ public sealed class RoomActions : GameStateManager
         long expected_room_generation,
         CancellationToken cancellation_token) =>
         SendGenerationGuardedMessage(
-            MessageContracts.Room.WallItemUse,
+            MessageContracts.Room.WallItem.Use,
             new UseWallItemRequest(item_id, state),
             expected_session,
             expected_room_generation,
@@ -849,11 +849,11 @@ public sealed class RoomActions : GameStateManager
     /// <remarks>
     /// Post-it notes are removed with this request, which deletes them.
     /// </remarks>
-    /// <param name="item_id">The id of the wall item.</param>
-    public void RemoveWallItem(Id item_id) =>
+    /// <param name="itemId">The id of the wall item.</param>
+    public void RemoveWallItem(Id itemId) =>
         SendMessage(
-            MessageContracts.Room.WallItemRemove,
-            new RemoveWallItemRequest(item_id));
+            MessageContracts.Room.WallItem.Remove,
+            new RemoveWallItemRequest(itemId));
 
     internal void RemoveWallItem(
         Id item_id,
@@ -861,24 +861,24 @@ public sealed class RoomActions : GameStateManager
         long expected_room_generation,
         CancellationToken cancellation_token) =>
         SendGenerationGuardedMessage(
-            MessageContracts.Room.WallItemRemove,
+            MessageContracts.Room.WallItem.Remove,
             new RemoveWallItemRequest(item_id),
             expected_session,
             expected_room_generation,
             cancellation_token);
 
     /// <summary>Sets the color and text of a post-it note.</summary>
-    /// <param name="item_id">The id of the post-it note.</param>
+    /// <param name="itemId">The id of the post-it note.</param>
     /// <param name="color">The note color.</param>
     /// <param name="text">The note text.</param>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="color"/> or <paramref name="text"/> is <see langword="null"/>.</exception>
-    public void SetStickyData(Id item_id, string color, string text)
+    public void SetStickyData(Id itemId, string color, string text)
     {
         ArgumentNullException.ThrowIfNull(color);
         ArgumentNullException.ThrowIfNull(text);
         SendMessage(
             MessageContracts.Room.WallItem.StickyDataSet,
-            new SetStickyDataRequest(item_id, color, text));
+            new SetStickyDataRequest(itemId, color, text));
     }
 
     internal void SetStickyData(
@@ -900,12 +900,12 @@ public sealed class RoomActions : GameStateManager
     }
 
     /// <summary>Places a post-it note on a wall.</summary>
-    /// <param name="item_id">The id of the post-it note item.</param>
-    /// <param name="wall_location">The wall location string of the target position.</param>
-    public void PlacePostIt(Id item_id, string wall_location) =>
+    /// <param name="itemId">The id of the post-it note item.</param>
+    /// <param name="wallLocation">The wall location string of the target position.</param>
+    public void PlacePostIt(Id itemId, string wallLocation) =>
         SendMessage(
             MessageContracts.Room.WallItem.PostItPlace,
-            new PlacePostItRequest(item_id, wall_location));
+            new PlacePostItRequest(itemId, wallLocation));
 
     internal void PlacePostIt(
         Id item_id,
@@ -924,18 +924,18 @@ public sealed class RoomActions : GameStateManager
     }
 
     /// <summary>Places a post-it note on a wall with its color and text in one request.</summary>
-    /// <param name="item_id">The id of the post-it note item.</param>
-    /// <param name="wall_location">The wall location string of the target position.</param>
+    /// <param name="itemId">The id of the post-it note item.</param>
+    /// <param name="wallLocation">The wall location string of the target position.</param>
     /// <param name="color">The note color.</param>
     /// <param name="text">The note text.</param>
     public void AddSpamWallPostIt(
-        Id item_id,
-        string wall_location,
+        Id itemId,
+        string wallLocation,
         string color,
         string text) =>
         SendMessage(
             MessageContracts.Room.WallItem.SpamPostItAdd,
-            new AddSpamWallPostItRequest(item_id, wall_location, color, text));
+            new AddSpamWallPostItRequest(itemId, wallLocation, color, text));
 
     internal void AddSpamWallPostIt(
         Id item_id,
@@ -980,15 +980,15 @@ public sealed class RoomActions : GameStateManager
     /// The move is sent through the room placement operations, which check that the item is in the
     /// active room.
     /// </remarks>
-    /// <param name="item_id">The id of the floor item.</param>
+    /// <param name="itemId">The id of the floor item.</param>
     /// <param name="x">The target tile x coordinate.</param>
     /// <param name="y">The target tile y coordinate.</param>
     /// <param name="direction">The target direction.</param>
     /// <exception cref="InvalidOperationException">
     /// Thrown when the placement operations are unavailable, or the item is not in the active room.
     /// </exception>
-    public void MoveFloorItem(Id item_id, int x, int y, int direction) =>
-        MoveFloorItem(item_id, x, y, direction, null, null, default);
+    public void MoveFloorItem(Id itemId, int x, int y, int direction) =>
+        MoveFloorItem(itemId, x, y, direction, null, null, default);
 
     private void MoveFloorItem(
         Id item_id,
@@ -1027,18 +1027,18 @@ public sealed class RoomActions : GameStateManager
 
     /// <summary>Picks up an item from the room by category and id.</summary>
     /// <param name="category">The item category, 1 for a wall item or 2 for a floor item.</param>
-    /// <param name="item_id">The id of the item.</param>
+    /// <param name="itemId">The id of the item.</param>
     /// <param name="confirmed">The confirmation flag sent with the pickup request.</param>
     /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="category"/> is not 1 or 2.</exception>
     /// <exception cref="InvalidOperationException">
     /// Thrown when the placement operations are unavailable, or the item is not in the active room.
     /// </exception>
-    public void Pickup(int category, Id item_id, bool confirmed = false)
+    public void Pickup(int category, Id itemId, bool confirmed = false)
     {
         if (category is not (1 or 2))
             throw new ArgumentOutOfRangeException(nameof(category));
         Pickup(
-            item_id,
+            itemId,
             category == 2 ? RoomPlacementItemKind.Floor : RoomPlacementItemKind.Wall,
             confirmed,
             null,
@@ -1600,13 +1600,13 @@ public sealed class RoomActions : GameStateManager
     }
 
     /// <inheritdoc/>
-    public override void Dispose()
+    protected internal override void Close()
     {
         if (Interlocked.Exchange(ref _disposed, 1) != 0)
             return;
         Cancel();
         Interlocked.Exchange(ref _placement_operations, null);
-        base.Dispose();
+        base.Close();
     }
 
     private IRoomPlacementOperations PlacementOperations()

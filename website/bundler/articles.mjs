@@ -6,7 +6,7 @@ import { gfmFromMarkdown } from 'mdast-util-gfm';
 import { gfm } from 'micromark-extension-gfm';
 import { slugger } from './slug.mjs';
 
-function plain_text(node) {
+export function plain_text(node) {
   if (node.type === 'text' || node.type === 'inlineCode') return node.value;
   return (node.children ?? []).map(plain_text).join('');
 }

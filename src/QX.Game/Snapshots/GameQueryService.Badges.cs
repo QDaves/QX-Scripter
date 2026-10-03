@@ -112,7 +112,6 @@ public sealed partial class GameQueryService
             snapshot_revision is long revision && page.SnapshotRevision != revision ||
             first is not null &&
             (page.Connected != first.Connected ||
-             page.Client != first.Client ||
              page.SessionGeneration != first.SessionGeneration ||
              page.StateRevision != first.StateRevision ||
              page.InventoryRevision != first.InventoryRevision ||

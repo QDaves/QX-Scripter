@@ -66,14 +66,12 @@ public sealed record RoomBotRemoveRequest(Id BotId);
 /// <see cref="ApplicationMemberIds.RoomPetRemove"/> and <see cref="ApplicationMemberIds.RoomBotRemove"/>. The message
 /// is only sent while the room generation is unchanged, and the hotel's response is not awaited.
 /// </remarks>
-/// <param name="Client">The client type of the hotel session.</param>
 /// <param name="RoomId">The id of the current room, or <see langword="null"/> when no room is loaded.</param>
 /// <param name="RoomGeneration">The room state generation the message was sent in.</param>
 /// <param name="Dispatched">Whether the message was sent.</param>
 /// <param name="ServerConfirmed">Whether the hotel confirmed the action, which is always <see langword="false"/>.</param>
 /// <param name="DispatchedAtUtc">The time the message was sent.</param>
 public sealed record RoomPeopleDispatchResult(
-    ClientType Client,
     Id? RoomId,
     long RoomGeneration,
     bool Dispatched,

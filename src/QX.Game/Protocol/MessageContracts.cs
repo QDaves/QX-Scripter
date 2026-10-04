@@ -2380,9 +2380,9 @@ public static class MessageContracts
                 public static readonly MessageContract<UserNameChanged> Name =
                     Flash<UserNameChanged>(MessageKeys.Room.Occupants.Identity.Name);
 
-                /// <summary>The contract for the incoming <c>FavouriteMembershipUpdate</c> message, which reports the favorite group an avatar in the room displays.</summary>
-                public static readonly MessageContract<FavouriteMembershipUpdate> FavoriteGroup =
-                    Flash<FavouriteMembershipUpdate>(MessageKeys.Room.Occupants.Identity.FavoriteGroup);
+                /// <summary>The contract for the incoming <c>FavoriteMembershipUpdate</c> message, which reports the favorite group an avatar in the room displays.</summary>
+                public static readonly MessageContract<FavoriteMembershipUpdate> FavoriteGroup =
+                    Flash<FavoriteMembershipUpdate>(MessageKeys.Room.Occupants.Identity.FavoriteGroup);
             }
 
             /// <summary>Contains the room pet message contracts.</summary>

@@ -1,7 +1,7 @@
 ﻿namespace Qx.Protocol;
 
 /// <summary>Provides the Flash message names as compile-checked constants.</summary>
-/// <remarks>Generated from <c>Resources/messages.ini</c>. Every constant is spelled exactly as in the Flash client.</remarks>
+/// <remarks>Generated from <c>Resources/messages.ini</c>. Every constant is spelled exactly as in the Flash client. A message the client knows by several names has one constant, named after its primary name, and its summary lists the other names.</remarks>
 public static class Msg
 {
     /// <summary>Provides the incoming message names, sent from the server to the client.</summary>
@@ -285,8 +285,6 @@ public static class Msg
         public const string FavoriteMembershipUpdate = "FavoriteMembershipUpdate";
         /// <summary>The incoming Flash message <c>FavouriteChanged</c>.</summary>
         public const string FavouriteChanged = "FavouriteChanged";
-        /// <summary>The incoming Flash message <c>FavouriteMembershipUpdate</c>, also named <c>FavoriteMembershipUpdate</c>.</summary>
-        public const string FavouriteMembershipUpdate = "FavouriteMembershipUpdate";
         /// <summary>The incoming Flash message <c>Favourites</c>.</summary>
         public const string Favourites = "Favourites";
         /// <summary>The incoming Flash message <c>FigureSetIdAdded</c>.</summary>
@@ -337,8 +335,6 @@ public static class Msg
         public const string FriendNotification = "FriendNotification";
         /// <summary>The incoming Flash message <c>FriendRequests</c>.</summary>
         public const string FriendRequests = "FriendRequests";
-        /// <summary>The incoming Flash message <c>FriendsListFragment</c>, also named <c>FriendListFragment</c>.</summary>
-        public const string FriendsListFragment = "FriendsListFragment";
         /// <summary>The incoming Flash message <c>FurniList</c>.</summary>
         public const string FurniList = "FurniList";
         /// <summary>The incoming Flash message <c>FurniListAddOrUpdate</c>.</summary>
@@ -947,8 +943,6 @@ public static class Msg
         public const string RoomVisits = "RoomVisits";
         /// <summary>The incoming Flash message <c>RoomVisualizationSettings</c>.</summary>
         public const string RoomVisualizationSettings = "RoomVisualizationSettings";
-        /// <summary>The incoming Flash message <c>SanctionStatus</c>, also named <c>MySanctionStatus</c>.</summary>
-        public const string SanctionStatus = "SanctionStatus";
         /// <summary>The incoming Flash message <c>ScrSendKickbackInfo</c>.</summary>
         public const string ScrSendKickbackInfo = "ScrSendKickbackInfo";
         /// <summary>The incoming Flash message <c>ScrSendUserInfo</c>.</summary>

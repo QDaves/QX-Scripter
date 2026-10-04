@@ -4,7 +4,7 @@ Qx.Model.Crafting: Qx.Model
 Qx.Model.Directions: Qx.Model.Direction
 Qx.Model.Forums: Qx.Model
 Qx.Model.Marketplace: Qx.Model
-Qx.Model.Messages.Incoming.FavoriteMembershipUpdate: Qx.Model.Messages.Incoming.FavouriteMembershipUpdate
+Qx.Model.Messages.Incoming.FavouriteMembershipUpdate: Qx.Model.Messages.Incoming.FavoriteMembershipUpdate
 Qx.Model.Messages.Incoming.ForumMessage: Qx.Model.Messages.Incoming.UpdateMessage
 Qx.Model.Messages.Incoming.ForumStats: Qx.Model.Messages.Incoming.ForumData
 Qx.Model.Messages.Incoming.ForumThread: Qx.Model.Messages.Incoming.PostThread

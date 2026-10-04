@@ -725,14 +725,14 @@ public sealed record WiredSetRoomSettings(int ModifyPermissionMask, int ReadPerm
 // confirmation and its .warning text).
 /// <summary>Sent when the user reloads the room's state or rolls it back from the wired menu.</summary>
 /// <remarks>Sent as the Flash <c>WiredUpdateRoom</c> message. A reload discards nothing. A rollback discards every change since the last saved state, furni included. The hotel sends no acknowledgement.</remarks>
-/// <param name="Rollback">Whether the room is rolled back to its last saved state instead of reloaded.</param>
-public sealed record WiredUpdateRoom(bool Rollback) : IParserComposer<WiredUpdateRoom>
+/// <param name="IsRollback">Whether the room is rolled back to its last saved state instead of reloaded.</param>
+public sealed record WiredUpdateRoom(bool IsRollback) : IParserComposer<WiredUpdateRoom>
 {
     /// <summary>Gets a request that reloads the room's state without discarding anything.</summary>
     public static WiredUpdateRoom Reload => new(false);
 
     /// <summary>Gets a request that rolls the room back to its last saved state, discarding every change since.</summary>
-    public static WiredUpdateRoom RollBack => new(true);
+    public static WiredUpdateRoom Rollback => new(true);
 
     /// <summary>Parses the message from a packet.</summary>
     /// <param name="p">The packet reader.</param>
@@ -747,7 +747,7 @@ public sealed record WiredUpdateRoom(bool Rollback) : IParserComposer<WiredUpdat
         FlashWire.Compose(this, in p, ComposeFlash);
 
     private static void ComposeFlash(WiredUpdateRoom value, in PacketWriter p) =>
-        p.WriteBool(value.Rollback);
+        p.WriteBool(value.IsRollback);
 
 }
 

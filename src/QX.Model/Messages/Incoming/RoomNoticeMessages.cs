@@ -2,7 +2,7 @@ using Qx.Messages;
 
 namespace Qx.Model.Messages.Incoming;
 
-/// <summary>Represents the <c>FavouriteMembershipUpdate</c> message, also named <c>FavoriteMembershipUpdate</c>, received when a room avatar's favorite group badge changes.</summary>
+/// <summary>Represents the <c>FavoriteMembershipUpdate</c> message, also named <c>FavouriteMembershipUpdate</c>, received when a room avatar's favorite group badge changes.</summary>
 /// <remarks>
 /// The avatar is named by its room index rather than its user id, so it resolves through the room's
 /// avatar list rather than the friend list.
@@ -18,18 +18,18 @@ namespace Qx.Model.Messages.Incoming;
 /// never stores it on the avatar, so it is not mirrored onto <see cref="User.GroupStatus"/>.
 /// </param>
 /// <param name="GroupName">The group's name.</param>
-public sealed record FavouriteMembershipUpdate(
+public sealed record FavoriteMembershipUpdate(
     int RoomIndex,
     Id GroupId,
     int Status,
-    string GroupName) : IParserComposer<FavouriteMembershipUpdate>
+    string GroupName) : IParserComposer<FavoriteMembershipUpdate>
 {
     /// <summary>Parses the message from a packet.</summary>
     /// <param name="p">The packet reader.</param>
-    public static FavouriteMembershipUpdate Parse(in PacketReader p) =>
+    public static FavoriteMembershipUpdate Parse(in PacketReader p) =>
         FlashWire.Parse(in p, ParseFlash);
 
-    private static FavouriteMembershipUpdate ParseFlash(in PacketReader p) =>
+    private static FavoriteMembershipUpdate ParseFlash(in PacketReader p) =>
         new(p.ReadInt(), p.ReadInt(), p.ReadInt(), p.ReadString());
 
     /// <summary>Composes the message into a packet.</summary>
@@ -37,7 +37,7 @@ public sealed record FavouriteMembershipUpdate(
     public void Compose(in PacketWriter p) =>
         FlashWire.Compose(this, in p, ComposeFlash);
 
-    private static void ComposeFlash(FavouriteMembershipUpdate value, in PacketWriter p)
+    private static void ComposeFlash(FavoriteMembershipUpdate value, in PacketWriter p)
     {
         int group_id = checked((int)value.GroupId);
         ArgumentNullException.ThrowIfNull(value.GroupName, nameof(GroupName));

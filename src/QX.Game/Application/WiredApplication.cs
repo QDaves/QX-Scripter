@@ -978,7 +978,7 @@ internal sealed partial class WiredApplication : IApplicationFeature
         ArgumentNullException.ThrowIfNull(request);
         return Dispatch(
             MessageContracts.Wired.Room.Update,
-            WiredUpdateRoom.RollBack,
+            WiredUpdateRoom.Rollback,
             cancellation_token);
     }
 

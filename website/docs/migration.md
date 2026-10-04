@@ -92,6 +92,7 @@ removes them.
 | `RemoveGroupFavourite`, `SetGroupFavourite` | `UnsetFavouriteGroup`, `SetFavouriteGroup` |
 | `RequestPollContents` | `AcceptPollAsync` |
 | `Respect`, `Scratch` | `RespectUser`, `RespectPet` |
+| `RollBackRoomState` | `RollbackRoomState` |
 | `RoomAccessState`, `RoomAccessRoomId` | `Room.AccessState`, `Room.AccessRoomId` |
 | `RoomFloor`, `RoomWallpaper`, `RoomLandscape`, `RoomAnimatedLandscape` | `Room.FloorProperty`, `Room.WallpaperProperty`, `Room.LandscapeProperty`, `Room.AnimatedLandscapeProperty` |
 | `RoomProperties`, `RoomVisualization`, `RoomChatSettings` | `Room.Properties`, `Room.VisualizationSettings`, `Room.ChatSettings` |
@@ -133,6 +134,7 @@ removes them.
 | `MessageManager.LoadVerifiedFallbackCatalog(catalog, preferred)` | `LoadVerifiedFallbackCatalog(catalog)`, which always sets the default catalog |
 | `RoomAuthorityState(IsOwner, RightsLevel, RightsKnown, HasRights, IsSpectating)` | Five more positional members: `IsRoomMuted`, `CanMute`, `WhoCanMute`, `WhoCanKick` and `WhoCanBan`. |
 | `CraftingProduct.Parse(reader, hasProductCode)`, a `string?` `ProductCode` | `CraftingProduct.Parse(reader)`, a `string` `ProductCode` |
+| `FavoriteMembershipUpdate(Index, GroupId, Status, GroupName)` with an `int` `GroupId` | `FavoriteMembershipUpdate(RoomIndex, GroupId, Status, GroupName)` with an `Id` `GroupId` |
 | `ClubGiftEligibility.IsVip`, `GiftClubEligibilityView.IsVip` as `bool?` | `bool` |
 | `GuildMembers.SearchType`, `GroupMembersPage.SearchType` as `GuildMemberSearchType?` | `GuildMemberSearchType` |
 | `MarketplaceCanMakeOfferResult.TokenCount` as `int?` | `int` |
@@ -155,7 +157,7 @@ the names of its properties.
 | `ScriptEngine`, `ScriptProgram`, `ScriptExecutionContext`, `ScriptExecutionError`, `ScriptHeader`, `ScriptRunState`, `QueryJson` and the `Api...`, `ScriptApi...` and `Ui...` types of `Qx.Scripting` | `Qx.Scripting.Hosting` |
 | `GroupMemberSearchType` | `GuildMemberSearchType` |
 | `ISemanticMessageResolver` | `IMessageResolver` |
-| `RequestIgnoreList`, `FavoriteMembershipUpdate` | `IgnoredUsers`, `FavouriteMembershipUpdate` |
+| `RequestIgnoreList`, `FavouriteMembershipUpdate` | `IgnoredUsers`, `FavoriteMembershipUpdate` |
 | Incoming `ForumStats`, `ForumThreadMessages`, `ForumThread`, `PostForumThreadOk`, `PostForumMessageOk`, `ForumMessage` | `ForumData`, `ThreadMessages`, `PostThread`, `PostThread`, `PostMessage`, `UpdateMessage` |
 | Outgoing `GetThreads`, `GetMessages`, `GetThread`, `ModerateThread`, `ModerateMessage`, `UpdateForumReadMarker` | `GetForumThreads`, `GetForumThreadMessages`, `GetForumThread`, `ModerateForumThread`, `ModerateForumMessage`, `UpdateForumReadMarkers` |
 | Outgoing `PostForumMessage`, `UpdateForumThread`, `ReportForumThread`, `ReportForumMessage` | `PostMessage`, `UpdateThread`, `CallForHelpFromForumThread`, `CallForHelpFromForumMessage` |
@@ -212,6 +214,8 @@ belong to the desktop app.
 | `MessageContracts.Room.FloorItemUse`, `FloorItemMove`, `WallItemUse`, `WallItemMove`, `WallItemRemove` | `Room.FloorItem.Use`, `FloorItem.Move`, `WallItem.Use`, `WallItem.Move`, `WallItem.Remove` |
 | `MessageContracts.Room.ItemPlace`, `ItemPickup`, `ItemClick`, `ItemPickupConfirmation` | `Room.Item.Place`, `Item.Pickup`, `Item.Click`, `Item.PickupConfirmation` |
 | `MessageContracts.Room.Moderation.UserMute`, `UserKick`, `UserBan`, `UserUnban` | `Mute`, `Kick`, `Ban`, `Unban` |
+| `Msg.In.FavouriteMembershipUpdate`, `SanctionStatus`, `FriendsListFragment`, second constants for messages that already had one | `Msg.In.FavoriteMembershipUpdate`, `MySanctionStatus`, `FriendListFragment`; the other names still resolve as strings |
+| `WiredUpdateRoom.RollBack`, `WiredUpdateRoom.Rollback` | `WiredUpdateRoom.Rollback`, `WiredUpdateRoom.IsRollback` |
 
 ## Behavior changes
 

@@ -707,7 +707,7 @@ public static class MessageKeys
         public static readonly MessageKey InitializeRequest = new("friends.initialize.request");
         /// <summary>The <c>friends.initialized</c> key of the incoming Flash message <c>MessengerInit</c>.</summary>
         public static readonly MessageKey Initialized = new("friends.initialized");
-        /// <summary>The <c>friends.list.fragment</c> key of the incoming Flash message <c>FriendsListFragment</c>, also named <c>FriendListFragment</c>.</summary>
+        /// <summary>The <c>friends.list.fragment</c> key of the incoming Flash message <c>FriendListFragment</c>, also named <c>FriendsListFragment</c>.</summary>
         public static readonly MessageKey ListFragment = new("friends.list.fragment");
         /// <summary>The <c>friends.list.updated</c> key of the incoming Flash message <c>FriendListUpdate</c>.</summary>
         public static readonly MessageKey ListUpdated = new("friends.list.updated");
@@ -929,7 +929,7 @@ public static class MessageKeys
         {
             /// <summary>The <c>users.sanctions.request</c> key of the outgoing Flash message <c>GetMySanctionStatus</c>.</summary>
             public static readonly MessageKey Request = new("users.sanctions.request");
-            /// <summary>The <c>users.sanctions.snapshot</c> key of the incoming Flash message <c>SanctionStatus</c>, also named <c>MySanctionStatus</c>.</summary>
+            /// <summary>The <c>users.sanctions.snapshot</c> key of the incoming Flash message <c>MySanctionStatus</c>, also named <c>SanctionStatus</c>.</summary>
             public static readonly MessageKey Snapshot = new("users.sanctions.snapshot");
         }
 
@@ -1300,7 +1300,7 @@ public static class MessageKeys
                 public static readonly MessageKey Appearance = new("room.occupants.identity.appearance");
                 /// <summary>The <c>room.occupants.identity.name</c> key of the incoming Flash message <c>UserNameChanged</c>.</summary>
                 public static readonly MessageKey Name = new("room.occupants.identity.name");
-                /// <summary>The <c>room.occupants.identity.favorite_group</c> key of the incoming Flash message <c>FavouriteMembershipUpdate</c>, also named <c>FavoriteMembershipUpdate</c>.</summary>
+                /// <summary>The <c>room.occupants.identity.favorite_group</c> key of the incoming Flash message <c>FavoriteMembershipUpdate</c>, also named <c>FavouriteMembershipUpdate</c>.</summary>
                 public static readonly MessageKey FavoriteGroup = new("room.occupants.identity.favorite_group");
             }
 

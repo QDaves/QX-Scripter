@@ -191,20 +191,18 @@ foreach ($raw_line in [IO.File]::ReadAllLines($messages_path))
     {
         throw "Message row '$line' has no Flash aliases."
     }
-    foreach ($name in $names)
+    $primary = $names[0]
+    $other_names = $null
+    if (!$directions[$direction].TryGetValue($primary, [ref]$other_names))
     {
-        $other_names = $null
-        if (!$directions[$direction].TryGetValue($name, [ref]$other_names))
+        $other_names = [Collections.Generic.SortedSet[string]]::new([StringComparer]::Ordinal)
+        $directions[$direction][$primary] = $other_names
+    }
+    foreach ($other in $names)
+    {
+        if ($other -cne $primary)
         {
-            $other_names = [Collections.Generic.SortedSet[string]]::new([StringComparer]::Ordinal)
-            $directions[$direction][$name] = $other_names
-        }
-        foreach ($other in $names)
-        {
-            if ($other -cne $name)
-            {
-                $other_names.Add($other) | Out-Null
-            }
+            $other_names.Add($other) | Out-Null
         }
     }
 }
@@ -213,7 +211,7 @@ $lines = [Collections.Generic.List[string]]::new()
 $lines.Add('namespace Qx.Protocol;')
 $lines.Add('')
 $lines.Add('/// <summary>Provides the Flash message names as compile-checked constants.</summary>')
-$lines.Add('/// <remarks>Generated from <c>Resources/messages.ini</c>. Every constant is spelled exactly as in the Flash client.</remarks>')
+$lines.Add('/// <remarks>Generated from <c>Resources/messages.ini</c>. Every constant is spelled exactly as in the Flash client. A message the client knows by several names has one constant, named after its primary name, and its summary lists the other names.</remarks>')
 $lines.Add('public static class Msg')
 $lines.Add('{')
 foreach ($entry in @(@('Incoming', 'In', 'incoming', 'server to the client'), @('Outgoing', 'Out', 'outgoing', 'client to the server')))

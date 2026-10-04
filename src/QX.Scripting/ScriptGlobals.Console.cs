@@ -191,7 +191,7 @@ public partial class ScriptGlobals
     /// </remarks>
     /// <param name="handler">Receives the change.</param>
     /// <returns>A handle that unsubscribes when disposed; also disposed when the script stops.</returns>
-    public IDisposable OnFavouriteGroupChanged(Action<FavouriteMembershipUpdate> handler) =>
+    public IDisposable OnFavouriteGroupChanged(Action<FavoriteMembershipUpdate> handler) =>
         OnIn(MessageContracts.Room.Occupants.Identity.FavoriteGroup, handler);
 
     /// <summary>Subscribes to a Flash special-system chat signal associated with an avatar.</summary>

@@ -729,7 +729,7 @@ public partial class ScriptGlobals
     /// confirms a warning: everything done since the last save is thrown away, furni included.
     /// There is no acknowledgement and no undo, so this returns as soon as the request is away.
     /// </remarks>
-    public void RollBackRoomState() =>
+    public void RollbackRoomState() =>
         wired_send(
             ApplicationMemberIds.WiredRoomRollback,
             new WiredCommandRequest());

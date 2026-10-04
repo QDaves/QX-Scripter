@@ -25,6 +25,14 @@ function git(...args) {
   return execFileSync('git', args, { cwd: repo_root, encoding: 'utf8' }).trim();
 }
 
+async function build_version() {
+  const props = await readFile(path.join(repo_root, 'Directory.Build.props'), 'utf8');
+  const series = /<QxVersionSeries>([^<]+)<\/QxVersionSeries>/.exec(props)[1];
+  const start = git('log', '-1', '--first-parent', '--format=%H', `-S<QxVersionSeries>${series}</QxVersionSeries>`, '--', 'Directory.Build.props');
+  const builds = start ? Number(git('rev-list', '--first-parent', '--count', `${start}..HEAD`)) + 1 : 1;
+  return `${series}.${builds}`;
+}
+
 function sha256(data) {
   return createHash('sha256').update(data).digest('hex');
 }
@@ -72,7 +80,7 @@ const content = {
 
 const bundle = {
   format,
-  version: `0.1.${git('rev-list', '--first-parent', '--count', 'HEAD')}`,
+  version: await build_version(),
   commit: git('rev-parse', 'HEAD'),
   repository,
   ...content,

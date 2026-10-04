@@ -9,13 +9,19 @@
     <Error Condition="'$(_QxShallowHistory)' == 'true'"
            Text="Version calculation requires complete Git history. Fetch with git fetch --unshallow or supply QxBuildVersion explicitly." />
     <Exec Condition="'$(QxBuildVersion)' == '' and Exists('$(MSBuildThisFileDirectory).git')"
-          Command="git rev-list --first-parent --count HEAD"
+          Command="git log -1 --first-parent --pretty=oneline -S&quot;&lt;QxVersionSeries&gt;$(QxVersionSeries)&lt;/QxVersionSeries&gt;&quot; -- Directory.Build.props"
+          WorkingDirectory="$(MSBuildThisFileDirectory)"
+          ConsoleToMSBuild="true" StandardOutputImportance="Low">
+      <Output TaskParameter="ConsoleOutput" PropertyName="_QxSeriesCommit" />
+    </Exec>
+    <Exec Condition="'$(QxBuildVersion)' == '' and '$(_QxSeriesCommit)' != ''"
+          Command="git rev-list --first-parent --count $(_QxSeriesCommit.Substring(0, 40))..HEAD"
           WorkingDirectory="$(MSBuildThisFileDirectory)"
           ConsoleToMSBuild="true" StandardOutputImportance="Low">
       <Output TaskParameter="ConsoleOutput" PropertyName="_QxCommitCount" />
     </Exec>
     <PropertyGroup>
-      <QxBuildVersion Condition="'$(QxBuildVersion)' == '' and '$(_QxCommitCount)' != ''">$(QxVersionSeries).$(_QxCommitCount)</QxBuildVersion>
+      <QxBuildVersion Condition="'$(QxBuildVersion)' == '' and '$(_QxCommitCount)' != ''">$(QxVersionSeries).$([MSBuild]::Add($(_QxCommitCount), 1))</QxBuildVersion>
       <QxBuildVersion Condition="'$(QxBuildVersion)' == ''">$(VersionPrefix)</QxBuildVersion>
       <FileVersion>$(QxBuildVersion).0</FileVersion>
       <InformationalVersion>$(QxBuildVersion)</InformationalVersion>

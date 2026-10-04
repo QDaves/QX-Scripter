@@ -95,7 +95,7 @@ public sealed partial class ScriptEditorView : UserControl
                 Code.TextArea.SelectionCornerRadius = 2;
                 _ = await Code.InitializeAsync(host, ThemeColors(), hosts.WorkingDirectory, document.Text, SourceCodeKind.Script);
                 if (Code.CompletionProvider is { } completions)
-                    Code.CompletionProvider = new GuardedCompletionProvider(completions, Code);
+                    Code.CompletionProvider = new GuardedCompletionProvider(new UiDirectiveCompletionProvider(completions, Code), Code);
                 Adopt(Code);
                 return;
             }

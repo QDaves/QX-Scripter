@@ -1,4 +1,5 @@
-﻿using System.Globalization;
+﻿using System.Collections.Frozen;
+using System.Globalization;
 using System.Text.RegularExpressions;
 
 namespace Qx.Scripting.Hosting;
@@ -344,6 +345,13 @@ public sealed record UiConsole(bool Collapsed, double? Height);
 /// </param>
 public sealed record UiLayout(bool Centered, double? Width);
 
+/// <summary>Describes a panel directive, for editors that offer it while a script is written.</summary>
+/// <param name="Key">The name written after <c>//@ui:</c>.</param>
+/// <param name="Syntax">The directive as it is written, with its arguments.</param>
+/// <param name="Summary">What the directive declares.</param>
+/// <param name="Aliases">Other names the parser accepts for it, empty when there are none.</param>
+public sealed record UiDirective(string Key, string Syntax, string Summary, IReadOnlyList<string> Aliases);
+
 internal sealed record UiUnknownDirective(string Key, int Offset);
 
 /// <summary>Represents the panel a script declares with <c>//@ui:</c> directives.</summary>
@@ -407,12 +415,137 @@ public sealed partial class UiSpec
     /// <summary>Gets the tables declared in the panel.</summary>
     public List<UiTableNode> Tables { get; } = [];
 
-    internal static IReadOnlyList<string> Directives { get; } =
+    private delegate void DirectiveReader(PanelBuilder panel, string rest, UiAttributes attributes);
+
+    private static readonly (UiDirective Directive, DirectiveReader Read)[] grammar =
     [
-        "bool", "button", "color", "console", "desc", "description", "divider", "end", "endgroup", "endrow", "file",
-        "group", "int", "label", "layout", "log", "number", "output", "progress", "required", "row", "section",
-        "select", "separator", "slider", "space", "spacer", "status", "string", "table", "text", "title"
+        (new("title", "//@ui:title Text", "The panel title.", []),
+            static (panel, rest, _) => panel.Spec.Title = Unquote(rest)),
+        (new("desc", "//@ui:desc Text", "A line of text under the title.", ["description"]),
+            static (panel, rest, _) => panel.Spec.Description = Unquote(rest)),
+        (new("required", "//@ui:required", "The script only works with its panel. Runs without one are refused.", []),
+            static (panel, _, _) => panel.Spec.Required = true),
+        (new("console", "//@ui:console [collapsed] [height=N]", "Shows the script's own output under the panel.", []),
+            static (panel, rest, _) =>
+            {
+                UiAttributes options = ParseAttributes(rest, named: false);
+                panel.Spec.Console = new UiConsole(options.Flag("collapsed") is true, options.Number("height"));
+            }),
+        (new("layout", "//@ui:layout [center] [width=N | full]", "Places the content. Left-aligned at 720 pixels by default.", []),
+            static (panel, rest, _) =>
+            {
+                UiAttributes options = ParseAttributes(rest, named: false);
+                double? width = options.Flag("full") is true
+                    ? double.PositiveInfinity
+                    : options.Number("width") is double value && value > 0 ? value : null;
+                panel.Spec.Layout = new UiLayout(options.Flag("center") is true, width);
+            }),
+        (new("string", "//@ui:string name \"Label\" =\"default\"", "A single line text input, read as string.", []),
+            Field(UiFieldKind.String)),
+        (new("text", "//@ui:text name \"Label\"", "A multi-line text input, read as string.", []),
+            Field(UiFieldKind.Text)),
+        (new("int", "//@ui:int name \"Label\" =5 min=0 max=10", "A whole number input, read as int.", []),
+            Field(UiFieldKind.Int)),
+        (new("number", "//@ui:number name \"Label\" =1.5", "A decimal number input, read as double.", []),
+            Field(UiFieldKind.Number)),
+        (new("slider", "//@ui:slider name \"Label\" =50 min=0 max=100", "A slider limited to min and max, read as double.", []),
+            Field(UiFieldKind.Slider)),
+        (new("bool", "//@ui:bool name \"Label\" =true", "A checkbox, read as bool.", []),
+            Field(UiFieldKind.Bool)),
+        (new("select", "//@ui:select name \"Label\" [A,B,C] =A", "A choice from the bracket list, read as string. Starts on the first option without a default.", []),
+            Field(UiFieldKind.Select)),
+        (new("file", "//@ui:file name \"Label\"", "A file picker, read as the chosen path.", []),
+            Field(UiFieldKind.File)),
+        (new("color", "//@ui:color name \"Label\" =\"#8EA2FF\"", "A color input, read as a #RRGGBB string.", []),
+            Field(UiFieldKind.Color)),
+        (new("label", "//@ui:label \"Text\"", "Static text.", []),
+            static (panel, rest, attributes) => panel.Add(new UiLabelNode(Unquote(StripAttributes(rest))) { Attr = attributes })),
+        (new("button", "//@ui:button name \"Label\" [style=primary|normal|quiet|danger]", "A button. The first one is filled.", []),
+            static (panel, rest, attributes) =>
+            {
+                if (ParseNameLabel(rest) is not ({ Length: > 0 } name, var label))
+                    return;
+                var button = new UiButton(name, label, attributes);
+                panel.Spec.Buttons.Add(button);
+                panel.Add(new UiButtonNode(button) { Attr = attributes });
+            }),
+        (new("output", "//@ui:output name \"Label\" [height=200] [wrap] [mono=false] [toolbar=false]", "A text box the script writes to.", ["log"]),
+            static (panel, rest, attributes) =>
+            {
+                if (ParseNameLabel(rest) is not ({ Length: > 0 } name, var label))
+                    return;
+                var output = new UiOutput(name, label, attributes);
+                panel.Spec.Outputs.Add(output);
+                panel.Add(new UiOutputNode(output) { Attr = attributes });
+            }),
+        (new("progress", "//@ui:progress name \"Label\"", "A progress bar.", []),
+            static (panel, rest, attributes) =>
+            {
+                if (ParseNameLabel(rest) is not ({ Length: > 0 } name, var label))
+                    return;
+                var progress = new UiProgressNode(name, label) { Attr = attributes };
+                panel.Spec.Progresses.Add(progress);
+                panel.Add(progress);
+            }),
+        (new("status", "//@ui:status name \"Label\" =\"text\"", "A status line.", []),
+            static (panel, rest, attributes) =>
+            {
+                if (ParseNameLabel(rest) is not ({ Length: > 0 } name, var label))
+                    return;
+                var status = new UiStatusNode(name, label, ParseDefault(rest)) { Attr = attributes };
+                panel.Spec.Statuses.Add(status);
+                panel.Add(status);
+            }),
+        (new("table", "//@ui:table name \"Label\" [Col,Col] [height=220] [selectable=false] [toolbar=false]", "A table with the bracket list as columns.", []),
+            static (panel, rest, attributes) =>
+            {
+                if (ParseNameLabel(rest) is not ({ Length: > 0 } name, var label))
+                    return;
+                Match bracket = BracketRegex().Match(StripAttributes(rest));
+                List<string> columns = bracket.Success
+                    ? [.. bracket.Groups["v"].Value.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)]
+                    : [];
+                var table = new UiTableNode(name, label, columns) { Attr = attributes };
+                panel.Spec.Tables.Add(table);
+                panel.Add(table);
+            }),
+        (new("row", "//@ui:row [gap=12] [align=start|center|end|stretch]", "Places controls side by side until //@ui:endrow.", []),
+            static (panel, _, attributes) =>
+            {
+                var row = new UiRowNode { Attr = attributes };
+                panel.Open(row, row.Children);
+            }),
+        (new("endrow", "//@ui:endrow", "Closes the open row.", ["end"]),
+            static (panel, _, _) => panel.Close()),
+        (new("group", "//@ui:group \"Title\" [collapsed=true]", "A titled box that folds away, until //@ui:endgroup.", []),
+            static (panel, rest, attributes) =>
+            {
+                var group = new UiGroupNode(Unquote(StripAttributes(rest))) { Attr = attributes };
+                panel.Open(group, group.Children);
+            }),
+        (new("endgroup", "//@ui:endgroup", "Closes the open group.", []),
+            static (panel, _, _) => panel.Close()),
+        (new("section", "//@ui:section Heading", "A heading.", []),
+            static (panel, rest, _) =>
+            {
+                // The older grammar attached a section to the next field. It now stands on its
+                // own as a heading, which is what it always looked like, and the pending value
+                // is still carried so a field's Section keeps reporting it.
+                panel.PendingSection = Unquote(rest);
+                panel.Add(new UiSectionNode(panel.PendingSection));
+            }),
+        (new("separator", "//@ui:separator", "A line.", ["divider"]),
+            static (panel, _, attributes) => panel.Add(new UiSeparatorNode { Attr = attributes })),
+        (new("spacer", "//@ui:spacer [height=12]", "Empty space.", ["space"]),
+            static (panel, _, attributes) => panel.Add(new UiSpacerNode { Attr = attributes }))
     ];
+
+    private static readonly FrozenDictionary<string, DirectiveReader> readers = grammar
+        .SelectMany(entry => entry.Directive.Aliases.Prepend(entry.Directive.Key).Select(key => KeyValuePair.Create(key, entry.Read)))
+        .ToFrozenDictionary(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>Gets every directive the parser knows, in the order the panel documentation lists them.</summary>
+    public static IReadOnlyList<UiDirective> Directives { get; } = [.. grammar.Select(entry => entry.Directive)];
 
     internal List<UiUnknownDirective> UnknownDirectives { get; } = [];
 
@@ -463,17 +596,7 @@ public sealed partial class UiSpec
     /// <returns>The parsed panel, empty when the script declares none.</returns>
     public static UiSpec Parse(string code)
     {
-        var spec = new UiSpec();
-        string? pendingSection = null;
-
-        // Containers nest, so the parser keeps a stack and appends to whatever is open. An
-        // unclosed row or group is closed by the end of the file rather than discarded, because a
-        // panel that is missing its last line should still render.
-        var open = new Stack<List<UiNode>>();
-        open.Push(spec.Nodes);
-
-        void Add(UiNode node) => open.Peek().Add(node);
-
+        var panel = new PanelBuilder(new UiSpec());
         int offset = 0;
         foreach (string line in code.Split('\n'))
         {
@@ -484,163 +607,62 @@ public sealed partial class UiSpec
                 continue;
 
             Group written = m.Groups["key"];
-            string key = written.Value.ToLowerInvariant();
-            string rest = m.Groups["rest"].Value.Trim();
-            UiAttributes attributes = ParseAttributes(rest);
-
-            switch (key)
+            if (readers.TryGetValue(written.Value, out DirectiveReader? read))
             {
-                case "title":
-                    spec.Title = Unquote(rest);
-                    break;
-
-                case "desc" or "description":
-                    spec.Description = Unquote(rest);
-                    break;
-
-                case "required":
-                    spec.Required = true;
-                    break;
-
-                case "console":
-                {
-                    UiAttributes options = ParseAttributes(rest, named: false);
-                    spec.Console = new UiConsole(options.Flag("collapsed") is true, options.Number("height"));
-                    break;
-                }
-
-                case "layout":
-                {
-                    UiAttributes options = ParseAttributes(rest, named: false);
-                    double? width = options.Flag("full") is true
-                        ? double.PositiveInfinity
-                        : options.Number("width") is double value && value > 0 ? value : null;
-                    spec.Layout = new UiLayout(options.Flag("center") is true, width);
-                    break;
-                }
-
-                case "section":
-                    // The older grammar attached a section to the next field. It now stands on its
-                    // own as a heading, which is what it always looked like, and the pending value
-                    // is still carried so a field's Section keeps reporting it.
-                    pendingSection = Unquote(rest);
-                    Add(new UiSectionNode(pendingSection));
-                    break;
-
-                case "row":
-                {
-                    var row = new UiRowNode { Attr = attributes };
-                    Add(row);
-                    open.Push(row.Children);
-                    break;
-                }
-
-                case "endrow" or "end":
-                    if (open.Count > 1)
-                        open.Pop();
-                    break;
-
-                case "group":
-                {
-                    var group = new UiGroupNode(Unquote(StripAttributes(rest))) { Attr = attributes };
-                    Add(group);
-                    open.Push(group.Children);
-                    break;
-                }
-
-                case "endgroup":
-                    if (open.Count > 1)
-                        open.Pop();
-                    break;
-
-                case "separator" or "divider":
-                    Add(new UiSeparatorNode { Attr = attributes });
-                    break;
-
-                case "spacer" or "space":
-                    Add(new UiSpacerNode { Attr = attributes });
-                    break;
-
-                case "label":
-                    Add(new UiLabelNode(Unquote(StripAttributes(rest))) { Attr = attributes });
-                    break;
-
-                case "progress":
-                    if (ParseNameLabel(rest) is var (pName, pLabel) && pName.Length > 0)
-                    {
-                        var progress = new UiProgressNode(pName, pLabel) { Attr = attributes };
-                        Add(progress);
-                        spec.Progresses.Add(progress);
-                    }
-                    break;
-
-                case "status":
-                    if (ParseNameLabel(rest) is var (sName, sLabel) && sName.Length > 0)
-                    {
-                        var status = new UiStatusNode(sName, sLabel, ParseDefault(rest))
-                        {
-                            Attr = attributes
-                        };
-                        Add(status);
-                        spec.Statuses.Add(status);
-                    }
-                    break;
-
-                case "table":
-                    if (ParseNameLabel(rest) is var (tName, tLabel) && tName.Length > 0)
-                    {
-                        List<string> columns = [];
-                        Match tBracket = BracketRegex().Match(StripAttributes(rest));
-                        if (tBracket.Success)
-                        {
-                            columns = tBracket.Groups["v"].Value
-                                .Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)
-                                .ToList();
-                        }
-                        var table = new UiTableNode(tName, tLabel, columns) { Attr = attributes };
-                        Add(table);
-                        spec.Tables.Add(table);
-                    }
-                    break;
-
-                case "output" or "log":
-                    if (ParseNameLabel(rest) is var (oName, oLabel) && oName.Length > 0)
-                    {
-                        var output = new UiOutput(oName, oLabel, attributes);
-                        spec.Outputs.Add(output);
-                        Add(new UiOutputNode(output) { Attr = attributes });
-                    }
-                    break;
-
-                case "button":
-                    if (ParseNameLabel(rest) is var (bName, bLabel) && bName.Length > 0)
-                    {
-                        var button = new UiButton(bName, bLabel, attributes);
-                        spec.Buttons.Add(button);
-                        Add(new UiButtonNode(button) { Attr = attributes });
-                    }
-                    break;
-
-                case "int" or "number" or "string" or "text" or "bool" or "select" or "file" or "slider" or "color":
-                    UiField? field = ParseField(key, rest, pendingSection, attributes);
-                    if (field is not null)
-                    {
-                        spec.Fields.Add(field);
-                        Add(new UiFieldNode(field) { Attr = attributes });
-                        pendingSection = null;
-                    }
-                    break;
-
-                default:
-                    spec.UnknownDirectives.Add(new UiUnknownDirective(written.Value, line_offset + written.Index));
-                    break;
+                string rest = m.Groups["rest"].Value.Trim();
+                read(panel, rest, ParseAttributes(rest));
+            }
+            else
+            {
+                panel.Spec.UnknownDirectives.Add(new UiUnknownDirective(written.Value, line_offset + written.Index));
             }
         }
 
-        return spec;
+        return panel.Spec;
     }
 
-    private static UiField? ParseField(string kind, string rest, string? section, UiAttributes attributes)
+    private static DirectiveReader Field(UiFieldKind kind) => (panel, rest, attributes) =>
+    {
+        if (ParseField(kind, rest, panel.PendingSection, attributes) is not { } field)
+            return;
+        panel.Spec.Fields.Add(field);
+        panel.Add(new UiFieldNode(field) { Attr = attributes });
+        panel.PendingSection = null;
+    };
+
+    private sealed class PanelBuilder
+    {
+        // Containers nest, so the parser keeps a stack and appends to whatever is open. An
+        // unclosed row or group is closed by the end of the file rather than discarded, because a
+        // panel that is missing its last line should still render.
+        private readonly Stack<List<UiNode>> _open = new();
+
+        public PanelBuilder(UiSpec spec)
+        {
+            Spec = spec;
+            _open.Push(spec.Nodes);
+        }
+
+        public UiSpec Spec { get; }
+
+        public string? PendingSection { get; set; }
+
+        public void Add(UiNode node) => _open.Peek().Add(node);
+
+        public void Open(UiNode node, List<UiNode> children)
+        {
+            Add(node);
+            _open.Push(children);
+        }
+
+        public void Close()
+        {
+            if (_open.Count > 1)
+                _open.Pop();
+        }
+    }
+
+    private static UiField? ParseField(UiFieldKind kind, string rest, string? section, UiAttributes attributes)
     {
         Match nameMatch = NameRegex().Match(rest);
         if (!nameMatch.Success)
@@ -666,23 +688,10 @@ public sealed partial class UiSpec
         double? min = attributes.Number("min");
         double? max = attributes.Number("max");
 
-        UiFieldKind fieldKind = kind switch
-        {
-            "int" => UiFieldKind.Int,
-            "number" => UiFieldKind.Number,
-            "text" => UiFieldKind.Text,
-            "bool" => UiFieldKind.Bool,
-            "select" => UiFieldKind.Select,
-            "file" => UiFieldKind.File,
-            "slider" => UiFieldKind.Slider,
-            "color" => UiFieldKind.Color,
-            _ => UiFieldKind.String
-        };
-
-        if (fieldKind == UiFieldKind.Select && def.Length == 0 && options.Count > 0)
+        if (kind == UiFieldKind.Select && def.Length == 0 && options.Count > 0)
             def = options[0];
 
-        return new UiField(fieldKind, name, labelText, def, options, min, max, section, attributes);
+        return new UiField(kind, name, labelText, def, options, min, max, section, attributes);
     }
 
     private static (string, string) ParseNameLabel(string rest)

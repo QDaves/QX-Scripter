@@ -92,6 +92,9 @@ internal sealed class ScriptAnalyzer(MessageNames names) : DiagnosticAnalyzer
         nameof(ScriptUi.Clicked)
     }.ToFrozenSet(StringComparer.Ordinal);
 
+    private static readonly string directive_names = string.Join(", ",
+        UiSpec.Directives.SelectMany(directive => directive.Aliases.Prepend(directive.Key)).Order(StringComparer.Ordinal));
+
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics { get; } =
         [unknown_message, model_mismatch, unknown_directive, undeclared_control];
 
@@ -140,7 +143,7 @@ internal sealed class ScriptAnalyzer(MessageNames names) : DiagnosticAnalyzer
                 context.ReportDiagnostic(Diagnostic.Create(
                     unknown_directive,
                     Location.Create(context.Tree, new TextSpan(directive.Offset, directive.Key.Length)),
-                    $"'//@ui:{directive.Key}' is not a panel directive. The directives are {string.Join(", ", UiSpec.Directives)}."));
+                    $"'//@ui:{directive.Key}' is not a panel directive. The directives are {directive_names}."));
             }
         }
 

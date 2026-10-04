@@ -1,7 +1,7 @@
 # Panels
 
 A script declares its own user interface with `//@ui:` directives. The desktop app shows it in the
-tab's panel view.
+tab's panel view. Typing `//@` in the editor lists every directive with its syntax.
 
 ```csharp
 //@ui:title Greeter

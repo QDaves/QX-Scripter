@@ -3,7 +3,6 @@ using Qx.Game;
 using Qx.Game.Application;
 using Qx.Game.Snapshots;
 using Qx.Game.Protocol;
-using Qx.Model.Marketplace;
 using Qx.Model.Messages.Incoming;
 using Qx.Model.Messages.Outgoing;
 using Qx.Model;
@@ -28,7 +27,7 @@ public partial class ScriptGlobals
     /// <exception cref="Qx.Game.RequestTimeoutException">Thrown when no matching profile arrived in time.</exception>
     public async Task<UserProfile> GetProfile(Id userId, int timeoutMs = 10000)
     {
-        RemoteProfileResult result = await Application
+        RemoteProfileResult result = await _application
             .InvokeAsync<RemoteProfileGetRequest, RemoteProfileResult>(
                 ApplicationMemberIds.PeopleProfileGet,
                 new RemoteProfileGetRequest(userId, timeoutMs),
@@ -51,7 +50,7 @@ public partial class ScriptGlobals
     /// <exception cref="Qx.Game.RequestTimeoutException">Thrown when no matching group details arrived in time.</exception>
     public async Task<GroupData> GetGroup(Id groupId, int timeoutMs = 10000)
     {
-        GroupDetailsResult result = await Application
+        GroupDetailsResult result = await _application
             .InvokeAsync<GroupDetailsGetRequest, GroupDetailsResult>(
                 ApplicationMemberIds.GroupsDetailsGet,
                 new GroupDetailsGetRequest(groupId, timeoutMs),
@@ -74,7 +73,7 @@ public partial class ScriptGlobals
     /// <exception cref="Qx.Game.RequestTimeoutException">Thrown when no matching pet info arrived in time.</exception>
     public async Task<PetInfo> GetPetInfo(Id petId, int timeoutMs = 10000)
     {
-        PetInfoReadResult result = await Application
+        PetInfoReadResult result = await _application
             .InvokeAsync<PetInfoReadRequest, PetInfoReadResult>(
                 ApplicationMemberIds.PetsInfoGet,
                 new PetInfoReadRequest(petId, timeoutMs),
@@ -128,7 +127,7 @@ public partial class ScriptGlobals
     /// <exception cref="Qx.Game.RequestTimeoutException">Thrown when no matching item data arrived in time.</exception>
     public async Task<Sticky> GetSticky(Id itemId, int timeoutMs = 10000)
     {
-        StickyReadResult result = await Application
+        StickyReadResult result = await _application
             .InvokeAsync<StickyReadRequest, StickyReadResult>(
                 ApplicationMemberIds.RoomStickyGet,
                 new StickyReadRequest(itemId, timeoutMs),
@@ -137,6 +136,21 @@ public partial class ScriptGlobals
         if (result.ItemId != itemId || result.MessagesDispatched != 1)
             throw new InvalidDataException("The sticky-data application returned an inconsistent result.");
         return new Sticky(result.ItemId, result.Color, result.Text);
+    }
+
+    /// <summary>
+    /// Requests the contents of a sticky note (post-it) placed in the room.
+    /// </summary>
+    /// <remarks>Same as <see cref="GetSticky(Id, int)"/> with the id of <paramref name="item"/>.</remarks>
+    /// <param name="item">The wall item holding the note; only its id is used.</param>
+    /// <param name="timeoutMs">The timeout in milliseconds, from 1 to 120000.</param>
+    /// <returns>The sticky note's id, color and text.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="item"/> is <see langword="null"/>.</exception>
+    /// <exception cref="Qx.Game.RequestTimeoutException">Thrown when no matching item data arrived in time.</exception>
+    public Task<Sticky> GetSticky(WallItem item, int timeoutMs = 10000)
+    {
+        ArgumentNullException.ThrowIfNull(item);
+        return GetSticky(item.Id, timeoutMs);
     }
 
     /// <summary>
@@ -152,7 +166,7 @@ public partial class ScriptGlobals
     /// <exception cref="Qx.Game.RequestTimeoutException">Thrown when no matching badge list arrived in time.</exception>
     public async Task<UserBadges> GetBadges(Id userId, int timeoutMs = 10000)
     {
-        RemoteBadgesResult result = await Application
+        RemoteBadgesResult result = await _application
             .InvokeAsync<RemoteBadgesGetRequest, RemoteBadgesResult>(
                 ApplicationMemberIds.PeopleBadgesGet,
                 new RemoteBadgesGetRequest(userId, timeoutMs),
@@ -177,7 +191,7 @@ public partial class ScriptGlobals
     /// <exception cref="Qx.Game.RequestTimeoutException">Thrown when no matching relationship status arrived in time.</exception>
     public async Task<RelationshipStatus> GetRelationship(Id userId, int timeoutMs = 10000)
     {
-        RemoteRelationshipResult result = await Application
+        RemoteRelationshipResult result = await _application
             .InvokeAsync<RemoteRelationshipGetRequest, RemoteRelationshipResult>(
                 ApplicationMemberIds.PeopleRelationshipGet,
                 new RemoteRelationshipGetRequest(userId, timeoutMs),
@@ -215,7 +229,7 @@ public partial class ScriptGlobals
         int timeoutMs = 10000)
     {
         NavigatorSearchSnapshot result =
-            await Application.InvokeAsync<NavigatorViewSearchInput, NavigatorSearchSnapshot>(
+            await _application.InvokeAsync<NavigatorViewSearchInput, NavigatorSearchSnapshot>(
                 ApplicationMemberIds.NavigatorSearchView,
                 new NavigatorViewSearchInput(code, filter, timeoutMs),
                 Ct);
@@ -257,7 +271,7 @@ public partial class ScriptGlobals
     /// <exception cref="Qx.Game.RequestTimeoutException">Thrown when no search result arrived in time.</exception>
     public async Task<UserSearchResults> SearchUsers(string name, int timeoutMs = 10000)
     {
-        FriendsSearchResult result = await Application.InvokeAsync<FriendsSearchRequest, FriendsSearchResult>(
+        FriendsSearchResult result = await _application.InvokeAsync<FriendsSearchRequest, FriendsSearchResult>(
             ApplicationMemberIds.FriendsSearch,
             new FriendsSearchRequest(name, timeoutMs),
             Ct);
@@ -268,23 +282,23 @@ public partial class ScriptGlobals
     /// Requests the marketplace price history and current offer counts for one furni kind.
     /// </summary>
     /// <remarks>The reply is not blocked, so the game client also receives it.</remarks>
-    /// <param name="itemType">The furni category: 1 floor item, 2 wall item, 3 limited edition.</param>
+    /// <param name="furniCategory">The furni category: floor item, wall item or limited edition.</param>
     /// <param name="kind">The furni type id (the sprite or class id shared by all copies of that furni).</param>
     /// <param name="timeoutMs">The timeout in milliseconds, from 1 to 120000, covering one automatic retry.</param>
     /// <returns>The stats whose category and furni type match the request.</returns>
-    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="itemType"/> is not 1, 2 or 3, or <paramref name="kind"/> is below 1.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="furniCategory"/> is not a defined value, or <paramref name="kind"/> is below 1.</exception>
     /// <exception cref="Qx.Game.RequestTimeoutException">Thrown when no matching stats arrived in time.</exception>
     public Task<MarketplaceItemStatsSnapshot> GetMarketplaceStats(
-        int itemType,
+        MarketplaceFurniCategory furniCategory,
         int kind,
         int timeoutMs = 10000) =>
-        GetMarketplaceStats(itemType, kind, "", timeoutMs);
+        GetMarketplaceStats(furniCategory, kind, "", timeoutMs);
 
     /// <summary>
     /// Requests marketplace stats for one furni kind, narrowed to a specific variant.
     /// </summary>
     /// <remarks>The reply is not blocked, so the game client also receives it.</remarks>
-    /// <param name="itemType">The furni category: 1 floor item, 2 wall item, 3 limited edition.</param>
+    /// <param name="furniCategory">The furni category: floor item, wall item or limited edition.</param>
     /// <param name="kind">The furni type id.</param>
     /// <param name="extraData">
     /// The variant discriminator, for example the limited edition serial data. Pass an empty
@@ -292,22 +306,22 @@ public partial class ScriptGlobals
     /// </param>
     /// <param name="timeoutMs">The timeout in milliseconds, from 1 to 120000, covering one automatic retry.</param>
     /// <returns>The stats whose category and furni type match the request.</returns>
-    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="itemType"/> is not 1, 2 or 3, or <paramref name="kind"/> is below 1.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="furniCategory"/> is not a defined value, or <paramref name="kind"/> is below 1.</exception>
     /// <exception cref="NotSupportedException">
-    /// Thrown when the session is a Flash client whose marketplace uses the legacy wire layout, which has
-    /// no field for <paramref name="extraData"/>, and a non-empty value was supplied.
+    /// Thrown when the client build's marketplace uses the legacy wire layout, which has no field for
+    /// <paramref name="extraData"/>, and a non-empty value was supplied.
     /// </exception>
     /// <exception cref="Qx.Game.RequestTimeoutException">Thrown when no matching stats arrived in time.</exception>
     public Task<MarketplaceItemStatsSnapshot> GetMarketplaceStats(
-        int itemType,
+        MarketplaceFurniCategory furniCategory,
         int kind,
         string extraData,
         int timeoutMs = 10000)
     {
-        return Application.InvokeAsync<MarketplaceItemStatsRequest, MarketplaceItemStatsSnapshot>(
+        return _application.InvokeAsync<MarketplaceItemStatsRequest, MarketplaceItemStatsSnapshot>(
             ApplicationMemberIds.MarketplaceItemStatsGet,
             new MarketplaceItemStatsRequest(
-                (MarketplaceFurniCategory)itemType,
+                furniCategory,
                 kind,
                 extraData,
                 timeoutMs),
@@ -315,22 +329,106 @@ public partial class ScriptGlobals
     }
 
     /// <summary>
+    /// Requests the marketplace price history and current offer counts for one floor or wall furni kind.
+    /// </summary>
+    /// <remarks>
+    /// Same as <see cref="GetMarketplaceStats(MarketplaceFurniCategory, int, int)"/> with the floor or wall category.
+    /// Limited editions cannot be expressed here. The reply is not blocked, so the game client also
+    /// receives it.
+    /// </remarks>
+    /// <param name="type">Whether the kind is a floor or a wall item.</param>
+    /// <param name="kind">The furni type id.</param>
+    /// <param name="timeoutMs">The timeout in milliseconds, from 1 to 120000, covering one automatic retry.</param>
+    /// <returns>The stats whose category and furni type match the request.</returns>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="type"/> is neither floor nor wall, or <paramref name="kind"/> is below 1.</exception>
+    /// <exception cref="Qx.Game.RequestTimeoutException">Thrown when no matching stats arrived in time.</exception>
+    public Task<MarketplaceItemStatsSnapshot> GetMarketplaceStats(
+        ItemType type,
+        int kind,
+        int timeoutMs = 10000) =>
+        GetMarketplaceStats(
+            type switch
+            {
+                ItemType.Floor => MarketplaceFurniCategory.Floor,
+                ItemType.Wall => MarketplaceFurniCategory.Wall,
+                _ => throw new ArgumentOutOfRangeException(nameof(type), type, "Unsupported item type.")
+            },
+            kind,
+            timeoutMs);
+
+    /// <summary>
+    /// Requests the marketplace price history and current offer counts for a room item's furni kind.
+    /// </summary>
+    /// <remarks>
+    /// Same as <see cref="GetMarketplaceStats(ItemType, int, int)"/> with the item's type and kind.
+    /// </remarks>
+    /// <param name="item">The room item; its type and kind are used.</param>
+    /// <param name="timeoutMs">The timeout in milliseconds, from 1 to 120000, covering one automatic retry.</param>
+    /// <returns>The stats for that furni kind.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="item"/> is <see langword="null"/>.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when the item is neither a floor nor a wall item.</exception>
+    /// <exception cref="Qx.Game.RequestTimeoutException">Thrown when no matching stats arrived in time.</exception>
+    public Task<MarketplaceItemStatsSnapshot> GetMarketplaceStats(Furni item, int timeoutMs = 10000)
+    {
+        ArgumentNullException.ThrowIfNull(item);
+        return GetMarketplaceStats(item.Type, item.Kind, timeoutMs);
+    }
+
+    /// <summary>
+    /// Requests the marketplace price history and current offer counts for an inventory item's furni kind.
+    /// </summary>
+    /// <remarks>
+    /// Same as <see cref="GetMarketplaceStats(ItemType, int, int)"/> with the item's type and kind.
+    /// </remarks>
+    /// <param name="item">The inventory item; its type and kind are used.</param>
+    /// <param name="timeoutMs">The timeout in milliseconds, from 1 to 120000, covering one automatic retry.</param>
+    /// <returns>The stats for that furni kind.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="item"/> is <see langword="null"/>.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when the item is neither a floor nor a wall item.</exception>
+    /// <exception cref="Qx.Game.RequestTimeoutException">Thrown when no matching stats arrived in time.</exception>
+    public Task<MarketplaceItemStatsSnapshot> GetMarketplaceStats(InventoryItem item, int timeoutMs = 10000)
+    {
+        ArgumentNullException.ThrowIfNull(item);
+        return GetMarketplaceStats(item.Type, item.Kind, timeoutMs);
+    }
+
+    /// <summary>
+    /// Requests the marketplace price history and current offer counts for a furni definition.
+    /// </summary>
+    /// <remarks>
+    /// Same as <see cref="GetMarketplaceStats(ItemType, int, int)"/> with the definition's type and kind.
+    /// </remarks>
+    /// <param name="item">The furni definition; its type and kind are used.</param>
+    /// <param name="timeoutMs">The timeout in milliseconds, from 1 to 120000, covering one automatic retry.</param>
+    /// <returns>The stats for that furni kind.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="item"/> is <see langword="null"/>.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when the definition is neither a floor nor a wall item.</exception>
+    /// <exception cref="Qx.Game.RequestTimeoutException">Thrown when no matching stats arrived in time.</exception>
+    public Task<MarketplaceItemStatsSnapshot> GetMarketplaceStats(FurniInfo item, int timeoutMs = 10000)
+    {
+        ArgumentNullException.ThrowIfNull(item);
+        return GetMarketplaceStats(item.Type, item.Kind, timeoutMs);
+    }
+
+    /// <summary>
     /// Requests marketplace stats for a floor furni kind.
     /// </summary>
-    /// <remarks>Shorthand for <c>GetMarketplaceStats(1, kind)</c>.</remarks>
+    /// <remarks>Shorthand for <c>GetMarketplaceStats(MarketplaceFurniCategory.Floor, kind)</c>.</remarks>
     /// <param name="kind">The furni type id.</param>
     /// <param name="timeoutMs">The timeout in milliseconds, from 1 to 120000, covering one automatic retry.</param>
     /// <returns>The stats of the floor furni kind.</returns>
-    public Task<MarketplaceItemStatsSnapshot> GetFloorItemStats(int kind, int timeoutMs = 10000) => GetMarketplaceStats(1, kind, timeoutMs);
+    public Task<MarketplaceItemStatsSnapshot> GetFloorItemStats(int kind, int timeoutMs = 10000) =>
+        GetMarketplaceStats(MarketplaceFurniCategory.Floor, kind, timeoutMs);
 
     /// <summary>
     /// Requests marketplace stats for a wall furni kind.
     /// </summary>
-    /// <remarks>Shorthand for <c>GetMarketplaceStats(2, kind)</c>.</remarks>
+    /// <remarks>Shorthand for <c>GetMarketplaceStats(MarketplaceFurniCategory.Wall, kind)</c>.</remarks>
     /// <param name="kind">The furni type id.</param>
     /// <param name="timeoutMs">The timeout in milliseconds, from 1 to 120000, covering one automatic retry.</param>
     /// <returns>The stats of the wall furni kind.</returns>
-    public Task<MarketplaceItemStatsSnapshot> GetWallItemStats(int kind, int timeoutMs = 10000) => GetMarketplaceStats(2, kind, timeoutMs);
+    public Task<MarketplaceItemStatsSnapshot> GetWallItemStats(int kind, int timeoutMs = 10000) =>
+        GetMarketplaceStats(MarketplaceFurniCategory.Wall, kind, timeoutMs);
 
     /// <summary>
     /// Searches the marketplace for offers currently on sale, grouping duplicate unique items.
@@ -342,17 +440,18 @@ public partial class ScriptGlobals
     /// <param name="name">The free text name filter; empty matches everything.</param>
     /// <param name="minPrice">The minimum price in credits, or -1 for no lower bound.</param>
     /// <param name="maxPrice">The maximum price in credits, or -1 for no upper bound.</param>
-    /// <param name="sort">
-    /// The sort order: 1 highest price, 2 lowest price, 3 most trades, 4 least trades, 5 most
-    /// offers, 6 least offers.
-    /// </param>
+    /// <param name="sort">The order of the offers.</param>
     /// <param name="timeoutMs">The timeout in milliseconds, from 1 to 120000, covering one automatic retry.</param>
     /// <returns>The first page of up to 100 offers, with the total offer count.</returns>
-    /// <exception cref="ArgumentOutOfRangeException">Thrown when a price is below -1, <paramref name="sort"/> is outside 1 to 6, or <paramref name="timeoutMs"/> is outside 1 to 120000.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when a price is below -1, <paramref name="sort"/> is not a defined value, or <paramref name="timeoutMs"/> is outside 1 to 120000.</exception>
     /// <exception cref="ArgumentException">Thrown when <paramref name="minPrice"/> is greater than <paramref name="maxPrice"/>.</exception>
     /// <exception cref="Qx.Game.RequestTimeoutException">Thrown when no offers arrived in time.</exception>
     public Task<MarketplaceOfferPage> SearchMarketplace(
-        string name = "", int minPrice = -1, int maxPrice = -1, int sort = 1, int timeoutMs = 10000) =>
+        string name = "",
+        int minPrice = -1,
+        int maxPrice = -1,
+        MarketplaceSortOrder sort = MarketplaceSortOrder.HighestPrice,
+        int timeoutMs = 10000) =>
         SearchMarketplace(name, minPrice, maxPrice, sort, true, timeoutMs);
 
     /// <summary>
@@ -366,14 +465,11 @@ public partial class ScriptGlobals
     /// <param name="name">The free text name filter; empty matches everything.</param>
     /// <param name="minPrice">The minimum price in credits, or -1 for no lower bound.</param>
     /// <param name="maxPrice">The maximum price in credits, or -1 for no upper bound.</param>
-    /// <param name="sort">
-    /// The sort order: 1 highest price, 2 lowest price, 3 most trades, 4 least trades, 5 most
-    /// offers, 6 least offers.
-    /// </param>
+    /// <param name="sort">The order of the offers.</param>
     /// <param name="combineUniques"><see langword="true"/> to group duplicate unique items into one offer; otherwise, <see langword="false"/>.</param>
     /// <param name="timeoutMs">The timeout in milliseconds, from 1 to 120000, covering one automatic retry.</param>
     /// <returns>The first page of up to 100 offers, with the total offer count.</returns>
-    /// <exception cref="ArgumentOutOfRangeException">Thrown when a price is below -1, <paramref name="sort"/> is outside 1 to 6, or <paramref name="timeoutMs"/> is outside 1 to 120000.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when a price is below -1, <paramref name="sort"/> is not a defined value, or <paramref name="timeoutMs"/> is outside 1 to 120000.</exception>
     /// <exception cref="ArgumentException">Thrown when <paramref name="minPrice"/> is greater than <paramref name="maxPrice"/>.</exception>
     /// <exception cref="NotSupportedException">
     /// Thrown when <paramref name="combineUniques"/> is <see langword="false"/> and the Flash marketplace uses
@@ -384,58 +480,43 @@ public partial class ScriptGlobals
     string name,
     int minPrice,
     int maxPrice,
-    int sort,
+    MarketplaceSortOrder sort,
     bool combineUniques,
     int timeoutMs = 10000)
     {
-        return Application.InvokeAsync<MarketplaceSearchRequest, MarketplaceOfferPage>(
+        return _application.InvokeAsync<MarketplaceSearchRequest, MarketplaceOfferPage>(
             ApplicationMemberIds.MarketplaceSearch,
             new MarketplaceSearchRequest(
                 name,
                 minPrice,
                 maxPrice,
-                (MarketplaceSortOrder)sort,
+                sort,
                 combineUniques,
                 TimeoutMilliseconds: timeoutMs),
             Ct).AsTask();
     }
 
     /// <summary>
-    /// Requests the local user's own marketplace offers that are still open for sale, together
-    /// with the credits waiting to be redeemed.
-    /// </summary>
-    /// <remarks>The reply is not blocked, so the game client also receives it.</remarks>
-    /// <param name="timeoutMs">The timeout in milliseconds, from 1 to 120000, covering one automatic retry.</param>
-    /// <returns>The first page of up to 100 open offers, with the total count and the credits waiting.</returns>
-    /// <exception cref="Qx.Game.RequestTimeoutException">Thrown when no offers arrived in time.</exception>
-    public Task<MarketplaceOwnOfferPage> GetMyMarketplaceOffers(int timeoutMs = 10000) =>
-        GetMyMarketplaceOffers(1, timeoutMs);
-
-    /// <summary>
     /// Requests the local user's own marketplace offers in one category, together with the credits
     /// waiting to be redeemed.
     /// </summary>
     /// <remarks>The reply is not blocked, so the game client also receives it.</remarks>
-    /// <param name="category">The offer category: 1 open, 2 sold, 3 expired.</param>
+    /// <param name="category">The offers to load: open, sold or expired. Open offers by default.</param>
     /// <param name="timeoutMs">The timeout in milliseconds, from 1 to 120000, covering one automatic retry.</param>
     /// <returns>The first page of up to 100 offers, with the total count and the credits waiting.</returns>
-    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="category"/> is outside 1 to 3, or <paramref name="timeoutMs"/> is outside 1 to 120000.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="category"/> is not a defined value, or <paramref name="timeoutMs"/> is outside 1 to 120000.</exception>
     /// <exception cref="NotSupportedException">
-    /// Thrown when <paramref name="category"/> is not 1 and the Flash marketplace uses the legacy wire layout,
-    /// which only reports open offers.
+    /// Thrown when <paramref name="category"/> is not <see cref="MarketplaceOwnOffersCategory.Open"/> and the
+    /// Flash marketplace uses the legacy wire layout, which only reports open offers.
     /// </exception>
     /// <exception cref="Qx.Game.RequestTimeoutException">Thrown when no offers arrived in time.</exception>
     public Task<MarketplaceOwnOfferPage> GetMyMarketplaceOffers(
-    int category,
-    int timeoutMs)
-    {
-        return Application.InvokeAsync<MarketplaceOwnOffersRequest, MarketplaceOwnOfferPage>(
+        MarketplaceOwnOffersCategory category = MarketplaceOwnOffersCategory.Open,
+        int timeoutMs = 10000) =>
+        _application.InvokeAsync<MarketplaceOwnOffersRequest, MarketplaceOwnOfferPage>(
             ApplicationMemberIds.MarketplaceOwnOffersGet,
-            new MarketplaceOwnOffersRequest(
-                (MarketplaceOwnOffersCategory)category,
-                TimeoutMilliseconds: timeoutMs),
+            new MarketplaceOwnOffersRequest(category, TimeoutMilliseconds: timeoutMs),
             Ct).AsTask();
-    }
 
     /// <summary>
     /// Requests the local user's full owned badge inventory from the server.
@@ -450,7 +531,7 @@ public partial class ScriptGlobals
     /// <exception cref="Qx.Game.RequestTimeoutException">Thrown when no badge list arrived in time.</exception>
     public async Task<BadgeInventory> GetBadgeInventory(int timeoutMs = 10000)
     {
-        BadgeRefreshResult refreshed = await Application
+        BadgeRefreshResult refreshed = await _application
             .InvokeAsync<BadgeRefreshRequest, BadgeRefreshResult>(
                 ApplicationMemberIds.BadgesRefresh,
                 new BadgeRefreshRequest(Limit: 500, TimeoutMilliseconds: timeoutMs),
@@ -462,7 +543,7 @@ public partial class ScriptGlobals
         AddOwnedBadges(page, badges);
         while (page.NextOffset is int offset)
         {
-            page = await Application.InvokeAsync<OwnedBadgePageRequest, OwnedBadgePage>(
+            page = await _application.InvokeAsync<OwnedBadgePageRequest, OwnedBadgePage>(
                     ApplicationMemberIds.BadgesOwnedList,
                     new OwnedBadgePageRequest(offset, 500, refreshed.SnapshotRevision),
                     Ct)
@@ -488,7 +569,7 @@ public partial class ScriptGlobals
     /// <exception cref="Qx.Game.RequestTimeoutException">Thrown when no achievement list arrived in time.</exception>
     public async Task<Achievements> GetAchievements(int timeoutMs = 10000)
     {
-        AchievementRefreshResult refreshed = await Application
+        AchievementRefreshResult refreshed = await _application
             .InvokeAsync<AchievementRefreshRequest, AchievementRefreshResult>(
                 ApplicationMemberIds.AchievementsRefresh,
                 new AchievementRefreshRequest(Limit: 500, TimeoutMilliseconds: timeoutMs),
@@ -500,7 +581,7 @@ public partial class ScriptGlobals
         AddAchievements(page, achievements);
         while (page.NextOffset is int offset)
         {
-            page = await Application.InvokeAsync<AchievementPageRequest, AchievementPage>(
+            page = await _application.InvokeAsync<AchievementPageRequest, AchievementPage>(
                     ApplicationMemberIds.AchievementsList,
                     new AchievementPageRequest(offset, 500, refreshed.SnapshotRevision),
                     Ct)
@@ -534,7 +615,6 @@ public partial class ScriptGlobals
         int? expected_next = consumed < page.Total ? consumed : null;
         if (refreshed.SnapshotRevision <= 0 ||
             !refreshed.FirstPage.Connected ||
-            refreshed.FirstPage.Client != refreshed.Client ||
             refreshed.FirstPage.SnapshotRevision != refreshed.SnapshotRevision ||
             refreshed.FirstPage.SessionGeneration != refreshed.SessionGeneration ||
             refreshed.FirstPage.StateRevision != refreshed.StateRevision ||
@@ -542,7 +622,6 @@ public partial class ScriptGlobals
             refreshed.FirstPage.BaselineRevision != refreshed.BaselineRevision ||
             page.SnapshotRevision != refreshed.SnapshotRevision ||
             page.Connected != refreshed.FirstPage.Connected ||
-            page.Client != refreshed.Client ||
             page.SessionGeneration != refreshed.SessionGeneration ||
             page.StateRevision != refreshed.StateRevision ||
             page.InventoryRevision != refreshed.InventoryRevision ||
@@ -595,7 +674,6 @@ public partial class ScriptGlobals
         int? expected_next = consumed < page.Total ? consumed : null;
         if (refreshed.SnapshotRevision <= 0 ||
             !refreshed.FirstPage.Connected ||
-            refreshed.FirstPage.Client != refreshed.Client ||
             refreshed.FirstPage.SnapshotRevision != refreshed.SnapshotRevision ||
             refreshed.FirstPage.SessionGeneration != refreshed.SessionGeneration ||
             refreshed.FirstPage.StateRevision != refreshed.StateRevision ||
@@ -603,7 +681,6 @@ public partial class ScriptGlobals
             refreshed.FirstPage.BaselineRevision != refreshed.BaselineRevision ||
             page.SnapshotRevision != refreshed.SnapshotRevision ||
             page.Connected != refreshed.FirstPage.Connected ||
-            page.Client != refreshed.Client ||
             page.SessionGeneration != refreshed.SessionGeneration ||
             page.StateRevision != refreshed.StateRevision ||
             page.ListRevision != refreshed.ListRevision ||
@@ -630,12 +707,12 @@ public partial class ScriptGlobals
     /// Requests the groups the local user belongs to, with the membership rank in each.
     /// </summary>
     /// <remarks>
-    /// The request is sent once without a retry and only works on the Flash client. The reply is
-    /// not blocked, so the game client also receives it.
+    /// The request is sent once without a retry. The reply is not blocked, so the game client also
+    /// receives it.
     /// </remarks>
     /// <param name="timeoutMs">The timeout in milliseconds, from 1 to 120000.</param>
     /// <returns>The memberships, or an empty list when the user is in no group.</returns>
-    /// <exception cref="InvalidDataException">Thrown when the session is not a Flash session, or the membership pages were inconsistent.</exception>
+    /// <exception cref="InvalidDataException">Thrown when the membership pages were inconsistent.</exception>
     /// <exception cref="Qx.Game.RequestTimeoutException">Thrown when no membership list arrived in time.</exception>
     public async Task<IReadOnlyList<GuildMembership>> GetGuildMemberships(int timeoutMs = 10000)
     {
@@ -646,11 +723,10 @@ public partial class ScriptGlobals
         int? total_memberships = null;
         long? snapshot_revision = null;
         long? session_generation = null;
-        ClientType? client = null;
 
         while (true)
         {
-            GroupMembershipsPage page = await Application
+            GroupMembershipsPage page = await _application
                 .InvokeAsync<GroupMembershipsGetRequest, GroupMembershipsPage>(
                     ApplicationMemberIds.GroupsMembershipsGet,
                     new GroupMembershipsGetRequest(
@@ -664,7 +740,6 @@ public partial class ScriptGlobals
             if (page.Offset != offset ||
                 page.TotalMemberships < 0 ||
                 page.SnapshotRevision <= 0 ||
-                page.Client is not (ClientType.Flash) ||
                 page.Memberships.Count > page_limit ||
                 (long)page.Offset + page.Memberships.Count > page.TotalMemberships)
             {
@@ -676,12 +751,10 @@ public partial class ScriptGlobals
                 total_memberships = page.TotalMemberships;
                 snapshot_revision = page.SnapshotRevision;
                 session_generation = page.SessionGeneration;
-                client = page.Client;
             }
             else if (page.TotalMemberships != total_memberships ||
                      page.SnapshotRevision != snapshot_revision ||
-                     page.SessionGeneration != session_generation ||
-                     page.Client != client)
+                     page.SessionGeneration != session_generation)
             {
                 throw new InvalidDataException("Group memberships changed while the result was being collected.");
             }
@@ -723,7 +796,7 @@ public partial class ScriptGlobals
     /// <exception cref="Qx.Game.RequestTimeoutException">Thrown when no matching room data arrived in time.</exception>
     public async Task<RoomData> GetRoomData(Id roomId, int timeoutMs = 10000)
     {
-        RoomDataReadResult result = await Application
+        RoomDataReadResult result = await _application
             .InvokeAsync<RoomDataReadRequest, RoomDataReadResult>(
                 ApplicationMemberIds.RoomDataGet,
                 new RoomDataReadRequest(roomId, timeoutMs),
@@ -778,7 +851,7 @@ public partial class ScriptGlobals
     /// </exception>
     public async Task<IReadOnlyList<IdName>> GetRightsFor(Id roomId, int timeoutMs = 10000)
     {
-        RoomRightsReadResult result = await Application
+        RoomRightsReadResult result = await _application
             .InvokeAsync<RoomRightsReadRequest, RoomRightsReadResult>(
                 ApplicationMemberIds.RoomRightsList,
                 new RoomRightsReadRequest(roomId, timeoutMs),
@@ -802,6 +875,30 @@ public partial class ScriptGlobals
         if (!Room.IsInRoom)
             throw new InvalidOperationException("The user is not in a room.");
         return GetRightsFor(Room.RoomId, timeoutMs);
+    }
+
+    /// <summary>
+    /// Saves the settings of a room and waits for the server to acknowledge them.
+    /// </summary>
+    /// <remarks>
+    /// Read the current values with <see cref="GetRoomSettings"/>, change them and pass them back.
+    /// <see cref="ModifyRoomSettings"/> does both and refuses to overwrite a change made in between.
+    /// </remarks>
+    /// <param name="settings">The complete room settings to save; its room id selects the room.</param>
+    /// <param name="password">The room password, used when the door mode requires one; otherwise empty.</param>
+    /// <param name="timeoutMs">The timeout in milliseconds, from 1 to 120000.</param>
+    /// <returns>A task that completes once the server has accepted the settings.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="settings"/> or <paramref name="password"/> is <see langword="null"/>.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="timeoutMs"/> is outside 1 to 120000.</exception>
+    /// <exception cref="Qx.Game.Application.RoomSettingsRejectedException">Thrown when the server rejected the settings.</exception>
+    /// <exception cref="Qx.Game.RequestTimeoutException">Thrown when the server did not answer in time.</exception>
+    public Task SaveRoomSettings(RoomSettings settings, string password = "", int timeoutMs = 10000)
+    {
+        ArgumentNullException.ThrowIfNull(settings);
+        return _application.InvokeAsync<RoomSettingsSaveRequest, RoomSettingsSaveReceipt>(
+            ApplicationMemberIds.RoomSettingsSave,
+            new RoomSettingsSaveRequest(ToApplicationRoomSettings(settings), password, timeoutMs),
+            Ct).AsTask();
     }
 
     /// <summary>
@@ -842,7 +939,7 @@ public partial class ScriptGlobals
             throw new InvalidOperationException("The room settings update returned null.");
         if (changed.RoomId != target_room_id)
             throw new InvalidOperationException("The room settings update changed the room ID.");
-        await Application.InvokeAsync<RoomSettingsSaveRequest, RoomSettingsSaveReceipt>(
+        await _application.InvokeAsync<RoomSettingsSaveRequest, RoomSettingsSaveReceipt>(
             ApplicationMemberIds.RoomSettingsSave,
             new RoomSettingsSaveRequest(
                 ToApplicationRoomSettings(changed),
@@ -853,21 +950,6 @@ public partial class ScriptGlobals
                 ExpectedSnapshotRevision: current_state.SnapshotRevision),
             Ct);
         return changed;
-    }
-
-    /// <summary>
-    /// Requests the rooms owned by the local user through the navigator's own rooms search.
-    /// </summary>
-    /// <remarks>
-    /// Same as <see cref="GetMyRooms(int)"/>, returned as a list instead of a query.
-    /// </remarks>
-    /// <param name="timeoutMs">The timeout in milliseconds, from 1 to 120000, covering one automatic retry.</param>
-    /// <returns>The rooms the local user owns.</returns>
-    /// <exception cref="Qx.Game.RequestTimeoutException">Thrown when no search result arrived in time.</exception>
-    public async Task<IReadOnlyList<RoomData>> GetUserRooms(int timeoutMs = 10000)
-    {
-        RoomDataQuery rooms = await FindRooms(NavigatorQuickSearch.MyRooms, timeoutMs);
-        return rooms.ToArray();
     }
 
     /// <summary>
@@ -897,7 +979,7 @@ public partial class ScriptGlobals
             if (remaining <= 0)
                 throw new RequestTimeoutException("profile.wardrobe.get", "wardrobe", timeoutMs);
 
-            ProfileWardrobePage page = await Application.InvokeAsync<ProfileWardrobeRequest, ProfileWardrobePage>(
+            ProfileWardrobePage page = await _application.InvokeAsync<ProfileWardrobeRequest, ProfileWardrobePage>(
                 ApplicationMemberIds.ProfileWardrobeGet,
                 new ProfileWardrobeRequest(
                     offset,
@@ -906,8 +988,7 @@ public partial class ScriptGlobals
                     first_page?.SnapshotRevision),
                 Ct);
             first_page ??= page;
-            if (page.Client != first_page.Client ||
-                page.Generation != first_page.Generation ||
+            if (page.Generation != first_page.Generation ||
                 page.Revision != first_page.Revision ||
                 page.SnapshotRevision != first_page.SnapshotRevision ||
                 page.State != first_page.State ||
@@ -950,7 +1031,7 @@ public partial class ScriptGlobals
         ToLegacyRoomSettings(await GetRoomSettingsState(roomId, timeoutMs));
 
     private ValueTask<RoomSettingsStateView> GetRoomSettingsState(Id room_id, int timeout_ms) =>
-        Application.InvokeAsync<RoomSettingsGetRequest, RoomSettingsStateView>(
+        _application.InvokeAsync<RoomSettingsGetRequest, RoomSettingsStateView>(
             ApplicationMemberIds.RoomSettingsGet,
             new RoomSettingsGetRequest(room_id, timeout_ms),
             Ct);
@@ -1065,7 +1146,7 @@ public partial class ScriptGlobals
     /// <exception cref="ArgumentOutOfRangeException">Thrown when an argument is outside its allowed range or the catalog mode is not known.</exception>
     /// <exception cref="Qx.Game.RequestTimeoutException">Thrown when no matching page arrived in time.</exception>
     /// <remarks>
-    /// The page supplies the page id and offer id pair needed by <see cref="PurchaseFromCatalog"/>.
+    /// The page supplies the page id and offer id pair needed by <see cref="BuyFromCatalog"/>.
     /// It is cached the same way as <see cref="GetCatalogIndex"/>, and concurrent callers for the
     /// same page share one request.
     /// </remarks>

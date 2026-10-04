@@ -70,27 +70,27 @@ public sealed partial class PersonRowViewModel(string key) : ObservableObject
 
     public bool HasTag => Tag.Length > 0;
 
-    public static PersonRowViewModel FromPerson(RoomPerson person, string web_host)
+    public static PersonRowViewModel FromPerson(RoomPerson person, string webHost)
     {
         ArgumentNullException.ThrowIfNull(person);
         var row = new PersonRowViewModel(PersonKey(person));
-        row.Take(person, web_host);
+        row.Take(person, webHost);
         return row;
     }
 
-    public static PersonRowViewModel FromVisit(RoomVisit visit, string web_host)
+    public static PersonRowViewModel FromVisit(RoomVisit visit, string webHost)
     {
         ArgumentNullException.ThrowIfNull(visit);
         var row = new PersonRowViewModel(VisitKey(visit));
-        row.Take(visit, web_host);
+        row.Take(visit, webHost);
         return row;
     }
 
-    public static PersonRowViewModel FromBan(RoomBanEntry ban, string web_host)
+    public static PersonRowViewModel FromBan(RoomBanEntry ban, string webHost)
     {
         ArgumentNullException.ThrowIfNull(ban);
         var row = new PersonRowViewModel(ban.UserId.ToString());
-        row.Take(ban, web_host);
+        row.Take(ban, webHost);
         return row;
     }
 
@@ -106,7 +106,7 @@ public sealed partial class PersonRowViewModel(string key) : ObservableObject
         return visit.Name;
     }
 
-    public void Take(RoomPerson person, string web_host)
+    public void Take(RoomPerson person, string webHost)
     {
         ArgumentNullException.ThrowIfNull(person);
         Name = person.Name;
@@ -130,11 +130,11 @@ public sealed partial class PersonRowViewModel(string key) : ObservableObject
         Motto = person.Motto;
         Head = person.Kind is RoomPersonKind.Pet
             ? null
-            : Picture(HabboUrls.Head(person.Figure, web_host), person.Kind);
+            : Picture(HabboUrls.Head(person.Figure, webHost), person.Kind);
         Search = new PersonSearch(Name, Detail);
     }
 
-    public void Take(RoomVisit visit, string web_host)
+    public void Take(RoomVisit visit, string webHost)
     {
         ArgumentNullException.ThrowIfNull(visit);
         Name = visit.Name;
@@ -151,11 +151,11 @@ public sealed partial class PersonRowViewModel(string key) : ObservableObject
         Person = null;
         Figure = "";
         Motto = "";
-        Head = Picture(HabboUrls.HeadForName(visit.Name, web_host), RoomPersonKind.User);
+        Head = Picture(HabboUrls.HeadForName(visit.Name, webHost), RoomPersonKind.User);
         Search = new PersonSearch(Name, Detail);
     }
 
-    public void Take(RoomBanEntry ban, string web_host)
+    public void Take(RoomBanEntry ban, string webHost)
     {
         ArgumentNullException.ThrowIfNull(ban);
         Name = ban.Name;
@@ -172,7 +172,7 @@ public sealed partial class PersonRowViewModel(string key) : ObservableObject
         Person = null;
         Figure = "";
         Motto = "";
-        Head = Picture(HabboUrls.HeadForName(ban.Name, web_host), RoomPersonKind.User);
+        Head = Picture(HabboUrls.HeadForName(ban.Name, webHost), RoomPersonKind.User);
         Search = new PersonSearch(Name, Detail);
     }
 

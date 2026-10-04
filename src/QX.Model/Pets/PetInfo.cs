@@ -91,7 +91,6 @@ public sealed class PetInfo : IParserComposer<PetInfo>
 
     /// <summary>Reads pet info from a packet.</summary>
     /// <param name="p">The packet to read from.</param>
-    /// <exception cref="UnsupportedClientException">Thrown when the packet is not from the Flash client.</exception>
     /// <exception cref="InvalidDataException">Thrown when the payload is too short or bytes remain after the last field.</exception>
     public static PetInfo Parse(in PacketReader p) =>
         FlashWire.Parse(in p, ParseFlash);
@@ -103,7 +102,7 @@ public sealed class PetInfo : IParserComposer<PetInfo>
         var strings = new RoomObjectReadStringBudget();
         RoomObjectReadWire.RequireRemaining(
             in p,
-            checked(RoomObjectReadWire.IdWidth(p.Client) + sizeof(short)),
+            checked(RoomObjectReadWire.IdWidth + sizeof(short)),
             0,
             nameof(PetInfo));
         var value = new PetInfo
@@ -142,7 +141,6 @@ public sealed class PetInfo : IParserComposer<PetInfo>
 
     /// <summary>Writes the pet info to a packet.</summary>
     /// <param name="p">The packet to write to.</param>
-    /// <exception cref="UnsupportedClientException">Thrown when the packet is not for the Flash client.</exception>
     public void Compose(in PacketWriter p) =>
         FlashWire.Compose(this, in p, ComposeFlash);
 
@@ -199,9 +197,8 @@ public sealed class PetInfo : IParserComposer<PetInfo>
     private static PetInfoWireSnapshot Prepare(PetInfo value, in PacketWriter p)
     {
         ArgumentNullException.ThrowIfNull(value);
-        RoomObjectReadWire.RequireSupportedClient(p.Client);
-        RoomObjectReadWire.RequireWireId(p.Client, value.Id, nameof(Id));
-        RoomObjectReadWire.RequireWireId(p.Client, value.OwnerId, nameof(OwnerId));
+        RoomObjectReadWire.RequireWireId(value.Id, nameof(Id));
+        RoomObjectReadWire.RequireWireId(value.OwnerId, nameof(OwnerId));
         var strings = new RoomObjectReadStringBudget();
         strings.Require(value.Name, in p, nameof(Name));
         strings.Require(value.OwnerName, in p, nameof(OwnerName));

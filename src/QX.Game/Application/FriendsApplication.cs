@@ -240,7 +240,7 @@ internal sealed class FriendsApplication : IApplicationFeature, IFriendOperation
             throw new ArgumentException("The private message cannot be empty.", nameof(request.Message));
         Session session = RequireSession(cancellation_token);
         friends.SendPrivateMessage(request.RecipientId, request.Message, session, cancellation_token);
-        return Result(session, [request.RecipientId]);
+        return Result([request.RecipientId]);
     }
 
     public ValueTask<FriendOperationResult> SendRequest(
@@ -253,7 +253,7 @@ internal sealed class FriendsApplication : IApplicationFeature, IFriendOperation
             throw new ArgumentException("The friend name cannot be empty.", nameof(request.Name));
         Session session = RequireSession(cancellation_token);
         friends.RequestFriend(request.Name, session, cancellation_token);
-        return Result(session, [], request.Name);
+        return Result([], request.Name);
     }
 
     public ValueTask<FriendOperationResult> AcceptRequests(
@@ -264,7 +264,7 @@ internal sealed class FriendsApplication : IApplicationFeature, IFriendOperation
         Id[] request_ids = RequiredIds(request?.RequestIds, nameof(request.RequestIds));
         Session session = RequireSession(cancellation_token);
         friends.AcceptFriendRequests(request_ids, session, cancellation_token);
-        return Result(session, request_ids);
+        return Result(request_ids);
     }
 
     public ValueTask<FriendOperationResult> DeclineRequests(
@@ -275,7 +275,7 @@ internal sealed class FriendsApplication : IApplicationFeature, IFriendOperation
         Id[] request_ids = RequiredIds(request?.RequestIds, nameof(request.RequestIds));
         Session session = RequireSession(cancellation_token);
         friends.DeclineFriendRequests(request_ids, session, cancellation_token);
-        return Result(session, request_ids);
+        return Result(request_ids);
     }
 
     public ValueTask<FriendOperationResult> DeclineAllRequests(
@@ -286,7 +286,7 @@ internal sealed class FriendsApplication : IApplicationFeature, IFriendOperation
         ArgumentNullException.ThrowIfNull(request);
         Session session = RequireSession(cancellation_token);
         friends.DeclineAllFriendRequests(session, cancellation_token);
-        return Result(session, []);
+        return Result([]);
     }
 
     public async ValueTask<PendingFriendRequests> ListRequests(
@@ -322,7 +322,7 @@ internal sealed class FriendsApplication : IApplicationFeature, IFriendOperation
         Id[] friend_ids = RequiredIds(request?.FriendIds, nameof(request.FriendIds));
         Session session = RequireSession(cancellation_token);
         friends.RemoveFriends(friend_ids, session, cancellation_token);
-        return Result(session, friend_ids);
+        return Result(friend_ids);
     }
 
     public ValueTask<FriendOperationResult> Follow(
@@ -333,7 +333,7 @@ internal sealed class FriendsApplication : IApplicationFeature, IFriendOperation
         ArgumentNullException.ThrowIfNull(request);
         Session session = RequireSession(cancellation_token);
         friends.Follow(request.FriendId, session, cancellation_token);
-        return Result(session, [request.FriendId]);
+        return Result([request.FriendId]);
     }
 
     public ValueTask<FriendOperationResult> SetRelationship(
@@ -346,7 +346,7 @@ internal sealed class FriendsApplication : IApplicationFeature, IFriendOperation
             throw new ArgumentOutOfRangeException(nameof(request.Relationship));
         Session session = RequireSession(cancellation_token);
         friends.SetRelationship(request.FriendId, request.Relationship, session, cancellation_token);
-        return Result(session, [request.FriendId]);
+        return Result([request.FriendId]);
     }
 
     public void Dispose()
@@ -431,10 +431,8 @@ internal sealed class FriendsApplication : IApplicationFeature, IFriendOperation
     }
 
     private ValueTask<FriendOperationResult> Result(
-        Session session,
         IReadOnlyList<Id> target_ids,
         string? target_name = null) => ValueTask.FromResult(new FriendOperationResult(
-            session.Client,
             time_provider.GetUtcNow(),
             target_ids,
             target_name));

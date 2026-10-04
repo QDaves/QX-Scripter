@@ -12,8 +12,8 @@ public sealed class MessageContractCatalog
 
     /// <summary>Initializes a new instance of the <see cref="MessageContractCatalog"/> class and validates every contract against the registry.</summary>
     /// <remarks>
-    /// Every contract needs a key that the registry declares as an explicit key, a model type, support for the
-    /// Flash client and a Flash alias. Each key may appear only once.
+    /// Every contract needs a key that the registry declares as an explicit key and a model type. Each key may
+    /// appear only once.
     /// </remarks>
     /// <param name="registry">The message registry to validate the contracts against.</param>
     /// <param name="contracts">The contracts to index.</param>
@@ -56,25 +56,22 @@ public sealed class MessageContractCatalog
     public bool TryGet(MessageKey key, out IMessageContract contract) =>
         _by_key.TryGetValue(key, out contract!);
 
-    /// <summary>Gets the contract for the message with the specified client, direction and name.</summary>
+    /// <summary>Gets the contract for the message with the specified direction and name.</summary>
     /// <remarks>
-    /// The name is matched, ignoring case, against the aliases the registry declares for that direction. A lookup
-    /// for any client other than Flash, or with an empty name, returns <see langword="false"/>.
+    /// The name is matched, ignoring case, against the names the registry declares for that direction. A lookup
+    /// with an empty name returns <see langword="false"/>.
     /// </remarks>
-    /// <param name="client">The client type.</param>
     /// <param name="direction">The direction of the message.</param>
-    /// <param name="name">The message name, such as the Flash alias.</param>
+    /// <param name="name">The message name, such as the Flash name.</param>
     /// <param name="contract">The matching contract, or <see langword="null"/> when there is none.</param>
-    /// <returns><see langword="true"/> when a contract that supports the client matches; otherwise, <see langword="false"/>.</returns>
+    /// <returns><see langword="true"/> when a contract matches; otherwise, <see langword="false"/>.</returns>
     public bool TryGet(
-        ClientType client,
-        Direction direction,
+        MessageDirection direction,
         string name,
         out IMessageContract contract)
     {
-        if (Registry.TryGet(client, direction, name, out MessageDescriptor descriptor) &&
-            _by_key.TryGetValue(descriptor.Key, out IMessageContract? resolved) &&
-            resolved.Supports(client))
+        if (Registry.TryGet(direction, name, out MessageDescriptor descriptor) &&
+            _by_key.TryGetValue(descriptor.Key, out IMessageContract? resolved))
         {
             contract = resolved;
             return true;
@@ -113,10 +110,5 @@ public sealed class MessageContractCatalog
             throw new InvalidDataException($"Message contract '{contract.Key}' is not declared in the message registry.");
         if (!descriptor.HasExplicitKey)
             throw new InvalidDataException($"Message contract '{contract.Key}' cannot use a generated legacy key.");
-        if (!contract.Supports(ClientType.Flash) || descriptor.NameFor(ClientType.Flash) is null)
-        {
-            throw new InvalidDataException(
-                $"Message contract '{contract.Key}' requires a matching Flash alias.");
-        }
     }
 }

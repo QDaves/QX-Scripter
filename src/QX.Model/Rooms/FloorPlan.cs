@@ -4,9 +4,9 @@ namespace Qx.Model;
 
 /// <summary>Represents the static floor layout of a room.</summary>
 /// <remarks>
-/// The map is a block of text with one line per row. Each character is a tile height, <c>0</c> to
-/// <c>9</c> and then <c>a</c> to <c>z</c> (or <c>A</c> to <c>Z</c>) for 10 to 35, and <c>x</c> or
-/// <c>X</c> marks a spot with no floor.
+/// Received as the Flash <c>FloorHeightmap</c> message. The map is a block of text with one line
+/// per row. Each character is a tile height, <c>0</c> to <c>9</c> and then <c>a</c> to <c>z</c>
+/// (or <c>A</c> to <c>Z</c>) for 10 to 35, and <c>x</c> or <c>X</c> marks a spot with no floor.
 /// </remarks>
 public sealed class FloorPlan : IParserComposer<FloorPlan>
 {
@@ -74,7 +74,6 @@ public sealed class FloorPlan : IParserComposer<FloorPlan>
 
     /// <summary>Reads a floor plan from a packet.</summary>
     /// <param name="p">The packet to read from.</param>
-    /// <exception cref="UnsupportedClientException">Thrown when the packet is not from the Flash client.</exception>
     public static FloorPlan Parse(in PacketReader p) =>
         FlashWire.Parse(in p, ParseFlash);
 
@@ -102,7 +101,6 @@ public sealed class FloorPlan : IParserComposer<FloorPlan>
 
     /// <summary>Writes the floor plan to a packet.</summary>
     /// <param name="p">The packet to write to.</param>
-    /// <exception cref="UnsupportedClientException">Thrown when the packet is not for the Flash client.</exception>
     /// <exception cref="OverflowException">Thrown when there are more than 65535 hidden areas.</exception>
     public void Compose(in PacketWriter p) =>
         FlashWire.Compose(this, in p, ComposeFlash);

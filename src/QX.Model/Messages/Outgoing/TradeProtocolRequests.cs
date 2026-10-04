@@ -45,9 +45,9 @@ public sealed record AddTradeItemsRequest : IParserComposer<AddTradeItemsRequest
     private IReadOnlyList<Id> _item_ids = Array.Empty<Id>();
 
     /// <summary>Initializes a new instance of the <see cref="AddTradeItemsRequest"/> record.</summary>
-    /// <param name="item_ids">The ids of the inventory items to offer.</param>
-    /// <exception cref="ArgumentNullException">Thrown when <paramref name="item_ids"/> is <see langword="null"/>.</exception>
-    public AddTradeItemsRequest(IReadOnlyList<Id> item_ids) => ItemIds = item_ids;
+    /// <param name="itemIds">The ids of the inventory items to offer.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="itemIds"/> is <see langword="null"/>.</exception>
+    public AddTradeItemsRequest(IReadOnlyList<Id> itemIds) => ItemIds = itemIds;
 
     /// <summary>Gets the ids of the inventory items to offer.</summary>
     /// <remarks>The list is copied when set.</remarks>

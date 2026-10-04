@@ -3,6 +3,7 @@ using Qx.Messages;
 namespace Qx.Model;
 
 /// <summary>Represents a floor region that an area-hide furni hides, as listed in the floor plan.</summary>
+/// <remarks>Received as the Flash <c>AreaHide</c> message and embedded in <c>FloorHeightmap</c>.</remarks>
 /// <param name="FurniId">The identifier of the furni that defines the region.</param>
 /// <param name="On">Whether the hiding is switched on.</param>
 /// <param name="RootX">The x coordinate of the region's corner tile.</param>
@@ -16,7 +17,6 @@ public readonly record struct AreaHideData(
 {
     /// <summary>Reads an area-hide entry from a packet.</summary>
     /// <param name="p">The packet to read from.</param>
-    /// <exception cref="UnsupportedClientException">Thrown when the packet is not from the Flash client.</exception>
     public static AreaHideData Parse(in PacketReader p) =>
         FlashWire.Parse(in p, ParseFlash);
 
@@ -25,7 +25,6 @@ public readonly record struct AreaHideData(
 
     /// <summary>Writes the area-hide entry to a packet.</summary>
     /// <param name="p">The packet to write to.</param>
-    /// <exception cref="UnsupportedClientException">Thrown when the packet is not for the Flash client.</exception>
     public void Compose(in PacketWriter p) =>
         FlashWire.Compose(this, in p, ComposeFlash);
 

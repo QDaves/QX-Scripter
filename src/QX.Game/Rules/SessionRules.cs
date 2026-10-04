@@ -145,7 +145,7 @@ public sealed partial class SessionRules : IDisposable
     /// The path of the JSON settings file. Remembered passwords are stored in
     /// <c>passwords.json</c> in the same directory.
     /// </param>
-    /// <param name="shift_pressed">
+    /// <param name="shiftPressed">
     /// A callback that reports whether the shift key is held, or <see langword="null"/> when it
     /// cannot be read, in which case the shift-click rules never fire.
     /// </param>
@@ -161,14 +161,14 @@ public sealed partial class SessionRules : IDisposable
         GameState game,
         IApplicationRuntime application,
         string path,
-        Func<bool>? shift_pressed = null)
+        Func<bool>? shiftPressed = null)
     {
         _interceptor = interceptor ?? throw new ArgumentNullException(nameof(interceptor));
         _application = application ?? throw new ArgumentNullException(nameof(application));
         ArgumentException.ThrowIfNullOrWhiteSpace(path);
         _path = Path.GetFullPath(path);
         _passwords_path = Path.Combine(Path.GetDirectoryName(_path)!, "passwords.json");
-        _shift_pressed = shift_pressed ?? (() => false);
+        _shift_pressed = shiftPressed ?? (() => false);
         Load();
         LoadPasswords();
         Game = game ?? throw new ArgumentNullException(nameof(game));
@@ -448,24 +448,6 @@ public sealed partial class SessionRules : IDisposable
         (ReturnHandItems ? 1 : 0) + (KeepDirection ? 1 : 0);
 
     /// <summary>
-    /// Gets the display name of the connected client, or <c>"not connected"</c> when there is no session.
-    /// </summary>
-    /// <exception cref="UnsupportedClientException">Thrown when the session uses a client other than Flash.</exception>
-    public string ClientName
-    {
-        get
-        {
-            ClientType? client = _interceptor.Session?.Client;
-            return client switch
-            {
-                null or ClientType.None => "not connected",
-                ClientType.Flash => "Flash",
-                _ => throw new UnsupportedClientException(client.Value)
-            };
-        }
-    }
-
-    /// <summary>
     /// Binds every rule to the interceptor and starts the anti-idle timer.
     /// </summary>
     /// <remarks>
@@ -556,7 +538,7 @@ public sealed partial class SessionRules : IDisposable
                 intercept.Block();
         });
 
-        OutOf(MessageContracts.Room.FloorItemUse, (message, intercept) =>
+        OutOf(MessageContracts.Room.FloorItem.Use, (message, intercept) =>
         {
             if (ShiftClickedFurni(intercept, message.ItemId))
                 return;
@@ -564,7 +546,7 @@ public sealed partial class SessionRules : IDisposable
                 intercept.Block();
         });
 
-        OutOf(MessageContracts.Room.WallItemUse, (message, intercept) =>
+        OutOf(MessageContracts.Room.WallItem.Use, (message, intercept) =>
         {
             if (ShiftClickedFurni(intercept, message.ItemId))
                 return;
@@ -595,7 +577,7 @@ public sealed partial class SessionRules : IDisposable
                     out Header shout))
                 return;
 
-            var louder = new Packet(shout, intercept.Packet.Client)
+            var louder = new Packet(shout)
             {
                 Context = intercept.Packet.Context
             };
@@ -662,7 +644,7 @@ public sealed partial class SessionRules : IDisposable
             if (!HideAvatars)
                 return;
 
-            var packet = new Packet(intercept.Packet.Header, intercept.Packet.Client)
+            var packet = new Packet(intercept.Packet.Header)
             {
                 Context = intercept.Packet.Context
             };
@@ -684,7 +666,7 @@ public sealed partial class SessionRules : IDisposable
                 int wall_height = reader.ReadInt();
                 string map = reader.ReadString();
                 ReadOnlySpan<byte> tail = reader.ReadSpan(reader.Available).ToArray();
-                var packet = new Packet(intercept.Packet.Header, intercept.Packet.Client)
+                var packet = new Packet(intercept.Packet.Header)
                 {
                     Context = intercept.Packet.Context
                 };
@@ -697,7 +679,7 @@ public sealed partial class SessionRules : IDisposable
             });
         });
 
-        In<Heightmap>(MessageKeys.Room.Heightmap.Snapshot, (map, intercept) =>
+        In(MessageContracts.Room.Heightmap.Snapshot, (map, intercept) =>
         {
             if (!FlattenFloor)
                 return;
@@ -705,7 +687,7 @@ public sealed partial class SessionRules : IDisposable
             Try(() =>
             {
                 var flat = new Heightmap(map.Width, [.. Flattened(map)]);
-                var packet = new Packet(intercept.Packet.Header, intercept.Packet.Client)
+                var packet = new Packet(intercept.Packet.Header)
                 {
                     Context = intercept.Packet.Context
                 };
@@ -736,7 +718,7 @@ public sealed partial class SessionRules : IDisposable
                 return;
 
             _password_room = key;
-            var packet = new Packet(intercept.Packet.Header, intercept.Packet.Client)
+            var packet = new Packet(intercept.Packet.Header)
             {
                 Context = intercept.Packet.Context
             };
@@ -815,9 +797,7 @@ public sealed partial class SessionRules : IDisposable
                 if (!ReturnHandItems || Game is not { } game)
                     return;
 
-                Avatar? giver = intercept.Packet.Client == ClientType.Flash
-                    ? game.Room.AvatarByIndex(checked((int)received.GiverId)) as User
-                    : game.Room.AvatarById(received.GiverId);
+                Avatar? giver = game.Room.AvatarByIndex(checked((int)received.GiverId)) as User;
                 if (giver is { } avatar)
                 {
                     game.RoomControlOperations?.PassHandItem(
@@ -1230,7 +1210,7 @@ public sealed partial class SessionRules : IDisposable
         OutOf<T>(name, (message, _) => handler(message));
 
     private void OutOf<T>(string name, Action<T, Intercept> handler) where T : IParserComposer<T> =>
-        Bind(Direction.Out, name, intercept =>
+        Bind(MessageDirection.Out, name, intercept =>
         {
             T message;
             try
@@ -1267,7 +1247,7 @@ public sealed partial class SessionRules : IDisposable
 
     /// <summary>Swallows one incoming message whenever the switch behind it is on.</summary>
     private void Swallow(string name, Func<bool> when) =>
-        Bind(Direction.In, name, intercept =>
+        Bind(MessageDirection.In, name, intercept =>
         {
             if (when())
                 intercept.Block();
@@ -1369,19 +1349,10 @@ public sealed partial class SessionRules : IDisposable
     /// <summary>Unbinds every rule and stops the anti-idle timer without saving the settings.</summary>
     public void Dispose() => Unbind();
 
-    private void Out(string name, Action<Intercept> handler) => Bind(Direction.Out, name, handler);
+    private void Out(string name, Action<Intercept> handler) => Bind(MessageDirection.Out, name, handler);
 
     private void In(string name, Action handler) =>
-        Bind(Direction.In, name, _ => handler());
-
-    private void In<T>(string name, Action<T> handler) where T : IParserComposer<T> =>
-        In<T>(name, (message, _) => handler(message));
-
-    private void In<T>(string name, Action<T, Intercept> handler) where T : IParserComposer<T> =>
-        Bind(Direction.In, name, Parsed(handler));
-
-    private void In<T>(MessageKey key, Action<T, Intercept> handler) where T : IParserComposer<T> =>
-        Bind(key, Parsed(handler));
+        Bind(MessageDirection.In, name, _ => handler());
 
     private void In<T>(MessageContract<T> contract, Action<T> handler)
         where T : IParserComposer<T> =>
@@ -1403,25 +1374,6 @@ public sealed partial class SessionRules : IDisposable
             }
         });
 
-    private static Action<Intercept> Parsed<T>(Action<T, Intercept> handler) where T : IParserComposer<T> =>
-        intercept =>
-        {
-            T message;
-            try
-            {
-                message = intercept.Packet.Reader().Parse<T>();
-            }
-            catch
-            {
-                return;
-            }
-
-            handler(message, intercept);
-        };
-
-    private void Bind(Direction direction, string name, Action<Intercept> handler)
-        => Bind(ClientType.None, direction, name, handler);
-
     private void Bind(MessageKey key, Action<Intercept> handler)
     {
         try
@@ -1433,12 +1385,12 @@ public sealed partial class SessionRules : IDisposable
         }
     }
 
-    private void Bind(ClientType client, Direction direction, string name, Action<Intercept> handler)
+    private void Bind(MessageDirection direction, string name, Action<Intercept> handler)
     {
         try
         {
             _bindings.Add(_interceptor.Intercept(
-                new Identifier(client, direction, name),
+                new Identifier(direction, name),
                 handler));
         }
         catch

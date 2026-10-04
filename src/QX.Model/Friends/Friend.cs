@@ -56,7 +56,6 @@ public sealed class Friend : IParserComposer<Friend>
 
     /// <summary>Reads a friend from a packet.</summary>
     /// <param name="p">The packet to read from.</param>
-    /// <exception cref="UnsupportedClientException">Thrown when the packet is not from the Flash client.</exception>
     public static Friend Parse(in PacketReader p) =>
         FlashWire.Parse(in p, ParseFlash);
 
@@ -83,7 +82,6 @@ public sealed class Friend : IParserComposer<Friend>
 
     /// <summary>Writes the friend to a packet.</summary>
     /// <param name="p">The packet to write to.</param>
-    /// <exception cref="UnsupportedClientException">Thrown when the packet is not for the Flash client.</exception>
     public void Compose(in PacketWriter p) =>
         FlashWire.Compose(this, in p, ComposeFlash);
 

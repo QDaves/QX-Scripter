@@ -104,20 +104,20 @@ public readonly record struct Area : IEnumerable<Tile>
     }
 
     /// <summary>Initializes a new instance of the <see cref="Area"/> struct.</summary>
-    /// <param name="Origin">The corner tile with the lowest x and y coordinates.</param>
-    /// <param name="Width">The number of tiles along x.</param>
-    /// <param name="Length">The number of tiles along y.</param>
+    /// <param name="origin">The corner tile with the lowest x and y coordinates.</param>
+    /// <param name="width">The number of tiles along x.</param>
+    /// <param name="length">The number of tiles along y.</param>
     /// <exception cref="ArgumentOutOfRangeException">
-    /// Thrown when <paramref name="Width"/> or <paramref name="Length"/> is 0 or less, or the area
+    /// Thrown when <paramref name="width"/> or <paramref name="length"/> is 0 or less, or the area
     /// would extend past the coordinate range.
     /// </exception>
-    public Area(Tile Origin, int Width, int Length)
+    public Area(Tile origin, int width, int length)
     {
-        ValidateWidth(Origin, Width);
-        ValidateLength(Origin, Length);
-        _origin = Origin;
-        _width = Width;
-        _length = Length;
+        ValidateWidth(origin, width);
+        ValidateLength(origin, length);
+        _origin = origin;
+        _width = width;
+        _length = length;
     }
 
     /// <summary>Initializes a new instance of the <see cref="Area"/> struct between two corners at height 0.</summary>
@@ -156,14 +156,14 @@ public readonly record struct Area : IEnumerable<Tile>
     }
 
     /// <summary>Deconstructs the area into its origin and size.</summary>
-    /// <param name="Origin">The corner tile with the lowest x and y coordinates.</param>
-    /// <param name="Width">The number of tiles along x.</param>
-    /// <param name="Length">The number of tiles along y.</param>
-    public void Deconstruct(out Tile Origin, out int Width, out int Length)
+    /// <param name="origin">The corner tile with the lowest x and y coordinates.</param>
+    /// <param name="width">The number of tiles along x.</param>
+    /// <param name="length">The number of tiles along y.</param>
+    public void Deconstruct(out Tile origin, out int width, out int length)
     {
-        Origin = this.Origin;
-        Width = this.Width;
-        Length = this.Length;
+        origin = Origin;
+        width = Width;
+        length = Length;
     }
 
     /// <summary>Gets whether a tile lies inside the area.</summary>

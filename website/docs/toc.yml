@@ -24,12 +24,20 @@
       href: movement.md
     - name: Waiting and room scope
       href: waiting.md
+    - name: Shopping
+      href: shopping.md
+    - name: Marketplace
+      href: marketplace.md
+    - name: Wired values
+      href: wired.md
     - name: Variable Fx
       href: variable-fx.md
     - name: Game data
       href: game-data.md
     - name: Packets
       href: packets.md
+    - name: Application layer
+      href: application.md
 - name: Panels
   items:
     - name: Panels
@@ -44,3 +52,7 @@
       href: cli.md
     - name: MCP
       href: mcp.md
+- name: Release notes
+  items:
+    - name: Migrating scripts
+      href: migration.md

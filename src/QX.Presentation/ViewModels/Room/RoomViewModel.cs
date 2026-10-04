@@ -149,13 +149,13 @@ public sealed partial class RoomViewModel : PageViewModel
         return cleared;
     }
 
-    protected override async Task OnActivatedAsync(CancellationToken cancellation_token)
+    protected override async Task OnActivatedAsync(CancellationToken cancellationToken)
     {
-        _context.Lifetime = cancellation_token;
+        _context.Lifetime = cancellationToken;
         _snapshots.Start();
         Furni.Start();
         Bans.Start();
-        await IdentifyAsync(cancellation_token);
+        await IdentifyAsync(cancellationToken);
     }
 
     protected override void OnDeactivated()

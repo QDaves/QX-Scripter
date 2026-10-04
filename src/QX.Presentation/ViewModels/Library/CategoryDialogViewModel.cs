@@ -15,11 +15,11 @@ public sealed partial class CategoryDialogViewModel : DialogViewModel<ScriptMeta
 
     readonly string _script;
 
-    public CategoryDialogViewModel(string script_name, ScriptMeta current, IReadOnlyList<string> categories)
+    public CategoryDialogViewModel(string scriptName, ScriptMeta current, IReadOnlyList<string> categories)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(script_name);
+        ArgumentException.ThrowIfNullOrWhiteSpace(scriptName);
         ArgumentNullException.ThrowIfNull(current);
-        _script = script_name;
+        _script = scriptName;
         Categories = categories ?? throw new ArgumentNullException(nameof(categories));
         Text = current.Category?.Trim() ?? "";
     }

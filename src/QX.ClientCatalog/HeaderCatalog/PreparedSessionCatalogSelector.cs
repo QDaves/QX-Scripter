@@ -6,7 +6,7 @@ namespace Qx.ClientCatalog;
 
 public sealed class PreparedSessionCatalogSelector : ISessionCatalogSelector
 {
-    readonly Func<ClientType, IReadOnlyList<PreparedHeaderCatalog>> _current_catalogs;
+    readonly Func<IReadOnlyList<PreparedHeaderCatalog>> _current_catalogs;
     readonly ConcurrentDictionary<string, MessageCatalog> _converted = new(StringComparer.Ordinal);
     readonly MessageRegistry? _registry;
 
@@ -27,7 +27,7 @@ public sealed class PreparedSessionCatalogSelector : ISessionCatalogSelector
     }
 
     internal PreparedSessionCatalogSelector(
-        Func<ClientType, IReadOnlyList<PreparedHeaderCatalog>> current_catalogs,
+        Func<IReadOnlyList<PreparedHeaderCatalog>> current_catalogs,
         MessageRegistry? registry)
     {
         _current_catalogs = current_catalogs ?? throw new ArgumentNullException(nameof(current_catalogs));
@@ -37,11 +37,7 @@ public sealed class PreparedSessionCatalogSelector : ISessionCatalogSelector
     public SessionCatalogBinding? Select(SessionCatalogRequest request)
     {
         ArgumentNullException.ThrowIfNull(request);
-        PreparedHeaderCatalog? selected = request.Client switch
-        {
-            ClientCatalogClients.Flash => SelectFlash(request.HotelVersion),
-            _ => null
-        };
+        PreparedHeaderCatalog? selected = SelectFlash(request.HotelVersion);
         if (selected is null)
             return null;
 
@@ -49,11 +45,9 @@ public sealed class PreparedSessionCatalogSelector : ISessionCatalogSelector
         catalog = EnrichFlashCatalog(request, selected, catalog, out CatalogSupplement? supplement);
         string client_version = selected.Catalog.ClientBuildIds[0];
         return new SessionCatalogBinding(
-            request.Client,
             catalog,
             new CatalogProvenance(
                 CatalogOrigin.ClientExtraction,
-                request.Client,
                 selected.SourcePath,
                 client_version,
                 selected.Key.SourceSha256),
@@ -71,7 +65,6 @@ public sealed class PreparedSessionCatalogSelector : ISessionCatalogSelector
         MessageCatalog? fallback = fallback_binding.Catalog;
         if (_registry is null ||
             fallback_binding.Provenance.Origin != CatalogOrigin.GEarthHandshake ||
-            fallback_binding.Client != ClientCatalogClients.Flash ||
             fallback is null ||
             !string.Equals(
                 fallback_binding.Provenance.ClientVersion,
@@ -99,7 +92,6 @@ public sealed class PreparedSessionCatalogSelector : ISessionCatalogSelector
             string name = FlashHeaderNameResolver.Strip(header.Name);
             if (IsObfuscatedFlashName(name) ||
                 !_registry.TryGet(
-                    ClientCatalogClients.Flash,
                     header.Direction,
                     name,
                     out MessageDescriptor descriptor) ||
@@ -129,7 +121,7 @@ public sealed class PreparedSessionCatalogSelector : ISessionCatalogSelector
     static bool DescriptorResolved(
         MessageCatalog catalog,
         MessageDescriptor descriptor) =>
-        descriptor.NamesFor(ClientCatalogClients.Flash).Any(name =>
+        descriptor.Names.Any(name =>
             catalog.TryGetIds(descriptor.Direction, name, out IReadOnlyList<short> ids) &&
             ids.Count != 0);
 
@@ -155,7 +147,7 @@ public sealed class PreparedSessionCatalogSelector : ISessionCatalogSelector
 
     readonly record struct FlashAlias(
         MessageDescriptor Descriptor,
-        Direction Direction,
+        MessageDirection Direction,
         int Id,
         string Name);
 
@@ -164,7 +156,7 @@ public sealed class PreparedSessionCatalogSelector : ISessionCatalogSelector
         if (string.IsNullOrEmpty(hotel_version))
             return null;
         PreparedHeaderCatalog[] matches = DistinctSources(
-                _current_catalogs(ClientCatalogClients.Flash),
+                _current_catalogs(),
                 true)
             .Where(prepared =>
                 prepared.Catalog.ClientBuildIds.Count == 1 &&

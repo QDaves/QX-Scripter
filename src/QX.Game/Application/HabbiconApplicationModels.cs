@@ -105,7 +105,6 @@ public sealed record HabbiconRoomUseView(int RoomIndex, int HabbiconId);
 /// cleared for a new or closed hotel session.
 /// </remarks>
 /// <param name="Connected">Whether the snapshot belongs to the active hotel session.</param>
-/// <param name="Client">The client type of the hotel session, or <see langword="null"/> when <paramref name="Connected"/> is <see langword="false"/>.</param>
 /// <param name="SessionGeneration">The generation of the hotel session the snapshot belongs to.</param>
 /// <param name="Revision">The habbicon state revision, which increases with every change.</param>
 /// <param name="ShopRevision">The revision of the habbicon shop, which increases each time the shop is received.</param>
@@ -121,7 +120,6 @@ public sealed record HabbiconRoomUseView(int RoomIndex, int HabbiconId);
 /// <param name="LastRoomUse">The last habbicon use seen in the room, or <see langword="null"/> when none has been seen.</param>
 public sealed record HabbiconStateView(
     bool Connected,
-    ClientType? Client,
     long SessionGeneration,
     long Revision,
     long ShopRevision,
@@ -162,7 +160,6 @@ public sealed record HabbiconCollectionPageRequest(
 /// <summary>Represents a page of habbicon collections read from one snapshot.</summary>
 /// <remarks>Returned by the <c>habbicons.collections.list</c> query. The collections keep the order in which the server sent them.</remarks>
 /// <param name="Connected">Whether the snapshot belongs to the active hotel session.</param>
-/// <param name="Client">The client type of the hotel session, or <see langword="null"/> when <paramref name="Connected"/> is <see langword="false"/>.</param>
 /// <param name="SessionGeneration">The generation of the hotel session the snapshot belongs to.</param>
 /// <param name="StateRevision">The habbicon state revision, which increases with every change.</param>
 /// <param name="ShopRevision">The revision of the habbicon shop, which increases each time the shop is received.</param>
@@ -175,7 +172,6 @@ public sealed record HabbiconCollectionPageRequest(
 /// <param name="Collections">The collections in the page.</param>
 public sealed record HabbiconCollectionPage(
     bool Connected,
-    ClientType? Client,
     long SessionGeneration,
     long StateRevision,
     long ShopRevision,
@@ -216,7 +212,6 @@ public sealed record HabbiconEntryPageRequest(
 /// collection in the order the server sent them, with the user's state applied.
 /// </remarks>
 /// <param name="Connected">Whether the snapshot belongs to the active hotel session.</param>
-/// <param name="Client">The client type of the hotel session, or <see langword="null"/> when <paramref name="Connected"/> is <see langword="false"/>.</param>
 /// <param name="SessionGeneration">The generation of the hotel session the snapshot belongs to.</param>
 /// <param name="StateRevision">The habbicon state revision, which increases with every change.</param>
 /// <param name="ShopRevision">The revision of the habbicon shop, which increases each time the shop is received.</param>
@@ -229,7 +224,6 @@ public sealed record HabbiconEntryPageRequest(
 /// <param name="Entries">The habbicons in the page.</param>
 public sealed record HabbiconEntryPage(
     bool Connected,
-    ClientType? Client,
     long SessionGeneration,
     long StateRevision,
     long ShopRevision,
@@ -269,7 +263,6 @@ public sealed record HabbiconShopRefreshRequest(
 
 /// <summary>Represents the result of a habbicon shop refresh.</summary>
 /// <remarks>Returned by the <c>habbicons.shop.refresh</c> operation.</remarks>
-/// <param name="Client">The client type of the hotel session.</param>
 /// <param name="RefreshedAtUtc">The UTC time the result was created.</param>
 /// <param name="ObservedAtUtc">The UTC time the shop snapshot was observed.</param>
 /// <param name="SessionGeneration">The generation of the hotel session the refresh ran in.</param>
@@ -281,7 +274,6 @@ public sealed record HabbiconShopRefreshRequest(
 /// <param name="FirstCollections">The first page of collections from the refreshed snapshot.</param>
 /// <param name="FirstEntries">The first page of habbicons from the refreshed snapshot.</param>
 public sealed record HabbiconShopRefreshResult(
-    ClientType Client,
     DateTimeOffset RefreshedAtUtc,
     DateTimeOffset ObservedAtUtc,
     long SessionGeneration,
@@ -310,7 +302,6 @@ public sealed record HabbiconInfoRefreshRequest(
 
 /// <summary>Represents the result of a habbicon details refresh.</summary>
 /// <remarks>Returned by the <c>habbicons.info.refresh</c> operation.</remarks>
-/// <param name="Client">The client type of the hotel session.</param>
 /// <param name="RefreshedAtUtc">The UTC time the result was created.</param>
 /// <param name="ObservedAtUtc">The UTC time the details were observed.</param>
 /// <param name="SessionGeneration">The generation of the hotel session the refresh ran in.</param>
@@ -320,7 +311,6 @@ public sealed record HabbiconInfoRefreshRequest(
 /// <param name="MessagesDispatched">The number of request messages the call sent.</param>
 /// <param name="Habbicon">The habbicon details the server returned.</param>
 public sealed record HabbiconInfoRefreshResult(
-    ClientType Client,
     DateTimeOffset RefreshedAtUtc,
     DateTimeOffset ObservedAtUtc,
     long SessionGeneration,
@@ -390,12 +380,10 @@ public sealed record HabbiconUnfavoriteActionRequest(
 /// Returned by the <c>habbicons.buy</c>, <c>habbicons.collection.buy</c>, <c>habbicons.claim</c>,
 /// <c>habbicons.favorite</c> and <c>habbicons.unfavorite</c> operations.
 /// </remarks>
-/// <param name="Client">The client type of the hotel session.</param>
 /// <param name="DispatchedAtUtc">The UTC time the request was sent.</param>
 /// <param name="SessionGeneration">The generation of the hotel session the request was sent in.</param>
 /// <param name="MessagesDispatched">The number of messages sent.</param>
 public sealed record HabbiconDispatchResult(
-    ClientType Client,
     DateTimeOffset DispatchedAtUtc,
     long SessionGeneration,
     int MessagesDispatched);
@@ -429,7 +417,7 @@ public sealed record HabbiconStatusView(int HabbiconId, int State, bool Gained);
 /// <remarks>Published by the <c>habbicons.changed</c> event.</remarks>
 /// <param name="Kind">The kind of change.</param>
 /// <param name="ChangedAtUtc">The UTC time the change was published.</param>
-/// <param name="Client">The client type of the hotel session, or <see langword="null"/> when there is no session.</param>
+/// <param name="Connected">Whether a hotel session is active.</param>
 /// <param name="SessionGeneration">The generation of the hotel session the change belongs to.</param>
 /// <param name="Revision">The habbicon state revision after the change.</param>
 /// <param name="SourceRevision">The revision of the part that changed, or <paramref name="Revision"/> for <see cref="HabbiconChangeKind.Reset"/>.</param>
@@ -441,7 +429,7 @@ public sealed record HabbiconStatusView(int HabbiconId, int State, bool Gained);
 public sealed record HabbiconChanged(
     HabbiconChangeKind Kind,
     DateTimeOffset ChangedAtUtc,
-    ClientType? Client,
+    bool Connected,
     long SessionGeneration,
     long Revision,
     long SourceRevision,

@@ -42,8 +42,8 @@ public static partial class SnapshotFactory
     /// Wire capabilities the connected build lacks; <see langword="null"/> is treated as none.
     /// </param>
     /// <returns>
-    /// The connection snapshot. With no session the client, host, port, hotel version and
-    /// client identifier are all <see langword="null"/>.
+    /// The connection snapshot. With no session the host, port, hotel version and client identifier
+    /// are all <see langword="null"/>.
     /// </returns>
     public static ConnectionSnapshot Connection(
         Session? session,
@@ -59,7 +59,6 @@ public static partial class SnapshotFactory
             wireProfileAnalyzed,
             wireProfileExact,
             missingWireCapabilities?.ToArray() ?? [],
-            session?.Client.ToString(),
             session?.Host,
             session?.Port,
             session?.HotelVersion,
@@ -992,7 +991,7 @@ public static partial class SnapshotFactory
     /// definition catalog.
     /// </summary>
     /// <param name="item">The inventory item snapshot to update.</param>
-    /// <param name="furni_data">
+    /// <param name="furniData">
     /// The furni definition catalog, or <see langword="null"/> to clear the definition.
     /// </param>
     /// <returns>A copy of <paramref name="item"/> with its definition replaced.</returns>
@@ -1002,7 +1001,7 @@ public static partial class SnapshotFactory
     /// </exception>
     public static InventoryItemSnapshot WithDefinition(
         InventoryItemSnapshot item,
-        FurniData? furni_data)
+        FurniData? furniData)
     {
         ArgumentNullException.ThrowIfNull(item);
         if (!Enum.TryParse(item.Type, false, out ItemType item_type) ||
@@ -1012,7 +1011,7 @@ public static partial class SnapshotFactory
         }
         return item with
         {
-            Definition = Definition(furni_data?.GetInfo(item_type, item.Kind))
+            Definition = Definition(furniData?.GetInfo(item_type, item.Kind))
         };
     }
 

@@ -1,6 +1,6 @@
 using System.Diagnostics;
 using Qx.Game.Snapshots;
-using Qx.Scripting;
+using Qx.Scripting.Hosting;
 
 namespace Qx.Hosting;
 

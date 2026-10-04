@@ -6,28 +6,12 @@ internal static class RoomObjectReadWire
 {
     public const int MaximumCollectionCount = ushort.MaxValue;
     public const int MaximumStringBytes = 16 * 1024 * 1024;
-
-    public static void RequireSupportedClient(ClientType client)
-    {
-        if (client is not (ClientType.Flash))
-            throw new UnsupportedClientException(client);
-    }
-
-    public static int IdWidth(ClientType client) => client switch
-    {
-        ClientType.Flash => sizeof(int),
-        _ => throw new UnsupportedClientException(client)
-    };
-
-    public static int CountWidth(ClientType client) => client switch
-    {
-        ClientType.Flash => sizeof(int),
-        _ => throw new UnsupportedClientException(client)
-    };
+    public const int IdWidth = sizeof(int);
+    public const int CountWidth = sizeof(int);
 
     public static Id ReadRootId(in PacketReader p, string name)
     {
-        RequireRemaining(in p, IdWidth(p.Client), 0, name);
+        RequireRemaining(in p, IdWidth, 0, name);
         Id value = p.ReadId();
         RequireEmpty(in p, name);
         return value;
@@ -37,8 +21,7 @@ internal static class RoomObjectReadWire
         where T : class
     {
         ArgumentNullException.ThrowIfNull(value);
-        RequireSupportedClient(p.Client);
-        RequireWireId(p.Client, id, nameof(id));
+        RequireWireId(id, nameof(id));
         p.WriteId(id);
     }
 
@@ -48,12 +31,8 @@ internal static class RoomObjectReadWire
         int trailing_bytes,
         string name)
     {
-        RequireRemaining(in p, CountWidth(p.Client), trailing_bytes, name);
-        int count = p.Client switch
-        {
-            ClientType.Flash => p.ReadInt(),
-            _ => throw new UnsupportedClientException(p.Client)
-        };
+        RequireRemaining(in p, CountWidth, trailing_bytes, name);
+        int count = p.ReadInt();
         if (count < 0 || count > MaximumCollectionCount)
             throw new InvalidDataException($"{name} count {count} is outside the supported range.");
         int available = p.Available - trailing_bytes;
@@ -64,7 +43,6 @@ internal static class RoomObjectReadWire
 
     public static void WriteCount(int count, in PacketWriter p)
     {
-        RequireSupportedClient(p.Client);
         if (count is < 0 or > MaximumCollectionCount)
             throw new InvalidDataException($"Collection count {count} is outside the supported range.");
         p.WriteInt(count);
@@ -78,9 +56,8 @@ internal static class RoomObjectReadWire
         return Array.AsReadOnly(values.ToArray());
     }
 
-    public static void RequireWireId(ClientType client, Id value, string name)
+    public static void RequireWireId(Id value, string name)
     {
-        RequireSupportedClient(client);
         _ = checked((int)(long)value);
     }
 

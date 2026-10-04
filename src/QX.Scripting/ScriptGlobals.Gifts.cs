@@ -1,4 +1,5 @@
 using Qx.Model.Messages.Incoming;
+using Qx.Model.Messages.Outgoing;
 using Qx;
 using Qx.Game.Application;
 
@@ -48,14 +49,12 @@ public partial class ScriptGlobals
     /// <summary>
     /// Gets the last club gift notification, or <see langword="null"/> when none has arrived.
     /// </summary>
-    /// <remarks>Only the Flash client receives this notification.</remarks>
     public ClubGiftNotification? LatestClubGiftNotification =>
     Gifts.LatestNotification;
 
     /// <summary>
     /// Gets the new user gift offer, or <see langword="null"/> when it has not been received.
     /// </summary>
-    /// <remarks>Only the Flash client receives this offer.</remarks>
     public NuxGiftOffer? NewUserGiftOffer => Gifts.NewUserOffer;
 
     /// <summary>
@@ -63,8 +62,8 @@ public partial class ScriptGlobals
     /// </summary>
     /// <remarks>
     /// It holds the answers to <see cref="RequestOfferGiftability(int)"/> for up to 500 offers;
-    /// the oldest answer is dropped when a new offer would exceed the limit. Only the Flash client
-    /// receives these answers. Every read returns a new copy.
+    /// the oldest answer is dropped when a new offer would exceed the limit. Every read returns a new
+    /// copy.
     /// </remarks>
     public IReadOnlyDictionary<int, bool> OfferGiftability =>
         Gifts.OfferGiftability;
@@ -88,25 +87,10 @@ public partial class ScriptGlobals
     /// arrive through <see cref="OnPresentOpened(Action{PresentOpened})"/> and
     /// <see cref="LastOpenedPresent"/>.
     /// </remarks>
-    /// <param name="furni_id">The floor item id of the present in the room.</param>
-    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="furni_id"/> is zero or negative.</exception>
+    /// <param name="furniId">The floor item id of the present in the room.</param>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="furniId"/> is zero or negative.</exception>
     /// <exception cref="InvalidOperationException">Thrown when there is no hotel session or no ready room.</exception>
-    public void OpenPresent(Id furni_id) => Gifts.OpenPresent(furni_id);
-
-    /// <summary>
-    /// Purchases a catalog offer as a gift for another user.
-    /// </summary>
-    /// <remarks>
-    /// It returns immediately. The catalog state must belong to the same hotel session as the
-    /// gift state. When the receiver does not exist, the
-    /// <see cref="OnGiftReceiverNotFound(Action)"/> handlers run.
-    /// </remarks>
-    /// <param name="request">The purchase, with the offer, the receiver, the gift message and the wrapping.</param>
-    /// <exception cref="ArgumentNullException">Thrown when <paramref name="request"/> or one of its texts is <see langword="null"/>.</exception>
-    /// <exception cref="InvalidOperationException">Thrown when there is no hotel session or the catalog state belongs to another session.</exception>
-    public void PurchaseFromCatalogAsGift(
-    PurchaseFromCatalogAsGift request) =>
-    Gifts.Purchase(request);
+    public void OpenPresent(Id furniId) => Gifts.OpenPresent(furniId);
 
     /// <summary>
     /// Asks for the club gift catalogue.
@@ -126,24 +110,23 @@ public partial class ScriptGlobals
     /// <see cref="OnClubGiftSelected(Action{ClubGiftSelected})"/> and
     /// <see cref="LastSelectedClubGift"/>.
     /// </remarks>
-    /// <param name="product_code">The product code taken from a club gift offer.</param>
-    /// <exception cref="ArgumentNullException">Thrown when <paramref name="product_code"/> is <see langword="null"/>.</exception>
+    /// <param name="productCode">The product code taken from a club gift offer.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="productCode"/> is <see langword="null"/>.</exception>
     /// <exception cref="InvalidOperationException">Thrown when the application runtime is not active or there is no hotel session.</exception>
-    public void SelectClubGift(string product_code) =>
-        Gifts.SelectClubGift(product_code);
+    public void SelectClubGift(string productCode) =>
+        Gifts.SelectClubGift(productCode);
 
     /// <summary>
     /// Asks whether a catalog offer can be sent as a gift.
     /// </summary>
     /// <remarks>
     /// It returns immediately; the answer lands in <see cref="OfferGiftability"/> and runs the
-    /// <see cref="OnOfferGiftabilityChanged(Action{IsOfferGiftable})"/> handlers. Only the Flash
-    /// client receives the answer.
+    /// <see cref="OnOfferGiftabilityChanged(Action{IsOfferGiftable})"/> handlers.
     /// </remarks>
-    /// <param name="offer_id">The id of the catalog offer.</param>
+    /// <param name="offerId">The id of the catalog offer.</param>
     /// <exception cref="InvalidOperationException">Thrown when the application runtime is not active or there is no hotel session.</exception>
-    public void RequestOfferGiftability(int offer_id) =>
-    Gifts.RequestOfferGiftability(offer_id);
+    public void RequestOfferGiftability(int offerId) =>
+    Gifts.RequestOfferGiftability(offerId);
 
     /// <summary>
     /// Selects gifts from the new user gift offer.
@@ -179,13 +162,13 @@ public partial class ScriptGlobals
     {
         const int page_limit = 500;
         const int maximum_pages = 132;
-        GiftStateView state = Application.Invoke<GiftStateRequest, GiftStateView>(
+        GiftStateView state = _application.Invoke<GiftStateRequest, GiftStateView>(
             ApplicationMemberIds.GiftsState,
             new GiftStateRequest(),
             Ct);
         if (state.NewUserOffer is null)
             return 0;
-        GiftNewUserOfferPage page = Application.Invoke<
+        GiftNewUserOfferPage page = _application.Invoke<
             GiftNewUserOfferPageRequest,
             GiftNewUserOfferPage>(
                 ApplicationMemberIds.GiftsNewUserOfferList,
@@ -194,8 +177,6 @@ public partial class ScriptGlobals
         if (!page.Loaded)
             return 0;
         if (!page.Connected ||
-            page.Client is null ||
-            page.Client != state.Client ||
             page.SessionGeneration != state.SessionGeneration ||
             page.NewUserOfferRevision != state.NewUserOfferRevision ||
             page.SessionGeneration <= 0 ||
@@ -214,7 +195,6 @@ public partial class ScriptGlobals
             throw new InvalidDataException("New-user gift pagination returned invalid metadata.");
         }
 
-        ClientType client = page.Client.Value;
         long session_generation = page.SessionGeneration;
         long offer_revision = page.NewUserOfferRevision;
         long snapshot_revision = page.SnapshotRevision;
@@ -228,7 +208,6 @@ public partial class ScriptGlobals
         for (int page_number = 0; page_number < maximum_pages; page_number++)
         {
             if (!page.Connected ||
-                page.Client != client ||
                 page.SessionGeneration != session_generation ||
                 page.NewUserOfferRevision != offer_revision ||
                 page.SnapshotRevision != snapshot_revision ||
@@ -285,7 +264,7 @@ public partial class ScriptGlobals
             }
 
             expected_offset = next_offset;
-            page = Application.Invoke<
+            page = _application.Invoke<
                 GiftNewUserOfferPageRequest,
                 GiftNewUserOfferPage>(
                     ApplicationMemberIds.GiftsNewUserOfferList,
@@ -299,7 +278,7 @@ public partial class ScriptGlobals
 
         if (selections.Count == 0)
             return 0;
-        Application.Invoke<GiftNewUserSelectRequest, GiftNewUserSelectDispatchReceipt>(
+        _application.Invoke<GiftNewUserSelectRequest, GiftNewUserSelectDispatchReceipt>(
             ApplicationMemberIds.GiftsNewUserSelect,
             new GiftNewUserSelectRequest(
                 Array.AsReadOnly(selections.ToArray()),

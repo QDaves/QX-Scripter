@@ -63,14 +63,14 @@ public partial class ScriptGlobals
     /// <remarks>
     /// Badges whose native id does not fit in 32 bits are never matched by this overload.
     /// </remarks>
-    /// <param name="badge_id">The badge id.</param>
+    /// <param name="badgeId">The badge id.</param>
     /// <returns>The badge, or <see langword="null"/> when the user does not own it.</returns>
-    public OwnedBadge? GetOwnedBadge(int badge_id) => BadgeInventory.Badge(badge_id);
+    public OwnedBadge? GetOwnedBadge(int badgeId) => BadgeInventory.Badge(badgeId);
 
     /// <summary>Finds an owned badge by its badge id.</summary>
-    /// <param name="badge_id">The badge id.</param>
+    /// <param name="badgeId">The badge id.</param>
     /// <returns>The badge, or <see langword="null"/> when the user does not own it.</returns>
-    public OwnedBadge? GetOwnedBadge(Id badge_id) => BadgeInventory.Badge(badge_id);
+    public OwnedBadge? GetOwnedBadge(Id badgeId) => BadgeInventory.Badge(badgeId);
 
     /// <summary>
     /// Gets the cached badge set one user has equipped on their profile, exactly as the server last
@@ -79,23 +79,23 @@ public partial class ScriptGlobals
     /// <remarks>
     /// Nothing is requested, so it only answers for users whose badges have already been seen.
     /// </remarks>
-    /// <param name="user_id">The user's account id.</param>
+    /// <param name="userId">The user's account id.</param>
     /// <returns>
     /// The badge set, or <see langword="null"/> when no badges have been seen for this user.
     /// </returns>
-    public UserBadges? GetCachedSelectedBadgeSet(Id user_id) =>
-        BadgeInventory.SelectedBadgeSet(user_id);
+    public UserBadges? GetCachedSelectedBadgeSet(Id userId) =>
+        BadgeInventory.SelectedBadgeSet(userId);
 
     /// <summary>
     /// Gets the cached badges one user has equipped, as a plain list.
     /// </summary>
     /// <remarks>Nothing is requested.</remarks>
-    /// <param name="user_id">The user's account id.</param>
+    /// <param name="userId">The user's account id.</param>
     /// <returns>
     /// A snapshot copy of the badges, or an empty list when none have been seen for this user.
     /// </returns>
-    public IReadOnlyList<SelectedBadge> GetCachedSelectedBadges(Id user_id) =>
-        BadgeInventory.SelectedBadgesFor(user_id);
+    public IReadOnlyList<SelectedBadge> GetCachedSelectedBadges(Id userId) =>
+        BadgeInventory.SelectedBadgesFor(userId);
 
     /// <summary>
     /// Loads the local user's badge inventory, requesting it if necessary, and waits until every
@@ -105,13 +105,13 @@ public partial class ScriptGlobals
     /// When the inventory is already loaded it returns the cached collection without touching the
     /// network. Concurrent callers share one request rather than each sending their own.
     /// </remarks>
-    /// <param name="timeout_ms">
+    /// <param name="timeoutMs">
     /// The time to wait for the load to finish, in milliseconds. It must be positive.
     /// </param>
     /// <returns>
     /// The complete owned badge collection.
     /// </returns>
-    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="timeout_ms"/> is zero or negative.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="timeoutMs"/> is zero or negative.</exception>
     /// <exception cref="Qx.Game.RequestTimeoutException">Thrown when the fragments did not all arrive within the timeout.</exception>
     /// <exception cref="OperationCanceledException">Thrown when the script was stopped while waiting.</exception>
     /// <exception cref="InvalidOperationException">
@@ -121,8 +121,8 @@ public partial class ScriptGlobals
     /// complete inventory arrives or the session reconnects.
     /// </exception>
     public Task<IReadOnlyCollection<OwnedBadge>> EnsureBadgeInventoryLoaded(
-        int timeout_ms = 10000) =>
-        BadgeInventory.EnsureLoadedAsync(timeout_ms, Ct);
+        int timeoutMs = 10000) =>
+        BadgeInventory.EnsureLoadedAsync(timeoutMs, Ct);
 
     /// <summary>
     /// Gets the local user's badge collection, loading it first when it is not loaded yet.
@@ -131,13 +131,13 @@ public partial class ScriptGlobals
     /// Identical to <see cref="EnsureBadgeInventoryLoaded(int)"/>; kept as the more discoverable
     /// name.
     /// </remarks>
-    /// <param name="timeout_ms">The time to wait for the load to finish, in milliseconds.</param>
+    /// <param name="timeoutMs">The time to wait for the load to finish, in milliseconds.</param>
     /// <returns>The complete owned badge collection.</returns>
-    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="timeout_ms"/> is zero or negative.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="timeoutMs"/> is zero or negative.</exception>
     /// <exception cref="Qx.Game.RequestTimeoutException">Thrown when the fragments did not all arrive within the timeout.</exception>
     /// <exception cref="OperationCanceledException">Thrown when the script was stopped while waiting.</exception>
-    public Task<IReadOnlyCollection<OwnedBadge>> GetUserBadges(int timeout_ms = 10000) =>
-        EnsureBadgeInventoryLoaded(timeout_ms);
+    public Task<IReadOnlyCollection<OwnedBadge>> GetUserBadges(int timeoutMs = 10000) =>
+        EnsureBadgeInventoryLoaded(timeoutMs);
 
     /// <summary>
     /// Starts a filter, sort and projection query over the badges currently cached as owned.
@@ -162,10 +162,10 @@ public partial class ScriptGlobals
     /// <remarks>
     /// Nothing is requested: for a user whose badges have not been seen the query is empty.
     /// </remarks>
-    /// <param name="user_id">The user's account id.</param>
+    /// <param name="userId">The user's account id.</param>
     /// <returns>A query over a snapshot of that user's equipped badges.</returns>
-    public SelectedBadgeQuery QuerySelectedBadges(Id user_id) =>
-        new(BadgeInventory.SelectedBadgesFor(user_id));
+    public SelectedBadgeQuery QuerySelectedBadges(Id userId) =>
+        new(BadgeInventory.SelectedBadgesFor(userId));
 
     /// <summary>
     /// Starts a selected-badge query over a caller-supplied sequence instead of the cache.
@@ -225,6 +225,24 @@ public partial class ScriptGlobals
             handler,
             value => BadgeInventory.BadgeUpdated += value,
             value => BadgeInventory.BadgeUpdated -= value);
+
+    /// <summary>
+    /// Registers a handler that runs when an achievement level takes a badge out of
+    /// <see cref="OwnedBadges"/>.
+    /// </summary>
+    /// <remarks>
+    /// The removed badge is usually the previous level of that achievement. A badge that drops out
+    /// of <see cref="OwnedBadges"/> because the inventory is reloaded or the session ends does not
+    /// raise it.
+    /// </remarks>
+    /// <param name="handler">The handler to call with the removed badge.</param>
+    /// <returns>A handle that removes the handler when disposed.</returns>
+    /// <exception cref="ObjectDisposedException">Thrown when the script globals have already been disposed.</exception>
+    public IDisposable OnOwnedBadgeRemoved(Action<OwnedBadge> handler)
+        => Subscribe(
+            handler,
+            value => BadgeInventory.BadgeRemoved += value,
+            value => BadgeInventory.BadgeRemoved -= value);
 
     /// <summary>
     /// Registers a handler that runs when the server reports the badges a user has equipped.

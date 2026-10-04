@@ -35,14 +35,12 @@ public sealed record InventoryCollectionStateView(
 /// <summary>Represents the current furni and pet inventory state.</summary>
 /// <remarks>Returned by the <c>inventory.state</c> query.</remarks>
 /// <param name="Connected">Whether the state belongs to the active hotel session.</param>
-/// <param name="Client">The client type of the hotel session, or <see langword="null"/> when <paramref name="Connected"/> is <see langword="false"/>.</param>
 /// <param name="SessionGeneration">The generation of the hotel session the state belongs to.</param>
 /// <param name="Revision">The inventory state revision, which increases with every change.</param>
 /// <param name="Furni">The load state of the furni inventory.</param>
 /// <param name="Pets">The load state of the pet inventory.</param>
 public sealed record InventoryStateView(
     bool Connected,
-    ClientType? Client,
     long SessionGeneration,
     long Revision,
     InventoryCollectionStateView Furni,
@@ -81,7 +79,6 @@ public sealed record InventoryFurniRefreshRequest(
 /// <summary>Represents a page of the furni inventory read from one snapshot.</summary>
 /// <remarks>Returned by the <c>inventory.furni.list</c> query and the <c>inventory.furni.refresh</c> operation.</remarks>
 /// <param name="Connected">Whether the snapshot belongs to the active hotel session.</param>
-/// <param name="Client">The client type of the hotel session, or <see langword="null"/> when <paramref name="Connected"/> is <see langword="false"/>.</param>
 /// <param name="SessionGeneration">The generation of the hotel session the snapshot belongs to.</param>
 /// <param name="Revision">The inventory state revision when the snapshot was captured.</param>
 /// <param name="SnapshotRevision">The revision of the retained snapshot, to pass when reading the next page.</param>
@@ -100,7 +97,6 @@ public sealed record InventoryFurniRefreshRequest(
 /// <param name="Items">The items in the page.</param>
 public sealed record InventoryFurniPage(
     bool Connected,
-    ClientType? Client,
     long SessionGeneration,
     long Revision,
     long SnapshotRevision,
@@ -159,7 +155,6 @@ public sealed record InventoryPetRefreshRequest(
 /// <summary>Represents a page of the pet inventory read from one snapshot.</summary>
 /// <remarks>Returned by the <c>inventory.pets.list</c> query and the <c>inventory.pets.refresh</c> operation.</remarks>
 /// <param name="Connected">Whether the snapshot belongs to the active hotel session.</param>
-/// <param name="Client">The client type of the hotel session, or <see langword="null"/> when <paramref name="Connected"/> is <see langword="false"/>.</param>
 /// <param name="SessionGeneration">The generation of the hotel session the snapshot belongs to.</param>
 /// <param name="Revision">The inventory state revision when the snapshot was captured.</param>
 /// <param name="SnapshotRevision">The revision of the retained snapshot, to pass when reading the next page.</param>
@@ -178,7 +173,6 @@ public sealed record InventoryPetRefreshRequest(
 /// <param name="Pets">The pets in the page.</param>
 public sealed record InventoryPetPage(
     bool Connected,
-    ClientType? Client,
     long SessionGeneration,
     long Revision,
     long SnapshotRevision,
@@ -207,13 +201,11 @@ public sealed record InventoryAvatarEffectRequest(int EffectId);
 
 /// <summary>Represents the receipt for an avatar effect activation that was sent.</summary>
 /// <remarks>Returned by the <c>inventory.avatar_effect.activate</c> operation.</remarks>
-/// <param name="Client">The client type of the hotel session.</param>
 /// <param name="DispatchedAtUtc">The UTC time the request was sent.</param>
 /// <param name="SessionGeneration">The generation of the hotel session the request was sent in.</param>
 /// <param name="Revision">The inventory state revision after the request was sent.</param>
 /// <param name="EffectId">The id of the avatar effect.</param>
 public sealed record InventoryDispatchResult(
-    ClientType Client,
     DateTimeOffset DispatchedAtUtc,
     long SessionGeneration,
     long Revision,
@@ -289,78 +281,78 @@ public static class InventoryApplicationPages
 
     /// <summary>Reads the furni inventory and joins every page into one page, blocking until it is complete.</summary>
     /// <param name="application">The application runtime to read through.</param>
-    /// <param name="item_id">The id of the only item to read, or <see langword="null"/> to read every item.</param>
-    /// <param name="max_items">The maximum number of items to read, or <see langword="null"/> to read every matching item.</param>
-    /// <param name="cancellation_token">The token to monitor for cancellation requests.</param>
+    /// <param name="itemId">The id of the only item to read, or <see langword="null"/> to read every item.</param>
+    /// <param name="maxItems">The maximum number of items to read, or <see langword="null"/> to read every matching item.</param>
+    /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
     /// <returns>A page that holds the requested items, with <c>NextOffset</c> set when more matching items remain.</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="application"/> is <see langword="null"/>.</exception>
-    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="max_items"/> is negative.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="maxItems"/> is negative.</exception>
     /// <exception cref="InvalidOperationException">Thrown when the snapshot changes or becomes unavailable while it is read.</exception>
     public static InventoryFurniPage ReadFurni(
         IApplicationRuntime application,
-        Id? item_id = null,
-        int? max_items = null,
-        CancellationToken cancellation_token = default) =>
-        ReadFurniAsync(application, item_id, max_items, cancellation_token)
+        Id? itemId = null,
+        int? maxItems = null,
+        CancellationToken cancellationToken = default) =>
+        ReadFurniAsync(application, itemId, maxItems, cancellationToken)
             .AsTask()
             .GetAwaiter()
             .GetResult();
 
     /// <summary>Reads the furni inventory and joins every page into one page.</summary>
     /// <param name="application">The application runtime to read through.</param>
-    /// <param name="item_id">The id of the only item to read, or <see langword="null"/> to read every item.</param>
-    /// <param name="max_items">The maximum number of items to read, or <see langword="null"/> to read every matching item.</param>
-    /// <param name="cancellation_token">The token to monitor for cancellation requests.</param>
+    /// <param name="itemId">The id of the only item to read, or <see langword="null"/> to read every item.</param>
+    /// <param name="maxItems">The maximum number of items to read, or <see langword="null"/> to read every matching item.</param>
+    /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
     /// <returns>A page that holds the requested items, with <c>NextOffset</c> set when more matching items remain.</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="application"/> is <see langword="null"/>.</exception>
-    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="max_items"/> is negative.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="maxItems"/> is negative.</exception>
     /// <exception cref="InvalidOperationException">Thrown when the snapshot changes or becomes unavailable while it is read.</exception>
     public static async ValueTask<InventoryFurniPage> ReadFurniAsync(
         IApplicationRuntime application,
-        Id? item_id = null,
-        int? max_items = null,
-        CancellationToken cancellation_token = default)
+        Id? itemId = null,
+        int? maxItems = null,
+        CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(application);
-        ValidateMaximum(max_items);
+        ValidateMaximum(maxItems);
         InventoryFurniPage first = await application
             .InvokeAsync<InventoryFurniPageRequest, InventoryFurniPage>(
                 ApplicationMemberIds.InventoryFurniList,
                 new InventoryFurniPageRequest(
-                    ItemId: item_id,
-                    Limit: FirstLimit(max_items)),
-                cancellation_token)
+                    ItemId: itemId,
+                    Limit: FirstLimit(maxItems)),
+                cancellationToken)
             .ConfigureAwait(false);
         return await CompleteFurniAsync(
             application,
             first,
-            item_id,
-            max_items,
-            cancellation_token).ConfigureAwait(false);
+            itemId,
+            maxItems,
+            cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>Reads the remaining pages of a furni inventory snapshot and joins them with the first page, blocking until it is complete.</summary>
     /// <param name="application">The application runtime to read through.</param>
     /// <param name="first">The first page of the snapshot, read with offset 0.</param>
-    /// <param name="item_id">The item id filter the first page was read with.</param>
-    /// <param name="max_items">The maximum number of items to read, or <see langword="null"/> to read every matching item.</param>
-    /// <param name="cancellation_token">The token to monitor for cancellation requests.</param>
+    /// <param name="itemId">The item id filter the first page was read with.</param>
+    /// <param name="maxItems">The maximum number of items to read, or <see langword="null"/> to read every matching item.</param>
+    /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
     /// <returns>A page that holds the requested items, with <c>NextOffset</c> set when more matching items remain.</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="application"/> or <paramref name="first"/> is <see langword="null"/>.</exception>
-    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="max_items"/> is negative.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="maxItems"/> is negative.</exception>
     /// <exception cref="InvalidOperationException">Thrown when <paramref name="first"/> is not a valid first page, or the snapshot changes or becomes unavailable while it is read.</exception>
     public static InventoryFurniPage CompleteFurni(
         IApplicationRuntime application,
         InventoryFurniPage first,
-        Id? item_id = null,
-        int? max_items = null,
-        CancellationToken cancellation_token = default) =>
+        Id? itemId = null,
+        int? maxItems = null,
+        CancellationToken cancellationToken = default) =>
         CompleteFurniAsync(
                 application,
                 first,
-                item_id,
-                max_items,
-                cancellation_token)
+                itemId,
+                maxItems,
+                cancellationToken)
             .AsTask()
             .GetAwaiter()
             .GetResult();
@@ -368,36 +360,36 @@ public static class InventoryApplicationPages
     /// <summary>Reads the remaining pages of a furni inventory snapshot and joins them with the first page.</summary>
     /// <param name="application">The application runtime to read through.</param>
     /// <param name="first">The first page of the snapshot, read with offset 0.</param>
-    /// <param name="item_id">The item id filter the first page was read with.</param>
-    /// <param name="max_items">The maximum number of items to read, or <see langword="null"/> to read every matching item.</param>
-    /// <param name="cancellation_token">The token to monitor for cancellation requests.</param>
+    /// <param name="itemId">The item id filter the first page was read with.</param>
+    /// <param name="maxItems">The maximum number of items to read, or <see langword="null"/> to read every matching item.</param>
+    /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
     /// <returns>A page that holds the requested items, with <c>NextOffset</c> set when more matching items remain.</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="application"/> or <paramref name="first"/> is <see langword="null"/>.</exception>
-    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="max_items"/> is negative.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="maxItems"/> is negative.</exception>
     /// <exception cref="InvalidOperationException">Thrown when <paramref name="first"/> is not a valid first page, or the snapshot changes or becomes unavailable while it is read.</exception>
     public static ValueTask<InventoryFurniPage> CompleteFurniAsync(
         IApplicationRuntime application,
         InventoryFurniPage first,
-        Id? item_id = null,
-        int? max_items = null,
-        CancellationToken cancellation_token = default)
+        Id? itemId = null,
+        int? maxItems = null,
+        CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(application);
         ArgumentNullException.ThrowIfNull(first);
-        ValidateMaximum(max_items);
-        cancellation_token.ThrowIfCancellationRequested();
+        ValidateMaximum(maxItems);
+        cancellationToken.ThrowIfCancellationRequested();
         return Complete<InventoryFurniPage, InventoryItemSnapshot>(
             first,
-            max_items,
+            maxItems,
             async (offset, limit) => await application
                 .InvokeAsync<InventoryFurniPageRequest, InventoryFurniPage>(
                     ApplicationMemberIds.InventoryFurniList,
                     new InventoryFurniPageRequest(
-                        item_id,
+                        itemId,
                         offset,
                         limit,
                         first.SnapshotRevision),
-                    cancellation_token)
+                    cancellationToken)
                 .ConfigureAwait(false),
             static (page, values, next_offset) => page with
             {
@@ -410,87 +402,87 @@ public static class InventoryApplicationPages
 
     /// <summary>Reads the pet inventory and joins every page into one page, blocking until it is complete.</summary>
     /// <param name="application">The application runtime to read through.</param>
-    /// <param name="pet_id">The id of the only pet to read, or <see langword="null"/> to skip the id filter.</param>
+    /// <param name="petId">The id of the only pet to read, or <see langword="null"/> to skip the id filter.</param>
     /// <param name="name">The exact pet name to match, ignoring case, or <see langword="null"/> to skip the name filter.</param>
-    /// <param name="max_pets">The maximum number of pets to read, or <see langword="null"/> to read every matching pet.</param>
-    /// <param name="cancellation_token">The token to monitor for cancellation requests.</param>
+    /// <param name="maxPets">The maximum number of pets to read, or <see langword="null"/> to read every matching pet.</param>
+    /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
     /// <returns>A page that holds the requested pets, with <c>NextOffset</c> set when more matching pets remain.</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="application"/> is <see langword="null"/>.</exception>
-    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="max_pets"/> is negative.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="maxPets"/> is negative.</exception>
     /// <exception cref="InvalidOperationException">Thrown when the snapshot changes or becomes unavailable while it is read.</exception>
     public static InventoryPetPage ReadPets(
         IApplicationRuntime application,
-        Id? pet_id = null,
+        Id? petId = null,
         string? name = null,
-        int? max_pets = null,
-        CancellationToken cancellation_token = default) =>
-        ReadPetsAsync(application, pet_id, name, max_pets, cancellation_token)
+        int? maxPets = null,
+        CancellationToken cancellationToken = default) =>
+        ReadPetsAsync(application, petId, name, maxPets, cancellationToken)
             .AsTask()
             .GetAwaiter()
             .GetResult();
 
     /// <summary>Reads the pet inventory and joins every page into one page.</summary>
     /// <param name="application">The application runtime to read through.</param>
-    /// <param name="pet_id">The id of the only pet to read, or <see langword="null"/> to skip the id filter.</param>
+    /// <param name="petId">The id of the only pet to read, or <see langword="null"/> to skip the id filter.</param>
     /// <param name="name">The exact pet name to match, ignoring case, or <see langword="null"/> to skip the name filter.</param>
-    /// <param name="max_pets">The maximum number of pets to read, or <see langword="null"/> to read every matching pet.</param>
-    /// <param name="cancellation_token">The token to monitor for cancellation requests.</param>
+    /// <param name="maxPets">The maximum number of pets to read, or <see langword="null"/> to read every matching pet.</param>
+    /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
     /// <returns>A page that holds the requested pets, with <c>NextOffset</c> set when more matching pets remain.</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="application"/> is <see langword="null"/>.</exception>
-    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="max_pets"/> is negative.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="maxPets"/> is negative.</exception>
     /// <exception cref="InvalidOperationException">Thrown when the snapshot changes or becomes unavailable while it is read.</exception>
     public static async ValueTask<InventoryPetPage> ReadPetsAsync(
         IApplicationRuntime application,
-        Id? pet_id = null,
+        Id? petId = null,
         string? name = null,
-        int? max_pets = null,
-        CancellationToken cancellation_token = default)
+        int? maxPets = null,
+        CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(application);
-        ValidateMaximum(max_pets);
+        ValidateMaximum(maxPets);
         InventoryPetPage first = await application
             .InvokeAsync<InventoryPetPageRequest, InventoryPetPage>(
                 ApplicationMemberIds.InventoryPetsList,
                 new InventoryPetPageRequest(
-                    PetId: pet_id,
+                    PetId: petId,
                     Name: name,
-                    Limit: FirstLimit(max_pets)),
-                cancellation_token)
+                    Limit: FirstLimit(maxPets)),
+                cancellationToken)
             .ConfigureAwait(false);
         return await CompletePetsAsync(
             application,
             first,
-            pet_id,
+            petId,
             name,
-            max_pets,
-            cancellation_token).ConfigureAwait(false);
+            maxPets,
+            cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>Reads the remaining pages of a pet inventory snapshot and joins them with the first page, blocking until it is complete.</summary>
     /// <param name="application">The application runtime to read through.</param>
     /// <param name="first">The first page of the snapshot, read with offset 0.</param>
-    /// <param name="pet_id">The pet id filter the first page was read with.</param>
+    /// <param name="petId">The pet id filter the first page was read with.</param>
     /// <param name="name">The pet name filter the first page was read with.</param>
-    /// <param name="max_pets">The maximum number of pets to read, or <see langword="null"/> to read every matching pet.</param>
-    /// <param name="cancellation_token">The token to monitor for cancellation requests.</param>
+    /// <param name="maxPets">The maximum number of pets to read, or <see langword="null"/> to read every matching pet.</param>
+    /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
     /// <returns>A page that holds the requested pets, with <c>NextOffset</c> set when more matching pets remain.</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="application"/> or <paramref name="first"/> is <see langword="null"/>.</exception>
-    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="max_pets"/> is negative.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="maxPets"/> is negative.</exception>
     /// <exception cref="InvalidOperationException">Thrown when <paramref name="first"/> is not a valid first page, or the snapshot changes or becomes unavailable while it is read.</exception>
     public static InventoryPetPage CompletePets(
         IApplicationRuntime application,
         InventoryPetPage first,
-        Id? pet_id = null,
+        Id? petId = null,
         string? name = null,
-        int? max_pets = null,
-        CancellationToken cancellation_token = default) =>
+        int? maxPets = null,
+        CancellationToken cancellationToken = default) =>
         CompletePetsAsync(
                 application,
                 first,
-                pet_id,
+                petId,
                 name,
-                max_pets,
-                cancellation_token)
+                maxPets,
+                cancellationToken)
             .AsTask()
             .GetAwaiter()
             .GetResult();
@@ -498,39 +490,39 @@ public static class InventoryApplicationPages
     /// <summary>Reads the remaining pages of a pet inventory snapshot and joins them with the first page.</summary>
     /// <param name="application">The application runtime to read through.</param>
     /// <param name="first">The first page of the snapshot, read with offset 0.</param>
-    /// <param name="pet_id">The pet id filter the first page was read with.</param>
+    /// <param name="petId">The pet id filter the first page was read with.</param>
     /// <param name="name">The pet name filter the first page was read with.</param>
-    /// <param name="max_pets">The maximum number of pets to read, or <see langword="null"/> to read every matching pet.</param>
-    /// <param name="cancellation_token">The token to monitor for cancellation requests.</param>
+    /// <param name="maxPets">The maximum number of pets to read, or <see langword="null"/> to read every matching pet.</param>
+    /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
     /// <returns>A page that holds the requested pets, with <c>NextOffset</c> set when more matching pets remain.</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="application"/> or <paramref name="first"/> is <see langword="null"/>.</exception>
-    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="max_pets"/> is negative.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="maxPets"/> is negative.</exception>
     /// <exception cref="InvalidOperationException">Thrown when <paramref name="first"/> is not a valid first page, or the snapshot changes or becomes unavailable while it is read.</exception>
     public static ValueTask<InventoryPetPage> CompletePetsAsync(
         IApplicationRuntime application,
         InventoryPetPage first,
-        Id? pet_id = null,
+        Id? petId = null,
         string? name = null,
-        int? max_pets = null,
-        CancellationToken cancellation_token = default)
+        int? maxPets = null,
+        CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(application);
         ArgumentNullException.ThrowIfNull(first);
-        ValidateMaximum(max_pets);
-        cancellation_token.ThrowIfCancellationRequested();
+        ValidateMaximum(maxPets);
+        cancellationToken.ThrowIfCancellationRequested();
         return Complete<InventoryPetPage, InventoryPetSnapshot>(
             first,
-            max_pets,
+            maxPets,
             async (offset, limit) => await application
                 .InvokeAsync<InventoryPetPageRequest, InventoryPetPage>(
                     ApplicationMemberIds.InventoryPetsList,
                     new InventoryPetPageRequest(
-                        pet_id,
+                        petId,
                         name,
                         offset,
                         limit,
                         first.SnapshotRevision),
-                    cancellation_token)
+                    cancellationToken)
                 .ConfigureAwait(false),
             static (page, values, next_offset) => page with
             {
@@ -592,7 +584,6 @@ public static class InventoryApplicationPages
         int consumed = checked(offset + page.Values.Count);
         int? expected_next = consumed < page.Matched ? consumed : null;
         if (page.Connected != first.Connected ||
-            page.Client != first.Client ||
             page.SessionGeneration != first.SessionGeneration ||
             page.Revision != first.Revision ||
             page.SnapshotRevision != first.SnapshotRevision ||
@@ -634,8 +625,6 @@ public interface IInventoryApplicationPage<out TValue>
 {
     /// <summary>Gets whether the snapshot belongs to the active hotel session.</summary>
     bool Connected { get; }
-    /// <summary>Gets the client type of the hotel session, or <see langword="null"/> when <see cref="Connected"/> is <see langword="false"/>.</summary>
-    ClientType? Client { get; }
     /// <summary>Gets the generation of the hotel session the snapshot belongs to.</summary>
     long SessionGeneration { get; }
     /// <summary>Gets the inventory state revision when the snapshot was captured.</summary>

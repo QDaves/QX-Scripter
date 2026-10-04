@@ -3,7 +3,7 @@ using System.Text;
 using Qx.Diagnostics;
 using Qx.Presentation.Platform;
 using Qx.Presentation.Services.Library;
-using Qx.Scripting;
+using Qx.Scripting.Hosting;
 
 namespace Qx.Presentation.Services.Files;
 
@@ -17,11 +17,11 @@ public sealed class ScriptFileService(IAppPaths paths) : IScriptFileService
 
     public string ScriptsDirectory { get; } = (paths ?? throw new ArgumentNullException(nameof(paths))).ScriptsDirectory;
 
-    public string PathFor(string typed_name) => ScriptFileName.PathIn(ScriptsDirectory, typed_name);
+    public string PathFor(string typedName) => ScriptFileName.PathIn(ScriptsDirectory, typedName);
 
     public bool Exists(string path) => !string.IsNullOrWhiteSpace(path) && File.Exists(path);
 
-    public Task<IReadOnlyList<ScriptFileEntry>> ListAsync(CancellationToken cancellation_token) =>
+    public Task<IReadOnlyList<ScriptFileEntry>> ListAsync(CancellationToken cancellationToken) =>
         Task.Run<IReadOnlyList<ScriptFileEntry>>(() =>
         {
             if (!Directory.Exists(ScriptsDirectory))
@@ -29,14 +29,14 @@ public sealed class ScriptFileService(IAppPaths paths) : IScriptFileService
             var entries = new List<ScriptFileEntry>();
             foreach (string path in Directory.EnumerateFiles(ScriptsDirectory, "*" + ScriptFileName.Extension, SearchOption.TopDirectoryOnly))
             {
-                cancellation_token.ThrowIfCancellationRequested();
+                cancellationToken.ThrowIfCancellationRequested();
                 var info = new FileInfo(path);
                 if (!info.Exists)
                     continue;
                 entries.Add(new ScriptFileEntry(info.FullName, ScriptFileName.NameOf(info.FullName), info.LastWriteTimeUtc, info.Length, HeaderOf(info)));
             }
             return entries;
-        }, cancellation_token);
+        }, cancellationToken);
 
     ScriptHeader HeaderOf(FileInfo info)
     {
@@ -57,7 +57,7 @@ public sealed class ScriptFileService(IAppPaths paths) : IScriptFileService
         return header;
     }
 
-    public Task<string?> ReadAsync(string path, CancellationToken cancellation_token) =>
+    public Task<string?> ReadAsync(string path, CancellationToken cancellationToken) =>
         Task.Run<string?>(() =>
         {
             try
@@ -68,9 +68,9 @@ public sealed class ScriptFileService(IAppPaths paths) : IScriptFileService
             {
                 return null;
             }
-        }, cancellation_token);
+        }, cancellationToken);
 
-    public Task<FileOperationResult> WriteAsync(string path, string text, CancellationToken cancellation_token)
+    public Task<FileOperationResult> WriteAsync(string path, string text, CancellationToken cancellationToken)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(path);
         ArgumentNullException.ThrowIfNull(text);
@@ -88,10 +88,10 @@ public sealed class ScriptFileService(IAppPaths paths) : IScriptFileService
             {
                 return FileOperationResult.Failed(error);
             }
-        }, cancellation_token);
+        }, cancellationToken);
     }
 
-    public Task<FileOperationResult> MoveAsync(string from, string to, CancellationToken cancellation_token) =>
+    public Task<FileOperationResult> MoveAsync(string from, string to, CancellationToken cancellationToken) =>
         Task.Run(() =>
         {
             try
@@ -104,9 +104,9 @@ public sealed class ScriptFileService(IAppPaths paths) : IScriptFileService
             {
                 return FileOperationResult.Failed(error);
             }
-        }, cancellation_token);
+        }, cancellationToken);
 
-    public Task<FileOperationResult> CopyAsync(string from, string to, CancellationToken cancellation_token) =>
+    public Task<FileOperationResult> CopyAsync(string from, string to, CancellationToken cancellationToken) =>
         Task.Run(() =>
         {
             try
@@ -119,9 +119,9 @@ public sealed class ScriptFileService(IAppPaths paths) : IScriptFileService
             {
                 return FileOperationResult.Failed(error);
             }
-        }, cancellation_token);
+        }, cancellationToken);
 
-    public Task<FileOperationResult> DeleteAsync(string path, CancellationToken cancellation_token) =>
+    public Task<FileOperationResult> DeleteAsync(string path, CancellationToken cancellationToken) =>
         Task.Run(() =>
         {
             try
@@ -133,7 +133,7 @@ public sealed class ScriptFileService(IAppPaths paths) : IScriptFileService
             {
                 return FileOperationResult.Failed(error);
             }
-        }, cancellation_token);
+        }, cancellationToken);
 
     public IDisposable Watch(Action changed)
     {

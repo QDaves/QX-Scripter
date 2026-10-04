@@ -138,7 +138,6 @@ internal sealed class CatalogApplication : IApplicationFeature, ICatalogBrowseOp
         bool connected = Connected(snapshot.State);
         return new CatalogStateView(
             connected,
-            connected ? snapshot.State.Session!.Client : null,
             snapshot.State.SessionGeneration,
             snapshot.State.CatalogGeneration,
             snapshot.State.Revision,
@@ -233,7 +232,6 @@ internal sealed class CatalogApplication : IApplicationFeature, ICatalogBrowseOp
         cancellation_token.ThrowIfCancellationRequested();
         RequireCurrent(loaded.Scope, MessageKeys.Catalog.PageRequest, MessageKeys.Catalog.PageSnapshot);
         return new CatalogLoadView(
-            loaded.Scope.Session.Client,
             loaded.Scope.SessionGeneration,
             loaded.Scope.CatalogGeneration,
             loaded.StateRevision,
@@ -262,7 +260,6 @@ internal sealed class CatalogApplication : IApplicationFeature, ICatalogBrowseOp
         IReadOnlyList<CatalogPageSummaryView> page = Slice(lease.Pages!, request.Offset, request.Limit);
         return new CatalogPageListView(
             Connected(lease.State),
-            Connected(lease.State) ? lease.State.Session!.Client : null,
             lease.State.SessionGeneration,
             lease.State.CatalogGeneration,
             lease.State.Revision,
@@ -295,7 +292,6 @@ internal sealed class CatalogApplication : IApplicationFeature, ICatalogBrowseOp
             request.Limit);
         return new CatalogOfferSearchPage(
             Connected(lease.State),
-            Connected(lease.State) ? lease.State.Session!.Client : null,
             lease.State.SessionGeneration,
             lease.State.CatalogGeneration,
             lease.State.Revision,
@@ -321,7 +317,7 @@ internal sealed class CatalogApplication : IApplicationFeature, ICatalogBrowseOp
             request.ExpectedSessionGeneration,
             request.ExpectedCatalogGeneration);
         return new CatalogCacheClearView(
-            update.State.Session?.Client,
+            update.State.Session is not null,
             update.State.SessionGeneration,
             update.State.CatalogGeneration,
             update.State.Revision,
@@ -371,7 +367,6 @@ internal sealed class CatalogApplication : IApplicationFeature, ICatalogBrowseOp
             cancellation_token,
             () => RequirePurchaseCurrent(scope));
         return new CatalogPurchaseDispatchReceipt(
-            scope.Session.Client,
             scope.SessionGeneration,
             scope.CatalogGeneration,
             request.PageId,
@@ -497,47 +492,29 @@ internal sealed class CatalogApplication : IApplicationFeature, ICatalogBrowseOp
             null);
     }
 
-    Task<CatalogPurchaseOutcome> ICatalogPurchaseOperations.PurchaseAsync(
+    void ICatalogPurchaseOperations.Purchase(
         PurchaseFromCatalogRequest request,
-        int timeout_ms,
         CancellationToken cancellation_token)
     {
-        try
-        {
-            ArgumentNullException.ThrowIfNull(request);
-            _ = SendPurchase(
-                new CatalogPurchaseSendRequest(
-                    request.PageId,
-                    request.OfferId,
-                    request.ExtraData,
-                    request.Quantity),
-                cancellation_token);
-            return Task.FromResult(DispatchedPurchase());
-        }
-        catch (Exception error)
-        {
-            return Task.FromException<CatalogPurchaseOutcome>(error);
-        }
+        ArgumentNullException.ThrowIfNull(request);
+        _ = SendPurchase(
+            new CatalogPurchaseSendRequest(
+                request.PageId,
+                request.OfferId,
+                request.ExtraData,
+                request.Quantity),
+            cancellation_token);
     }
 
-    Task<CatalogPurchaseOutcome> ICatalogPurchaseOperations.DispatchCompatibility(
+    void ICatalogPurchaseOperations.DispatchCompatibility(
         Action send,
-        int timeout_ms,
         CancellationToken cancellation_token)
     {
-        try
-        {
-            cancellation_token.ThrowIfCancellationRequested();
-            using Invocation invocation = EnterInvocation();
-            ArgumentNullException.ThrowIfNull(send);
-            cancellation_token.ThrowIfCancellationRequested();
-            send();
-            return Task.FromResult(DispatchedPurchase());
-        }
-        catch (Exception error)
-        {
-            return Task.FromException<CatalogPurchaseOutcome>(error);
-        }
+        cancellation_token.ThrowIfCancellationRequested();
+        using Invocation invocation = EnterInvocation();
+        ArgumentNullException.ThrowIfNull(send);
+        cancellation_token.ThrowIfCancellationRequested();
+        send();
     }
 
     public void Dispose()
@@ -1202,10 +1179,9 @@ internal sealed class CatalogApplication : IApplicationFeature, ICatalogBrowseOp
 
     private void OnInvalidationPublished(CatalogInvalidationUpdate update)
     {
-        if (update.Publication is not { } publication || update.State.Session is not { } session)
+        if (update.Publication is not { } publication || update.State.Session is null)
             return;
         published.Publish(new CatalogPublishedEvent(
-            session.Client,
             update.State.SessionGeneration,
             update.State.CatalogGeneration,
             update.State.Revision,
@@ -1226,14 +1202,13 @@ internal sealed class CatalogApplication : IApplicationFeature, ICatalogBrowseOp
         }
         using (invocation)
         {
-            if (update.State.Session is not { } session ||
+            if (update.State.Session is null ||
                 update.State.LastOutcome is not { } outcome ||
                 update.State.LastOutcomeAtUtc is not { } received_at)
             {
                 return;
             }
             purchase_outcomes.Publish(new CatalogPurchaseOutcomeEvent(
-                session.Client,
                 update.State.SessionGeneration,
                 update.State.Revision,
                 received_at,
@@ -1416,7 +1391,6 @@ internal sealed class CatalogApplication : IApplicationFeature, ICatalogBrowseOp
             }
         }
         return new CatalogIndexView(
-            fetched.Scope.Session.Client,
             fetched.Scope.SessionGeneration,
             fetched.Scope.CatalogGeneration,
             fetched.StateRevision,
@@ -1478,7 +1452,6 @@ internal sealed class CatalogApplication : IApplicationFeature, ICatalogBrowseOp
             .Select(FrontPageItemView)
             .ToArray();
         return new CatalogPageView(
-            fetched.Scope.Session.Client,
             fetched.Scope.SessionGeneration,
             fetched.Scope.CatalogGeneration,
             fetched.StateRevision,
@@ -1534,7 +1507,6 @@ internal sealed class CatalogApplication : IApplicationFeature, ICatalogBrowseOp
             ReferenceEquals(state.Session, active_session);
         return new CatalogPurchaseStateView(
             connected,
-            connected ? state.Session!.Client : null,
             state.SessionGeneration,
             state.Revision,
             connected && state.LastOutcome is { } outcome
@@ -1581,11 +1553,6 @@ internal sealed class CatalogApplication : IApplicationFeature, ICatalogBrowseOp
             products.Length != offer.Products.Count,
             Array.AsReadOnly(products));
     }
-
-    private static CatalogPurchaseOutcome DispatchedPurchase() => new(
-        CatalogPurchaseStatus.Dispatched,
-        null,
-        0);
 
     private static CatalogFrontPageItemView FrontPageItemView(CatalogFrontPageItem value) => new(
         value.Position,
@@ -2126,23 +2093,23 @@ internal sealed class CatalogApplication : IApplicationFeature, ICatalogBrowseOp
 /// The catalog generation changes when a new index is received, the hotel publishes a catalog
 /// update or the catalog cache is cleared.
 /// </remarks>
-/// <param name="expected_session_generation">The hotel session generation the operation started in.</param>
-/// <param name="expected_catalog_generation">The catalog generation the operation started in.</param>
-/// <param name="current_session_generation">The hotel session generation when the change was detected.</param>
-/// <param name="current_catalog_generation">The catalog generation when the change was detected.</param>
+/// <param name="expectedSessionGeneration">The hotel session generation the operation started in.</param>
+/// <param name="expectedCatalogGeneration">The catalog generation the operation started in.</param>
+/// <param name="currentSessionGeneration">The hotel session generation when the change was detected.</param>
+/// <param name="currentCatalogGeneration">The catalog generation when the change was detected.</param>
 public sealed class CatalogInvalidatedException(
-    long expected_session_generation,
-    long expected_catalog_generation,
-    long current_session_generation,
-    long current_catalog_generation) : InvalidOperationException(
+    long expectedSessionGeneration,
+    long expectedCatalogGeneration,
+    long currentSessionGeneration,
+    long currentCatalogGeneration) : InvalidOperationException(
         "The catalog generation changed during the operation.")
 {
     /// <summary>Gets the hotel session generation the operation started in.</summary>
-    public long ExpectedSessionGeneration { get; } = expected_session_generation;
+    public long ExpectedSessionGeneration { get; } = expectedSessionGeneration;
     /// <summary>Gets the catalog generation the operation started in.</summary>
-    public long ExpectedCatalogGeneration { get; } = expected_catalog_generation;
+    public long ExpectedCatalogGeneration { get; } = expectedCatalogGeneration;
     /// <summary>Gets the hotel session generation when the change was detected.</summary>
-    public long CurrentSessionGeneration { get; } = current_session_generation;
+    public long CurrentSessionGeneration { get; } = currentSessionGeneration;
     /// <summary>Gets the catalog generation when the change was detected.</summary>
-    public long CurrentCatalogGeneration { get; } = current_catalog_generation;
+    public long CurrentCatalogGeneration { get; } = currentCatalogGeneration;
 }

@@ -7,6 +7,8 @@ import { parseArgs } from 'node:util';
 import { gzipSync } from 'node:zlib';
 import { build_api } from './api.mjs';
 import { build_guide, read_markdown } from './articles.mjs';
+import { read_moved } from './moved.mjs';
+import { arrange_namespaces, check_import_list, read_imports } from './namespaces.mjs';
 
 const format = 1;
 
@@ -21,6 +23,14 @@ const { values: options } = parseArgs({
 
 function git(...args) {
   return execFileSync('git', args, { cwd: repo_root, encoding: 'utf8' }).trim();
+}
+
+async function build_version() {
+  const props = await readFile(path.join(repo_root, 'Directory.Build.props'), 'utf8');
+  const series = /<QxVersionSeries>([^<]+)<\/QxVersionSeries>/.exec(props)[1];
+  const start = git('log', '-1', '--first-parent', '--format=%H', `-S<QxVersionSeries>${series}</QxVersionSeries>`, '--', 'Directory.Build.props');
+  const builds = start ? Number(git('rev-list', '--first-parent', '--count', `${start}..HEAD`)) + 1 : 1;
+  return `${series}.${builds}`;
 }
 
 function sha256(data) {
@@ -52,19 +62,25 @@ const repository = JSON.parse(await readFile(path.join(website_dir, 'package.jso
 const api = await build_api(path.join(website_dir, 'api'), repo_root);
 const context = { repo_root, website_dir, resolve: api.resolve };
 const guide = await build_guide(context);
+const index = await read_markdown(path.join(website_dir, 'api', 'index.md'), context);
+const imports = await read_imports(repo_root);
+check_import_list(guide, imports);
+const namespaces = arrange_namespaces(api, index, imports);
+const moved = await read_moved(path.join(website_dir, 'moved.yml'), api.pages, repo_root);
 
 const content = {
   guide,
   api: {
-    index: await read_markdown(path.join(website_dir, 'api', 'index.md'), context),
-    namespaces: api.namespaces,
+    index,
+    namespaces,
     pages: api.pages,
+    moved,
   },
 };
 
 const bundle = {
   format,
-  version: `0.0.${git('rev-list', '--first-parent', '--count', 'HEAD')}`,
+  version: await build_version(),
   commit: git('rev-parse', 'HEAD'),
   repository,
   ...content,

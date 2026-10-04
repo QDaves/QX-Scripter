@@ -40,6 +40,14 @@ const type_groups = [
 
 const type_sections = ['remarks', 'examples', 'fields', 'see-also'];
 
+const topic_member_limit = 150;
+
+const topic_titles = new Map([
+  ['Raw', 'Identity, wallet and runtime'],
+  ['Helpers', 'Lookups and helpers'],
+  ['Messages', 'Receiving packets'],
+]);
+
 const tuple_element = /^System\.ValueTuple\{.*\}\.[^.]+$/;
 
 const by_name = (a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0);
@@ -51,6 +59,41 @@ function page_path(uid) {
     .replace(/[`#]/g, '-');
   if (!/^[A-Za-z0-9._-]+$/.test(value)) throw new Error(`cannot map uid to a page path: ${uid}`);
   return value;
+}
+
+function topic_suffix(file, type) {
+  const name = type.name.replace(/<.*$/, '');
+  const base = path.basename(file, '.cs');
+  return base === name ? '' : base.startsWith(`${name}.`) ? base.slice(name.length + 1) : base;
+}
+
+function topic_title(suffix) {
+  if (!suffix) return 'General';
+  const words = suffix.replace(/(?<=[a-z0-9])(?=[A-Z])/g, ' ').toLowerCase();
+  return topic_titles.get(suffix) ?? words[0].toUpperCase() + words.slice(1);
+}
+
+function is_obsolete(item) {
+  return item.attributes?.some(attribute => attribute.type === 'System.ObsoleteAttribute') ?? false;
+}
+
+function topics(type, rows) {
+  const files = new Map();
+  for (const row of rows) {
+    const file = row.member.source?.path ?? type.source?.path ?? '';
+    (files.get(file) ?? files.set(file, []).get(file)).push(row);
+  }
+  if (rows.length <= topic_member_limit || files.size < 2) return undefined;
+
+  const rank = topic => (!topic.suffix ? 0 : topic.obsolete ? 2 : 1);
+  const slug = slugger([...type_sections, ...member_sections.map(([kind]) => `${kind}s`), ...rows.map(row => row.anchor)]);
+  return [...files]
+    .map(([file, items]) => {
+      const suffix = topic_suffix(file, type);
+      return { suffix, title: topic_title(suffix), obsolete: items.every(row => is_obsolete(row.member)), items };
+    })
+    .sort((a, b) => rank(a) - rank(b) || (a.title < b.title ? -1 : a.title > b.title ? 1 : 0))
+    .map(topic => ({ id: slug(topic.title), title: topic.title, anchors: topic.items.map(row => row.anchor) }));
 }
 
 function external_url(uid) {
@@ -240,15 +283,20 @@ export async function build_api(api_dir, repo_root) {
       );
     } else {
       const row_anchor = slugger();
+      const rows = member_sections.flatMap(([member_kind]) =>
+        children
+          .filter(member => member_kinds[member.type] === member_kind)
+          .map(member => ({ member, kind: member_kind, anchor: row_anchor(`${member_kind} ${member.name}`) })),
+      );
       page.sections = member_sections
         .map(([member_kind, title]) => ({
           title,
           kind: member_kind,
-          items: children
-            .filter(member => member_kinds[member.type] === member_kind)
-            .map(member =>
+          items: rows
+            .filter(row => row.kind === member_kind)
+            .map(({ member, anchor }) =>
               compact({
-                anchor: row_anchor(`${member_kind} ${member.name}`),
+                anchor,
                 name: member.name,
                 url: targets.get(member.uid).url,
                 summary: text_of(member)(member.summary),
@@ -256,6 +304,7 @@ export async function build_api(api_dir, repo_root) {
             ),
         }))
         .filter(section => section.items.length);
+      page.topics = topics(type, rows);
     }
     pages[page_path(type.uid)] = page;
   }
@@ -293,7 +342,6 @@ export async function build_api(api_dir, repo_root) {
       pages[page_path(ns.uid)] = compact({
         page: 'namespace',
         name: ns.name,
-        summary: text_of(ns)(ns.summary),
         groups: type_groups
           .map(([kind, title]) => ({ kind, title, items: entries.filter(entry => entry.kind === kind) }))
           .filter(group => group.items.length),

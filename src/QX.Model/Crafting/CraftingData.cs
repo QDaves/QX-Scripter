@@ -1,46 +1,31 @@
 using Qx.Messages;
 
-namespace Qx.Model.Crafting;
+namespace Qx.Model;
 
 /// <summary>Represents a product that a crafting recipe yields.</summary>
 /// <param name="RecipeCode">The recipe code, which names the recipe when requesting its ingredients or crafting it.</param>
-/// <param name="ProductCode">The product code of the crafted item, or <see langword="null"/> when absent. Flash always sends it.</param>
+/// <param name="ProductCode">The product code of the crafted item.</param>
 /// <param name="FurnitureClassName">The furniture class name of the crafted item.</param>
 public sealed record CraftingProduct(
     string RecipeCode,
-    string? ProductCode,
-    string FurnitureClassName) : IComposer
+    string ProductCode,
+    string FurnitureClassName) : IParserComposer<CraftingProduct>
 {
-    /// <summary>Gets whether <see cref="ProductCode"/> is set.</summary>
-    public bool HasProductCode => ProductCode is not null;
-
     /// <summary>Parses a crafting product from a packet.</summary>
     /// <param name="p">The packet reader.</param>
-    /// <param name="has_product_code">Whether the product carries a product code. Flash products always do.</param>
     /// <returns>The parsed product.</returns>
-    /// <exception cref="UnsupportedClientException">Thrown when the packet is not from the Flash client.</exception>
-    /// <exception cref="InvalidDataException">Thrown when <paramref name="has_product_code"/> is <see langword="false"/>, or the payload is malformed.</exception>
-    public static CraftingProduct Parse(
-        in PacketReader p,
-        bool has_product_code)
+    /// <exception cref="InvalidDataException">Thrown when the payload is malformed.</exception>
+    public static CraftingProduct Parse(in PacketReader p)
     {
-        CraftingWire.RequireSupportedClient(p.Client);
-        if (!has_product_code)
-            throw new InvalidDataException("Flash crafting products require a product code.");
         var strings = CraftingWire.NewStringBudget();
-        return CraftingWire.ParseProduct(
-            in p,
-            0,
-            ref strings);
+        return CraftingWire.ParseProduct(in p, 0, ref strings);
     }
 
     /// <summary>Composes the product into a packet.</summary>
     /// <param name="p">The packet writer.</param>
-    /// <exception cref="UnsupportedClientException">Thrown when the packet is not for the Flash client.</exception>
-    /// <exception cref="InvalidDataException">Thrown when <see cref="ProductCode"/> is <see langword="null"/>, or a string exceeds the wire limit.</exception>
+    /// <exception cref="InvalidDataException">Thrown when a string exceeds the wire limit.</exception>
     public void Compose(in PacketWriter p)
     {
-        CraftingWire.RequireSupportedClient(p.Client);
         var strings = CraftingWire.NewStringBudget();
         CraftingWire.PrepareProduct(this, ref strings, in p);
         CraftingWire.WriteProduct(this, in p);
@@ -58,7 +43,6 @@ public sealed record CraftingIngredient(
     /// <param name="p">The packet reader.</param>
     public static CraftingIngredient Parse(in PacketReader p)
     {
-        CraftingWire.RequireSupportedClient(p.Client);
         var strings = CraftingWire.NewStringBudget();
         return CraftingWire.ParseIngredient(in p, 0, ref strings);
     }
@@ -67,7 +51,6 @@ public sealed record CraftingIngredient(
     /// <param name="p">The packet writer.</param>
     public void Compose(in PacketWriter p)
     {
-        CraftingWire.RequireSupportedClient(p.Client);
         var strings = CraftingWire.NewStringBudget();
         CraftingWire.PrepareIngredient(this, ref strings, in p);
         CraftingWire.WriteIngredient(this, in p);
@@ -80,24 +63,8 @@ internal static class CraftingWire
     public const int MaximumStrings = 196_608;
     public const int MaximumStringBytes = 16 * 1024 * 1024;
     public const int StringPrefixBytes = sizeof(short);
-
-    public static void RequireSupportedClient(ClientType client)
-    {
-        if (client is not (ClientType.Flash))
-            throw new UnsupportedClientException(client);
-    }
-
-    public static int CountWidth(ClientType client) => client switch
-    {
-        ClientType.Flash => sizeof(int),
-        _ => throw new UnsupportedClientException(client)
-    };
-
-    public static int IdWidth(ClientType client) => client switch
-    {
-        ClientType.Flash => sizeof(int),
-        _ => throw new UnsupportedClientException(client)
-    };
+    public const int CountWidth = sizeof(int);
+    public const int IdWidth = sizeof(int);
 
     public static int ReadCount(
         in PacketReader p,
@@ -107,12 +74,8 @@ internal static class CraftingWire
     {
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(minimum_element_bytes);
         ArgumentOutOfRangeException.ThrowIfNegative(trailing_bytes);
-        RequireRemaining(in p, CountWidth(p.Client), trailing_bytes, name);
-        int count = p.Client switch
-        {
-            ClientType.Flash => p.ReadInt(),
-            _ => throw new UnsupportedClientException(p.Client)
-        };
+        RequireRemaining(in p, CountWidth, trailing_bytes, name);
+        int count = p.ReadInt();
         RequireCount(count, name);
         int available = p.Available - trailing_bytes;
         if (available < 0 || count > available / minimum_element_bytes)
@@ -196,17 +159,12 @@ internal static class CraftingWire
         int trailing_bytes,
         string name)
     {
-        RequireRemaining(in p, IdWidth(p.Client), trailing_bytes, name);
-        return p.Client switch
-        {
-            ClientType.Flash => p.ReadInt(),
-            _ => throw new UnsupportedClientException(p.Client)
-        };
+        RequireRemaining(in p, IdWidth, trailing_bytes, name);
+        return p.ReadInt();
     }
 
-    public static void RequireId(Id value, ClientType client)
+    public static void RequireId(Id value)
     {
-        RequireSupportedClient(client);
         _ = checked((int)(long)value);
     }
 
@@ -223,7 +181,6 @@ internal static class CraftingWire
         int trailing_bytes,
         ref CraftingStringBudget strings)
     {
-        RequireSupportedClient(p.Client);
         string recipe_code = strings.Read(
             in p,
             nameof(CraftingProduct.RecipeCode),
@@ -248,15 +205,8 @@ internal static class CraftingWire
         in PacketWriter p)
     {
         ArgumentNullException.ThrowIfNull(value);
-        RequireSupportedClient(p.Client);
-        if (value.ProductCode is null)
-        {
-            throw new InvalidDataException(
-                "Flash crafting products require a product code.");
-        }
         strings.Require(value.RecipeCode, nameof(value.RecipeCode), in p);
-        if (value.ProductCode is string product_code)
-            strings.Require(product_code, nameof(value.ProductCode), in p);
+        strings.Require(value.ProductCode, nameof(value.ProductCode), in p);
         strings.Require(
             value.FurnitureClassName,
             nameof(value.FurnitureClassName),
@@ -266,8 +216,7 @@ internal static class CraftingWire
     public static void WriteProduct(CraftingProduct value, in PacketWriter p)
     {
         p.WriteString(value.RecipeCode);
-        if (value.ProductCode is string product_code)
-            p.WriteString(product_code);
+        p.WriteString(value.ProductCode);
         p.WriteString(value.FurnitureClassName);
     }
 
@@ -276,7 +225,6 @@ internal static class CraftingWire
         int trailing_bytes,
         ref CraftingStringBudget strings)
     {
-        RequireSupportedClient(p.Client);
         RequireRemaining(
             in p,
             checked(sizeof(int) + StringPrefixBytes),
@@ -296,7 +244,6 @@ internal static class CraftingWire
         in PacketWriter p)
     {
         ArgumentNullException.ThrowIfNull(value);
-        RequireSupportedClient(p.Client);
         strings.Require(
             value.FurnitureClassName,
             nameof(value.FurnitureClassName),

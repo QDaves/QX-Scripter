@@ -17,21 +17,21 @@ public interface IScriptFileService
 {
     string ScriptsDirectory { get; }
 
-    string PathFor(string typed_name);
+    string PathFor(string typedName);
 
     bool Exists(string path);
 
-    Task<IReadOnlyList<ScriptFileEntry>> ListAsync(CancellationToken cancellation_token);
+    Task<IReadOnlyList<ScriptFileEntry>> ListAsync(CancellationToken cancellationToken);
 
-    Task<string?> ReadAsync(string path, CancellationToken cancellation_token);
+    Task<string?> ReadAsync(string path, CancellationToken cancellationToken);
 
-    Task<FileOperationResult> WriteAsync(string path, string text, CancellationToken cancellation_token);
+    Task<FileOperationResult> WriteAsync(string path, string text, CancellationToken cancellationToken);
 
-    Task<FileOperationResult> MoveAsync(string from, string to, CancellationToken cancellation_token);
+    Task<FileOperationResult> MoveAsync(string from, string to, CancellationToken cancellationToken);
 
-    Task<FileOperationResult> CopyAsync(string from, string to, CancellationToken cancellation_token);
+    Task<FileOperationResult> CopyAsync(string from, string to, CancellationToken cancellationToken);
 
-    Task<FileOperationResult> DeleteAsync(string path, CancellationToken cancellation_token);
+    Task<FileOperationResult> DeleteAsync(string path, CancellationToken cancellationToken);
 
     IDisposable Watch(Action changed);
 }

@@ -1,5 +1,5 @@
 using Qx.Hosting;
-using Qx.Scripting;
+using Qx.Scripting.Hosting;
 
 namespace Qx.App;
 
@@ -68,7 +68,10 @@ internal sealed class ScriptSession(RuntimeHost runtime, TextReader input, TextW
                             ScriptExecutionRequest request = await ReadScriptAsync(FileArgument(argument), cancellation_token);
                             var diagnostics = await Task.Run(() => runtime.ScriptExecution.Compile(request.Code, request.FileName), cancellation_token);
                             foreach (var diagnostic in diagnostics)
-                                output.WriteLine(diagnostic);
+                            {
+                                string hint = ScriptEngine.UsingHint(diagnostic) is { } text ? " - " + text : "";
+                                output.WriteLine($"{diagnostic.Severity} {ScriptExecutionError.FromDiagnostic(diagnostic, request.FileName).Format()}{hint}");
+                            }
                             output.WriteLine(diagnostics.Any(value => value.Severity == Microsoft.CodeAnalysis.DiagnosticSeverity.Error)
                                 ? "Compilation failed." : "Compilation successful.");
                             break;
@@ -79,7 +82,7 @@ internal sealed class ScriptSession(RuntimeHost runtime, TextReader input, TextW
                         case "status":
                             var connection = runtime.Extension;
                             output.WriteLine($"G-Earth: {(connection.IsInterceptorConnected ? "connected" : "disconnected")}");
-                            output.WriteLine($"Hotel: {connection.Session?.Client.ToString() ?? "disconnected"}");
+                            output.WriteLine($"Hotel: {(connection.IsConnected ? "connected" : "disconnected")}");
                             output.WriteLine(runtime.Game.Room.Capture(room =>
                                 $"Room: {room.RoomId} ({room.State}), {room.Avatars.Count()} avatars, {room.FloorItems.Count()} floor items, {room.WallItems.Count()} wall items"));
                             lock (gate)

@@ -11,29 +11,29 @@ public sealed record CatalogNode : IParserComposer<CatalogNode>
     private IReadOnlyList<CatalogNode> _children = Array.AsReadOnly(Array.Empty<CatalogNode>());
 
     /// <summary>Initializes a new instance of the <see cref="CatalogNode"/> record.</summary>
-    /// <param name="Visible">Whether the node is visible in the catalog.</param>
-    /// <param name="Icon">The icon identifier of the node.</param>
-    /// <param name="PageId">The identifier of the catalog page.</param>
-    /// <param name="PageName">The internal name of the page.</param>
-    /// <param name="Localization">The localized caption of the page.</param>
-    /// <param name="OfferIds">The identifiers of the offers on the page, copied into a read only list.</param>
-    /// <param name="Children">The child nodes, copied into a read only list.</param>
+    /// <param name="visible">Whether the node is visible in the catalog.</param>
+    /// <param name="icon">The icon identifier of the node.</param>
+    /// <param name="pageId">The identifier of the catalog page.</param>
+    /// <param name="pageName">The internal name of the page.</param>
+    /// <param name="localization">The localized caption of the page.</param>
+    /// <param name="offerIds">The identifiers of the offers on the page, copied into a read only list.</param>
+    /// <param name="children">The child nodes, copied into a read only list.</param>
     public CatalogNode(
-        bool Visible,
-        int Icon,
-        int PageId,
-        string PageName,
-        string Localization,
-        IReadOnlyList<int> OfferIds,
-        IReadOnlyList<CatalogNode> Children)
+        bool visible,
+        int icon,
+        int pageId,
+        string pageName,
+        string localization,
+        IReadOnlyList<int> offerIds,
+        IReadOnlyList<CatalogNode> children)
     {
-        this.Visible = Visible;
-        this.Icon = Icon;
-        this.PageId = PageId;
-        this.PageName = PageName;
-        this.Localization = Localization;
-        this.OfferIds = OfferIds;
-        this.Children = Children;
+        Visible = visible;
+        Icon = icon;
+        PageId = pageId;
+        PageName = pageName;
+        Localization = localization;
+        OfferIds = offerIds;
+        Children = children;
     }
 
     private CatalogNode(
@@ -124,29 +124,29 @@ public sealed record CatalogNode : IParserComposer<CatalogNode>
         new(visible, icon, page_id, page_name, localization, offer_ids, children);
 
     /// <summary>Deconstructs the node into its parts.</summary>
-    /// <param name="Visible">Whether the node is visible in the catalog.</param>
-    /// <param name="Icon">The icon identifier of the node.</param>
-    /// <param name="PageId">The identifier of the catalog page.</param>
-    /// <param name="PageName">The internal name of the page.</param>
-    /// <param name="Localization">The localized caption of the page.</param>
-    /// <param name="OfferIds">The identifiers of the offers on the page.</param>
-    /// <param name="Children">The child nodes.</param>
+    /// <param name="visible">Whether the node is visible in the catalog.</param>
+    /// <param name="icon">The icon identifier of the node.</param>
+    /// <param name="pageId">The identifier of the catalog page.</param>
+    /// <param name="pageName">The internal name of the page.</param>
+    /// <param name="localization">The localized caption of the page.</param>
+    /// <param name="offerIds">The identifiers of the offers on the page.</param>
+    /// <param name="children">The child nodes.</param>
     public void Deconstruct(
-        out bool Visible,
-        out int Icon,
-        out int PageId,
-        out string PageName,
-        out string Localization,
-        out IReadOnlyList<int> OfferIds,
-        out IReadOnlyList<CatalogNode> Children)
+        out bool visible,
+        out int icon,
+        out int pageId,
+        out string pageName,
+        out string localization,
+        out IReadOnlyList<int> offerIds,
+        out IReadOnlyList<CatalogNode> children)
     {
-        Visible = this.Visible;
-        Icon = this.Icon;
-        PageId = this.PageId;
-        PageName = this.PageName;
-        Localization = this.Localization;
-        OfferIds = this.OfferIds;
-        Children = this.Children;
+        visible = Visible;
+        icon = Icon;
+        pageId = PageId;
+        pageName = PageName;
+        localization = Localization;
+        offerIds = OfferIds;
+        children = Children;
     }
 }
 
@@ -157,17 +157,17 @@ public sealed record CatalogIndex : IParserComposer<CatalogIndex>
     private string _catalog_type = "";
 
     /// <summary>Initializes a new instance of the <see cref="CatalogIndex"/> record.</summary>
-    /// <param name="Root">The root node of the page tree.</param>
-    /// <param name="NewAdditionsAvailable">Whether the catalog has new additions.</param>
-    /// <param name="CatalogType">The type of the catalog, such as <c>NORMAL</c> or <c>BUILDERS_CLUB</c>.</param>
+    /// <param name="root">The root node of the page tree.</param>
+    /// <param name="newAdditionsAvailable">Whether the catalog has new additions.</param>
+    /// <param name="catalogType">The type of the catalog, such as <c>NORMAL</c> or <c>BUILDERS_CLUB</c>.</param>
     /// <exception cref="ArgumentNullException">
-    /// Thrown when <paramref name="Root"/> or <paramref name="CatalogType"/> is <see langword="null"/>.
+    /// Thrown when <paramref name="root"/> or <paramref name="catalogType"/> is <see langword="null"/>.
     /// </exception>
-    public CatalogIndex(CatalogNode Root, bool NewAdditionsAvailable, string CatalogType)
+    public CatalogIndex(CatalogNode root, bool newAdditionsAvailable, string catalogType)
     {
-        _root = CatalogWire.RequireReference(Root, nameof(Root));
-        this.NewAdditionsAvailable = NewAdditionsAvailable;
-        _catalog_type = CatalogWire.RequireReference(CatalogType, nameof(CatalogType));
+        _root = CatalogWire.RequireReference(root, nameof(root));
+        NewAdditionsAvailable = newAdditionsAvailable;
+        _catalog_type = CatalogWire.RequireReference(catalogType, nameof(catalogType));
     }
 
     /// <summary>Gets the root node of the page tree.</summary>
@@ -207,17 +207,17 @@ public sealed record CatalogIndex : IParserComposer<CatalogIndex>
         CatalogIndexWire.ComposeIndex(value, in p);
 
     /// <summary>Deconstructs the message into its parts.</summary>
-    /// <param name="Root">The root node of the page tree.</param>
-    /// <param name="NewAdditionsAvailable">Whether the catalog has new additions.</param>
-    /// <param name="CatalogType">The type of the catalog.</param>
+    /// <param name="root">The root node of the page tree.</param>
+    /// <param name="newAdditionsAvailable">Whether the catalog has new additions.</param>
+    /// <param name="catalogType">The type of the catalog.</param>
     public void Deconstruct(
-        out CatalogNode Root,
-        out bool NewAdditionsAvailable,
-        out string CatalogType)
+        out CatalogNode root,
+        out bool newAdditionsAvailable,
+        out string catalogType)
     {
-        Root = this.Root;
-        NewAdditionsAvailable = this.NewAdditionsAvailable;
-        CatalogType = this.CatalogType;
+        root = Root;
+        newAdditionsAvailable = NewAdditionsAvailable;
+        catalogType = CatalogType;
     }
 }
 
@@ -285,7 +285,7 @@ internal static class CatalogIndexWire
         int page_id = p.ReadInt();
         string page_name = strings.Read(in p, nameof(CatalogNode.PageName));
         string localization = strings.Read(in p, nameof(CatalogNode.Localization));
-        int count_width = CatalogWire.CountWidth(p.Client);
+        int count_width = CatalogWire.CountWidth;
         int offer_count = CatalogWire.ReadCount(
             in p,
             sizeof(int),
@@ -299,13 +299,13 @@ internal static class CatalogIndexWire
 
         int child_count = CatalogWire.ReadCount(
             in p,
-            MinimumNodeBytes(p.Client),
+            MinimumNodeBytes,
             trailing_bytes,
             CatalogWire.MaximumCollectionCount,
             nameof(CatalogNode.Children));
         budget.ReserveNodes(child_count);
         var children = new CatalogNode[child_count];
-        int minimum_node_bytes = MinimumNodeBytes(p.Client);
+        int minimum_node_bytes = MinimumNodeBytes;
         for (int index = 0; index < children.Length; index++)
         {
             int sibling_bytes = checked((children.Length - index - 1) * minimum_node_bytes);
@@ -394,9 +394,9 @@ internal static class CatalogIndexWire
             WriteNode(child, in p);
     }
 
-    private static int MinimumNodeBytes(ClientType client) =>
+    private const int MinimumNodeBytes =
         sizeof(byte) + sizeof(int) + sizeof(int) + CatalogWire.StringMinimumBytes * 2 +
-        CatalogWire.CountWidth(client) * 2;
+        CatalogWire.CountWidth * 2;
 }
 
 internal struct CatalogIndexBudget

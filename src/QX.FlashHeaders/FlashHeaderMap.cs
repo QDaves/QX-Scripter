@@ -2,7 +2,7 @@ using Flazzy.ABC;
 
 namespace Qx.Headers.Flash;
 
-public enum MessageDirection
+public enum FlashMessageDirection
 {
     Incoming,
     Outgoing
@@ -25,7 +25,7 @@ public enum NameSource
 public sealed class FlashHeaderDefinition
 {
     public required int Id { get; init; }
-    public required MessageDirection Direction { get; init; }
+    public required FlashMessageDirection Direction { get; init; }
     public required string Class { get; init; }
     public required string Namespace { get; init; }
     public string? Name { get; set; }

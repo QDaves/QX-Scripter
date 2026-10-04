@@ -3,7 +3,6 @@ using System.Runtime.ExceptionServices;
 using Qx.Game.Application;
 using Qx.Game.Protocol;
 using Qx.Interception;
-using Qx.Model.Crafting;
 using Qx.Model.Messages.Incoming;
 
 namespace Qx.Game;
@@ -144,78 +143,78 @@ public sealed class CraftingManager : GameStateManager
     }
 
     /// <summary>Requests the products that can be crafted with a crafting furniture.</summary>
-    /// <param name="crafting_furniture_id">The id of the crafting furniture in the room.</param>
+    /// <param name="craftingFurnitureId">The id of the crafting furniture in the room.</param>
     /// <remarks>
     /// The request is sent without waiting for a response. The response updates
     /// <see cref="Products"/> and raises <see cref="ProductsReceived"/>.
     /// </remarks>
     /// <exception cref="InvalidOperationException">Thrown when the application runtime is not active.</exception>
-    public void RequestProducts(Id crafting_furniture_id) =>
-        Operations().RequestProducts(crafting_furniture_id);
+    public void RequestProducts(Id craftingFurnitureId) =>
+        Operations().RequestProducts(craftingFurnitureId);
 
     /// <summary>Requests the ingredients of a recipe.</summary>
-    /// <param name="recipe_code">The code of the recipe.</param>
+    /// <param name="recipeCode">The code of the recipe.</param>
     /// <remarks>
     /// The request is sent without waiting for a response. The response updates
     /// <see cref="Recipe"/> and raises <see cref="RecipeReceived"/>.
     /// </remarks>
-    /// <exception cref="ArgumentNullException">Thrown when <paramref name="recipe_code"/> is <see langword="null"/>.</exception>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="recipeCode"/> is <see langword="null"/>.</exception>
     /// <exception cref="InvalidOperationException">Thrown when the application runtime is not active.</exception>
-    public void RequestRecipe(string recipe_code)
+    public void RequestRecipe(string recipeCode)
     {
-        ArgumentNullException.ThrowIfNull(recipe_code);
-        Operations().RequestRecipe(recipe_code);
+        ArgumentNullException.ThrowIfNull(recipeCode);
+        Operations().RequestRecipe(recipeCode);
     }
 
     /// <summary>Crafts a recipe with a crafting furniture.</summary>
-    /// <param name="crafting_furniture_id">The id of the crafting furniture in the room.</param>
-    /// <param name="recipe_code">The code of the recipe to craft.</param>
+    /// <param name="craftingFurnitureId">The id of the crafting furniture in the room.</param>
+    /// <param name="recipeCode">The code of the recipe to craft.</param>
     /// <remarks>
     /// The request is sent without waiting for a response. The response updates
     /// <see cref="LastResult"/> and raises <see cref="ResultReceived"/>.
     /// </remarks>
-    /// <exception cref="ArgumentNullException">Thrown when <paramref name="recipe_code"/> is <see langword="null"/>.</exception>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="recipeCode"/> is <see langword="null"/>.</exception>
     /// <exception cref="InvalidOperationException">Thrown when the application runtime is not active.</exception>
-    public void Craft(Id crafting_furniture_id, string recipe_code)
+    public void Craft(Id craftingFurnitureId, string recipeCode)
     {
-        ArgumentNullException.ThrowIfNull(recipe_code);
-        Operations().Craft(crafting_furniture_id, recipe_code);
+        ArgumentNullException.ThrowIfNull(recipeCode);
+        Operations().Craft(craftingFurnitureId, recipeCode);
     }
 
     /// <summary>Crafts a secret recipe from a set of ingredient items.</summary>
-    /// <param name="crafting_furniture_id">The id of the crafting furniture in the room.</param>
-    /// <param name="ingredient_item_ids">The ids of the inventory items to use as ingredients.</param>
+    /// <param name="craftingFurnitureId">The id of the crafting furniture in the room.</param>
+    /// <param name="ingredientItemIds">The ids of the inventory items to use as ingredients.</param>
     /// <remarks>
     /// The request is sent without waiting for a response. The response updates
     /// <see cref="LastResult"/> and raises <see cref="ResultReceived"/>.
     /// </remarks>
-    /// <exception cref="ArgumentNullException">Thrown when <paramref name="ingredient_item_ids"/> is <see langword="null"/>.</exception>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="ingredientItemIds"/> is <see langword="null"/>.</exception>
     /// <exception cref="InvalidOperationException">Thrown when the application runtime is not active.</exception>
     public void CraftSecret(
-        Id crafting_furniture_id,
-        IReadOnlyList<Id> ingredient_item_ids)
+        Id craftingFurnitureId,
+        IReadOnlyList<Id> ingredientItemIds)
     {
-        ArgumentNullException.ThrowIfNull(ingredient_item_ids);
-        Operations().CraftSecret(crafting_furniture_id, ingredient_item_ids);
+        ArgumentNullException.ThrowIfNull(ingredientItemIds);
+        Operations().CraftSecret(craftingFurnitureId, ingredientItemIds);
     }
 
     /// <summary>Requests the number of recipes that match a set of ingredient items.</summary>
-    /// <param name="crafting_furniture_id">The id of the crafting furniture in the room.</param>
-    /// <param name="ingredient_item_ids">The ids of the inventory items to check.</param>
+    /// <param name="craftingFurnitureId">The id of the crafting furniture in the room.</param>
+    /// <param name="ingredientItemIds">The ids of the inventory items to check.</param>
     /// <remarks>
     /// The request is sent without waiting for a response. The response updates
     /// <see cref="AvailableRecipes"/> and raises <see cref="AvailableRecipesReceived"/>.
     /// </remarks>
-    /// <exception cref="ArgumentNullException">Thrown when <paramref name="ingredient_item_ids"/> is <see langword="null"/>.</exception>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="ingredientItemIds"/> is <see langword="null"/>.</exception>
     /// <exception cref="InvalidOperationException">Thrown when the application runtime is not active.</exception>
     public void RequestAvailableRecipes(
-        Id crafting_furniture_id,
-        IReadOnlyList<Id> ingredient_item_ids)
+        Id craftingFurnitureId,
+        IReadOnlyList<Id> ingredientItemIds)
     {
-        ArgumentNullException.ThrowIfNull(ingredient_item_ids);
+        ArgumentNullException.ThrowIfNull(ingredientItemIds);
         Operations().RequestAvailableRecipes(
-            crafting_furniture_id,
-            ingredient_item_ids);
+            craftingFurnitureId,
+            ingredientItemIds);
     }
 
     internal void BindOperations(ICraftingOperations value)

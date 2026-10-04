@@ -667,8 +667,6 @@ public sealed class FriendManager : GameStateManager
             _categories.Clear();
             _categories.AddRange(init.Categories);
             _revision++;
-
-            ClientType client = Interceptor.Session?.Client ?? Interceptor.Messages.ActiveClient;
         }
 
         Initialized?.Invoke();

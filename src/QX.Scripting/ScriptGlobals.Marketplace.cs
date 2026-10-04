@@ -1,21 +1,13 @@
 using Qx.Game;
 using Qx.Game.Application;
 using Qx.Messages;
-using Qx.Model.Marketplace;
+using Qx.Model;
 using Qx.Model.Messages.Incoming;
 
 namespace Qx.Scripting;
 
 public partial class ScriptGlobals
 {
-    /// <summary>
-    /// Gets a snapshot of the marketplace state with the first page of up to 100 cached entries.
-    /// </summary>
-    /// <remarks>
-    /// It returns the same view as <see cref="Marketplace"/>. Every read builds a new view.
-    /// </remarks>
-    public MarketplaceStateView MarketplaceState => Marketplace;
-
     /// <summary>
     /// Gets a snapshot of the marketplace state with one page of each cached list.
     /// </summary>
@@ -26,17 +18,17 @@ public partial class ScriptGlobals
     /// is requested from the server.
     /// </remarks>
     /// <param name="page">The zero-based page index.</param>
-    /// <param name="page_size">The number of entries per page, from 1 to 250.</param>
+    /// <param name="pageSize">The number of entries per page, from 1 to 250.</param>
     /// <returns>The marketplace state view for that page.</returns>
     /// <exception cref="ArgumentOutOfRangeException">
-    /// Thrown when <paramref name="page"/> is negative, or <paramref name="page_size"/> is outside 1 to 250.
+    /// Thrown when <paramref name="page"/> is negative, or <paramref name="pageSize"/> is outside 1 to 250.
     /// </exception>
     public MarketplaceStateView GetMarketplaceStatePage(
         int page = 0,
-        int page_size = 100) =>
-        Application.Invoke<MarketplaceStateRequest, MarketplaceStateView>(
+        int pageSize = 100) =>
+        _application.Invoke<MarketplaceStateRequest, MarketplaceStateView>(
             ApplicationMemberIds.MarketplaceState,
-            new MarketplaceStateRequest(page, page_size),
+            new MarketplaceStateRequest(page, pageSize),
             Ct);
 
     /// <summary>
@@ -49,24 +41,24 @@ public partial class ScriptGlobals
     /// averaging period and the revenue limits.
     /// </remarks>
     public MarketplaceConfiguration? MarketplaceSettings =>
-        MarketplaceState.Configuration;
+        Marketplace.Configuration;
 
     /// <summary>
     /// Gets the server's last answer on whether the local user may post another offer, or
     /// <see langword="null"/> when it was never asked.
     /// </summary>
     /// <remarks>
-    /// It carries the result code and, on Flash, the remaining token count.
+    /// It carries the result code and the remaining token count.
     /// </remarks>
     public MarketplaceCanMakeOfferResult? MarketplaceEligibility =>
-        MarketplaceState.Eligibility;
+        Marketplace.Eligibility;
 
     /// <summary>
     /// Gets the first page of up to 100 offers from the last cached marketplace search, or
     /// <see langword="null"/> when no search result is cached.
     /// </summary>
     public MarketplaceOfferPage? LatestMarketplaceSearch =>
-        MarketplaceState.SearchResult;
+        Marketplace.SearchResult;
 
     /// <summary>
     /// Gets the first page of up to 100 of the local user's own marketplace offers, or
@@ -76,8 +68,8 @@ public partial class ScriptGlobals
     /// The page also carries the total number of own offers and the credits waiting to be
     /// redeemed.
     /// </remarks>
-    public MarketplaceOwnOfferPage? MarketplaceOwnOfferState =>
-        MarketplaceState.OwnOffers;
+    public MarketplaceOwnOfferPage? OwnMarketplaceOffers =>
+        Marketplace.OwnOffers;
 
     /// <summary>
     /// Gets the first 100 cached marketplace item statistics, ordered by furni category and then
@@ -88,49 +80,49 @@ public partial class ScriptGlobals
     /// <see cref="FindMarketplaceItemStats"/> to look up one furni kind across all pages.
     /// </remarks>
     public IReadOnlyList<MarketplaceItemStatsSnapshot> MarketplaceItemStatistics =>
-        MarketplaceState.ItemStats.Items;
+        Marketplace.ItemStats.Items;
 
     /// <summary>Finds one offer inside the cached search result.</summary>
     /// <remarks>
     /// Every page of the cached result is read, and the read starts again, up to three times, when
     /// the marketplace state changes in between. Nothing is requested from the server.
     /// </remarks>
-    /// <param name="offer_id">The marketplace offer id.</param>
+    /// <param name="offerId">The marketplace offer id.</param>
     /// <returns>
     /// The offer, or <see langword="null"/> when no search result is cached or it contains no
     /// offer with that id.
     /// </returns>
     /// <exception cref="InvalidOperationException">Thrown when the marketplace state kept changing while it was being read.</exception>
-    public MarketplaceOfferSnapshot? FindMarketplaceOffer(Id offer_id) =>
+    public MarketplaceOfferSnapshot? FindMarketplaceOffer(Id offerId) =>
         FindMarketplaceStateItem(
             state => state.SearchResult?.Offers.FirstOrDefault(
-                offer => offer.OfferId == offer_id),
+                offer => offer.OfferId == offerId),
             state => state.SearchResult?.CachedItems ?? 0);
 
     /// <summary>Finds one of the local user's own offers in the cached own offer list.</summary>
     /// <remarks>
     /// It reads the cache the same way as <see cref="FindMarketplaceOffer"/>.
     /// </remarks>
-    /// <param name="offer_id">The marketplace offer id.</param>
+    /// <param name="offerId">The marketplace offer id.</param>
     /// <returns>
     /// The offer, or <see langword="null"/> when the own offer list is not cached or contains no
     /// offer with that id.
     /// </returns>
     /// <exception cref="InvalidOperationException">Thrown when the marketplace state kept changing while it was being read.</exception>
-    public MarketplaceOfferSnapshot? FindOwnMarketplaceOffer(Id offer_id) =>
+    public MarketplaceOfferSnapshot? FindOwnMarketplaceOffer(Id offerId) =>
         FindMarketplaceStateItem(
             state => state.OwnOffers?.Offers.FirstOrDefault(
-                offer => offer.OfferId == offer_id),
+                offer => offer.OfferId == offerId),
             state => state.OwnOffers?.TotalItems ?? 0);
 
     /// <summary>Finds a cached price history entry for one furni kind.</summary>
     /// <remarks>
     /// It reads the cache the same way as <see cref="FindMarketplaceOffer"/>.
     /// </remarks>
-    /// <param name="furni_category">
+    /// <param name="furniCategory">
     /// The marketplace category: <c>Floor</c> = 1, <c>Wall</c> = 2, <c>Limited</c> = 3.
     /// </param>
-    /// <param name="furni_type_id">
+    /// <param name="furniTypeId">
     /// The furni type id, which is the class id shared by every copy of that furni, not an item id.
     /// </param>
     /// <returns>
@@ -139,12 +131,12 @@ public partial class ScriptGlobals
     /// </returns>
     /// <exception cref="InvalidOperationException">Thrown when the marketplace state kept changing while it was being read.</exception>
     public MarketplaceItemStatsSnapshot? FindMarketplaceItemStats(
-        MarketplaceFurniCategory furni_category,
-        int furni_type_id) =>
+        MarketplaceFurniCategory furniCategory,
+        int furniTypeId) =>
         FindMarketplaceStateItem(
             state => state.ItemStats.Items.FirstOrDefault(stats =>
-                stats.FurniCategory == furni_category &&
-                stats.FurniTypeId == furni_type_id),
+                stats.FurniCategory == furniCategory &&
+                stats.FurniTypeId == furniTypeId),
             state => state.ItemStats.TotalItems);
 
     private T? FindMarketplaceStateItem<T>(

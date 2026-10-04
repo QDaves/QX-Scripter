@@ -4,82 +4,28 @@ using Qx.Model.Messages.Incoming;
 namespace Qx.Scripting;
 
 /// <content>
-/// Room access: how far the local user got trying to enter a room (connecting, ringing a
-/// doorbell, waiting in a queue, admitted, denied, not found, or refused outright), plus the
-/// correlated entry helper and the access events.
+/// Room access: the correlated entry helper and the events that report how far the local user got
+/// trying to enter a room (connecting, ringing a doorbell, waiting in a queue, admitted, denied,
+/// not found, or refused outright).
 /// <para>
-/// All of the state below is a live view of the room tracker, updated as the entry handshake
-/// progresses. Reading it never sends anything.
+/// The current access state is a live view on <see cref="Room"/>, updated as the entry handshake
+/// progresses: <see cref="RoomManager.AccessState"/>, <see cref="RoomManager.QueuePosition"/>,
+/// <see cref="RoomManager.ConnectionFailure"/> and the members next to them. Reading it never
+/// sends anything.
 /// </para>
 /// </content>
 public partial class ScriptGlobals
 {
     /// <summary>
-    /// Gets where the local user stands in the room entry handshake.
-    /// </summary>
-    /// <remarks>
-    /// The states are <c>Idle</c>, <c>Connecting</c>, <c>RingingDoorbell</c>, <c>Queued</c>,
-    /// <c>Accessible</c>, and the terminal failures <c>Denied</c>, <c>NotFound</c> and
-    /// <c>ConnectionError</c>.
-    /// </remarks>
-    public RoomAccessState RoomAccessState => Room.AccessState;
-
-    /// <summary>
-    /// Gets the room the current access state refers to, or <see langword="null"/> when the state
-    /// is idle or the server never named a room.
-    /// </summary>
-    /// <remarks>
-    /// This is not necessarily the room the user is in; it is the room being entered.
-    /// </remarks>
-    public Id? RoomAccessRoomId => Room.AccessRoomId;
-
-    /// <summary>
-    /// Gets whether the local user is waiting at a locked door for someone inside to let them in.
-    /// </summary>
-    public bool IsRingingDoorbell => Room.IsRingingDoorbell;
-
-    /// <summary>Gets whether the local user is currently waiting in a room's door queue.</summary>
-    public bool IsInRoomQueue => Room.IsInQueue;
-
-    /// <summary>
-    /// Gets the local user's place in the queue they are waiting in, or <see langword="null"/>
-    /// when they are not queued.
-    /// </summary>
-    /// <remarks>
-    /// The value comes from the queue set whose target matches the first set the server reports.
-    /// </remarks>
-    public int? RoomQueuePosition => Room.QueuePosition;
-
-    /// <summary>
-    /// Gets the full queue status as last reported, or <see langword="null"/> when there is none.
-    /// </summary>
-    /// <remarks>
-    /// It holds the room and every queue set with its target (spectator or visitor) and position.
-    /// It is <see langword="null"/> until a queue message arrives, and is cleared when the access
-    /// state moves to a state other than queued.
-    /// </remarks>
-    public RoomQueueStatus? CurrentRoomQueue => Room.QueueStatus;
-
-    /// <summary>
-    /// Gets why the last room entry attempt was refused outright, or <see langword="null"/> when
-    /// the current attempt did not fail that way.
-    /// </summary>
-    /// <remarks>
-    /// The failure names the reason (room full, queue error, banned or blocked) together with the
-    /// raw reason code. It is cleared on every access state change.
-    /// </remarks>
-    public RoomConnectionFailure? LastRoomConnectionFailure => Room.ConnectionFailure;
-
-    /// <summary>
     /// Requests entry into a room and waits for the handshake to reach a conclusion.
     /// </summary>
-    /// <param name="room_id">The room to enter. Must be positive.</param>
+    /// <param name="roomId">The room to enter. Must be positive.</param>
     /// <param name="password">The door password; empty for rooms that need none.</param>
-    /// <param name="timeout_ms">
+    /// <param name="timeoutMs">
     /// The timeout in milliseconds for the handshake to conclude. Doorbell and queue waits count
     /// against this budget, so a busy room usually needs more than the default.
     /// </param>
-    /// <param name="cancellation_token">
+    /// <param name="cancellationToken">
     /// An extra token to abandon the wait with. The script's own stop token always applies as well.
     /// </param>
     /// <returns>
@@ -89,7 +35,7 @@ public partial class ScriptGlobals
     /// </returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="password"/> is <see langword="null"/>.</exception>
     /// <exception cref="ArgumentOutOfRangeException">
-    /// Thrown when <paramref name="room_id"/> is not positive, or <paramref name="timeout_ms"/> is not positive.
+    /// Thrown when <paramref name="roomId"/> is not positive, or <paramref name="timeoutMs"/> is not positive.
     /// </exception>
     /// <exception cref="Qx.Game.RoomEntryTimeoutException">
     /// Thrown when the handshake did not conclude in time. This is a <see cref="TimeoutException"/>.
@@ -99,27 +45,34 @@ public partial class ScriptGlobals
     /// at a time.
     /// </exception>
     /// <exception cref="OperationCanceledException">
-    /// Thrown when the script was stopped, or <paramref name="cancellation_token"/> was canceled.
+    /// Thrown when the script was stopped, or <paramref name="cancellationToken"/> was canceled.
     /// </exception>
     /// <remarks>
+    /// <para>
+    /// This is the awaited form of <see cref="EnterRoom(Id, string)"/>. The entry request is sent on
+    /// every call, also when the local user is already in that room; compare <see cref="RoomId"/>
+    /// first when that is not wanted.
+    /// </para>
+    /// <para>
     /// Only failures the server reports as an access result are returned. A wrong password is not
     /// one of them: the server answers with a generic error and does not let the user in, so the
     /// call ends in a timeout.
+    /// </para>
     /// </remarks>
-    public async Task<RoomEntryResult> EnsureEnterRoom(
-        Id room_id,
+    public async Task<RoomEntryResult> EnterRoomAsync(
+        Id roomId,
         string password = "",
-        int timeout_ms = 10000,
-        CancellationToken cancellation_token = default)
+        int timeoutMs = 10000,
+        CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(password);
         CancellationToken script_token = Ct;
         using var operation_lifetime = new CancellationTokenSource();
         using IDisposable tracked_lifetime = Track(new Unsubscriber(operation_lifetime.Cancel));
-        using CancellationTokenSource linked = cancellation_token.CanBeCanceled
+        using CancellationTokenSource linked = cancellationToken.CanBeCanceled
             ? CancellationTokenSource.CreateLinkedTokenSource(
                 script_token,
-                cancellation_token,
+                cancellationToken,
                 operation_lifetime.Token)
             : CancellationTokenSource.CreateLinkedTokenSource(
                 script_token,
@@ -128,15 +81,15 @@ public partial class ScriptGlobals
         {
             return await Game.RoomEntries
                 .EnsureAsync(
-                    room_id,
-                    () => EnterRoom(room_id, password),
-                    timeout_ms,
+                    roomId,
+                    () => EnterRoom(roomId, password),
+                    timeoutMs,
                     linked.Token)
                 .ConfigureAwait(false);
         }
-        catch (OperationCanceledException) when (cancellation_token.IsCancellationRequested)
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
-            throw new OperationCanceledException(cancellation_token);
+            throw new OperationCanceledException(cancellationToken);
         }
         catch (OperationCanceledException) when (script_token.IsCancellationRequested)
         {

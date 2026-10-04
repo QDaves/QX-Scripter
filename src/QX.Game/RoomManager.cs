@@ -2,7 +2,6 @@ using Qx.Messages;
 using Qx.Game.Protocol;
 using Qx.Model.Messages.Incoming;
 using Qx.Model;
-using Qx.Protocol;
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Globalization;
@@ -49,7 +48,6 @@ internal sealed record RoomPlacementCommitItem(
 
 internal sealed record RoomPlacementStateCommit(
     RoomPlacementCommitKind Kind,
-    ClientType Client,
     long SessionGeneration,
     Id RoomId,
     long RoomGeneration,
@@ -61,7 +59,6 @@ internal sealed record RoomPlacementStateCommit(
     int? Delay);
 
 internal sealed record RoomPickupConfirmationCommit(
-    ClientType Client,
     long SessionGeneration,
     Id RoomId,
     long RoomGeneration,
@@ -90,6 +87,7 @@ internal sealed record RoomPickupConfirmationCommit(
 public sealed class RoomManager : GameStateManager
 {
     private const int KickedByOwnerError = 4008;
+    private readonly Dictionary<Id, AreaHideData> pending_hidden_areas = [];
 
     private readonly ConcurrentDictionary<long, FloorItem> _floorItems = [];
     private readonly ConcurrentDictionary<long, WallItem> _wallItems = [];
@@ -106,8 +104,6 @@ public sealed class RoomManager : GameStateManager
     private long _revision;
     private int _mutation_depth;
     private bool _room_ready_received;
-    private bool _placement_session_bound;
-    private ClientType _placement_client;
     private RoomKick? _pending_kick;
     private CancellationTokenSource _session_end = new();
     private TaskCompletionSource _next_change = new(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -205,9 +201,16 @@ public sealed class RoomManager : GameStateManager
     /// <summary>Gets the chat settings of the current room, or <see langword="null"/> while they have not arrived.</summary>
     /// <remarks>Set from the room details and from the chat settings message, whichever arrives last.</remarks>
     public RoomChatSettings? ChatSettings { get; private set; }
-    /// <summary>Gets or sets the game data used to fill in the identifier and size of room furni.</summary>
-    /// <remarks>Call <see cref="EnrichFurni"/> after setting it to apply it to the furni already in the room.</remarks>
-    public GameData? GameData { get; set; }
+    /// <summary>
+    /// Gets the game data used to fill in the identifier and size of room furni, or
+    /// <see langword="null"/> until a <see cref="GameState"/> attaches the manager.
+    /// </summary>
+    /// <remarks>
+    /// It is the <see cref="GameState.GameData"/> of that game state. Furni already in the room are
+    /// filled in again whenever it loads for the current session. An identifier the server sent is
+    /// kept, and sizes are set on floor items only.
+    /// </remarks>
+    public GameData? GameData { get; internal set; }
     internal Func<Id?>? OwnUserId { get; set; }
     /// <summary>Gets whether the data of the current room has been received.</summary>
     public bool DataIsLoaded { get; private set; }
@@ -261,13 +264,43 @@ public sealed class RoomManager : GameStateManager
     /// <summary>Gets the heightmap of the current room, or <see langword="null"/> while it has not arrived.</summary>
     /// <remarks>Height updates from the server are applied to the same instance.</remarks>
     public Heightmap? Heightmap { get; private set; }
-    /// <summary>Gets the user's ownership, rights and spectator state in the current room as one value.</summary>
-    public RoomAuthorityState Authority => new(
-        IsOwner,
-        RightsLevel,
-        RightsAreKnown,
-        HasRights,
-        IsSpectating);
+    /// <summary>
+    /// Gets the user's ownership, rights and spectator state in the current room, together with the
+    /// room's mute state and moderation levels, as one value.
+    /// </summary>
+    /// <remarks>Read it through <see cref="Capture{TResult}"/> to take every member from the same state.</remarks>
+    public RoomAuthorityState Authority
+    {
+        get
+        {
+            RoomResultDetails? details = Details;
+            return new RoomAuthorityState(
+                IsOwner,
+                RightsLevel,
+                RightsAreKnown,
+                HasRights,
+                IsSpectating,
+                details?.IsRoomMuted,
+                details?.CanMute,
+                details?.Moderation.Mute,
+                details?.Moderation.Kick,
+                details?.Moderation.Ban);
+        }
+    }
+    /// <summary>Gets the decoration, layout and chat rules of the current room as one value.</summary>
+    /// <remarks>
+    /// The value is detached: its property map and chat settings are copies that do not change with
+    /// the room. Read it through <see cref="Capture{TResult}"/> to take every member from the same state.
+    /// </remarks>
+    public RoomEnvironmentState Environment => new(
+        EntryTile,
+        Properties,
+        FloorProperty,
+        WallpaperProperty,
+        LandscapeProperty,
+        AnimatedLandscapeProperty,
+        VisualizationSettings,
+        ChatSettings is { } chat ? RoomObjectSnapshot.Copy(chat) : null);
     /// <summary>Gets a copy of the properties of the current room, such as <c>floor</c>, <c>wallpaper</c> and <c>landscape</c>, keyed by name.</summary>
     public IReadOnlyDictionary<string, string> Properties
     {
@@ -440,7 +473,14 @@ public sealed class RoomManager : GameStateManager
     public event Action<RoomVisualizationSettings>? VisualizationSettingsUpdated;
     /// <summary>Occurs when the chat settings of the current room arrive.</summary>
     public event Action<RoomChatSettings>? ChatSettingsUpdated;
-    /// <summary>Occurs when the user's ownership, rights or spectator state in the current room changes.</summary>
+    /// <summary>Occurs when a member of <see cref="Authority"/> changes in the current room, with the new value.</summary>
+    /// <remarks>
+    /// Besides changes of the user's ownership, rights and spectator state, it is raised when a guest
+    /// room result for the current room changes the room's mute state, whether the user may mute
+    /// others or the moderation levels. The room result applied as the room is entered and the reset
+    /// on leaving do not raise it, so read <see cref="Authority"/> once the room is entered to get the
+    /// starting value.
+    /// </remarks>
     public event Action<RoomAuthorityState>? AuthorityChanged;
     /// <summary>Occurs when the user's rights level in the current room changes, with the previous and the current level.</summary>
     public event Action<int?, int?>? RightsLevelChanged;
@@ -473,6 +513,21 @@ public sealed class RoomManager : GameStateManager
         item.Data = data;
         Publish(WallItemDataChanged, item, previous, item.Data);
         Publish(WallItemUpdated, item);
+    }
+
+    private void replace_hidden_areas(IEnumerable<AreaHideData> areas)
+    {
+        if (FloorPlan is not { } previous) return;
+        FloorPlan = new FloorPlan(previous.Map)
+        {
+            UseLegacyScale = previous.UseLegacyScale,
+            WallHeight = previous.WallHeight,
+            CameraX = previous.CameraX,
+            CameraY = previous.CameraY,
+            CameraZ = previous.CameraZ,
+            HasCameraData = previous.HasCameraData,
+            HiddenAreas = Array.AsReadOnly(areas.ToArray())
+        };
     }
 
     private FloorItem? RemoveFloorItem(Id id)
@@ -528,11 +583,8 @@ public sealed class RoomManager : GameStateManager
         bool? is_expired = null,
         int? delay = null)
     {
-        if (!TryPlacementClient(out ClientType client))
-            return;
         Publish(PlacementStateCommitted, new RoomPlacementStateCommit(
             kind,
-            client,
             session_generation,
             RoomId,
             Generation,
@@ -546,10 +598,7 @@ public sealed class RoomManager : GameStateManager
 
     private void PublishPickupConfirmation(PickupConfirmation message, long session_generation)
     {
-        if (!TryPlacementClient(out ClientType client))
-            return;
         Publish(PickupConfirmationReceived, new RoomPickupConfirmationCommit(
-            client,
             session_generation,
             RoomId,
             Generation,
@@ -558,26 +607,6 @@ public sealed class RoomManager : GameStateManager
             message.ItemId,
             message.Title,
             message.Body));
-    }
-
-    private bool TryPlacementClient(out ClientType client)
-    {
-        if (CurrentSession is { } session)
-        {
-            _placement_client = session.Client;
-            _placement_session_bound = true;
-        }
-        client = _placement_client;
-        return _placement_session_bound;
-    }
-
-    private void BindPlacementClient(ClientType client)
-    {
-        lock (_state_sync)
-        {
-            _placement_client = client;
-            _placement_session_bound = true;
-        }
     }
 
     private static RoomPlacementCommitItem PlacementItem(FloorItem item) => new(
@@ -810,13 +839,6 @@ public sealed class RoomManager : GameStateManager
                 handler(message);
         });
 
-    private void OnRoomState<T>(MessageKey key, Action<T> handler) where T : IParserComposer<T> =>
-        OnIncoming<T>(key, message => Mutate(() =>
-        {
-            if (State is RoomSessionState.Entering or RoomSessionState.Ready)
-                handler(message);
-        }));
-
     private void OnRoomState<T>(MessageContract<T> contract, Action<T> handler)
         where T : IParserComposer<T> =>
         OnRoomState(contract, (message, _) => handler(message));
@@ -828,18 +850,6 @@ public sealed class RoomManager : GameStateManager
             if (State is RoomSessionState.Entering or RoomSessionState.Ready)
                 handler(message, state_generation);
         }));
-
-    private void OnRoomIncoming<T>(ClientType client, string name, Action<T> handler)
-        where T : IParserComposer<T> =>
-        OnIncoming<T>(client, name, message => Mutate(() => handler(message)));
-
-    private void OnRoomState<T>(ClientType client, string name, Action<T> handler)
-        where T : IParserComposer<T> =>
-        OnRoomIncoming<T>(client, name, message =>
-        {
-            if (State is RoomSessionState.Entering or RoomSessionState.Ready)
-                handler(message);
-        });
 
     private void OnRoomOutgoing(string name, Action handler) =>
         OnOutgoing(name, () => Mutate(handler));
@@ -871,6 +881,7 @@ public sealed class RoomManager : GameStateManager
 
     private void SetRoomResult(GuestRoomResult message, bool notify)
     {
+        RoomAuthorityState previous_authority = Authority;
         bool data_changed = Data is null || !RoomDataMatches(Data, message.Data);
         Data = message.Data;
         DataIsLoaded = true;
@@ -893,6 +904,9 @@ public sealed class RoomManager : GameStateManager
         }
         if (data_changed)
             Publish(RoomDataUpdated, message.Data);
+        RoomAuthorityState current_authority = Authority;
+        if (notify && previous_authority != current_authority)
+            Publish(AuthorityChanged, current_authority);
     }
 
     private static bool RoomDataMatches(RoomData left, RoomData right) =>
@@ -1239,6 +1253,7 @@ public sealed class RoomManager : GameStateManager
         Controllers = [];
         ControllersAreLoaded = false;
         FloorPlan = null;
+        pending_hidden_areas.Clear();
         FloorPlanIsLoaded = false;
         Heightmap = null;
         HeightmapIsLoaded = false;
@@ -1279,9 +1294,7 @@ public sealed class RoomManager : GameStateManager
         }
     }
 
-    /// <summary>Fills in the identifier and size of every furni in the room from <see cref="GameData"/>.</summary>
-    /// <remarks>An identifier the server already sent is kept. Sizes are set on floor items only.</remarks>
-    public void EnrichFurni()
+    internal void EnrichFurni()
     {
         Mutate(() =>
         {
@@ -1293,15 +1306,15 @@ public sealed class RoomManager : GameStateManager
     }
 
     /// <summary>Gets the Fx bar values of one avatar, by room index, or of one furni, by item id.</summary>
-    /// <param name="is_user"><see langword="true"/> to read the values of an avatar; <see langword="false"/> to read the values of a furni.</param>
-    /// <param name="entity_id">The avatar's room index, or the furni's item id.</param>
+    /// <param name="isUser"><see langword="true"/> to read the values of an avatar; <see langword="false"/> to read the values of a furni.</param>
+    /// <param name="entityId">The avatar's room index, or the furni's item id.</param>
     /// <returns>The values bound to their current configuration, or an empty list when there are none.</returns>
-    public IReadOnlyList<VariableFxValue> VariableFxOf(bool is_user, long entity_id)
+    public IReadOnlyList<VariableFxValue> VariableFxOf(bool isUser, long entityId)
     {
         lock (_state_sync)
         {
             return [.. _variable_fx_values.Values
-                .Where(value => value.IsUser == is_user && value.EntityId == entity_id)
+                .Where(value => value.IsUser == isUser && value.EntityId == entityId)
                 .Select(BindVariableFx)];
         }
     }
@@ -1327,10 +1340,6 @@ public sealed class RoomManager : GameStateManager
     /// <inheritdoc/>
     protected override void OnAttach()
     {
-        if (CurrentSession is { } active_session)
-            BindPlacementClient(active_session.Client);
-        OnConnected(session => BindPlacementClient(session.Client));
-
         OnRoomOutgoing(MessageContracts.Room.Access.OpenRequest, message =>
         {
             BeginRoom(message.RoomId, new_entry: true);
@@ -1539,11 +1548,11 @@ public sealed class RoomManager : GameStateManager
         // it treats a single ObjectAdd - onObjects and onObjectAdd both call addActiveObject and
         // neither drops what is already placed. Replacing the collection here emptied the room down
         // to whatever the newest batch carried. Leaving the room is what clears it, in Reset.
-        OnRoomState<FloorItems>(MessageKeys.Room.Objects, ApplyFloorItems);
+        OnRoomState(MessageContracts.Room.Objects, ApplyFloorItems);
 
         // Same batching as Objects above: the client's onItems adds each element through the same
         // path as a single ItemAdd and never clears.
-        OnRoomState<WallItems>(MessageKeys.Room.WallItems, message =>
+        OnRoomState(MessageContracts.Room.WallItems, message =>
         {
             foreach (WallItem item in message.Items)
             {
@@ -1617,7 +1626,7 @@ public sealed class RoomManager : GameStateManager
             }
         });
 
-        OnRoomState<FloorItemsRemove>(MessageKeys.Room.FloorItem.RemovedMultiple, message =>
+        OnRoomState(MessageContracts.Room.FloorItem.RemovedMultiple, message =>
         {
             foreach (Id id in message.Ids)
                 RemoveFloorItem(id);
@@ -1650,16 +1659,16 @@ public sealed class RoomManager : GameStateManager
             }
         });
 
-        OnRoomState<WallItemsRemove>(MessageKeys.Room.WallItem.RemovedMultiple, message =>
+        OnRoomState(MessageContracts.Room.WallItem.RemovedMultiple, message =>
         {
             foreach (Id id in message.Ids)
                 RemoveWallItem(id);
         });
 
-        OnRoomState<ItemStateUpdate>(MessageKeys.Room.WallItem.DataUpdated, message =>
+        OnRoomState(MessageContracts.Room.WallItem.DataUpdated, message =>
             SetWallItemData(message.Id, message.ItemData));
 
-        OnRoomState<WallItemsStateUpdate>(MessageKeys.Room.WallItem.DataBatchUpdated, message =>
+        OnRoomState(MessageContracts.Room.WallItem.DataBatchUpdated, message =>
         {
             foreach (ItemStateUpdate item in message.Items)
                 SetWallItemData(item.Id, item.ItemData);
@@ -1766,7 +1775,7 @@ public sealed class RoomManager : GameStateManager
         }));
 
         OnRoomState(MessageContracts.Room.Occupants.Identity.FavoriteGroup, message =>
-            Patch(message.Index, avatar =>
+            Patch(message.RoomIndex, avatar =>
             {
                 if (avatar is not User user)
                     return;
@@ -1850,9 +1859,9 @@ public sealed class RoomManager : GameStateManager
                 PlacementItem(message.Item));
         });
 
-        OnRoomState(MessageContracts.Room.ItemPickupConfirmation, PublishPickupConfirmation);
+        OnRoomState(MessageContracts.Room.Item.PickupConfirmation, PublishPickupConfirmation);
 
-        OnRoomState<FloorItemDataUpdate>(MessageKeys.Room.FloorItem.DataUpdated, message =>
+        OnRoomState(MessageContracts.Room.FloorItem.DataUpdated, message =>
         {
             if (_floorItems.TryGetValue(message.Id, out FloorItem? item))
             {
@@ -1863,7 +1872,7 @@ public sealed class RoomManager : GameStateManager
             }
         });
 
-        OnRoomState<FloorItemsDataUpdate>(MessageKeys.Room.FloorItem.DataBatchUpdated, message =>
+        OnRoomState(MessageContracts.Room.FloorItem.DataBatchUpdated, message =>
         {
             foreach (FloorDataEntry entry in message.Items)
                 if (_floorItems.TryGetValue(entry.Id, out FloorItem? item))
@@ -1886,12 +1895,23 @@ public sealed class RoomManager : GameStateManager
         OnRoomState(MessageContracts.Room.Environment.FloorPlan, message =>
         {
             FloorPlan = message;
+            foreach (AreaHideData area in pending_hidden_areas.Values)
+                replace_hidden_areas(FloorPlan.HiddenAreas.Where(value => value.FurniId != area.FurniId).Append(area));
+            pending_hidden_areas.Clear();
             FloorPlanIsLoaded = true;
         });
 
-        OnRoomState<Heightmap>(MessageKeys.Room.Heightmap.Snapshot, ApplyHeightmap);
+        OnRoomState(MessageContracts.Room.Environment.AreaHide, message =>
+        {
+            if (FloorPlan is null)
+                pending_hidden_areas[message.FurniId] = message;
+            else
+                replace_hidden_areas(FloorPlan.HiddenAreas.Where(value => value.FurniId != message.FurniId).Append(message));
+        });
 
-        OnRoomState<HeightmapUpdate>(MessageKeys.Room.Heightmap.Diff, message =>
+        OnRoomState(MessageContracts.Room.Heightmap.Snapshot, ApplyHeightmap);
+
+        OnRoomState(MessageContracts.Room.Heightmap.Diff, message =>
         {
             if (Heightmap is { } map)
             {

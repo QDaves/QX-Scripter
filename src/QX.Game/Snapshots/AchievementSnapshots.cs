@@ -2,7 +2,10 @@ using Qx.Model.Messages.Incoming;
 
 namespace Qx.Game.Snapshots;
 
-/// <summary>Represents one achievement of the local user and the progress on its current level.</summary>
+/// <summary>
+/// Represents the JSON projection of one of the local user's achievements for the MCP read tools;
+/// scripts use <see cref="Qx.Model.Messages.Incoming.Achievement"/>.
+/// </summary>
 /// <param name="Id">The achievement identifier.</param>
 /// <param name="Level">The level being worked on, or the final level once <paramref name="IsComplete"/> is <see langword="true"/>.</param>
 /// <param name="BadgeCode">The badge code of the level, such as <c>ACH_RoomEntry5</c>.</param>
@@ -39,7 +42,10 @@ public sealed record AchievementSnapshot(
     int DisplayMethod,
     short State);
 
-/// <summary>Represents the local user's achievements, capped to a maximum count.</summary>
+/// <summary>
+/// Represents the JSON projection of the local user's achievements, capped to a maximum count, for
+/// the MCP read tools; scripts use <see cref="AchievementManager"/>.
+/// </summary>
 /// <param name="DefaultCategory">The default category the hotel sent with the achievement list.</param>
 /// <param name="Total">The number of achievements the user has.</param>
 /// <param name="Completed">The number of achievements at their final level, counted over all of them.</param>

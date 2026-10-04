@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Qx.Messages;
 using Qx.Model;
 using Qx.Protocol;
@@ -18,11 +19,11 @@ internal static class RoomModerationApplicationDescriptors
         typeof(RoomModerationStateRequest),
         typeof(RoomModerationStateView),
         PageParameters(),
-        state_effects:
+        stateEffects:
         [new(ApplicationStateKey.RoomBansLoaded, ApplicationStateEffectKind.Reads)],
         messages: StateMessages(),
-        tool_hints: new(true, false, true, false),
-        invocation_scope: ApplicationInvocationScope.Persistent);
+        toolHints: new(true, false, true, false),
+        invocationScope: ApplicationInvocationScope.Persistent);
 
     public static ApplicationDescriptor Refresh { get; } = new(
         ApplicationMemberIds.RoomModerationRefresh,
@@ -116,11 +117,11 @@ internal static class RoomModerationApplicationDescriptors
         event_exposure,
         null,
         typeof(RoomModerationChanged),
-        state_effects:
+        stateEffects:
         [new(ApplicationStateKey.RoomBansLoaded, ApplicationStateEffectKind.Changes)],
         messages: StateMessages());
 
-    private static ApplicationDescriptor Action<TRequest>(
+    private static ApplicationDescriptor Action<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TRequest>(
         string id,
         string title,
         string description,
@@ -219,10 +220,10 @@ internal static class RoomModerationApplicationDescriptors
     ];
 
     private static ApplicationMessageRequirement Send(MessageKey key) =>
-        new(key, Direction.Out, ApplicationMessageRole.Send);
+        new(key, MessageDirection.Out, ApplicationMessageRole.Send);
 
     private static ApplicationMessageRequirement Observe(MessageKey key, bool required = true) =>
-        new(key, Direction.In, ApplicationMessageRole.Observe, required);
+        new(key, MessageDirection.In, ApplicationMessageRole.Observe, required);
 
     private static ApplicationParameterConstraints IdConstraint() =>
         new(Pattern: "^[1-9][0-9]*$");

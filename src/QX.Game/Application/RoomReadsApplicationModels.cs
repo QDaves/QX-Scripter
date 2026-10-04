@@ -11,7 +11,7 @@ namespace Qx.Game.Application;
 /// Used by <see cref="ApplicationMemberIds.RoomDataGet"/>. One request is sent and the call completes
 /// with the first room data response for <paramref name="RoomId"/>.
 /// </remarks>
-/// <param name="RoomId">The id of the room. Must be positive and, on the Flash client, fit in a 32-bit integer.</param>
+/// <param name="RoomId">The id of the room. Must be positive and fit in a 32-bit integer.</param>
 /// <param name="TimeoutMilliseconds">The time to wait for the matching response in milliseconds, from 1 to 120000.</param>
 /// <param name="ExpectedSessionGeneration">
 /// The session generation the request must run in, or <see langword="null"/> to use the active session.
@@ -111,14 +111,12 @@ public sealed record RoomDataView(
 /// <remarks>
 /// Returned by <see cref="ApplicationMemberIds.RoomDataGet"/>.
 /// </remarks>
-/// <param name="Client">The client type of the hotel session.</param>
 /// <param name="ReceivedAtUtc">The time the matching response was received.</param>
 /// <param name="SessionGeneration">The state generation of the hotel session the request ran in.</param>
 /// <param name="RequestedRoomId">The id of the room that was requested.</param>
 /// <param name="MessagesDispatched">The number of request messages sent.</param>
 /// <param name="Room">The navigator data of the room.</param>
 public sealed record RoomDataReadResult(
-    ClientType Client,
     DateTimeOffset ReceivedAtUtc,
     long SessionGeneration,
     Id RequestedRoomId,
@@ -133,7 +131,7 @@ public sealed record RoomDataReadResult(
 /// with the first rights list for <paramref name="RoomId"/>. The hotel answers only for rooms the
 /// local user controls.
 /// </remarks>
-/// <param name="RoomId">The id of the room. Must be positive and, on the Flash client, fit in a 32-bit integer.</param>
+/// <param name="RoomId">The id of the room. Must be positive and fit in a 32-bit integer.</param>
 /// <param name="TimeoutMilliseconds">The time to wait for the matching response in milliseconds, from 1 to 120000.</param>
 /// <param name="ExpectedSessionGeneration">
 /// The session generation the request must run in, or <see langword="null"/> to use the active session.
@@ -149,14 +147,12 @@ public sealed record RoomRightsReadRequest(
 /// <remarks>
 /// Returned by <see cref="ApplicationMemberIds.RoomRightsList"/>.
 /// </remarks>
-/// <param name="Client">The client type of the hotel session.</param>
 /// <param name="ReceivedAtUtc">The time the matching response was received.</param>
 /// <param name="SessionGeneration">The state generation of the hotel session the request ran in.</param>
 /// <param name="RoomId">The id of the room the rights list belongs to.</param>
 /// <param name="MessagesDispatched">The number of request messages sent.</param>
 /// <param name="Users">The id and name of each user holding rights in the room.</param>
 public sealed record RoomRightsReadResult(
-    ClientType Client,
     DateTimeOffset ReceivedAtUtc,
     long SessionGeneration,
     Id RoomId,
@@ -192,7 +188,7 @@ public sealed record RoomRightsReadResult(
 /// Used by <see cref="ApplicationMemberIds.PetsInfoGet"/>. One request is sent and the call completes
 /// with the first pet info response for <paramref name="PetId"/>.
 /// </remarks>
-/// <param name="PetId">The id of the pet. Must be positive and, on the Flash client, fit in a 32-bit integer.</param>
+/// <param name="PetId">The id of the pet. Must be positive and fit in a 32-bit integer.</param>
 /// <param name="TimeoutMilliseconds">The time to wait for the matching response in milliseconds, from 1 to 120000.</param>
 /// <param name="ExpectedSessionGeneration">
 /// The session generation the request must run in, or <see langword="null"/> to use the active session.
@@ -294,14 +290,12 @@ public sealed record PetInfoView(
 /// <remarks>
 /// Returned by <see cref="ApplicationMemberIds.PetsInfoGet"/>.
 /// </remarks>
-/// <param name="Client">The client type of the hotel session.</param>
 /// <param name="ReceivedAtUtc">The time the matching response was received.</param>
 /// <param name="SessionGeneration">The state generation of the hotel session the request ran in.</param>
 /// <param name="RequestedPetId">The id of the pet that was requested.</param>
 /// <param name="MessagesDispatched">The number of request messages sent.</param>
 /// <param name="Pet">The statistics of the pet.</param>
 public sealed record PetInfoReadResult(
-    ClientType Client,
     DateTimeOffset ReceivedAtUtc,
     long SessionGeneration,
     Id RequestedPetId,
@@ -315,7 +309,7 @@ public sealed record PetInfoReadResult(
 /// Used by <see cref="ApplicationMemberIds.RoomStickyGet"/>. One request is sent and the call completes
 /// with the first sticky data response for <paramref name="ItemId"/>.
 /// </remarks>
-/// <param name="ItemId">The id of the sticky note wall item. Must be positive and, on the Flash client, fit in a 32-bit integer.</param>
+/// <param name="ItemId">The id of the sticky note wall item. Must be positive and fit in a 32-bit integer.</param>
 /// <param name="TimeoutMilliseconds">The time to wait for the matching response in milliseconds, from 1 to 120000.</param>
 /// <param name="ExpectedSessionGeneration">
 /// The session generation the request must run in, or <see langword="null"/> to use the active session.
@@ -331,7 +325,6 @@ public sealed record StickyReadRequest(
 /// <remarks>
 /// Returned by <see cref="ApplicationMemberIds.RoomStickyGet"/>.
 /// </remarks>
-/// <param name="Client">The client type of the hotel session.</param>
 /// <param name="ReceivedAtUtc">The time the matching response was received.</param>
 /// <param name="SessionGeneration">The state generation of the hotel session the request ran in.</param>
 /// <param name="ItemId">The id of the sticky note wall item.</param>
@@ -339,7 +332,6 @@ public sealed record StickyReadRequest(
 /// <param name="Color">The note color as a hex string, empty when the hotel sent none.</param>
 /// <param name="Text">The note text.</param>
 public sealed record StickyReadResult(
-    ClientType Client,
     DateTimeOffset ReceivedAtUtc,
     long SessionGeneration,
     Id ItemId,
@@ -379,14 +371,12 @@ public sealed record RoomAdRoomView(
 /// <remarks>
 /// Returned by <see cref="ApplicationMemberIds.CatalogRoomAdInfoGet"/>.
 /// </remarks>
-/// <param name="Client">The client type of the hotel session.</param>
 /// <param name="ReceivedAtUtc">The time the response was received.</param>
 /// <param name="SessionGeneration">The state generation of the hotel session the request ran in.</param>
 /// <param name="MessagesDispatched">The number of request messages sent.</param>
 /// <param name="IsVip">Whether the account holds the membership that extends a room event.</param>
 /// <param name="Rooms">The rooms that may be advertised.</param>
 public sealed record RoomAdInfoReadResult(
-    ClientType Client,
     DateTimeOffset ReceivedAtUtc,
     long SessionGeneration,
     int MessagesDispatched,

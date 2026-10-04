@@ -66,23 +66,23 @@ public sealed record EarningEntry : IParserComposer<EarningEntry>
     private string _product_code = "";
 
     /// <summary>Initializes a new instance of the <see cref="EarningEntry"/> record.</summary>
-    /// <param name="Category">Where the earning came from.</param>
-    /// <param name="Kind">Whether the amount is duckets or credits.</param>
-    /// <param name="Amount">How much is waiting.</param>
-    /// <param name="ProductCode">
+    /// <param name="category">Where the earning came from.</param>
+    /// <param name="kind">Whether the amount is duckets or credits.</param>
+    /// <param name="amount">How much is waiting.</param>
+    /// <param name="productCode">
     /// The product this line hands over, empty when the line is plain currency. The client counts these
     /// rather than adding them up, because one line is one item however large its amount reads.
     /// </param>
     public EarningEntry(
-        EarningCategory Category,
-        EarningRewardKind Kind,
-        int Amount,
-        string ProductCode)
+        EarningCategory category,
+        EarningRewardKind kind,
+        int amount,
+        string productCode)
     {
-        this.Category = Category;
-        this.Kind = Kind;
-        this.Amount = Amount;
-        this.ProductCode = ProductCode;
+        Category = category;
+        Kind = kind;
+        Amount = amount;
+        ProductCode = productCode;
     }
 
     /// <summary>Gets where the earning came from.</summary>
@@ -107,20 +107,20 @@ public sealed record EarningEntry : IParserComposer<EarningEntry>
     }
 
     /// <summary>Deconstructs the entry into its parts.</summary>
-    /// <param name="Category">Where the earning came from.</param>
-    /// <param name="Kind">Whether the amount is duckets or credits.</param>
-    /// <param name="Amount">How much is waiting.</param>
-    /// <param name="ProductCode">The product this line hands over, empty when the line is plain currency.</param>
+    /// <param name="category">Where the earning came from.</param>
+    /// <param name="kind">Whether the amount is duckets or credits.</param>
+    /// <param name="amount">How much is waiting.</param>
+    /// <param name="productCode">The product this line hands over, empty when the line is plain currency.</param>
     public void Deconstruct(
-        out EarningCategory Category,
-        out EarningRewardKind Kind,
-        out int Amount,
-        out string ProductCode)
+        out EarningCategory category,
+        out EarningRewardKind kind,
+        out int amount,
+        out string productCode)
     {
-        Category = this.Category;
-        Kind = this.Kind;
-        Amount = this.Amount;
-        ProductCode = this.ProductCode;
+        category = Category;
+        kind = Kind;
+        amount = Amount;
+        productCode = ProductCode;
     }
 
     /// <summary>Gets whether this line hands over an item rather than currency.</summary>
@@ -215,10 +215,10 @@ public sealed record EarningStatus : IParserComposer<EarningStatus>
         Array.AsReadOnly(Array.Empty<EarningEntry>());
 
     /// <summary>Initializes a new instance of the <see cref="EarningStatus"/> record.</summary>
-    /// <param name="Entries">The lines, in the order the hotel sent them.</param>
-    public EarningStatus(IReadOnlyList<EarningEntry> Entries)
+    /// <param name="entries">The lines, in the order the hotel sent them.</param>
+    public EarningStatus(IReadOnlyList<EarningEntry> entries)
     {
-        this.Entries = Entries;
+        Entries = entries;
     }
 
     /// <summary>Gets the lines, in the order the hotel sent them, as a read only copy.</summary>
@@ -229,10 +229,10 @@ public sealed record EarningStatus : IParserComposer<EarningStatus>
     }
 
     /// <summary>Deconstructs the message into its lines.</summary>
-    /// <param name="Entries">The lines, in the order the hotel sent them.</param>
-    public void Deconstruct(out IReadOnlyList<EarningEntry> Entries)
+    /// <param name="entries">The lines, in the order the hotel sent them.</param>
+    public void Deconstruct(out IReadOnlyList<EarningEntry> entries)
     {
-        Entries = this.Entries;
+        entries = Entries;
     }
 
     /// <summary>The categories that carry at least one line, in the order they first appear.</summary>

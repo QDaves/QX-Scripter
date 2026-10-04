@@ -1,12 +1,6 @@
 namespace Qx.ClientCatalog.InstalledClients;
 
-public enum InstalledClientFamily
-{
-    Flash
-}
-
 public sealed record InstalledClientCandidate(
-    InstalledClientFamily Family,
     string Version,
     string Path,
     string Source,
@@ -19,16 +13,12 @@ public sealed record InstalledClientCandidate(
 public sealed class InstalledClientCandidateChangedEventArgs : EventArgs
 {
     public InstalledClientCandidateChangedEventArgs(
-        InstalledClientFamily family,
         InstalledClientCandidate? previous,
         InstalledClientCandidate? candidate)
     {
-        Family = family;
         Previous = previous;
         Candidate = candidate;
     }
-
-    public InstalledClientFamily Family { get; }
 
     public InstalledClientCandidate? Previous { get; }
 

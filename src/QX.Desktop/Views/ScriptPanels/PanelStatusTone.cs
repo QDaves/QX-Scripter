@@ -6,7 +6,7 @@ namespace Qx.Desktop.Views.ScriptPanels;
 
 public sealed class PanelStatusTone : IValueConverter
 {
-    public object Convert(object? value, Type target_type, object? parameter, CultureInfo culture) =>
+    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture) =>
         (value as string) switch
         {
             "compiling…" => StatusTone.Warning,
@@ -17,6 +17,6 @@ public sealed class PanelStatusTone : IValueConverter
             _ => StatusTone.Neutral
         };
 
-    public object ConvertBack(object? value, Type target_type, object? parameter, CultureInfo culture) =>
+    public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) =>
         throw new NotSupportedException();
 }

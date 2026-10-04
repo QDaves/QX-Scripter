@@ -18,7 +18,7 @@ public sealed partial class FlashHeaderNameResolver
             return;
 
         IReadOnlyDictionary<FlashHeaderDefinition, IReadOnlyList<string>> anchors = CollectUsageAnchors(map);
-        var taken = new HashSet<(MessageDirection, string)>(
+        var taken = new HashSet<(FlashMessageDirection, string)>(
             map.Incoming.Concat(map.Outgoing)
                 .Where(definition => !string.IsNullOrEmpty(definition.Name))
                 .Select(definition => (definition.Direction, definition.Name!)));
@@ -90,7 +90,7 @@ public sealed partial class FlashHeaderNameResolver
                     }
 
                     string? key;
-                    if (definition.Direction == MessageDirection.Incoming)
+                    if (definition.Direction == FlashMessageDirection.Incoming)
                     {
                         string? callback = Callback(code, i, name);
                         string space = Namespace(body);

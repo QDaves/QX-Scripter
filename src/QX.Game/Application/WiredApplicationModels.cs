@@ -712,7 +712,7 @@ public sealed record WiredChestRequest(Id ChestId);
 /// </remarks>
 /// <param name="Locked">Whether the chests are locked.</param>
 /// <param name="ApplyToAllInRoom">
-/// Whether to apply the change to every chest in the room instead of the nearby or selected chests only.
+/// Whether to apply the change to every chest in the room instead of only the user's own chests in the room.
 /// </param>
 public sealed record WiredChestsLockRequest(
     bool Locked,
@@ -934,13 +934,13 @@ public sealed record WiredContractSendRequest(WiredContractContents Contract);
 public sealed record WiredTradeItemsRequest(IReadOnlyList<Id> InventoryIds);
 
 /// <summary>
-/// Represents a request to confirm the active wired chest trade or withdraw the confirmation.
+/// Represents one explicit stage of confirming the active wired trade.
 /// </summary>
 /// <remarks>
 /// Used by <see cref="ApplicationMemberIds.WiredTradeConfirm"/>. The message is sent without waiting, and
 /// the outcome arrives as a trade completion or cancellation.
 /// </remarks>
-/// <param name="Confirm">Whether to confirm the trade instead of withdrawing a previous confirmation.</param>
+/// <param name="Confirm">False for initial acceptance; true only for final confirmation after the countdown.</param>
 public sealed record WiredTradeConfirmRequest(bool Confirm = true);
 
 /// <summary>
@@ -972,12 +972,10 @@ public sealed record WiredCommandRequest;
 /// <see cref="ApplicationMemberIds.WiredTradeConfirm"/> and <see cref="ApplicationMemberIds.WiredTradeCancel"/>.
 /// The message is only sent while the hotel session, the room and the wired state generation are unchanged.
 /// </remarks>
-/// <param name="Client">The client type of the hotel session.</param>
 /// <param name="DispatchedAtUtc">The time the message was sent.</param>
 /// <param name="Generation">The wired state generation the message was sent in.</param>
 /// <param name="Revision">The wired state revision right after the message was sent.</param>
 public sealed record WiredDispatchResult(
-    ClientType Client,
     DateTimeOffset DispatchedAtUtc,
     long Generation,
     long Revision);

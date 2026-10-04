@@ -19,13 +19,13 @@ public interface IConnection
     /// <param name="packet">The packet to send.</param>
     void Send(IPacket packet);
 
-    /// <summary>Sends a packet only when <paramref name="expected_session"/> is still the active session.</summary>
+    /// <summary>Sends a packet only when <paramref name="expectedSession"/> is still the active session.</summary>
     /// <param name="packet">The packet to send.</param>
-    /// <param name="expected_session">The session the packet belongs to.</param>
-    /// <exception cref="InvalidOperationException">Thrown when the active session is not <paramref name="expected_session"/>.</exception>
-    void Send(IPacket packet, Session? expected_session)
+    /// <param name="expectedSession">The session the packet belongs to.</param>
+    /// <exception cref="InvalidOperationException">Thrown when the active session is not <paramref name="expectedSession"/>.</exception>
+    void Send(IPacket packet, Session? expectedSession)
     {
-        if (!ReferenceEquals(Session, expected_session))
+        if (!ReferenceEquals(Session, expectedSession))
         {
             throw new InvalidOperationException(
                 "The connection session changed before the packet could be sent.");

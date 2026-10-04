@@ -128,7 +128,6 @@ internal sealed class FriendMessageJournal : IDisposable
                 entry = new FriendMessageEntry(
                     ++next_sequence,
                     time_provider.GetUtcNow(),
-                    session.Client,
                     message.ChatId,
                     message.Content.Type,
                     message.Content.Text,

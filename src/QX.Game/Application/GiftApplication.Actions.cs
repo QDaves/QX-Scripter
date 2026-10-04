@@ -1,6 +1,6 @@
 using System.Text;
 using Qx.Game.Protocol;
-using Qx.Model.Messages.Incoming;
+using Qx.Model.Messages.Outgoing;
 
 namespace Qx.Game.Application;
 
@@ -31,7 +31,6 @@ internal sealed partial class GiftApplication
             cancellation_token,
             () => RequireRoomScope(scope));
         return new GiftPresentOpenDispatchReceipt(
-            scope.Session.Client,
             time_provider.GetUtcNow(),
             scope.SessionGeneration,
             scope.RoomId,
@@ -79,7 +78,6 @@ internal sealed partial class GiftApplication
             cancellation_token,
             () => RequirePurchaseScope(scope));
         return new GiftPurchaseDispatchReceipt(
-            scope.Session.Client,
             time_provider.GetUtcNow(),
             scope.SessionGeneration,
             scope.CatalogGeneration,
@@ -130,7 +128,6 @@ internal sealed partial class GiftApplication
                 static state => state.ClubInfoRevision,
                 "club-gift info"));
         return new GiftClubSelectDispatchReceipt(
-            scope.Session.Client,
             time_provider.GetUtcNow(),
             scope.SessionGeneration,
             scope.SourceRevision,
@@ -171,7 +168,6 @@ internal sealed partial class GiftApplication
                 static state => state.NewUserOfferRevision,
                 "new-user gift offer"));
         return new GiftNewUserSelectDispatchReceipt(
-            scope.Session.Client,
             time_provider.GetUtcNow(),
             scope.SessionGeneration,
             scope.SourceRevision,
@@ -202,7 +198,6 @@ internal sealed partial class GiftApplication
             cancellation_token,
             () => RequireRoomScope(scope));
         return new GiftNewUserAdvanceDispatchReceipt(
-            scope.Session.Client,
             time_provider.GetUtcNow(),
             scope.SessionGeneration,
             scope.RoomId,

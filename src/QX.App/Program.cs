@@ -4,7 +4,7 @@ using Qx.Game;
 using Qx.Game.Application;
 using Qx.Hosting;
 using Qx.Interception.GEarth;
-using Qx.Scripting;
+using Qx.Scripting.Hosting;
 
 if (Qx.App.ApplicationCommands.IsCommand(args))
 {
@@ -137,7 +137,7 @@ static async Task<int> Run(string[] args)
         });
     game.Friends.Loaded += () => Diag.Info($"Friends loaded ({game.Friends.Friends.Count})");
 
-    extension.Connected += session => Diag.Info($"Connected: {session.Client} {session.HotelVersion} @ {session.Host}:{session.Port}");
+    extension.Connected += session => Diag.Info($"Connected: {session.HotelVersion} @ {session.Host}:{session.Port}");
     extension.Disconnected += () => Diag.Info("Disconnected from hotel");
     extension.Initialized += () => Diag.Info("Extension initialized");
 
@@ -148,7 +148,7 @@ static async Task<int> Run(string[] args)
             string name = runtime.Messages.TryGetIdentifier(intercept.Packet.Header, out var identifier)
                 ? identifier.Name
                 : $"#{intercept.Packet.Header.Value}";
-            string arrow = intercept.Direction == Direction.In ? "<-" : "->";
+            string arrow = intercept.Direction == MessageDirection.In ? "<-" : "->";
             Diag.Info($"{arrow} {name} ({intercept.Packet.Length}b)", "packet");
         };
     }

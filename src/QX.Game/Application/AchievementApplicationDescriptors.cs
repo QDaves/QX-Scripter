@@ -20,10 +20,10 @@ internal static class AchievementApplicationDescriptors
         typeof(AchievementStateRequest),
         typeof(AchievementStateView),
         [SnapshotRevisionParameter(false)],
-        state_effects: [AchievementRead()],
+        stateEffects: [AchievementRead()],
         messages: AchievementObservedMessages(),
-        tool_hints: QueryHints(),
-        invocation_scope: ApplicationInvocationScope.Persistent);
+        toolHints: QueryHints(),
+        invocationScope: ApplicationInvocationScope.Persistent);
 
     public static ApplicationDescriptor AchievementList { get; } = new(
         ApplicationMemberIds.AchievementsList,
@@ -34,14 +34,14 @@ internal static class AchievementApplicationDescriptors
         typeof(AchievementPageRequest),
         typeof(AchievementPage),
         PageParameters(),
-        state_effects: [AchievementRead()],
+        stateEffects: [AchievementRead()],
         messages:
         [
             Observe(MessageKeys.Achievements.Snapshot),
             Observe(MessageKeys.Achievements.Updated)
         ],
-        tool_hints: QueryHints(),
-        invocation_scope: ApplicationInvocationScope.Persistent);
+        toolHints: QueryHints(),
+        invocationScope: ApplicationInvocationScope.Persistent);
 
     public static ApplicationDescriptor AchievementPointLimitsList { get; } = new(
         ApplicationMemberIds.AchievementPointLimitsList,
@@ -52,18 +52,18 @@ internal static class AchievementApplicationDescriptors
         typeof(AchievementPointLimitPageRequest),
         typeof(AchievementPointLimitPage),
         PageParameters(),
-        state_effects: [AchievementRead()],
+        stateEffects: [AchievementRead()],
         messages:
         [
             Observe(MessageKeys.Achievements.PointLimits)
         ],
-        tool_hints: QueryHints(),
-        invocation_scope: ApplicationInvocationScope.Persistent);
+        toolHints: QueryHints(),
+        invocationScope: ApplicationInvocationScope.Persistent);
 
     public static ApplicationDescriptor AchievementRefresh { get; } = new(
         ApplicationMemberIds.AchievementsRefresh,
         "Refresh achievements",
-        "Coalesces callers within one hotel session and returns only a fresh full achievement snapshot for the dispatched request epoch; achievement updates never establish the baseline. Caller cancellation and timeout detach only that waiter.",
+        "Reloads the achievement list from the server. Coalesces callers within one hotel session and returns only a fresh full achievement snapshot for the dispatched request epoch; achievement updates never establish the baseline. Caller cancellation and timeout detach only that waiter.",
         ApplicationMemberKind.Operation,
         ApplicationExposure.All,
         typeof(AchievementRefreshRequest),
@@ -80,7 +80,7 @@ internal static class AchievementApplicationDescriptors
     public static ApplicationDescriptor AchievementPointLimitsRefresh { get; } = new(
         ApplicationMemberIds.AchievementPointLimitsRefresh,
         "Refresh achievement point limits",
-        "Coalesces callers within one hotel session and returns only a fresh point-limit response for the dispatched request epoch. Caller cancellation and timeout detach only that waiter.",
+        "Reloads the badge point limits from the server. Coalesces callers within one hotel session and returns only a fresh point-limit response for the dispatched request epoch. Caller cancellation and timeout detach only that waiter.",
         ApplicationMemberKind.Operation,
         ApplicationExposure.All,
         typeof(AchievementPointLimitsRefreshRequest),
@@ -97,14 +97,14 @@ internal static class AchievementApplicationDescriptors
     public static ApplicationDescriptor AchievementChanged { get; } = new(
         ApplicationMemberIds.AchievementsChanged,
         "Achievements changed",
-        "Publishes bounded passive achievement-domain changes, including full snapshots, incremental updates, optional Flash score data, point limits, game-data new codes, and resets.",
+        "Publishes bounded passive achievement-domain changes, including full snapshots, incremental updates, score data, point limits, game-data new codes, and resets.",
         ApplicationMemberKind.Event,
         event_exposure,
         null,
         typeof(AchievementChanged),
-        state_effects: [AchievementChange()],
+        stateEffects: [AchievementChange()],
         messages: AchievementObservedMessages(),
-        invocation_scope: ApplicationInvocationScope.Persistent);
+        invocationScope: ApplicationInvocationScope.Persistent);
 
     public static ApplicationDescriptor BadgeState { get; } = new(
         ApplicationMemberIds.BadgesState,
@@ -115,10 +115,10 @@ internal static class AchievementApplicationDescriptors
         typeof(BadgeStateRequest),
         typeof(BadgeStateView),
         [SnapshotRevisionParameter(false)],
-        state_effects: [BadgeRead()],
+        stateEffects: [BadgeRead()],
         messages: BadgeObservedMessages(),
-        tool_hints: QueryHints(),
-        invocation_scope: ApplicationInvocationScope.Persistent);
+        toolHints: QueryHints(),
+        invocationScope: ApplicationInvocationScope.Persistent);
 
     public static ApplicationDescriptor OwnedBadgeList { get; } = new(
         ApplicationMemberIds.BadgesOwnedList,
@@ -129,15 +129,15 @@ internal static class AchievementApplicationDescriptors
         typeof(OwnedBadgePageRequest),
         typeof(OwnedBadgePage),
         PageParameters(),
-        state_effects: [BadgeRead()],
+        stateEffects: [BadgeRead()],
         messages:
         [
             Observe(MessageKeys.Badges.Snapshot),
             Observe(MessageKeys.Badges.Received),
             Observe(MessageKeys.Achievements.Notification)
         ],
-        tool_hints: QueryHints(),
-        invocation_scope: ApplicationInvocationScope.Persistent);
+        toolHints: QueryHints(),
+        invocationScope: ApplicationInvocationScope.Persistent);
 
     public static ApplicationDescriptor BadgeSelectedSetsList { get; } = new(
         ApplicationMemberIds.BadgesSelectedSetsList,
@@ -148,13 +148,13 @@ internal static class AchievementApplicationDescriptors
         typeof(BadgeSelectedSetPageRequest),
         typeof(BadgeSelectedSetPage),
         PageParameters(),
-        state_effects: [BadgeRead()],
+        stateEffects: [BadgeRead()],
         messages:
         [
             Observe(MessageKeys.Badges.Selected)
         ],
-        tool_hints: QueryHints(),
-        invocation_scope: ApplicationInvocationScope.Persistent);
+        toolHints: QueryHints(),
+        invocationScope: ApplicationInvocationScope.Persistent);
 
     public static ApplicationDescriptor BadgeSelectedList { get; } = new(
         ApplicationMemberIds.BadgesSelectedList,
@@ -165,18 +165,18 @@ internal static class AchievementApplicationDescriptors
         typeof(BadgeSelectedPageRequest),
         typeof(BadgeSelectedPage),
         [UserIdParameter(), .. PageParameters()],
-        state_effects: [BadgeRead()],
+        stateEffects: [BadgeRead()],
         messages:
         [
             Observe(MessageKeys.Badges.Selected)
         ],
-        tool_hints: QueryHints(),
-        invocation_scope: ApplicationInvocationScope.Persistent);
+        toolHints: QueryHints(),
+        invocationScope: ApplicationInvocationScope.Persistent);
 
     public static ApplicationDescriptor BadgeRefresh { get; } = new(
         ApplicationMemberIds.BadgesRefresh,
         "Refresh owned badges",
-        "Coalesces callers within one hotel session and publishes an owned-badge baseline only after every out-of-order fragment is present. Caller cancellation and timeout detach only that waiter; a response-free lane can retire after thirty seconds and surfaces ambiguous retired-baseline correlation explicitly.",
+        "Reloads the badge inventory from the server. Coalesces callers within one hotel session and publishes an owned-badge baseline only after every out-of-order fragment is present. Caller cancellation and timeout detach only that waiter; a response-free lane can retire after thirty seconds and surfaces ambiguous retired-baseline correlation explicitly.",
         ApplicationMemberKind.Operation,
         ApplicationExposure.All,
         typeof(BadgeRefreshRequest),
@@ -198,9 +198,9 @@ internal static class AchievementApplicationDescriptors
         event_exposure,
         null,
         typeof(BadgeChanged),
-        state_effects: [BadgeChange()],
+        stateEffects: [BadgeChange()],
         messages: BadgeObservedMessages(),
-        invocation_scope: ApplicationInvocationScope.Persistent);
+        invocationScope: ApplicationInvocationScope.Persistent);
 
     private static IReadOnlyList<ApplicationParameterDescriptor> PageParameters() =>
     [
@@ -279,12 +279,12 @@ internal static class AchievementApplicationDescriptors
     ];
 
     private static ApplicationMessageRequirement Send(MessageKey key) =>
-        new(key, Direction.Out, ApplicationMessageRole.Send);
+        new(key, MessageDirection.Out, ApplicationMessageRole.Send);
 
     private static ApplicationMessageRequirement Observe(
         MessageKey key,
         bool required = true) =>
-        new(key, Direction.In, ApplicationMessageRole.Observe, required);
+        new(key, MessageDirection.In, ApplicationMessageRole.Observe, required);
 
     private static ApplicationStateEffect AchievementRead() =>
         new(ApplicationStateKey.Achievements, ApplicationStateEffectKind.Reads);
@@ -299,5 +299,5 @@ internal static class AchievementApplicationDescriptors
         new(ApplicationStateKey.BadgeInventory, ApplicationStateEffectKind.Changes);
 
     private static ApplicationToolHints QueryHints() => new(true, false, true, false);
-    private static ApplicationToolHints RefreshHints() => new(false, false, true, true);
+    private static ApplicationToolHints RefreshHints() => new(true, false, true, true);
 }

@@ -104,57 +104,57 @@ public sealed class InventoryPetQuery : QueryCollection<InventoryPet>
     /// <summary>
     /// Filters the pets to those of any of the specified pet types.
     /// </summary>
-    /// <param name="type_ids">The pet type ids to keep, compared with <see cref="InventoryPet.TypeId"/>.</param>
+    /// <param name="typeIds">The pet type ids to keep, compared with <see cref="InventoryPet.TypeId"/>.</param>
     /// <returns>A new query with the matching pets.</returns>
-    public InventoryPetQuery OfType(params int[] type_ids) =>
-        OfType((IEnumerable<int>)type_ids);
+    public InventoryPetQuery OfType(params int[] typeIds) =>
+        OfType((IEnumerable<int>)typeIds);
 
     /// <summary>
     /// Filters the pets to those of any of the specified pet types.
     /// </summary>
-    /// <param name="type_ids">The pet type ids to keep, compared with <see cref="InventoryPet.TypeId"/>.</param>
+    /// <param name="typeIds">The pet type ids to keep, compared with <see cref="InventoryPet.TypeId"/>.</param>
     /// <returns>A new query with the matching pets.</returns>
-    public InventoryPetQuery OfType(IEnumerable<int> type_ids)
+    public InventoryPetQuery OfType(IEnumerable<int> typeIds)
     {
-        HashSet<int> values = QueryValues.Set(type_ids);
+        HashSet<int> values = QueryValues.Set(typeIds);
         return Where(pet => values.Contains(pet.TypeId));
     }
 
     /// <summary>
     /// Filters the pets to those with any of the specified palettes.
     /// </summary>
-    /// <param name="palette_ids">The palette ids to keep, compared with <see cref="InventoryPet.PaletteId"/>.</param>
+    /// <param name="paletteIds">The palette ids to keep, compared with <see cref="InventoryPet.PaletteId"/>.</param>
     /// <returns>A new query with the matching pets.</returns>
-    public InventoryPetQuery OfPalette(params int[] palette_ids) =>
-        OfPalette((IEnumerable<int>)palette_ids);
+    public InventoryPetQuery OfPalette(params int[] paletteIds) =>
+        OfPalette((IEnumerable<int>)paletteIds);
 
     /// <summary>
     /// Filters the pets to those with any of the specified palettes.
     /// </summary>
-    /// <param name="palette_ids">The palette ids to keep, compared with <see cref="InventoryPet.PaletteId"/>.</param>
+    /// <param name="paletteIds">The palette ids to keep, compared with <see cref="InventoryPet.PaletteId"/>.</param>
     /// <returns>A new query with the matching pets.</returns>
-    public InventoryPetQuery OfPalette(IEnumerable<int> palette_ids)
+    public InventoryPetQuery OfPalette(IEnumerable<int> paletteIds)
     {
-        HashSet<int> values = QueryValues.Set(palette_ids);
+        HashSet<int> values = QueryValues.Set(paletteIds);
         return Where(pet => values.Contains(pet.PaletteId));
     }
 
     /// <summary>
     /// Filters the pets to those of any of the specified breeds.
     /// </summary>
-    /// <param name="breed_ids">The breed ids to keep, compared with <see cref="InventoryPet.BreedId"/>.</param>
+    /// <param name="breedIds">The breed ids to keep, compared with <see cref="InventoryPet.BreedId"/>.</param>
     /// <returns>A new query with the matching pets.</returns>
-    public InventoryPetQuery OfBreed(params int[] breed_ids) =>
-        OfBreed((IEnumerable<int>)breed_ids);
+    public InventoryPetQuery OfBreed(params int[] breedIds) =>
+        OfBreed((IEnumerable<int>)breedIds);
 
     /// <summary>
     /// Filters the pets to those of any of the specified breeds.
     /// </summary>
-    /// <param name="breed_ids">The breed ids to keep, compared with <see cref="InventoryPet.BreedId"/>.</param>
+    /// <param name="breedIds">The breed ids to keep, compared with <see cref="InventoryPet.BreedId"/>.</param>
     /// <returns>A new query with the matching pets.</returns>
-    public InventoryPetQuery OfBreed(IEnumerable<int> breed_ids)
+    public InventoryPetQuery OfBreed(IEnumerable<int> breedIds)
     {
-        HashSet<int> values = QueryValues.Set(breed_ids);
+        HashSet<int> values = QueryValues.Set(breedIds);
         return Where(pet => values.Contains(pet.BreedId));
     }
 
@@ -229,19 +229,19 @@ public sealed class InventoryPetQuery : QueryCollection<InventoryPet>
     /// <summary>
     /// Filters the pets to those with any of the specified rarity levels.
     /// </summary>
-    /// <param name="rarity_levels">The rarity levels to keep, compared with <see cref="InventoryPet.RarityLevel"/>.</param>
+    /// <param name="rarityLevels">The rarity levels to keep, compared with <see cref="InventoryPet.RarityLevel"/>.</param>
     /// <returns>A new query with the matching pets.</returns>
-    public InventoryPetQuery OfRarity(params int[] rarity_levels) =>
-        OfRarity((IEnumerable<int>)rarity_levels);
+    public InventoryPetQuery OfRarity(params int[] rarityLevels) =>
+        OfRarity((IEnumerable<int>)rarityLevels);
 
     /// <summary>
     /// Filters the pets to those with any of the specified rarity levels.
     /// </summary>
-    /// <param name="rarity_levels">The rarity levels to keep, compared with <see cref="InventoryPet.RarityLevel"/>.</param>
+    /// <param name="rarityLevels">The rarity levels to keep, compared with <see cref="InventoryPet.RarityLevel"/>.</param>
     /// <returns>A new query with the matching pets.</returns>
-    public InventoryPetQuery OfRarity(IEnumerable<int> rarity_levels)
+    public InventoryPetQuery OfRarity(IEnumerable<int> rarityLevels)
     {
-        HashSet<int> values = QueryValues.Set(rarity_levels);
+        HashSet<int> values = QueryValues.Set(rarityLevels);
         return Where(pet => values.Contains(pet.RarityLevel));
     }
 
@@ -267,33 +267,33 @@ public sealed class InventoryPetQuery : QueryCollection<InventoryPet>
     /// <summary>
     /// Filters the pets to those with a custom part on any of the specified layers.
     /// </summary>
-    /// <param name="layer_ids">The layer ids to match, compared with <see cref="PetCustomPart.LayerId"/>.</param>
+    /// <param name="layerIds">The layer ids to match, compared with <see cref="PetCustomPart.LayerId"/>.</param>
     /// <returns>A new query with the matching pets.</returns>
-    public InventoryPetQuery WithCustomLayer(params int[] layer_ids)
+    public InventoryPetQuery WithCustomLayer(params int[] layerIds)
     {
-        HashSet<int> values = QueryValues.Set(layer_ids);
+        HashSet<int> values = QueryValues.Set(layerIds);
         return Where(pet => pet.CustomParts.Any(part => values.Contains(part.LayerId)));
     }
 
     /// <summary>
     /// Filters the pets to those with any of the specified custom parts.
     /// </summary>
-    /// <param name="part_ids">The part ids to match, compared with <see cref="PetCustomPart.PartId"/>.</param>
+    /// <param name="partIds">The part ids to match, compared with <see cref="PetCustomPart.PartId"/>.</param>
     /// <returns>A new query with the matching pets.</returns>
-    public InventoryPetQuery WithCustomPart(params int[] part_ids)
+    public InventoryPetQuery WithCustomPart(params int[] partIds)
     {
-        HashSet<int> values = QueryValues.Set(part_ids);
+        HashSet<int> values = QueryValues.Set(partIds);
         return Where(pet => pet.CustomParts.Any(part => values.Contains(part.PartId)));
     }
 
     /// <summary>
     /// Filters the pets to those with a custom part in any of the specified palettes.
     /// </summary>
-    /// <param name="palette_ids">The palette ids to match, compared with <see cref="PetCustomPart.PaletteId"/>.</param>
+    /// <param name="paletteIds">The palette ids to match, compared with <see cref="PetCustomPart.PaletteId"/>.</param>
     /// <returns>A new query with the matching pets.</returns>
-    public InventoryPetQuery WithCustomPalette(params int[] palette_ids)
+    public InventoryPetQuery WithCustomPalette(params int[] paletteIds)
     {
-        HashSet<int> values = QueryValues.Set(palette_ids);
+        HashSet<int> values = QueryValues.Set(paletteIds);
         return Where(pet => pet.CustomParts.Any(part => values.Contains(part.PaletteId)));
     }
 

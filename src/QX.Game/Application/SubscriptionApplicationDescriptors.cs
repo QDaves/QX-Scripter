@@ -17,11 +17,11 @@ internal static class SubscriptionApplicationDescriptors
         typeof(SubscriptionStateRequest),
         typeof(SubscriptionStateView),
         StateParameters(),
-        state_effects:
+        stateEffects:
         [new(ApplicationStateKey.Subscriptions, ApplicationStateEffectKind.Reads)],
         messages: ObservedMessages(),
-        tool_hints: new(true, false, true, false),
-        invocation_scope: ApplicationInvocationScope.Persistent);
+        toolHints: new(true, false, true, false),
+        invocationScope: ApplicationInvocationScope.Persistent);
 
     public static ApplicationDescriptor ClubOffersList { get; } = new(
         ApplicationMemberIds.SubscriptionsClubOffersList,
@@ -32,17 +32,17 @@ internal static class SubscriptionApplicationDescriptors
         typeof(SubscriptionClubOffersPageRequest),
         typeof(SubscriptionClubOffersPage),
         ClubOffersPageParameters(),
-        state_effects:
+        stateEffects:
         [new(ApplicationStateKey.Subscriptions, ApplicationStateEffectKind.Reads)],
         messages:
         [
             new(
                 MessageKeys.Subscriptions.ClubOffersSnapshot,
-                Direction.In,
+                MessageDirection.In,
                 ApplicationMessageRole.Observe)
         ],
-        tool_hints: new(true, false, true, false),
-        invocation_scope: ApplicationInvocationScope.Persistent);
+        toolHints: new(true, false, true, false),
+        invocationScope: ApplicationInvocationScope.Persistent);
 
     public static ApplicationDescriptor ClubOffersRefresh { get; } = new(
         ApplicationMemberIds.SubscriptionsClubOffersRefresh,
@@ -68,11 +68,11 @@ internal static class SubscriptionApplicationDescriptors
         [
             new(
                 MessageKeys.Subscriptions.ClubOffersRequest,
-                Direction.Out,
+                MessageDirection.Out,
                 ApplicationMessageRole.Send),
             new(
                 MessageKeys.Subscriptions.ClubOffersSnapshot,
-                Direction.In,
+                MessageDirection.In,
                 ApplicationMessageRole.Observe)
         ],
         new(true, false, true, true));
@@ -91,11 +91,11 @@ internal static class SubscriptionApplicationDescriptors
         [
             new(
                 MessageKeys.Subscriptions.UserInfoRequest,
-                Direction.Out,
+                MessageDirection.Out,
                 ApplicationMessageRole.Send),
             new(
                 MessageKeys.Subscriptions.UserInfo,
-                Direction.In,
+                MessageDirection.In,
                 ApplicationMessageRole.Observe)
         ],
         new(true, false, true, true));
@@ -114,11 +114,11 @@ internal static class SubscriptionApplicationDescriptors
         [
             new(
                 MessageKeys.Subscriptions.KickbackInfoRequest,
-                Direction.Out,
+                MessageDirection.Out,
                 ApplicationMessageRole.Send),
             new(
                 MessageKeys.Subscriptions.KickbackInfo,
-                Direction.In,
+                MessageDirection.In,
                 ApplicationMessageRole.Observe)
         ],
         new(true, false, true, true));
@@ -137,11 +137,11 @@ internal static class SubscriptionApplicationDescriptors
         [
             new(
                 MessageKeys.Subscriptions.BuildersClubFurniCountRequest,
-                Direction.Out,
+                MessageDirection.Out,
                 ApplicationMessageRole.Send),
             new(
                 MessageKeys.Subscriptions.BuildersClubFurniCount,
-                Direction.In,
+                MessageDirection.In,
                 ApplicationMessageRole.Observe)
         ],
         new(true, false, true, true));
@@ -170,7 +170,7 @@ internal static class SubscriptionApplicationDescriptors
         [
             new(
                 MessageKeys.Subscriptions.BuildersClubFloorOfferPlace,
-                Direction.Out,
+                MessageDirection.Out,
                 ApplicationMessageRole.Send)
         ],
         new(false, true, false, true));
@@ -191,7 +191,7 @@ internal static class SubscriptionApplicationDescriptors
                 typeof(string),
                 true,
                 null,
-                "Non-empty wall-location string represented natively for the active client.",
+                "Non-empty wall-location string in the Flash text form.",
                 new(MinLength: 1, MaxUtf8Bytes: ushort.MaxValue, Pattern: @".*\S.*")),
             ExtraDataParameter(),
             new("is_retry", typeof(bool), false, false, "Explicit hotel placement-retry flag."),
@@ -203,7 +203,7 @@ internal static class SubscriptionApplicationDescriptors
         [
             new(
                 MessageKeys.Subscriptions.BuildersClubWallOfferPlace,
-                Direction.Out,
+                MessageDirection.Out,
                 ApplicationMessageRole.Send)
         ],
         new(false, true, false, true));
@@ -216,10 +216,10 @@ internal static class SubscriptionApplicationDescriptors
         event_exposure,
         null,
         typeof(SubscriptionChanged),
-        state_effects:
+        stateEffects:
         [new(ApplicationStateKey.Subscriptions, ApplicationStateEffectKind.Changes)],
         messages: ObservedMessages(),
-        invocation_scope: ApplicationInvocationScope.Persistent);
+        invocationScope: ApplicationInvocationScope.Persistent);
 
     private static IReadOnlyList<ApplicationParameterDescriptor> StateParameters() =>
     [
@@ -270,28 +270,28 @@ internal static class SubscriptionApplicationDescriptors
     [
         new(
             MessageKeys.Subscriptions.UserInfo,
-            Direction.In,
+            MessageDirection.In,
             ApplicationMessageRole.Observe),
         new(
             MessageKeys.Subscriptions.KickbackInfo,
-            Direction.In,
+            MessageDirection.In,
             ApplicationMessageRole.Observe),
         new(
             MessageKeys.Subscriptions.ClubOffersSnapshot,
-            Direction.In,
+            MessageDirection.In,
             ApplicationMessageRole.Observe),
         new(
             MessageKeys.Subscriptions.BuildersClubFurniCount,
-            Direction.In,
+            MessageDirection.In,
             ApplicationMessageRole.Observe),
         new(
             MessageKeys.Subscriptions.BuildersClubMembershipStatus,
-            Direction.In,
+            MessageDirection.In,
             ApplicationMessageRole.Observe,
             false),
         new(
             MessageKeys.Subscriptions.BuildersClubPlacementWarning,
-            Direction.In,
+            MessageDirection.In,
             ApplicationMessageRole.Observe,
             false)
     ];

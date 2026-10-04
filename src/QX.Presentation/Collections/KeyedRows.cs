@@ -14,10 +14,10 @@ public sealed class KeyedRows<TKey, TRow>
 
     public TRow? Find(TKey key) => _rows.GetValueOrDefault(key);
 
-    public RowChanges Sync<TSource>(IReadOnlyList<TSource> source, Func<TSource, TKey> source_key, Func<TSource, TRow> create, Action<TRow, TSource> update)
+    public RowChanges Sync<TSource>(IReadOnlyList<TSource> source, Func<TSource, TKey> sourceKey, Func<TSource, TRow> create, Action<TRow, TSource> update)
     {
         ArgumentNullException.ThrowIfNull(source);
-        ArgumentNullException.ThrowIfNull(source_key);
+        ArgumentNullException.ThrowIfNull(sourceKey);
         ArgumentNullException.ThrowIfNull(create);
         ArgumentNullException.ThrowIfNull(update);
         var seen = new HashSet<TKey>(source.Count, _rows.Comparer);
@@ -26,7 +26,7 @@ public sealed class KeyedRows<TKey, TRow>
         for (int index = 0; index < source.Count; index++)
         {
             TSource item = source[index];
-            TKey key = source_key(item);
+            TKey key = sourceKey(item);
             if (!seen.Add(key))
                 continue;
             if (_rows.TryGetValue(key, out TRow? row))

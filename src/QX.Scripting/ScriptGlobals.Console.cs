@@ -26,7 +26,7 @@ public partial class ScriptGlobals
     public IDisposable OnPrivateMessage(Action<NewConsoleMessage> handler)
     {
         ArgumentNullException.ThrowIfNull(handler);
-        return Track(Application.Subscribe<FriendMessageEntry>(
+        return Track(_application.Subscribe<FriendMessageEntry>(
             ApplicationMemberIds.FriendMessageReceived,
             Guarded<FriendMessageEntry>(entry => handler(LegacyMessage(entry)))));
     }
@@ -48,7 +48,7 @@ public partial class ScriptGlobals
                 handler(message.SenderName, message.Text);
         }
 
-        return Track(Application.Subscribe<FriendMessageEntry>(
+        return Track(_application.Subscribe<FriendMessageEntry>(
             ApplicationMemberIds.FriendMessageReceived,
             Guarded<FriendMessageEntry>(Wrapper)));
     }
@@ -58,7 +58,7 @@ public partial class ScriptGlobals
     /// <returns>A handle that unsubscribes when disposed; also disposed when the script stops.</returns>
     public IDisposable OnMessengerError(Action<MessengerError> handler)
     {
-        return Track(Application.Subscribe(
+        return Track(_application.Subscribe(
             ApplicationMemberIds.FriendOperationFailed,
             Guarded(handler)));
     }
@@ -68,7 +68,7 @@ public partial class ScriptGlobals
     /// <returns>A handle that unsubscribes when disposed; also disposed when the script stops.</returns>
     public IDisposable OnPrivateMessageFailed(Action<InstantMessageError> handler)
     {
-        return Track(Application.Subscribe(
+        return Track(_application.Subscribe(
             ApplicationMemberIds.FriendMessageFailed,
             Guarded(handler)));
     }
@@ -106,7 +106,7 @@ public partial class ScriptGlobals
         ReadFigureSets().Select(entry => entry.FigureSetId).ToArray();
 
     /// <summary>Gets the metadata value of each owned figure set, keyed by figure set id.</summary>
-    /// <remarks>The Flash client sends no metadata, so every value is 0 there.</remarks>
+    /// <remarks>The message carries no metadata, so every value is 0.</remarks>
     public IReadOnlyDictionary<int, int> OwnedFigureSetMetadata
     {
         get
@@ -139,7 +139,7 @@ public partial class ScriptGlobals
     public IDisposable OnBlockListChanged(Action handler)
     {
         ArgumentNullException.ThrowIfNull(handler);
-        return Track(Application.Subscribe<ProfileChanged>(
+        return Track(_application.Subscribe<ProfileChanged>(
             ApplicationMemberIds.ProfileChanged,
             Guarded<ProfileChanged>(change =>
             {
@@ -158,7 +158,7 @@ public partial class ScriptGlobals
     public IDisposable OnFigureSetsChanged(Action handler)
     {
         ArgumentNullException.ThrowIfNull(handler);
-        return Track(Application.Subscribe<ProfileChanged>(
+        return Track(_application.Subscribe<ProfileChanged>(
             ApplicationMemberIds.ProfileChanged,
             Guarded<ProfileChanged>(change =>
             {
@@ -173,7 +173,7 @@ public partial class ScriptGlobals
     public IDisposable OnSanctionsChanged(Action<MySanctionStatus> handler)
     {
         ArgumentNullException.ThrowIfNull(handler);
-        return Track(Application.Subscribe<ProfileChanged>(
+        return Track(_application.Subscribe<ProfileChanged>(
             ApplicationMemberIds.ProfileChanged,
             Guarded<ProfileChanged>(change =>
             {
@@ -192,13 +192,7 @@ public partial class ScriptGlobals
     /// <param name="handler">Receives the change.</param>
     /// <returns>A handle that unsubscribes when disposed; also disposed when the script stops.</returns>
     public IDisposable OnFavouriteGroupChanged(Action<FavouriteMembershipUpdate> handler) =>
-        OnIn(
-            MessageContracts.Room.Occupants.Identity.FavoriteGroup,
-            message => handler(new FavouriteMembershipUpdate(
-                message.Index,
-                message.GroupId,
-                message.Status,
-                message.GroupName)));
+        OnIn(MessageContracts.Room.Occupants.Identity.FavoriteGroup, handler);
 
     /// <summary>Subscribes to a Flash special-system chat signal associated with an avatar.</summary>
     /// <param name="handler">Receives the avatar index and the special chat signal.</param>
@@ -240,7 +234,7 @@ public partial class ScriptGlobals
     /// <exception cref="InvalidOperationException">Thrown when no hotel session is active, the session changed, or the list kept changing while it was being read.</exception>
     public async Task<IReadOnlyCollection<long>> GetBlockedUsers(int timeoutMs = 10000)
     {
-        ProfileIdPage first_page = await Application.InvokeAsync<ProfileIdRefreshRequest, ProfileIdPage>(
+        ProfileIdPage first_page = await _application.InvokeAsync<ProfileIdRefreshRequest, ProfileIdPage>(
             ApplicationMemberIds.ProfileBlocksRefresh,
             new ProfileIdRefreshRequest(Limit: 500, TimeoutMilliseconds: timeoutMs),
             Ct);
@@ -255,7 +249,7 @@ public partial class ScriptGlobals
     {
         for (int attempt = 0; attempt < 3; attempt++)
         {
-            ProfileIdPage page = first_page ?? Application.Invoke<ProfileIdPageRequest, ProfileIdPage>(
+            ProfileIdPage page = first_page ?? _application.Invoke<ProfileIdPageRequest, ProfileIdPage>(
                 member_id,
                 new ProfileIdPageRequest(Limit: 500),
                 Ct);
@@ -270,7 +264,7 @@ public partial class ScriptGlobals
 
             while (stable && next_offset is int offset)
             {
-                ProfileIdPage next_page = Application.Invoke<ProfileIdPageRequest, ProfileIdPage>(
+                ProfileIdPage next_page = _application.Invoke<ProfileIdPageRequest, ProfileIdPage>(
                     member_id,
                     new ProfileIdPageRequest(offset, 500),
                     Ct);
@@ -296,7 +290,7 @@ public partial class ScriptGlobals
     {
         for (int attempt = 0; attempt < 3; attempt++)
         {
-            ProfileFigureSetsPage page = Application.Invoke<ProfileFigureSetsRequest, ProfileFigureSetsPage>(
+            ProfileFigureSetsPage page = _application.Invoke<ProfileFigureSetsRequest, ProfileFigureSetsPage>(
                 ApplicationMemberIds.ProfileFigureSetsList,
                 new ProfileFigureSetsRequest(Limit: 500),
                 Ct);
@@ -310,7 +304,7 @@ public partial class ScriptGlobals
 
             while (stable && next_offset is int offset)
             {
-                ProfileFigureSetsPage next_page = Application.Invoke<ProfileFigureSetsRequest, ProfileFigureSetsPage>(
+                ProfileFigureSetsPage next_page = _application.Invoke<ProfileFigureSetsRequest, ProfileFigureSetsPage>(
                     ApplicationMemberIds.ProfileFigureSetsList,
                     new ProfileFigureSetsRequest(offset, 500),
                     Ct);
@@ -336,7 +330,7 @@ public partial class ScriptGlobals
     {
         for (int attempt = 0; attempt < 3; attempt++)
         {
-            ProfileSanctionsPage page = Application.Invoke<ProfileSanctionsRequest, ProfileSanctionsPage>(
+            ProfileSanctionsPage page = _application.Invoke<ProfileSanctionsRequest, ProfileSanctionsPage>(
                 ApplicationMemberIds.ProfileSanctionsList,
                 new ProfileSanctionsRequest(Limit: 500),
                 Ct);
@@ -353,7 +347,7 @@ public partial class ScriptGlobals
 
             while (stable && next_offset is int offset)
             {
-                ProfileSanctionsPage next_page = Application.Invoke<ProfileSanctionsRequest, ProfileSanctionsPage>(
+                ProfileSanctionsPage next_page = _application.Invoke<ProfileSanctionsRequest, ProfileSanctionsPage>(
                     ApplicationMemberIds.ProfileSanctionsList,
                     new ProfileSanctionsRequest(offset, 500),
                     Ct);

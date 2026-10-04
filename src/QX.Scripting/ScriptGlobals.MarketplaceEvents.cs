@@ -29,15 +29,15 @@ public partial class ScriptGlobals
     /// </summary>
     /// <remarks>
     /// Every kind of change triggers it, including a reset. The handler receives a fresh
-    /// <see cref="MarketplaceState"/> read, so it sees the first page of up to 100 cached entries.
+    /// <see cref="Marketplace"/> read, so it sees the first page of up to 100 cached entries.
     /// </remarks>
     /// <param name="handler">The handler to call with the current marketplace state.</param>
     /// <returns>A handle that removes the handler when disposed.</returns>
     /// <exception cref="ObjectDisposedException">Thrown when the script globals have already been disposed.</exception>
     public IDisposable OnMarketplaceStateChanged(Action<MarketplaceStateView> handler) =>
-        Track(Application.Subscribe<MarketplaceChanged>(
+        Track(_application.Subscribe<MarketplaceChanged>(
             ApplicationMemberIds.MarketplaceChanged,
-            Guarded<MarketplaceChanged>(_ => handler(MarketplaceState))));
+            Guarded<MarketplaceChanged>(_ => handler(Marketplace))));
 
     /// <summary>
     /// Registers a handler that runs when the server sends the marketplace configuration.
@@ -52,7 +52,7 @@ public partial class ScriptGlobals
     /// <exception cref="ObjectDisposedException">Thrown when the script globals have already been disposed.</exception>
     public IDisposable OnMarketplaceConfigurationChanged(
         Action<MarketplaceConfiguration> handler) =>
-        Track(Application.Subscribe<MarketplaceConfigurationChanged>(
+        Track(_application.Subscribe<MarketplaceConfigurationChanged>(
             ApplicationMemberIds.MarketplaceConfigurationChanged,
             Guarded<MarketplaceConfigurationChanged>(change => handler(change.Configuration))));
 
@@ -61,14 +61,14 @@ public partial class ScriptGlobals
     /// post marketplace offers.
     /// </summary>
     /// <remarks>
-    /// The answer carries the result code and, on Flash, the remaining token count.
+    /// The answer carries the result code and the remaining token count.
     /// </remarks>
     /// <param name="handler">The handler to call with the eligibility answer.</param>
     /// <returns>A handle that removes the handler when disposed.</returns>
     /// <exception cref="ObjectDisposedException">Thrown when the script globals have already been disposed.</exception>
     public IDisposable OnMarketplaceEligibilityChanged(
         Action<MarketplaceCanMakeOfferResult> handler) =>
-        Track(Application.Subscribe<MarketplaceEligibilityChanged>(
+        Track(_application.Subscribe<MarketplaceEligibilityChanged>(
             ApplicationMemberIds.MarketplaceEligibilityChanged,
             Guarded<MarketplaceEligibilityChanged>(change => handler(change.Eligibility))));
 
@@ -84,7 +84,7 @@ public partial class ScriptGlobals
     /// <returns>A handle that removes the handler when disposed.</returns>
     /// <exception cref="ObjectDisposedException">Thrown when the script globals have already been disposed.</exception>
     public IDisposable OnMarketplaceSearchResults(Action<MarketplaceOfferPage> handler) =>
-        Track(Application.Subscribe<MarketplaceSearchReceived>(
+        Track(_application.Subscribe<MarketplaceSearchReceived>(
             ApplicationMemberIds.MarketplaceSearchReceived,
             Guarded<MarketplaceSearchReceived>(result => handler(result.Result))));
 
@@ -98,7 +98,7 @@ public partial class ScriptGlobals
     /// <returns>A handle that removes the handler when disposed.</returns>
     /// <exception cref="ObjectDisposedException">Thrown when the script globals have already been disposed.</exception>
     public IDisposable OnOwnMarketplaceOffers(Action<MarketplaceOwnOfferPage> handler) =>
-        Track(Application.Subscribe<MarketplaceOwnOffersReceived>(
+        Track(_application.Subscribe<MarketplaceOwnOffersReceived>(
             ApplicationMemberIds.MarketplaceOwnOffersReceived,
             Guarded<MarketplaceOwnOffersReceived>(result => handler(result.Result))));
 
@@ -113,7 +113,7 @@ public partial class ScriptGlobals
     /// <returns>A handle that removes the handler when disposed.</returns>
     /// <exception cref="ObjectDisposedException">Thrown when the script globals have already been disposed.</exception>
     public IDisposable OnMarketplaceItemStats(Action<MarketplaceItemStatsSnapshot> handler) =>
-        Track(Application.Subscribe<MarketplaceItemStatsReceived>(
+        Track(_application.Subscribe<MarketplaceItemStatsReceived>(
             ApplicationMemberIds.MarketplaceItemStatsReceived,
             Guarded<MarketplaceItemStatsReceived>(result => handler(result.Result))));
 
@@ -128,7 +128,7 @@ public partial class ScriptGlobals
     /// <exception cref="ObjectDisposedException">Thrown when the script globals have already been disposed.</exception>
     public IDisposable OnMarketplaceOfferResult(
         Action<MarketplaceMakeOfferResult> handler) =>
-        Track(Application.Subscribe<MarketplaceMakeOfferResultReceived>(
+        Track(_application.Subscribe<MarketplaceMakeOfferResultReceived>(
             ApplicationMemberIds.MarketplaceOfferMakeResult,
             Guarded<MarketplaceMakeOfferResultReceived>(result => handler(result.Result))));
 
@@ -144,7 +144,7 @@ public partial class ScriptGlobals
     /// <exception cref="ObjectDisposedException">Thrown when the script globals have already been disposed.</exception>
     public IDisposable OnMarketplacePurchaseResult(
         Action<MarketplaceBuyResult> handler) =>
-        Track(Application.Subscribe<MarketplaceBuyResultReceived>(
+        Track(_application.Subscribe<MarketplaceBuyResultReceived>(
             ApplicationMemberIds.MarketplaceOfferBuyResult,
             Guarded<MarketplaceBuyResultReceived>(result => handler(result.Result))));
 
@@ -159,7 +159,7 @@ public partial class ScriptGlobals
     /// <exception cref="ObjectDisposedException">Thrown when the script globals have already been disposed.</exception>
     public IDisposable OnMarketplaceOfferCancelResult(
     Action<MarketplaceCancelOfferResult> handler) =>
-    Track(Application.Subscribe<MarketplaceCancelResultReceived>(
+    Track(_application.Subscribe<MarketplaceCancelResultReceived>(
         ApplicationMemberIds.MarketplaceOfferCancelResult,
         Guarded<MarketplaceCancelResultReceived>(result => handler(result.Result))));
 
@@ -168,16 +168,15 @@ public partial class ScriptGlobals
     /// offer at once.
     /// </summary>
     /// <remarks>
-    /// The result carries the ids that were canceled and whether the request succeeded. On Flash
-    /// this message only exists in the modern marketplace layout; a legacy Flash build cannot
-    /// produce it.
+    /// The result carries the ids that were canceled and whether the request succeeded. The message
+    /// only exists in the modern marketplace layout; a legacy Flash build cannot produce it.
     /// </remarks>
     /// <param name="handler">The handler to call with the result.</param>
     /// <returns>A handle that removes the handler when disposed.</returns>
     /// <exception cref="ObjectDisposedException">Thrown when the script globals have already been disposed.</exception>
     public IDisposable OnMarketplaceAllOffersCancelResult(
         Action<MarketplaceCancelAllOffersSnapshot> handler) =>
-        Track(Application.Subscribe<MarketplaceCancelAllResultReceived>(
+        Track(_application.Subscribe<MarketplaceCancelAllResultReceived>(
             ApplicationMemberIds.MarketplaceOffersCancelAllResult,
             Guarded<MarketplaceCancelAllResultReceived>(result => handler(result.Result))));
 
@@ -193,7 +192,7 @@ public partial class ScriptGlobals
     /// <exception cref="ObjectDisposedException">Thrown when the script globals have already been disposed.</exception>
     public IDisposable OnMarketplaceHistoryClearResult(
     Action<MarketplaceClearOwnHistoryResult> handler) =>
-    Track(Application.Subscribe<MarketplaceHistoryClearResultReceived>(
+    Track(_application.Subscribe<MarketplaceHistoryClearResultReceived>(
         ApplicationMemberIds.MarketplaceHistoryClearResult,
         Guarded<MarketplaceHistoryClearResultReceived>(result => handler(result.Result))));
 
@@ -209,7 +208,7 @@ public partial class ScriptGlobals
     /// <returns>A handle that removes the handler when disposed.</returns>
     /// <exception cref="ObjectDisposedException">Thrown when the script globals have already been disposed.</exception>
     public IDisposable OnMarketplaceReset(Action handler) =>
-        Track(Application.Subscribe<MarketplaceChanged>(
+        Track(_application.Subscribe<MarketplaceChanged>(
             ApplicationMemberIds.MarketplaceChanged,
             Guarded<MarketplaceChanged>(change =>
             {

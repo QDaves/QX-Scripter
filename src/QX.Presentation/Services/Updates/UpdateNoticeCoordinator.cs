@@ -2,7 +2,6 @@ using Qx.Diagnostics;
 using Qx.Presentation.Platform;
 using Qx.Presentation.Services.Settings;
 using Qx.Presentation.Threading;
-using Qx.Updates;
 
 namespace Qx.Presentation.Services.Updates;
 
@@ -31,7 +30,7 @@ public sealed class UpdateNoticeCoordinator : IDisposable
         IUpdateNoticePresenter presenter,
         IUiDispatcher dispatcher,
         TimeProvider time,
-        string installed_version,
+        string installedVersion,
         CancellationToken lifetime)
     {
         _fetch = fetch ?? throw new ArgumentNullException(nameof(fetch));
@@ -40,7 +39,7 @@ public sealed class UpdateNoticeCoordinator : IDisposable
         _presenter = presenter ?? throw new ArgumentNullException(nameof(presenter));
         _dispatcher = dispatcher ?? throw new ArgumentNullException(nameof(dispatcher));
         _time = time ?? throw new ArgumentNullException(nameof(time));
-        _installed_version = installed_version ?? throw new ArgumentNullException(nameof(installed_version));
+        _installed_version = installedVersion ?? throw new ArgumentNullException(nameof(installedVersion));
         _lifetime = lifetime;
         _window.Activated += OnActivated;
     }

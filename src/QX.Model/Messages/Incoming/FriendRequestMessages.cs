@@ -70,14 +70,14 @@ public sealed record PendingFriendRequests(
 
     private static void ComposeFlash(PendingFriendRequests value, in PacketWriter p)
     {
-        Validate(value, ClientType.Flash);
+        Validate(value);
         p.WriteInt(value.Total);
         p.WriteLength((Length)value.Requests.Count);
         foreach (NewFriendRequest request in value.Requests)
             p.Compose(request);
     }
 
-    private static void Validate(PendingFriendRequests value, ClientType client)
+    private static void Validate(PendingFriendRequests value)
     {
         ArgumentNullException.ThrowIfNull(value.Requests);
         ArgumentOutOfRangeException.ThrowIfNegative(value.Total);

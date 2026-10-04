@@ -12,24 +12,8 @@ internal static class AchievementBadgeWire
     public const int BadgeMinimumBytes = sizeof(int) + StringPrefixBytes;
     public const int SelectedBadgeMinimumBytes = sizeof(int) + StringPrefixBytes;
     public const int PointLimitMinimumBytes = sizeof(int) * 2;
-
-    public static void RequireSupportedClient(ClientType client)
-    {
-        if (client is not (ClientType.Flash))
-            throw new UnsupportedClientException(client);
-    }
-
-    public static int CountWidth(ClientType client) => client switch
-    {
-        ClientType.Flash => sizeof(int),
-        _ => throw new UnsupportedClientException(client)
-    };
-
-    public static int UserIdWidth(ClientType client) => client switch
-    {
-        ClientType.Flash => sizeof(int),
-        _ => throw new UnsupportedClientException(client)
-    };
+    public const int CountWidth = sizeof(int);
+    public const int UserIdWidth = sizeof(int);
 
     public static int ReadCount(
         in PacketReader p,
@@ -39,12 +23,8 @@ internal static class AchievementBadgeWire
     {
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(minimum_element_bytes);
         ArgumentOutOfRangeException.ThrowIfNegative(trailing_bytes);
-        RequireRemaining(in p, CountWidth(p.Client), trailing_bytes, name);
-        int count = p.Client switch
-        {
-            ClientType.Flash => p.ReadInt(),
-            _ => throw new UnsupportedClientException(p.Client)
-        };
+        RequireRemaining(in p, CountWidth, trailing_bytes, name);
+        int count = p.ReadInt();
         RequireCount(count, name);
         int available = p.Available - trailing_bytes;
         if (available < 0 || count > available / minimum_element_bytes)
@@ -123,17 +103,12 @@ internal static class AchievementBadgeWire
         int trailing_bytes,
         string name)
     {
-        RequireRemaining(in p, UserIdWidth(p.Client), trailing_bytes, name);
-        return p.Client switch
-        {
-            ClientType.Flash => p.ReadInt(),
-            _ => throw new UnsupportedClientException(p.Client)
-        };
+        RequireRemaining(in p, UserIdWidth, trailing_bytes, name);
+        return p.ReadInt();
     }
 
-    public static void RequireUserId(Id value, ClientType client)
+    public static void RequireUserId(Id value)
     {
-        RequireSupportedClient(client);
         _ = checked((int)(long)value);
     }
 

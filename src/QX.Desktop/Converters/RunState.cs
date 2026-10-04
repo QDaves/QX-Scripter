@@ -8,7 +8,7 @@ namespace Qx.Desktop.Converters;
 
 public sealed class RunState : IValueConverter
 {
-    public object Convert(object? value, Type target_type, object? parameter, CultureInfo culture) =>
+    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture) =>
         value is RunPhase phase
             ? phase switch
             {
@@ -20,13 +20,13 @@ public sealed class RunState : IValueConverter
             }
             : RunButtonState.Idle;
 
-    public object ConvertBack(object? value, Type target_type, object? parameter, CultureInfo culture) =>
+    public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) =>
         throw new NotSupportedException();
 }
 
 public sealed class TabState : IValueConverter
 {
-    public object Convert(object? value, Type target_type, object? parameter, CultureInfo culture) =>
+    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture) =>
         value is DocumentBadge badge
             ? badge switch
             {
@@ -38,6 +38,6 @@ public sealed class TabState : IValueConverter
             }
             : TabHeaderState.Idle;
 
-    public object ConvertBack(object? value, Type target_type, object? parameter, CultureInfo culture) =>
+    public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) =>
         throw new NotSupportedException();
 }

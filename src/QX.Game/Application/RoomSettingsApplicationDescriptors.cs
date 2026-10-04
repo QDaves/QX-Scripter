@@ -18,11 +18,11 @@ internal static class RoomSettingsApplicationDescriptors
         typeof(RoomSettingsStateRequest),
         typeof(RoomSettingsStateView),
         [RoomIdParameter()],
-        state_effects:
+        stateEffects:
         [new(ApplicationStateKey.RoomSettingsLoaded, ApplicationStateEffectKind.Reads)],
         messages: ObservedMessages(),
-        tool_hints: new(true, false, true, false),
-        invocation_scope: ApplicationInvocationScope.Persistent);
+        toolHints: new(true, false, true, false),
+        invocationScope: ApplicationInvocationScope.Persistent);
 
     public static ApplicationDescriptor Get { get; } = new(
         ApplicationMemberIds.RoomSettingsGet,
@@ -41,9 +41,9 @@ internal static class RoomSettingsApplicationDescriptors
         [ApplicationStateKey.HotelConnected],
         [new(ApplicationStateKey.RoomSettingsLoaded, ApplicationStateEffectKind.Changes)],
         [
-            new(MessageKeys.Room.Settings.Request, Direction.Out, ApplicationMessageRole.Send),
-            new(MessageKeys.Room.Settings.Snapshot, Direction.In, ApplicationMessageRole.Observe),
-            new(MessageKeys.Room.Settings.RequestFailed, Direction.In, ApplicationMessageRole.Observe)
+            new(MessageKeys.Room.Settings.Request, MessageDirection.Out, ApplicationMessageRole.Send),
+            new(MessageKeys.Room.Settings.Snapshot, MessageDirection.In, ApplicationMessageRole.Observe),
+            new(MessageKeys.Room.Settings.RequestFailed, MessageDirection.In, ApplicationMessageRole.Observe)
         ],
         new(true, false, true, true));
 
@@ -67,9 +67,9 @@ internal static class RoomSettingsApplicationDescriptors
         [ApplicationStateKey.HotelConnected],
         [new(ApplicationStateKey.RoomSettingsLoaded, ApplicationStateEffectKind.Invalidates)],
         [
-            new(MessageKeys.Room.Settings.Save, Direction.Out, ApplicationMessageRole.Send),
-            new(MessageKeys.Room.Settings.SaveSucceeded, Direction.In, ApplicationMessageRole.Observe),
-            new(MessageKeys.Room.Settings.SaveFailed, Direction.In, ApplicationMessageRole.Observe)
+            new(MessageKeys.Room.Settings.Save, MessageDirection.Out, ApplicationMessageRole.Send),
+            new(MessageKeys.Room.Settings.SaveSucceeded, MessageDirection.In, ApplicationMessageRole.Observe),
+            new(MessageKeys.Room.Settings.SaveFailed, MessageDirection.In, ApplicationMessageRole.Observe)
         ],
         new(false, false, true, true));
 
@@ -81,7 +81,7 @@ internal static class RoomSettingsApplicationDescriptors
         event_exposure,
         null,
         typeof(RoomSettingsChanged),
-        state_effects:
+        stateEffects:
         [
             new(ApplicationStateKey.RoomSettingsLoaded, ApplicationStateEffectKind.Changes),
             new(ApplicationStateKey.RoomSettingsLoaded, ApplicationStateEffectKind.Invalidates)
@@ -89,15 +89,15 @@ internal static class RoomSettingsApplicationDescriptors
         messages:
         [
             .. ObservedMessages(),
-            new(MessageKeys.Room.Settings.Save, Direction.Out, ApplicationMessageRole.Observe)
+            new(MessageKeys.Room.Settings.Save, MessageDirection.Out, ApplicationMessageRole.Observe)
         ]);
 
     private static IReadOnlyList<ApplicationMessageRequirement> ObservedMessages() =>
     [
-        new(MessageKeys.Room.Settings.Snapshot, Direction.In, ApplicationMessageRole.Observe),
-        new(MessageKeys.Room.Settings.RequestFailed, Direction.In, ApplicationMessageRole.Observe),
-        new(MessageKeys.Room.Settings.SaveSucceeded, Direction.In, ApplicationMessageRole.Observe),
-        new(MessageKeys.Room.Settings.SaveFailed, Direction.In, ApplicationMessageRole.Observe)
+        new(MessageKeys.Room.Settings.Snapshot, MessageDirection.In, ApplicationMessageRole.Observe),
+        new(MessageKeys.Room.Settings.RequestFailed, MessageDirection.In, ApplicationMessageRole.Observe),
+        new(MessageKeys.Room.Settings.SaveSucceeded, MessageDirection.In, ApplicationMessageRole.Observe),
+        new(MessageKeys.Room.Settings.SaveFailed, MessageDirection.In, ApplicationMessageRole.Observe)
     ];
 
     private static ApplicationParameterDescriptor RoomIdParameter() => new(

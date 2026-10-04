@@ -16,12 +16,16 @@ public partial class ScriptGlobals
     /// <summary>
     /// Finds a user in the current room by account id.
     /// </summary>
+    /// <remarks>
+    /// To find an avatar by its room index, use <see cref="RoomManager.AvatarByIndex"/> on
+    /// <see cref="Room"/>.
+    /// </remarks>
     /// <param name="id">The account id of the user.</param>
     /// <returns>
     /// The user, or <see langword="null"/> when nobody with that id is in the room. Bots and
     /// pets are never returned even when their id matches.
     /// </returns>
-    public User? GetUser(Id id) => Room.AvatarById(id) as User;
+    public User? GetUser(Id id) => Users.FirstOrDefault(user => user.Id == id);
 
     /// <summary>
     /// Finds a user in the current room by name, case-insensitively.
@@ -29,6 +33,11 @@ public partial class ScriptGlobals
     /// <param name="name">The name of the user.</param>
     /// <returns>The user, or <see langword="null"/> when nobody in the room matches.</returns>
     public User? GetUser(string name) => Room.UserByName(name);
+
+    /// <summary>Finds a pet in the current room by pet id.</summary>
+    /// <param name="id">The pet id.</param>
+    /// <returns>The pet, or <see langword="null"/> when it is not in the room.</returns>
+    public Pet? GetPet(Id id) => Pets.FirstOrDefault(pet => pet.Id == id);
 
     /// <summary>
     /// Finds a pet in the current room by name, case-insensitively.
@@ -38,6 +47,11 @@ public partial class ScriptGlobals
     public Pet? GetPet(string name) =>
         Pets.FirstOrDefault(p => string.Equals(p.Name, name, StringComparison.OrdinalIgnoreCase));
 
+    /// <summary>Finds a bot in the current room by bot id.</summary>
+    /// <param name="id">The bot id.</param>
+    /// <returns>The bot, or <see langword="null"/> when it is not in the room.</returns>
+    public Bot? GetBot(Id id) => Bots.FirstOrDefault(bot => bot.Id == id);
+
     /// <summary>
     /// Finds a bot in the current room by name, case-insensitively.
     /// </summary>
@@ -46,21 +60,33 @@ public partial class ScriptGlobals
     public Bot? GetBot(string name) =>
         Bots.FirstOrDefault(b => string.Equals(b.Name, name, StringComparison.OrdinalIgnoreCase));
 
+    /// <summary>Finds an avatar of any kind in the current room by name, case-insensitively.</summary>
+    /// <param name="name">The avatar's name.</param>
+    /// <returns>The first user, pet or bot with that name, or <see langword="null"/> when none matches.</returns>
+    public Avatar? GetEntity(string name) =>
+        Avatars.FirstOrDefault(avatar =>
+            string.Equals(avatar.Name, name, StringComparison.OrdinalIgnoreCase));
+
+    /// <summary>Finds a floor item in the current room by item id.</summary>
+    /// <param name="id">The floor item id.</param>
+    /// <returns>The item, or <see langword="null"/> when it is not in the room.</returns>
+    public FloorItem? GetFloorItem(Id id) => Room.FloorItem(id);
+
+    /// <summary>Finds a wall item in the current room by item id.</summary>
+    /// <param name="id">The wall item id.</param>
+    /// <returns>The item, or <see langword="null"/> when it is not in the room.</returns>
+    public WallItem? GetWallItem(Id id) => Room.WallItem(id);
+
     /// <summary>Gets whether a trade window is currently open.</summary>
     public bool IsTrading => Trade.Active is not null;
-
-    /// <summary>
-    /// Gets the state of the room session: outside a room, entering, ready, or leaving.
-    /// </summary>
-    public RoomSessionState RoomState => Room.State;
 
     /// <summary>
     /// Gets whether the room session is ready, which is the case once the server has reported
     /// the room ready and confirmed the entry.
     /// </summary>
     /// <remarks>
-    /// Prefer it over <see cref="InRoom"/> before reading room contents. It does not wait for
-    /// the avatar, furni, floor plan or heightmap messages, which arrive separately.
+    /// Prefer it over <see cref="RoomManager.IsInRoom"/> before reading room contents. It does not
+    /// wait for the avatar, furni, floor plan or heightmap messages, which arrive separately.
     /// </remarks>
     public bool IsRoomReady => Room.IsReady;
 
@@ -139,9 +165,9 @@ public partial class ScriptGlobals
     /// </returns>
     public InventoryPet? GetInventoryPet(Id id) =>
         InventoryApplicationPages.ReadPets(
-                Application,
-                pet_id: id,
-                cancellation_token: Ct)
+                _application,
+                petId: id,
+                cancellationToken: Ct)
             .Pets
             .Select(LegacyInventoryPet)
             .FirstOrDefault();
@@ -156,9 +182,9 @@ public partial class ScriptGlobals
     /// </returns>
     public InventoryPet? GetInventoryPet(string name) =>
         InventoryApplicationPages.ReadPets(
-                Application,
+                _application,
                 name: name,
-                cancellation_token: Ct)
+                cancellationToken: Ct)
             .Pets
             .Select(LegacyInventoryPet)
             .FirstOrDefault();
@@ -234,8 +260,8 @@ public partial class ScriptGlobals
     /// A loaded inventory that is not stale returns immediately without touching the network;
     /// a missing or stale inventory is requested again.
     /// </remarks>
-    /// <param name="timeout_ms">The timeout for the load, in milliseconds.</param>
-    /// <param name="cancellation_token">
+    /// <param name="timeoutMs">The timeout for the load, in milliseconds.</param>
+    /// <param name="cancellationToken">
     /// An extra token to cancel on, combined with the script's own. Leave unset to use only the
     /// script's.
     /// </param>
@@ -244,13 +270,13 @@ public partial class ScriptGlobals
     /// <exception cref="InvalidOperationException">Thrown when no hotel session is active, or the connection closed or the session changed during the load.</exception>
     /// <exception cref="OperationCanceledException">Thrown when the script was stopped, or the supplied token fired.</exception>
     public async Task<IReadOnlyCollection<InventoryItem>> EnsureInventoryLoaded(
-        int timeout_ms = 10000,
-        CancellationToken cancellation_token = default)
+        int timeoutMs = 10000,
+        CancellationToken cancellationToken = default)
     {
-        if (cancellation_token == default)
-            return await LoadInventory(timeout_ms, Ct).ConfigureAwait(false);
-        using CancellationTokenSource linked = CancellationTokenSource.CreateLinkedTokenSource(Ct, cancellation_token);
-        return await LoadInventory(timeout_ms, linked.Token).ConfigureAwait(false);
+        if (cancellationToken == default)
+            return await LoadInventory(timeoutMs, Ct).ConfigureAwait(false);
+        using CancellationTokenSource linked = CancellationTokenSource.CreateLinkedTokenSource(Ct, cancellationToken);
+        return await LoadInventory(timeoutMs, linked.Token).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -260,27 +286,27 @@ public partial class ScriptGlobals
     /// A loaded pet inventory that is not stale returns immediately without touching the
     /// network; a missing or stale one is requested again.
     /// </remarks>
-    /// <param name="timeout_ms">The timeout for the load, in milliseconds.</param>
-    /// <param name="cancellation_token">An extra token to cancel on, combined with the script's own.</param>
+    /// <param name="timeoutMs">The timeout for the load, in milliseconds.</param>
+    /// <param name="cancellationToken">An extra token to cancel on, combined with the script's own.</param>
     /// <returns>A snapshot of every inventory pet.</returns>
     /// <exception cref="TimeoutException">Thrown when the pet inventory did not finish loading in time.</exception>
     /// <exception cref="InvalidOperationException">Thrown when no hotel session is active, or the connection closed or the session changed during the load.</exception>
     /// <exception cref="OperationCanceledException">Thrown when the script was stopped, or the supplied token fired.</exception>
     public async Task<IReadOnlyCollection<InventoryPet>> EnsurePetInventoryLoaded(
-        int timeout_ms = 10000,
-        CancellationToken cancellation_token = default)
+        int timeoutMs = 10000,
+        CancellationToken cancellationToken = default)
     {
-        if (cancellation_token == default)
-            return await LoadPetInventory(timeout_ms, Ct).ConfigureAwait(false);
-        using CancellationTokenSource linked = CancellationTokenSource.CreateLinkedTokenSource(Ct, cancellation_token);
-        return await LoadPetInventory(timeout_ms, linked.Token).ConfigureAwait(false);
+        if (cancellationToken == default)
+            return await LoadPetInventory(timeoutMs, Ct).ConfigureAwait(false);
+        using CancellationTokenSource linked = CancellationTokenSource.CreateLinkedTokenSource(Ct, cancellationToken);
+        return await LoadPetInventory(timeoutMs, linked.Token).ConfigureAwait(false);
     }
 
     private async Task<IReadOnlyCollection<InventoryItem>> LoadInventory(
         int timeout_ms,
         CancellationToken cancellation_token)
     {
-        InventoryFurniPage first = await Application
+        InventoryFurniPage first = await _application
             .InvokeAsync<InventoryFurniPageRequest, InventoryFurniPage>(
                 ApplicationMemberIds.InventoryFurniList,
                 new InventoryFurniPageRequest(Limit: 500),
@@ -288,7 +314,7 @@ public partial class ScriptGlobals
             .ConfigureAwait(false);
         if (!first.Loaded || first.Stale || first.RecoveryPending)
         {
-            first = await Application
+            first = await _application
                 .InvokeAsync<InventoryFurniRefreshRequest, InventoryFurniPage>(
                     ApplicationMemberIds.InventoryFurniRefresh,
                     new InventoryFurniRefreshRequest(
@@ -298,9 +324,9 @@ public partial class ScriptGlobals
                 .ConfigureAwait(false);
         }
         InventoryFurniPage inventory = await InventoryApplicationPages.CompleteFurniAsync(
-            Application,
+            _application,
             first,
-            cancellation_token: cancellation_token).ConfigureAwait(false);
+            cancellationToken: cancellation_token).ConfigureAwait(false);
         return Array.AsReadOnly(inventory.Items.Select(LegacyInventoryItem).ToArray());
     }
 
@@ -308,7 +334,7 @@ public partial class ScriptGlobals
         int timeout_ms,
         CancellationToken cancellation_token)
     {
-        InventoryPetPage first = await Application
+        InventoryPetPage first = await _application
             .InvokeAsync<InventoryPetPageRequest, InventoryPetPage>(
                 ApplicationMemberIds.InventoryPetsList,
                 new InventoryPetPageRequest(Limit: 500),
@@ -316,7 +342,7 @@ public partial class ScriptGlobals
             .ConfigureAwait(false);
         if (!first.Loaded || first.Stale || first.RecoveryPending)
         {
-            first = await Application
+            first = await _application
                 .InvokeAsync<InventoryPetRefreshRequest, InventoryPetPage>(
                     ApplicationMemberIds.InventoryPetsRefresh,
                     new InventoryPetRefreshRequest(
@@ -326,9 +352,9 @@ public partial class ScriptGlobals
                 .ConfigureAwait(false);
         }
         InventoryPetPage inventory = await InventoryApplicationPages.CompletePetsAsync(
-            Application,
+            _application,
             first,
-            cancellation_token: cancellation_token).ConfigureAwait(false);
+            cancellationToken: cancellation_token).ConfigureAwait(false);
         return Array.AsReadOnly(inventory.Pets.Select(LegacyInventoryPet).ToArray());
     }
 
@@ -339,29 +365,24 @@ public partial class ScriptGlobals
     /// Call it before relying on <see cref="IsFriend(string)"/> or <see cref="FindFriend"/>. A
     /// loaded list returns without touching the network.
     /// </remarks>
-    /// <param name="timeout_ms">The timeout for the load, in milliseconds. Must be positive.</param>
-    /// <param name="cancellation_token">An extra token to cancel on, combined with the script's own.</param>
+    /// <param name="timeoutMs">The timeout for the load, in milliseconds. Must be positive.</param>
+    /// <param name="cancellationToken">An extra token to cancel on, combined with the script's own.</param>
     /// <returns>A snapshot of every friend.</returns>
-    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="timeout_ms"/> is zero or negative.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="timeoutMs"/> is zero or negative.</exception>
     /// <exception cref="TimeoutException">Thrown when the friend list did not finish loading in time.</exception>
     /// <exception cref="InvalidOperationException">
     /// Thrown when the session changed or the list kept changing while it was being read.
     /// </exception>
     /// <exception cref="OperationCanceledException">Thrown when the script was stopped, or the supplied token fired.</exception>
     public async Task<IReadOnlyCollection<Friend>> EnsureFriendsLoaded(
-        int timeout_ms = 10000,
-        CancellationToken cancellation_token = default)
+        int timeoutMs = 10000,
+        CancellationToken cancellationToken = default)
     {
-        if (cancellation_token == default)
-            return await LoadFriends(timeout_ms, Ct);
-        using CancellationTokenSource linked = CancellationTokenSource.CreateLinkedTokenSource(Ct, cancellation_token);
-        return await LoadFriends(timeout_ms, linked.Token);
+        if (cancellationToken == default)
+            return await LoadFriends(timeoutMs, Ct);
+        using CancellationTokenSource linked = CancellationTokenSource.CreateLinkedTokenSource(Ct, cancellationToken);
+        return await LoadFriends(timeoutMs, linked.Token);
     }
-
-    /// <summary>Writes a line to the script output.</summary>
-    /// <remarks>Alias of <see cref="Log"/>.</remarks>
-    /// <param name="message">The value to write; <see langword="null"/> writes an empty line.</param>
-    public void Status(object? message) => Log(message);
 
     /// <summary>
     /// Ends the script immediately and successfully, by throwing
@@ -409,6 +430,66 @@ public partial class ScriptGlobals
     public T? GetGlobal<T>(string key) => _globals.TryGetValue(key, out object? value) && value is T typed ? typed : default;
 
     /// <summary>
+    /// Stores a value in the shared store only if the key is not taken.
+    /// </summary>
+    /// <remarks>
+    /// Several script runs can race to initialize shared state without overwriting each other.
+    /// The store is the one read by <see cref="GetGlobal(string)"/>.
+    /// </remarks>
+    /// <param name="key">The key. Compared case-sensitively.</param>
+    /// <param name="value">The value to store.</param>
+    /// <returns>
+    /// <see langword="true"/> when this call stored the value, <see langword="false"/> when the key
+    /// already existed and nothing changed.
+    /// </returns>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="key"/> is <see langword="null"/>, empty or whitespace.</exception>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="value"/> is <see langword="null"/>.</exception>
+    public bool InitGlobal(string key, object value)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(key);
+        ArgumentNullException.ThrowIfNull(value);
+        lock (_global_sync)
+        {
+            if (_globals.ContainsKey(key))
+                return false;
+            _globals[key] = value;
+            return true;
+        }
+    }
+
+    /// <summary>
+    /// Stores a lazily built value in the shared store only if the key is not taken.
+    /// </summary>
+    /// <remarks>
+    /// The factory runs only when the key is free, under the store's lock, so an expensive
+    /// initialization is skipped on the losing side of a race.
+    /// </remarks>
+    /// <param name="key">The key. Compared case-sensitively.</param>
+    /// <param name="valueFactory">The factory that builds the value; it must not return <see langword="null"/>.</param>
+    /// <returns>
+    /// <see langword="true"/> when this call stored the value, <see langword="false"/> when the key
+    /// already existed and the factory was never called.
+    /// </returns>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="key"/> is <see langword="null"/>, empty or whitespace.</exception>
+    /// <exception cref="ArgumentNullException">
+    /// Thrown when <paramref name="valueFactory"/> is <see langword="null"/>, or it returned <see langword="null"/>.
+    /// </exception>
+    public bool InitGlobal(string key, Func<object> valueFactory)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(key);
+        ArgumentNullException.ThrowIfNull(valueFactory);
+        lock (_global_sync)
+        {
+            if (_globals.ContainsKey(key))
+                return false;
+            object value = valueFactory();
+            ArgumentNullException.ThrowIfNull(value);
+            _globals[key] = value;
+            return true;
+        }
+    }
+
+    /// <summary>
     /// Serializes a value to JSON with the default options: no indentation, property names kept
     /// exactly as declared.
     /// </summary>
@@ -431,7 +512,7 @@ public partial class ScriptGlobals
     /// </summary>
     /// <remarks>
     /// Fire-and-forget: the room may still refuse entry (locked door, ban, full room). Subscribe
-    /// to <see cref="OnRoomReady"/> to know when the entry succeeded.
+    /// to <see cref="OnEnteredRoom"/> to know when the entry succeeded.
     /// </remarks>
     /// <param name="roomId">The room id.</param>
     /// <exception cref="InvalidOperationException">Thrown when no hotel session is active.</exception>
@@ -440,20 +521,20 @@ public partial class ScriptGlobals
     /// <summary>
     /// Enters a room, supplying a door password.
     /// </summary>
-    /// <param name="room_id">The room id.</param>
+    /// <param name="roomId">The room id.</param>
     /// <param name="password">The door password; empty for rooms that need none.</param>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="password"/> is <see langword="null"/>.</exception>
     /// <exception cref="InvalidOperationException">Thrown when no hotel session is active.</exception>
     /// <remarks>
     /// Fire-and-forget. A wrong password or a refused entry is not reported by an exception
-    /// here; subscribe to <see cref="OnRoomReady"/> to know when the entry succeeded.
+    /// here; subscribe to <see cref="OnEnteredRoom"/> to know when the entry succeeded.
     /// </remarks>
-    public void EnterRoom(Id room_id, string password)
+    public void EnterRoom(Id roomId, string password)
     {
         ArgumentNullException.ThrowIfNull(password);
-        Application.Invoke<RoomEnterRequest, RoomLifecycleDispatchResult>(
+        _application.Invoke<RoomEnterRequest, RoomLifecycleDispatchResult>(
             ApplicationMemberIds.RoomEnter,
-            new RoomEnterRequest(room_id, password),
+            new RoomEnterRequest(roomId, password),
             Ct);
     }
 
@@ -473,6 +554,11 @@ public partial class ScriptGlobals
         double dy = (double)y1 - y2;
         return Math.Sqrt(dx * dx + dy * dy);
     }
+
+    /// <summary>Gets the straight-line distance between two tiles, in tiles.</summary>
+    /// <param name="a">The first tile.</param>
+    /// <param name="b">The second tile.</param>
+    public static double Distance(Point a, Point b) => Distance(a.X, a.Y, b.X, b.Y);
 
     /// <summary>Gets the straight-line distance between two tiles, in tiles, ignoring height.</summary>
     /// <param name="a">The first tile.</param>

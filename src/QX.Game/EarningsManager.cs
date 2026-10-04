@@ -177,10 +177,6 @@ public sealed class EarningsManager : GameStateManager
     /// <exception cref="InvalidOperationException">Thrown when the application runtime is not active.</exception>
     public void ClaimAll() => Claim(EarningCategory.All);
 
-    /// <summary>Gets whether the connected client supports earnings.</summary>
-    /// <remarks>Always <see langword="true"/>.</remarks>
-    public bool IsSupported => true;
-
     /// <summary>Gets the vault, requesting it from the server if it has not been received in this session.</summary>
     /// <param name="timeoutMs">The time to wait for the vault, in milliseconds.</param>
     /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>

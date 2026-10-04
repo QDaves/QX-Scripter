@@ -10,9 +10,9 @@ public sealed class HotelContext
 
     public event Action<string>? WebHostChanged;
 
-    public void Use(string? web_host)
+    public void Use(string? webHost)
     {
-        string next = string.IsNullOrWhiteSpace(web_host) ? DefaultWebHost : web_host.Trim();
+        string next = string.IsNullOrWhiteSpace(webHost) ? DefaultWebHost : webHost.Trim();
         if (string.Equals(Interlocked.Exchange(ref _web_host, next), next, StringComparison.OrdinalIgnoreCase))
             return;
         WebHostChanged?.Invoke(next);

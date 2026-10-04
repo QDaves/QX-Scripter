@@ -3,6 +3,7 @@ using Qx.Messages;
 namespace Qx.Model;
 
 /// <summary>Represents the contents of a sticky note on a room wall.</summary>
+/// <remarks>Received as the Flash <c>ItemDataUpdate</c> message.</remarks>
 /// <param name="Id">The sticky note's item identifier, or 0 when the packet's identifier is not numeric.</param>
 /// <param name="Color">The note color as a hex string, empty when the packet carries none.</param>
 /// <param name="Text">The note text.</param>
@@ -34,7 +35,6 @@ public sealed record Sticky(Id Id, string Color, string Text) : IParserComposer<
     /// <see cref="Text"/>; without a space the whole data string becomes <see cref="Text"/>.
     /// </remarks>
     /// <param name="p">The packet to read from.</param>
-    /// <exception cref="UnsupportedClientException">Thrown when the packet is not from the Flash client.</exception>
     public static Sticky Parse(in PacketReader p) =>
         FlashWire.Parse(in p, ParseFlash);
 
@@ -55,7 +55,6 @@ public sealed record Sticky(Id Id, string Color, string Text) : IParserComposer<
 
     /// <summary>Writes the sticky note to a packet as <c>color text</c>, or as the text alone when <see cref="Color"/> is empty.</summary>
     /// <param name="p">The packet to write to.</param>
-    /// <exception cref="UnsupportedClientException">Thrown when the packet is not for the Flash client.</exception>
     public void Compose(in PacketWriter p) =>
         FlashWire.Compose(this, in p, ComposeFlash);
 
@@ -69,14 +68,13 @@ public sealed record Sticky(Id Id, string Color, string Text) : IParserComposer<
     private static StickyWireSnapshot Prepare(Sticky value, in PacketWriter p, bool string_id)
     {
         ArgumentNullException.ThrowIfNull(value);
-        RoomObjectReadWire.RequireSupportedClient(p.Client);
         string data = value.Color.Length > 0 ? $"{value.Color} {value.Text}" : value.Text;
         string? id_text = string_id ? value.Id.ToString() : null;
         var strings = new RoomObjectReadStringBudget();
         if (id_text is not null)
             strings.Require(id_text, in p, nameof(Id));
         else
-            RoomObjectReadWire.RequireWireId(p.Client, value.Id, nameof(Id));
+            RoomObjectReadWire.RequireWireId(value.Id, nameof(Id));
         strings.Require(data, in p, nameof(Text));
         return new StickyWireSnapshot(value.Id, id_text, data);
     }

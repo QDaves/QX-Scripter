@@ -155,19 +155,19 @@ public sealed class FriendQuery : QueryCollection<Friend>
     /// <summary>
     /// Filters the friends to those in any of the specified friend list categories.
     /// </summary>
-    /// <param name="category_ids">The category ids to keep, compared with <see cref="Friend.CategoryId"/>.</param>
+    /// <param name="categoryIds">The category ids to keep, compared with <see cref="Friend.CategoryId"/>.</param>
     /// <returns>A new query with the matching friends.</returns>
-    public FriendQuery InCategory(params int[] category_ids) =>
-        InCategory((IEnumerable<int>)category_ids);
+    public FriendQuery InCategory(params int[] categoryIds) =>
+        InCategory((IEnumerable<int>)categoryIds);
 
     /// <summary>
     /// Filters the friends to those in any of the specified friend list categories.
     /// </summary>
-    /// <param name="category_ids">The category ids to keep, compared with <see cref="Friend.CategoryId"/>.</param>
+    /// <param name="categoryIds">The category ids to keep, compared with <see cref="Friend.CategoryId"/>.</param>
     /// <returns>A new query with the matching friends.</returns>
-    public FriendQuery InCategory(IEnumerable<int> category_ids)
+    public FriendQuery InCategory(IEnumerable<int> categoryIds)
     {
-        HashSet<int> values = QueryValues.Set(category_ids);
+        HashSet<int> values = QueryValues.Set(categoryIds);
         return Where(friend => values.Contains(friend.CategoryId));
     }
 

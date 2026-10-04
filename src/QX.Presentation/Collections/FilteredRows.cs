@@ -14,12 +14,12 @@ public sealed class FilteredRows<T> where T : class
 
     public event Action? Applied;
 
-    public async Task ApplyAsync(IReadOnlyCollection<T> source, Func<T, bool> keep, IComparer<T>? order, CancellationToken cancellation_token)
+    public async Task ApplyAsync(IReadOnlyCollection<T> source, Func<T, bool> keep, IComparer<T>? order, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(source);
         ArgumentNullException.ThrowIfNull(keep);
         T[] snapshot = [.. source];
-        OperationLease lease = await _filtering.StartAsync(cancellation_token);
+        OperationLease lease = await _filtering.StartAsync(cancellationToken);
         try
         {
             T[] result = snapshot.Length <= InlineLimit

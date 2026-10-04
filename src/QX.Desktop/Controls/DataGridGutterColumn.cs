@@ -16,13 +16,13 @@ public sealed class DataGridGutterColumn : DataGridColumn
         IsReadOnly = true;
     }
 
-    protected override Control GenerateElement(DataGridCell cell, object data_item) => new Panel();
+    protected override Control GenerateElement(DataGridCell cell, object dataItem) => new Panel();
 
-    protected override Control GenerateEditingElement(DataGridCell cell, object data_item, out BindingExpressionBase? binding)
+    protected override Control GenerateEditingElement(DataGridCell cell, object dataItem, out BindingExpressionBase? binding)
     {
         binding = null;
         return new Panel();
     }
 
-    protected override object? PrepareCellForEdit(Control editing_element, RoutedEventArgs editing_event_args) => null;
+    protected override object? PrepareCellForEdit(Control editingElement, RoutedEventArgs editingEventArgs) => null;
 }

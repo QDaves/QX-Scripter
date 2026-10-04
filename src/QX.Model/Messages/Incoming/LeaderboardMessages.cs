@@ -10,26 +10,26 @@ public sealed record LeaderboardEntry : IParserComposer<LeaderboardEntry>
     private string gender = "";
 
     /// <summary>Initializes a new instance of the <see cref="LeaderboardEntry"/> class.</summary>
-    /// <param name="UserId">The player's user ID.</param>
-    /// <param name="Score">The player's score.</param>
-    /// <param name="Rank">The player's rank, counted from one.</param>
-    /// <param name="Name">The player's name.</param>
-    /// <param name="Figure">The player's figure string.</param>
-    /// <param name="Gender">The player's gender.</param>
+    /// <param name="userId">The player's user ID.</param>
+    /// <param name="score">The player's score.</param>
+    /// <param name="rank">The player's rank, counted from one.</param>
+    /// <param name="name">The player's name.</param>
+    /// <param name="figure">The player's figure string.</param>
+    /// <param name="gender">The player's gender.</param>
     public LeaderboardEntry(
-        int UserId,
-        int Score,
-        int Rank,
-        string Name,
-        string Figure,
-        string Gender)
+        int userId,
+        int score,
+        int rank,
+        string name,
+        string figure,
+        string gender)
     {
-        this.UserId = UserId;
-        this.Score = Score;
-        this.Rank = Rank;
-        this.Name = Name;
-        this.Figure = Figure;
-        this.Gender = Gender;
+        UserId = userId;
+        Score = score;
+        Rank = rank;
+        Name = name;
+        Figure = figure;
+        Gender = gender;
     }
 
     /// <summary>Gets the player's user ID.</summary>
@@ -75,26 +75,26 @@ public sealed record LeaderboardEntry : IParserComposer<LeaderboardEntry>
     }
 
     /// <summary>Deconstructs the entry into its values.</summary>
-    /// <param name="UserId">The player's user ID.</param>
-    /// <param name="Score">The player's score.</param>
-    /// <param name="Rank">The player's rank, counted from one.</param>
-    /// <param name="Name">The player's name.</param>
-    /// <param name="Figure">The player's figure string.</param>
-    /// <param name="Gender">The player's gender.</param>
+    /// <param name="userId">The player's user ID.</param>
+    /// <param name="score">The player's score.</param>
+    /// <param name="rank">The player's rank, counted from one.</param>
+    /// <param name="name">The player's name.</param>
+    /// <param name="figure">The player's figure string.</param>
+    /// <param name="gender">The player's gender.</param>
     public void Deconstruct(
-        out int UserId,
-        out int Score,
-        out int Rank,
-        out string Name,
-        out string Figure,
-        out string Gender)
+        out int userId,
+        out int score,
+        out int rank,
+        out string name,
+        out string figure,
+        out string gender)
     {
-        UserId = this.UserId;
-        Score = this.Score;
-        Rank = this.Rank;
-        Name = this.Name;
-        Figure = this.Figure;
-        Gender = this.Gender;
+        userId = UserId;
+        score = Score;
+        rank = Rank;
+        name = Name;
+        figure = Figure;
+        gender = Gender;
     }
 
     /// <summary>Parses the entry from a packet.</summary>
@@ -192,17 +192,17 @@ public sealed record Leaderboard : IParserComposer<Leaderboard>
         Array.AsReadOnly(Array.Empty<LeaderboardEntry>());
 
     /// <summary>Initializes a new instance of the <see cref="Leaderboard"/> class.</summary>
-    /// <param name="Entries">The entries in this window.</param>
-    /// <param name="TotalListSize">The number of entries on the whole board.</param>
-    /// <param name="GameTypeId">The ID of the game the board belongs to.</param>
+    /// <param name="entries">The entries in this window.</param>
+    /// <param name="totalListSize">The number of entries on the whole board.</param>
+    /// <param name="gameTypeId">The ID of the game the board belongs to.</param>
     public Leaderboard(
-        IReadOnlyList<LeaderboardEntry> Entries,
-        int TotalListSize,
-        int GameTypeId)
+        IReadOnlyList<LeaderboardEntry> entries,
+        int totalListSize,
+        int gameTypeId)
     {
-        this.Entries = Entries;
-        this.TotalListSize = TotalListSize;
-        this.GameTypeId = GameTypeId;
+        Entries = entries;
+        TotalListSize = totalListSize;
+        GameTypeId = gameTypeId;
     }
 
     /// <summary>Gets the entries in this window.</summary>
@@ -219,17 +219,17 @@ public sealed record Leaderboard : IParserComposer<Leaderboard>
     public int GameTypeId { get; init; }
 
     /// <summary>Deconstructs the leaderboard into its values.</summary>
-    /// <param name="Entries">The entries in this window.</param>
-    /// <param name="TotalListSize">The number of entries on the whole board.</param>
-    /// <param name="GameTypeId">The ID of the game the board belongs to.</param>
+    /// <param name="entries">The entries in this window.</param>
+    /// <param name="totalListSize">The number of entries on the whole board.</param>
+    /// <param name="gameTypeId">The ID of the game the board belongs to.</param>
     public void Deconstruct(
-        out IReadOnlyList<LeaderboardEntry> Entries,
-        out int TotalListSize,
-        out int GameTypeId)
+        out IReadOnlyList<LeaderboardEntry> entries,
+        out int totalListSize,
+        out int gameTypeId)
     {
-        Entries = this.Entries;
-        TotalListSize = this.TotalListSize;
-        GameTypeId = this.GameTypeId;
+        entries = Entries;
+        totalListSize = TotalListSize;
+        gameTypeId = GameTypeId;
     }
 
     /// <summary>Gets the best rank in this window, or 0 when it is empty.</summary>
@@ -330,10 +330,10 @@ public sealed record TotalLeaderboard : IParserComposer<TotalLeaderboard>
     private Leaderboard board = null!;
 
     /// <summary>Initializes a new instance of the <see cref="TotalLeaderboard"/> class.</summary>
-    /// <param name="Board">The leaderboard page.</param>
-    public TotalLeaderboard(Leaderboard Board)
+    /// <param name="board">The leaderboard page.</param>
+    public TotalLeaderboard(Leaderboard board)
     {
-        this.Board = Board;
+        Board = board;
     }
 
     /// <summary>Gets the leaderboard page.</summary>
@@ -348,10 +348,10 @@ public sealed record TotalLeaderboard : IParserComposer<TotalLeaderboard>
     }
 
     /// <summary>Deconstructs the message into its values.</summary>
-    /// <param name="Board">The leaderboard page.</param>
-    public void Deconstruct(out Leaderboard Board)
+    /// <param name="board">The leaderboard page.</param>
+    public void Deconstruct(out Leaderboard board)
     {
-        Board = this.Board;
+        board = Board;
     }
 
     /// <summary>Parses the message from a packet.</summary>
@@ -387,10 +387,10 @@ public sealed record FriendsLeaderboard : IParserComposer<FriendsLeaderboard>
     private Leaderboard board = null!;
 
     /// <summary>Initializes a new instance of the <see cref="FriendsLeaderboard"/> class.</summary>
-    /// <param name="Board">The leaderboard page.</param>
-    public FriendsLeaderboard(Leaderboard Board)
+    /// <param name="board">The leaderboard page.</param>
+    public FriendsLeaderboard(Leaderboard board)
     {
-        this.Board = Board;
+        Board = board;
     }
 
     /// <summary>Gets the leaderboard page.</summary>
@@ -405,10 +405,10 @@ public sealed record FriendsLeaderboard : IParserComposer<FriendsLeaderboard>
     }
 
     /// <summary>Deconstructs the message into its values.</summary>
-    /// <param name="Board">The leaderboard page.</param>
-    public void Deconstruct(out Leaderboard Board)
+    /// <param name="board">The leaderboard page.</param>
+    public void Deconstruct(out Leaderboard board)
     {
-        Board = this.Board;
+        board = Board;
     }
 
     /// <summary>Parses the message from a packet.</summary>
@@ -445,12 +445,12 @@ public sealed record TotalGroupLeaderboard : IParserComposer<TotalGroupLeaderboa
     private Leaderboard board = null!;
 
     /// <summary>Initializes a new instance of the <see cref="TotalGroupLeaderboard"/> class.</summary>
-    /// <param name="Board">The leaderboard page.</param>
-    /// <param name="FavouriteGroupId">The ID of the group the user has marked as their favorite.</param>
-    public TotalGroupLeaderboard(Leaderboard Board, int FavouriteGroupId)
+    /// <param name="board">The leaderboard page.</param>
+    /// <param name="favouriteGroupId">The ID of the group the user has marked as their favorite.</param>
+    public TotalGroupLeaderboard(Leaderboard board, int favouriteGroupId)
     {
-        this.Board = Board;
-        this.FavouriteGroupId = FavouriteGroupId;
+        Board = board;
+        FavouriteGroupId = favouriteGroupId;
     }
 
     /// <summary>Gets the leaderboard page.</summary>
@@ -468,12 +468,12 @@ public sealed record TotalGroupLeaderboard : IParserComposer<TotalGroupLeaderboa
     public int FavouriteGroupId { get; init; }
 
     /// <summary>Deconstructs the message into its values.</summary>
-    /// <param name="Board">The leaderboard page.</param>
-    /// <param name="FavouriteGroupId">The ID of the group the user has marked as their favorite.</param>
-    public void Deconstruct(out Leaderboard Board, out int FavouriteGroupId)
+    /// <param name="board">The leaderboard page.</param>
+    /// <param name="favouriteGroupId">The ID of the group the user has marked as their favorite.</param>
+    public void Deconstruct(out Leaderboard board, out int favouriteGroupId)
     {
-        Board = this.Board;
-        FavouriteGroupId = this.FavouriteGroupId;
+        board = Board;
+        favouriteGroupId = FavouriteGroupId;
     }
 
     /// <summary>Parses the message from a packet.</summary>
@@ -581,12 +581,12 @@ public sealed record WeeklyLeaderboard : IParserComposer<WeeklyLeaderboard>
     private Leaderboard board = null!;
 
     /// <summary>Initializes a new instance of the <see cref="WeeklyLeaderboard"/> class.</summary>
-    /// <param name="Period">The week the page covers.</param>
-    /// <param name="Board">The leaderboard page.</param>
-    public WeeklyLeaderboard(WeeklyLeaderboardPeriod Period, Leaderboard Board)
+    /// <param name="period">The week the page covers.</param>
+    /// <param name="board">The leaderboard page.</param>
+    public WeeklyLeaderboard(WeeklyLeaderboardPeriod period, Leaderboard board)
     {
-        this.Period = Period;
-        this.Board = Board;
+        Period = period;
+        Board = board;
     }
 
     /// <summary>Gets the week the page covers.</summary>
@@ -612,12 +612,12 @@ public sealed record WeeklyLeaderboard : IParserComposer<WeeklyLeaderboard>
     }
 
     /// <summary>Deconstructs the message into its values.</summary>
-    /// <param name="Period">The week the page covers.</param>
-    /// <param name="Board">The leaderboard page.</param>
-    public void Deconstruct(out WeeklyLeaderboardPeriod Period, out Leaderboard Board)
+    /// <param name="period">The week the page covers.</param>
+    /// <param name="board">The leaderboard page.</param>
+    public void Deconstruct(out WeeklyLeaderboardPeriod period, out Leaderboard board)
     {
-        Period = this.Period;
-        Board = this.Board;
+        period = Period;
+        board = Board;
     }
 
     /// <summary>Parses the message from a packet.</summary>
@@ -659,12 +659,12 @@ public sealed record WeeklyFriendsLeaderboard : IParserComposer<WeeklyFriendsLea
     private Leaderboard board = null!;
 
     /// <summary>Initializes a new instance of the <see cref="WeeklyFriendsLeaderboard"/> class.</summary>
-    /// <param name="Period">The week the page covers.</param>
-    /// <param name="Board">The leaderboard page.</param>
-    public WeeklyFriendsLeaderboard(WeeklyLeaderboardPeriod Period, Leaderboard Board)
+    /// <param name="period">The week the page covers.</param>
+    /// <param name="board">The leaderboard page.</param>
+    public WeeklyFriendsLeaderboard(WeeklyLeaderboardPeriod period, Leaderboard board)
     {
-        this.Period = Period;
-        this.Board = Board;
+        Period = period;
+        Board = board;
     }
 
     /// <summary>Gets the week the page covers.</summary>
@@ -690,12 +690,12 @@ public sealed record WeeklyFriendsLeaderboard : IParserComposer<WeeklyFriendsLea
     }
 
     /// <summary>Deconstructs the message into its values.</summary>
-    /// <param name="Period">The week the page covers.</param>
-    /// <param name="Board">The leaderboard page.</param>
-    public void Deconstruct(out WeeklyLeaderboardPeriod Period, out Leaderboard Board)
+    /// <param name="period">The week the page covers.</param>
+    /// <param name="board">The leaderboard page.</param>
+    public void Deconstruct(out WeeklyLeaderboardPeriod period, out Leaderboard board)
     {
-        Period = this.Period;
-        Board = this.Board;
+        period = Period;
+        board = Board;
     }
 
     /// <summary>Parses the message from a packet.</summary>
@@ -741,17 +741,17 @@ public sealed record WeeklyGroupLeaderboard : IParserComposer<WeeklyGroupLeaderb
     private Leaderboard board = null!;
 
     /// <summary>Initializes a new instance of the <see cref="WeeklyGroupLeaderboard"/> class.</summary>
-    /// <param name="Period">The week the page covers.</param>
-    /// <param name="Board">The leaderboard page.</param>
-    /// <param name="FavouriteGroupId">The ID of the group the user has marked as their favorite.</param>
+    /// <param name="period">The week the page covers.</param>
+    /// <param name="board">The leaderboard page.</param>
+    /// <param name="favouriteGroupId">The ID of the group the user has marked as their favorite.</param>
     public WeeklyGroupLeaderboard(
-        WeeklyLeaderboardPeriod Period,
-        Leaderboard Board,
-        int FavouriteGroupId)
+        WeeklyLeaderboardPeriod period,
+        Leaderboard board,
+        int favouriteGroupId)
     {
-        this.Period = Period;
-        this.Board = Board;
-        this.FavouriteGroupId = FavouriteGroupId;
+        Period = period;
+        Board = board;
+        FavouriteGroupId = favouriteGroupId;
     }
 
     /// <summary>Gets the week the page covers.</summary>
@@ -780,17 +780,17 @@ public sealed record WeeklyGroupLeaderboard : IParserComposer<WeeklyGroupLeaderb
     public int FavouriteGroupId { get; init; }
 
     /// <summary>Deconstructs the message into its values.</summary>
-    /// <param name="Period">The week the page covers.</param>
-    /// <param name="Board">The leaderboard page.</param>
-    /// <param name="FavouriteGroupId">The ID of the group the user has marked as their favorite.</param>
+    /// <param name="period">The week the page covers.</param>
+    /// <param name="board">The leaderboard page.</param>
+    /// <param name="favouriteGroupId">The ID of the group the user has marked as their favorite.</param>
     public void Deconstruct(
-        out WeeklyLeaderboardPeriod Period,
-        out Leaderboard Board,
-        out int FavouriteGroupId)
+        out WeeklyLeaderboardPeriod period,
+        out Leaderboard board,
+        out int favouriteGroupId)
     {
-        Period = this.Period;
-        Board = this.Board;
-        FavouriteGroupId = this.FavouriteGroupId;
+        period = Period;
+        board = Board;
+        favouriteGroupId = FavouriteGroupId;
     }
 
     /// <summary>Parses the message from a packet.</summary>

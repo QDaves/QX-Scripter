@@ -1,5 +1,7 @@
 # Shared code
 
+Scripts share code by loading other scripts with `#load` and .NET assemblies with `#r`.
+
 ## Load a script
 
 `#load` compiles another script from the library into the current one. Its methods, types and
@@ -8,7 +10,7 @@ variables are available as if they were written in place.
 `Maze Engine.csx`:
 
 ```csharp
-async Task WalkTo(int x, int y)
+async Task WalkAndWait(int x, int y)
 {
     Walk(x, y);
     await WaitUntil(() => SelfAvatar?.X == x && SelfAvatar?.Y == y, 5000);
@@ -20,12 +22,15 @@ A script that uses it:
 ```csharp
 #load "Maze Engine.csx"
 
-await WalkTo(4, 7);
-await WalkTo(4, 12);
+await WalkAndWait(4, 7);
+await WalkAndWait(4, 12);
 ```
 
 A fix in the loaded file reaches every script that loads it the next time they run. Loops in a
 loaded file stop with the script, the same way the script's own loops do.
+
+A method a script declares hides every global of the same name, so a helper named `Walk` would
+make the global `Walk` overloads unreachable. Give helpers names of their own.
 
 ## Reference an assembly
 

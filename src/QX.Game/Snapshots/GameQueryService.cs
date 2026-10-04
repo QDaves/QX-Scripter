@@ -331,7 +331,7 @@ public sealed partial class GameQueryService
     {
         InventoryFurniPage page = InventoryApplicationPages.ReadFurni(
             application,
-            max_items: max_inventory_items);
+            maxItems: max_inventory_items);
         FurniData? definitions = game.GameData.Furni;
         InventoryItemSnapshot[] items =
         [

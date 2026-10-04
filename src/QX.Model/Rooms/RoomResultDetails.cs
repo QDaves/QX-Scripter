@@ -68,7 +68,6 @@ public sealed class RoomChatSettings : IParserComposer<RoomChatSettings>
     /// <see cref="FloodProtection"/>, or 20 for the full form.
     /// </remarks>
     /// <param name="p">The packet to read from.</param>
-    /// <exception cref="UnsupportedClientException">Thrown when the packet is not from the Flash client.</exception>
     /// <exception cref="NotSupportedException">Thrown when the bytes left match neither layout.</exception>
     public static RoomChatSettings Parse(in PacketReader p) =>
         FlashWire.Parse(in p, ParseFlash);
@@ -131,7 +130,6 @@ public sealed class RoomChatSettings : IParserComposer<RoomChatSettings>
     /// only <see cref="FloodProtection"/> is written.
     /// </remarks>
     /// <param name="p">The packet to write to.</param>
-    /// <exception cref="UnsupportedClientException">Thrown when the packet is not for the Flash client.</exception>
     public void Compose(in PacketWriter p) =>
         FlashWire.Compose(this, in p, ComposeFlash);
 
@@ -192,7 +190,7 @@ internal static class GuestRoomResultLayout
 
     internal static GuestRoomResultWireLayout Resolve(in PacketReader p)
     {
-        if (Known(p.Context?.WireProfile, p.Client) is { } known)
+        if (p.Context?.WireProfile.FlashGuestRoomResultLayout is { } known)
             return known;
         return FromRemainder(p.Available);
     }
@@ -201,7 +199,7 @@ internal static class GuestRoomResultLayout
         in PacketWriter p,
         GuestRoomResultWireLayout? parsed)
     {
-        if (Known(p.Context?.WireProfile, p.Client) is { } known)
+        if (p.Context?.WireProfile.FlashGuestRoomResultLayout is { } known)
             return known;
         // Nothing to measure while writing, so a value carried over from parsing is the only other
         // evidence there is.
@@ -209,17 +207,6 @@ internal static class GuestRoomResultLayout
             throw new NotSupportedException(
                 "Guest room result details require an exact wire profile, or a layout carried over " +
                 "from the packet they were read from.");
-    }
-
-    private static GuestRoomResultWireLayout? Known(MessageWireProfile? profile, ClientType client)
-    {
-        if (profile is not { } wire)
-            return null;
-        return client switch
-        {
-            ClientType.Flash => wire.FlashGuestRoomResultLayout,
-            _ => null
-        };
     }
 
     private static GuestRoomResultWireLayout FromRemainder(int available) => available switch
@@ -285,7 +272,6 @@ public sealed class RoomResultDetails : IParserComposer<RoomResultDetails>
 
     /// <summary>Reads the guest room details from a packet.</summary>
     /// <param name="p">The packet to read from.</param>
-    /// <exception cref="UnsupportedClientException">Thrown when the packet is not from the Flash client.</exception>
     /// <exception cref="NotSupportedException">Thrown when the layout of the chat settings cannot be determined.</exception>
     public static RoomResultDetails Parse(in PacketReader p)
     {
@@ -319,7 +305,6 @@ public sealed class RoomResultDetails : IParserComposer<RoomResultDetails>
 
     /// <summary>Writes the guest room details to a packet.</summary>
     /// <param name="p">The packet to write to.</param>
-    /// <exception cref="UnsupportedClientException">Thrown when the packet is not for the Flash client.</exception>
     /// <exception cref="NotSupportedException">
     /// Thrown when the wire layout is unknown and the details were not parsed from a packet.
     /// </exception>

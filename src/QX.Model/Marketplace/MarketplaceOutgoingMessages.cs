@@ -1,5 +1,4 @@
 using Qx.Messages;
-using Qx.Model.Marketplace;
 using Qx.Model.Messages.Incoming;
 
 namespace Qx.Model.Messages.Outgoing;
@@ -87,6 +86,7 @@ public sealed record BuyMarketplaceTokens
 
 /// <summary>Represents a request to list inventory items on the marketplace at one price each.</summary>
 /// <remarks>
+/// Sent as the Flash <c>MakeOffer</c> message.
 /// The legacy Flash marketplace layout carries exactly one item id; the modern layout carries a list.
 /// The hotel answers with <see cref="MarketplaceMakeOfferResult"/>.
 /// </remarks>
@@ -97,16 +97,16 @@ public sealed record MakeMarketplaceOffer
 
     /// <summary>Initializes a new instance of the <see cref="MakeMarketplaceOffer"/> record.</summary>
     /// <param name="price">The price per item in credits.</param>
-    /// <param name="furni_category">The category of the items, <see cref="MarketplaceFurniCategory.Floor"/> or <see cref="MarketplaceFurniCategory.Wall"/>.</param>
-    /// <param name="item_ids">The inventory item ids to list.</param>
+    /// <param name="furniCategory">The category of the items, <see cref="MarketplaceFurniCategory.Floor"/> or <see cref="MarketplaceFurniCategory.Wall"/>.</param>
+    /// <param name="itemIds">The inventory item ids to list.</param>
     public MakeMarketplaceOffer(
         int price,
-        MarketplaceFurniCategory furni_category,
-        IReadOnlyList<Id> item_ids)
+        MarketplaceFurniCategory furniCategory,
+        IReadOnlyList<Id> itemIds)
     {
         Price = price;
-        FurniCategory = furni_category;
-        ItemIds = item_ids;
+        FurniCategory = furniCategory;
+        ItemIds = itemIds;
     }
 
     /// <summary>Gets the price per item in credits.</summary>
@@ -232,7 +232,7 @@ public sealed record GetMarketplaceItemStats(
 }
 
 /// <summary>Represents a marketplace offer search.</summary>
-/// <remarks>The hotel answers with <see cref="MarketplaceOffers"/>.</remarks>
+/// <remarks>Sent as the Flash <c>GetMarketplaceOffers</c> message. The hotel answers with <see cref="MarketplaceOffers"/>.</remarks>
 /// <param name="MinimumPrice">The lowest price to include, in credits, or -1 for no lower bound.</param>
 /// <param name="MaximumPrice">The highest price to include, in credits, or -1 for no upper bound.</param>
 /// <param name="SearchQuery">The search text.</param>

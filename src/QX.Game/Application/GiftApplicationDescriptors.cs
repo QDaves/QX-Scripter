@@ -1,6 +1,7 @@
 using Qx.Messages;
 using Qx.Game.Protocol;
 using Qx.Model.Messages.Incoming;
+using Qx.Model.Messages.Outgoing;
 using Qx.Protocol;
 
 namespace Qx.Game.Application;
@@ -18,10 +19,10 @@ internal static class GiftApplicationDescriptors
         ApplicationExposure.All,
         typeof(GiftStateRequest),
         typeof(GiftStateView),
-        state_effects: [GiftRead()],
+        stateEffects: [GiftRead()],
         messages: ObservedMessages(),
-        tool_hints: QueryHints(),
-        invocation_scope: ApplicationInvocationScope.Persistent);
+        toolHints: QueryHints(),
+        invocationScope: ApplicationInvocationScope.Persistent);
 
     public static ApplicationDescriptor WrappingList { get; } = new(
         ApplicationMemberIds.GiftsWrappingList,
@@ -32,16 +33,16 @@ internal static class GiftApplicationDescriptors
         typeof(GiftWrappingPageRequest),
         typeof(GiftWrappingPage),
         PageParameters(typeof(GiftWrappingCollection), GiftWrappingCollection.StuffTypes),
-        state_effects: [GiftRead()],
+        stateEffects: [GiftRead()],
         messages:
         [
             new(
                 MessageKeys.Gifts.WrappingConfiguration,
-                Direction.In,
+                MessageDirection.In,
                 ApplicationMessageRole.Observe)
         ],
-        tool_hints: QueryHints(),
-        invocation_scope: ApplicationInvocationScope.Persistent);
+        toolHints: QueryHints(),
+        invocationScope: ApplicationInvocationScope.Persistent);
 
     public static ApplicationDescriptor ClubInfoList { get; } = new(
         ApplicationMemberIds.GiftsClubInfoList,
@@ -52,16 +53,16 @@ internal static class GiftApplicationDescriptors
         typeof(GiftClubInfoPageRequest),
         typeof(GiftClubInfoPage),
         PageParameters(typeof(GiftClubInfoCollection), GiftClubInfoCollection.Offers),
-        state_effects: [GiftRead()],
+        stateEffects: [GiftRead()],
         messages:
         [
             new(
                 MessageKeys.Gifts.ClubInfo,
-                Direction.In,
+                MessageDirection.In,
                 ApplicationMessageRole.Observe)
         ],
-        tool_hints: QueryHints(),
-        invocation_scope: ApplicationInvocationScope.Persistent);
+        toolHints: QueryHints(),
+        invocationScope: ApplicationInvocationScope.Persistent);
 
     public static ApplicationDescriptor ClubSelectedList { get; } = new(
         ApplicationMemberIds.GiftsClubSelectedList,
@@ -74,16 +75,16 @@ internal static class GiftApplicationDescriptors
         PageParameters(
             typeof(GiftClubSelectedCollection),
             GiftClubSelectedCollection.Products),
-        state_effects: [GiftRead()],
+        stateEffects: [GiftRead()],
         messages:
         [
             new(
                 MessageKeys.Gifts.ClubSelected,
-                Direction.In,
+                MessageDirection.In,
                 ApplicationMessageRole.Observe)
         ],
-        tool_hints: QueryHints(),
-        invocation_scope: ApplicationInvocationScope.Persistent);
+        toolHints: QueryHints(),
+        invocationScope: ApplicationInvocationScope.Persistent);
 
     public static ApplicationDescriptor NewUserOfferList { get; } = new(
         ApplicationMemberIds.GiftsNewUserOfferList,
@@ -94,16 +95,16 @@ internal static class GiftApplicationDescriptors
         typeof(GiftNewUserOfferPageRequest),
         typeof(GiftNewUserOfferPage),
         PageParameters(typeof(GiftNewUserOfferCollection), GiftNewUserOfferCollection.Steps),
-        state_effects: [GiftRead()],
+        stateEffects: [GiftRead()],
         messages:
         [
             new(
                 MessageKeys.Gifts.NewUserOffer,
-                Direction.In,
+                MessageDirection.In,
                 ApplicationMessageRole.Observe)
         ],
-        tool_hints: QueryHints(),
-        invocation_scope: ApplicationInvocationScope.Persistent);
+        toolHints: QueryHints(),
+        invocationScope: ApplicationInvocationScope.Persistent);
 
     public static ApplicationDescriptor Refresh { get; } = new(
         ApplicationMemberIds.GiftsRefresh,
@@ -119,19 +120,19 @@ internal static class GiftApplicationDescriptors
         [
             new(
                 MessageKeys.Gifts.WrappingConfigurationRequest,
-                Direction.Out,
+                MessageDirection.Out,
                 ApplicationMessageRole.Send),
             new(
                 MessageKeys.Gifts.WrappingConfiguration,
-                Direction.In,
+                MessageDirection.In,
                 ApplicationMessageRole.Observe),
             new(
                 MessageKeys.Gifts.ClubInfoRequest,
-                Direction.Out,
+                MessageDirection.Out,
                 ApplicationMessageRole.Send),
             new(
                 MessageKeys.Gifts.ClubInfo,
-                Direction.In,
+                MessageDirection.In,
                 ApplicationMessageRole.Observe)
         ],
         RefreshHints());
@@ -160,11 +161,11 @@ internal static class GiftApplicationDescriptors
         [
             new(
                 MessageKeys.Gifts.PresentOpen,
-                Direction.Out,
+                MessageDirection.Out,
                 ApplicationMessageRole.Send),
             new(
                 MessageKeys.Gifts.PresentOpened,
-                Direction.In,
+                MessageDirection.In,
                 ApplicationMessageRole.Observe,
                 false)
         ],
@@ -187,11 +188,11 @@ internal static class GiftApplicationDescriptors
         [
             new(
                 MessageKeys.Gifts.Purchase,
-                Direction.Out,
+                MessageDirection.Out,
                 ApplicationMessageRole.Send),
             new(
                 MessageKeys.Gifts.ReceiverNotFound,
-                Direction.In,
+                MessageDirection.In,
                 ApplicationMessageRole.Observe,
                 false)
         ],
@@ -217,11 +218,11 @@ internal static class GiftApplicationDescriptors
         [
             new(
                 MessageKeys.Gifts.ClubSelect,
-                Direction.Out,
+                MessageDirection.Out,
                 ApplicationMessageRole.Send),
             new(
                 MessageKeys.Gifts.ClubSelected,
-                Direction.In,
+                MessageDirection.In,
                 ApplicationMessageRole.Observe,
                 false)
         ],
@@ -230,7 +231,7 @@ internal static class GiftApplicationDescriptors
     public static ApplicationDescriptor OfferGiftabilityRefresh { get; } = new(
         ApplicationMemberIds.GiftsOfferGiftabilityRefresh,
         "Refresh offer giftability",
-        "Requests one offer and returns the exact matching fresh Flash response.",
+        "Asks whether a catalog offer can be sent as a gift. Requests one offer and returns the exact matching fresh Flash response.",
         ApplicationMemberKind.Operation,
         ApplicationExposure.All,
         typeof(GiftOfferGiftabilityRefreshRequest),
@@ -245,11 +246,11 @@ internal static class GiftApplicationDescriptors
         [
             new(
                 MessageKeys.Gifts.OfferGiftabilityRequest,
-                Direction.Out,
+                MessageDirection.Out,
                 ApplicationMessageRole.Send),
             new(
                 MessageKeys.Gifts.OfferGiftability,
-                Direction.In,
+                MessageDirection.In,
                 ApplicationMessageRole.Observe)
         ],
         RefreshHints());
@@ -280,11 +281,11 @@ internal static class GiftApplicationDescriptors
         [
             new(
                 MessageKeys.Gifts.NewUserSelect,
-                Direction.Out,
+                MessageDirection.Out,
                 ApplicationMessageRole.Send),
             new(
                 MessageKeys.Gifts.NewUserIncomplete,
-                Direction.In,
+                MessageDirection.In,
                 ApplicationMessageRole.Observe,
                 false)
         ],
@@ -304,11 +305,11 @@ internal static class GiftApplicationDescriptors
         [
             new(
                 MessageKeys.Gifts.NewUserAdvance,
-                Direction.Out,
+                MessageDirection.Out,
                 ApplicationMessageRole.Send),
             new(
                 MessageKeys.Gifts.NewUserIncomplete,
-                Direction.In,
+                MessageDirection.In,
                 ApplicationMessageRole.Observe,
                 false)
         ],
@@ -322,9 +323,9 @@ internal static class GiftApplicationDescriptors
         event_exposure,
         null,
         typeof(GiftChanged),
-        state_effects: [GiftChange()],
+        stateEffects: [GiftChange()],
         messages: ObservedMessages(),
-        invocation_scope: ApplicationInvocationScope.Persistent);
+        invocationScope: ApplicationInvocationScope.Persistent);
 
     private static IReadOnlyList<ApplicationParameterDescriptor> PageParameters(
         Type collection_type,
@@ -384,43 +385,43 @@ internal static class GiftApplicationDescriptors
     [
         new(
             MessageKeys.Gifts.WrappingConfiguration,
-            Direction.In,
+            MessageDirection.In,
             ApplicationMessageRole.Observe),
         new(
             MessageKeys.Gifts.PresentOpened,
-            Direction.In,
+            MessageDirection.In,
             ApplicationMessageRole.Observe),
         new(
             MessageKeys.Gifts.ClubInfo,
-            Direction.In,
+            MessageDirection.In,
             ApplicationMessageRole.Observe),
         new(
             MessageKeys.Gifts.ClubSelected,
-            Direction.In,
+            MessageDirection.In,
             ApplicationMessageRole.Observe),
         new(
             MessageKeys.Gifts.ReceiverNotFound,
-            Direction.In,
+            MessageDirection.In,
             ApplicationMessageRole.Observe,
             false),
         new(
             MessageKeys.Gifts.ClubNotification,
-            Direction.In,
+            MessageDirection.In,
             ApplicationMessageRole.Observe,
             false),
         new(
             MessageKeys.Gifts.OfferGiftability,
-            Direction.In,
+            MessageDirection.In,
             ApplicationMessageRole.Observe,
             false),
         new(
             MessageKeys.Gifts.NewUserOffer,
-            Direction.In,
+            MessageDirection.In,
             ApplicationMessageRole.Observe,
             false),
         new(
             MessageKeys.Gifts.NewUserIncomplete,
-            Direction.In,
+            MessageDirection.In,
             ApplicationMessageRole.Observe)
     ];
 
@@ -496,6 +497,6 @@ internal static class GiftApplicationDescriptors
         new(ApplicationStateKey.Gifts, ApplicationStateEffectKind.Changes);
 
     private static ApplicationToolHints QueryHints() => new(true, false, true, false);
-    private static ApplicationToolHints RefreshHints() => new(false, false, true, true);
+    private static ApplicationToolHints RefreshHints() => new(true, false, true, true);
     private static ApplicationToolHints DispatchHints() => new(false, true, false, true);
 }

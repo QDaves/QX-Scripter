@@ -85,117 +85,117 @@ public sealed class RoomDataQuery : QueryCollection<RoomData>
     /// <summary>
     /// Filters the rooms to those owned by the specified user id.
     /// </summary>
-    /// <param name="owner_id">The owner's user id.</param>
+    /// <param name="ownerId">The owner's user id.</param>
     /// <returns>A new query with the matching rooms.</returns>
-    public RoomDataQuery OwnedBy(Id owner_id) =>
-        Where(room => room.OwnerId == owner_id);
+    public RoomDataQuery OwnedBy(Id ownerId) =>
+        Where(room => room.OwnerId == ownerId);
 
     /// <summary>
     /// Filters the rooms to those whose owner has the specified name, ignoring case.
     /// </summary>
-    /// <param name="owner_name">The owner's name.</param>
+    /// <param name="ownerName">The owner's name.</param>
     /// <returns>A new query with the matching rooms.</returns>
-    public RoomDataQuery OwnedBy(string owner_name)
+    public RoomDataQuery OwnedBy(string ownerName)
     {
-        ArgumentNullException.ThrowIfNull(owner_name);
+        ArgumentNullException.ThrowIfNull(ownerName);
         return Where(room => string.Equals(
             room.OwnerName,
-            owner_name,
+            ownerName,
             StringComparison.OrdinalIgnoreCase));
     }
 
     /// <summary>
     /// Filters the rooms to those in any of the specified navigator categories.
     /// </summary>
-    /// <param name="category_ids">The category ids to keep, compared with <see cref="RoomData.Category"/>.</param>
+    /// <param name="categoryIds">The category ids to keep, compared with <see cref="RoomData.Category"/>.</param>
     /// <returns>A new query with the matching rooms.</returns>
-    public RoomDataQuery InCategory(params int[] category_ids) =>
-        InCategory((IEnumerable<int>)category_ids);
+    public RoomDataQuery InCategory(params int[] categoryIds) =>
+        InCategory((IEnumerable<int>)categoryIds);
 
     /// <summary>
     /// Filters the rooms to those in any of the specified navigator categories.
     /// </summary>
-    /// <param name="category_ids">The category ids to keep, compared with <see cref="RoomData.Category"/>.</param>
+    /// <param name="categoryIds">The category ids to keep, compared with <see cref="RoomData.Category"/>.</param>
     /// <returns>A new query with the matching rooms.</returns>
-    public RoomDataQuery InCategory(IEnumerable<int> category_ids)
+    public RoomDataQuery InCategory(IEnumerable<int> categoryIds)
     {
-        HashSet<int> values = QueryValues.Set(category_ids);
+        HashSet<int> values = QueryValues.Set(categoryIds);
         return Where(room => values.Contains(room.Category));
     }
 
     /// <summary>
     /// Filters the rooms to those with any of the specified numeric door modes.
     /// </summary>
-    /// <param name="door_modes">The numeric values of the <see cref="RoomDoorMode"/> members to keep.</param>
+    /// <param name="doorModes">The numeric values of the <see cref="RoomDoorMode"/> members to keep.</param>
     /// <returns>A new query with the matching rooms.</returns>
-    public RoomDataQuery WithDoorMode(params int[] door_modes) =>
-        WithDoorMode((IEnumerable<int>)door_modes);
+    public RoomDataQuery WithDoorMode(params int[] doorModes) =>
+        WithDoorMode((IEnumerable<int>)doorModes);
 
     /// <summary>
     /// Filters the rooms to those with any of the specified numeric door modes.
     /// </summary>
-    /// <param name="door_modes">The numeric values of the <see cref="RoomDoorMode"/> members to keep.</param>
+    /// <param name="doorModes">The numeric values of the <see cref="RoomDoorMode"/> members to keep.</param>
     /// <returns>A new query with the matching rooms.</returns>
-    public RoomDataQuery WithDoorMode(IEnumerable<int> door_modes)
+    public RoomDataQuery WithDoorMode(IEnumerable<int> doorModes)
     {
-        HashSet<int> values = QueryValues.Set(door_modes);
+        HashSet<int> values = QueryValues.Set(doorModes);
         return Where(room => values.Contains((int)room.DoorMode));
     }
 
     /// <summary>
     /// Filters the rooms to those with any of the specified door modes.
     /// </summary>
-    /// <param name="door_modes">The door modes to keep.</param>
+    /// <param name="doorModes">The door modes to keep.</param>
     /// <returns>A new query with the matching rooms.</returns>
-    public RoomDataQuery WithDoorMode(params RoomDoorMode[] door_modes) =>
-        WithDoorMode((IEnumerable<RoomDoorMode>)door_modes);
+    public RoomDataQuery WithDoorMode(params RoomDoorMode[] doorModes) =>
+        WithDoorMode((IEnumerable<RoomDoorMode>)doorModes);
 
     /// <summary>
     /// Filters the rooms to those with any of the specified door modes.
     /// </summary>
-    /// <param name="door_modes">The door modes to keep.</param>
+    /// <param name="doorModes">The door modes to keep.</param>
     /// <returns>A new query with the matching rooms.</returns>
-    public RoomDataQuery WithDoorMode(IEnumerable<RoomDoorMode> door_modes)
+    public RoomDataQuery WithDoorMode(IEnumerable<RoomDoorMode> doorModes)
     {
-        HashSet<RoomDoorMode> values = QueryValues.Set(door_modes);
+        HashSet<RoomDoorMode> values = QueryValues.Set(doorModes);
         return Where(room => values.Contains(room.DoorMode));
     }
 
     /// <summary>
     /// Filters the rooms to those with any of the specified numeric trade modes.
     /// </summary>
-    /// <param name="trade_modes">The numeric values of the <see cref="RoomTradeMode"/> members to keep.</param>
+    /// <param name="tradeModes">The numeric values of the <see cref="RoomTradeMode"/> members to keep.</param>
     /// <returns>A new query with the matching rooms.</returns>
-    public RoomDataQuery WithTradeMode(params int[] trade_modes) =>
-        WithTradeMode((IEnumerable<int>)trade_modes);
+    public RoomDataQuery WithTradeMode(params int[] tradeModes) =>
+        WithTradeMode((IEnumerable<int>)tradeModes);
 
     /// <summary>
     /// Filters the rooms to those with any of the specified numeric trade modes.
     /// </summary>
-    /// <param name="trade_modes">The numeric values of the <see cref="RoomTradeMode"/> members to keep.</param>
+    /// <param name="tradeModes">The numeric values of the <see cref="RoomTradeMode"/> members to keep.</param>
     /// <returns>A new query with the matching rooms.</returns>
-    public RoomDataQuery WithTradeMode(IEnumerable<int> trade_modes)
+    public RoomDataQuery WithTradeMode(IEnumerable<int> tradeModes)
     {
-        HashSet<int> values = QueryValues.Set(trade_modes);
+        HashSet<int> values = QueryValues.Set(tradeModes);
         return Where(room => values.Contains((int)room.TradeMode));
     }
 
     /// <summary>
     /// Filters the rooms to those with any of the specified trade modes.
     /// </summary>
-    /// <param name="trade_modes">The trade modes to keep.</param>
+    /// <param name="tradeModes">The trade modes to keep.</param>
     /// <returns>A new query with the matching rooms.</returns>
-    public RoomDataQuery WithTradeMode(params RoomTradeMode[] trade_modes) =>
-        WithTradeMode((IEnumerable<RoomTradeMode>)trade_modes);
+    public RoomDataQuery WithTradeMode(params RoomTradeMode[] tradeModes) =>
+        WithTradeMode((IEnumerable<RoomTradeMode>)tradeModes);
 
     /// <summary>
     /// Filters the rooms to those with any of the specified trade modes.
     /// </summary>
-    /// <param name="trade_modes">The trade modes to keep.</param>
+    /// <param name="tradeModes">The trade modes to keep.</param>
     /// <returns>A new query with the matching rooms.</returns>
-    public RoomDataQuery WithTradeMode(IEnumerable<RoomTradeMode> trade_modes)
+    public RoomDataQuery WithTradeMode(IEnumerable<RoomTradeMode> tradeModes)
     {
-        HashSet<RoomTradeMode> values = QueryValues.Set(trade_modes);
+        HashSet<RoomTradeMode> values = QueryValues.Set(tradeModes);
         return Where(room => values.Contains(room.TradeMode));
     }
 
@@ -260,22 +260,22 @@ public sealed class RoomDataQuery : QueryCollection<RoomData>
     /// <summary>
     /// Filters the rooms to those that belong to the group with the specified id.
     /// </summary>
-    /// <param name="group_id">The group id.</param>
+    /// <param name="groupId">The group id.</param>
     /// <returns>A new query with the matching rooms.</returns>
-    public RoomDataQuery InGroup(Id group_id) =>
-        Where(room => room.HasGroup && room.GroupId == group_id);
+    public RoomDataQuery InGroup(Id groupId) =>
+        Where(room => room.HasGroup && room.GroupId == groupId);
 
     /// <summary>
     /// Filters the rooms to those that belong to the group with the specified name, ignoring case.
     /// </summary>
-    /// <param name="group_name">The group name.</param>
+    /// <param name="groupName">The group name.</param>
     /// <returns>A new query with the matching rooms.</returns>
-    public RoomDataQuery InGroup(string group_name)
+    public RoomDataQuery InGroup(string groupName)
     {
-        ArgumentNullException.ThrowIfNull(group_name);
+        ArgumentNullException.ThrowIfNull(groupName);
         return Where(room => room.HasGroup && string.Equals(
             room.GroupName,
-            group_name,
+            groupName,
             StringComparison.OrdinalIgnoreCase));
     }
 

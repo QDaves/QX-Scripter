@@ -26,7 +26,7 @@ public interface IShellWindow
 
     void Hide();
 
-    void Shutdown(int exit_code);
+    void Shutdown(int exitCode);
 
     WindowPlacement? CapturePlacement();
 }

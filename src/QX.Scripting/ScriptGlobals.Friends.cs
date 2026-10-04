@@ -45,19 +45,20 @@ public partial class ScriptGlobals
     }
 
     /// <summary>
-    /// Searches the hotel for users by name.
+    /// Asks the hotel to search for users by name.
     /// </summary>
     /// <remarks>
     /// The search runs in the background and the call returns at once. The answer arrives as a
     /// separate message that also reaches the game client; read it with
-    /// <c>OnIn&lt;UserSearchResults&gt;("HabboSearchResult", result =&gt; ...)</c>. A failure,
-    /// such as no answer within 10000 milliseconds, is reported as a background script error.
+    /// <c>OnIn&lt;UserSearchResults&gt;("HabboSearchResult", result =&gt; ...)</c>, or await
+    /// <see cref="SearchUsers(string, int)"/> instead. A failure, such as no answer within 10000
+    /// milliseconds, is reported as a background script error.
     /// </remarks>
     /// <param name="query">The name or fragment to search for.</param>
-    public void SearchUsers(string query) => StartObservedTask(
+    public void RequestUserSearch(string query) => StartObservedTask(
         async () =>
         {
-            await Application.InvokeAsync(
+            await _application.InvokeAsync(
                 ApplicationMemberIds.FriendsSearch,
                 new FriendsSearchRequest(query),
                 Ct);
@@ -73,7 +74,7 @@ public partial class ScriptGlobals
     public void RequestFriendRequests() => StartObservedTask(
         async () =>
         {
-            await Application.InvokeAsync<FriendRequestsListRequest, PendingFriendRequests>(
+            await _application.InvokeAsync<FriendRequestsListRequest, PendingFriendRequests>(
                 ApplicationMemberIds.FriendRequestsList,
                 new FriendRequestsListRequest(),
                 Ct);
@@ -87,7 +88,7 @@ public partial class ScriptGlobals
     /// <param name="friendId">The id of the friend.</param>
     /// <param name="relationship">The relationship to show, or <see cref="RelationshipType.None"/> to clear it.</param>
     public void SetRelationship(Id friendId, RelationshipType relationship) =>
-        Application.Invoke<FriendRelationshipSetRequest, FriendOperationResult>(
+        _application.Invoke<FriendRelationshipSetRequest, FriendOperationResult>(
             ApplicationMemberIds.FriendRelationshipSet,
             new FriendRelationshipSetRequest(friendId, relationship),
             Ct);
@@ -108,10 +109,31 @@ public partial class ScriptGlobals
     /// <summary>Removes several friends in one message.</summary>
     /// <param name="friendIds">The friends to remove.</param>
     public void RemoveFriends(params Id[] friendIds) =>
-        Application.Invoke<FriendsRemoveRequest, FriendOperationResult>(
+        _application.Invoke<FriendsRemoveRequest, FriendOperationResult>(
             ApplicationMemberIds.FriendsRemove,
             new FriendsRemoveRequest(friendIds),
             Ct);
+
+    /// <summary>Removes several friends in one message.</summary>
+    /// <param name="friendIds">The account ids to remove.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="friendIds"/> is <see langword="null"/>.</exception>
+    public void RemoveFriends(IEnumerable<Id> friendIds)
+    {
+        ArgumentNullException.ThrowIfNull(friendIds);
+        RemoveFriends(friendIds.ToArray());
+    }
+
+    /// <summary>Removes several friends in one message, skipping null entries.</summary>
+    /// <param name="friends">The friends to remove; only their ids are used.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="friends"/> is <see langword="null"/>.</exception>
+    public void RemoveFriends(IEnumerable<Friend> friends)
+    {
+        ArgumentNullException.ThrowIfNull(friends);
+        RemoveFriends(friends
+            .Where(friend => friend is not null)
+            .Select(friend => friend.Id)
+            .ToArray());
+    }
 
     private async Task<IReadOnlyCollection<Friend>> LoadFriends(
         int timeout_milliseconds,
@@ -121,14 +143,14 @@ public partial class ScriptGlobals
         cancellation_token.ThrowIfCancellationRequested();
         var expected_session = Session;
 
-        FriendListPage first = Application.Invoke<FriendsListRequest, FriendListPage>(
+        FriendListPage first = _application.Invoke<FriendsListRequest, FriendListPage>(
             ApplicationMemberIds.FriendsList,
             new FriendsListRequest(Limit: 500),
             cancellation_token);
         RequireSameSession();
         if (!first.Loaded)
         {
-            first = await Application.InvokeAsync<FriendsRefreshRequest, FriendListPage>(
+            first = await _application.InvokeAsync<FriendsRefreshRequest, FriendListPage>(
                 ApplicationMemberIds.FriendsRefresh,
                 new FriendsRefreshRequest(Limit: 500, TimeoutMilliseconds: timeout_milliseconds),
                 cancellation_token);
@@ -139,7 +161,7 @@ public partial class ScriptGlobals
         {
             if (attempt != 0)
             {
-                first = Application.Invoke<FriendsListRequest, FriendListPage>(
+                first = _application.Invoke<FriendsListRequest, FriendListPage>(
                     ApplicationMemberIds.FriendsList,
                     new FriendsListRequest(Limit: 500),
                     cancellation_token);
@@ -153,7 +175,7 @@ public partial class ScriptGlobals
             bool consistent = true;
             while (next_offset is int offset)
             {
-                FriendListPage page = Application.Invoke<FriendsListRequest, FriendListPage>(
+                FriendListPage page = _application.Invoke<FriendsListRequest, FriendListPage>(
                     ApplicationMemberIds.FriendsList,
                     new FriendsListRequest(Offset: offset, Limit: 500),
                     cancellation_token);
@@ -206,33 +228,33 @@ public partial class ScriptGlobals
     }
 
     /// <summary>Registers a handler that runs when someone joins the friend list.</summary>
-    /// <remarks>No handle is returned; the handler stays registered until the script stops.</remarks>
     /// <param name="handler">The handler to call with the new friend.</param>
+    /// <returns>A handle that removes the handler when disposed.</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="handler"/> is <see langword="null"/>.</exception>
-    public void OnFriendAdded(Action<Friend> handler)
+    public IDisposable OnFriendAdded(Action<Friend> handler)
         => OnFriendChange(FriendChangeKind.Added, handler);
 
     /// <summary>
     /// Registers a handler that runs when a friend's details change, which is also how going
     /// online and offline is reported.
     /// </summary>
-    /// <remarks>No handle is returned; the handler stays registered until the script stops.</remarks>
     /// <param name="handler">The handler to call with the friend as they now stand.</param>
+    /// <returns>A handle that removes the handler when disposed.</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="handler"/> is <see langword="null"/>.</exception>
-    public void OnFriendUpdated(Action<Friend> handler)
+    public IDisposable OnFriendUpdated(Action<Friend> handler)
         => OnFriendChange(FriendChangeKind.Updated, handler);
 
     /// <summary>Registers a handler that runs when someone leaves the friend list.</summary>
-    /// <remarks>No handle is returned; the handler stays registered until the script stops.</remarks>
     /// <param name="handler">The handler to call with the removed friend.</param>
+    /// <returns>A handle that removes the handler when disposed.</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="handler"/> is <see langword="null"/>.</exception>
-    public void OnFriendRemoved(Action<Friend> handler)
+    public IDisposable OnFriendRemoved(Action<Friend> handler)
         => OnFriendChange(FriendChangeKind.Removed, handler);
 
-    private void OnFriendChange(FriendChangeKind kind, Action<Friend> handler)
+    private IDisposable OnFriendChange(FriendChangeKind kind, Action<Friend> handler)
     {
         ArgumentNullException.ThrowIfNull(handler);
-        Track(Application.Subscribe<FriendChanged>(
+        return Track(_application.Subscribe<FriendChanged>(
             ApplicationMemberIds.FriendsChanged,
             Guarded<FriendChanged>(change =>
             {

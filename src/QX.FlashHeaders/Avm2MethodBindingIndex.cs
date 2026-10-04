@@ -126,34 +126,34 @@ public sealed class Avm2MethodBindingIndex
         return Create(sources);
     }
 
-    public static Avm2MethodBindingIndex Create(ABCFile abc, int abc_index = 0)
+    public static Avm2MethodBindingIndex Create(ABCFile abc, int abcIndex = 0)
     {
         ArgumentNullException.ThrowIfNull(abc);
-        ArgumentOutOfRangeException.ThrowIfNegative(abc_index);
-        return Create([(abc_index, abc)]);
+        ArgumentOutOfRangeException.ThrowIfNegative(abcIndex);
+        return Create([(abcIndex, abc)]);
     }
 
     public IReadOnlyList<Avm2MethodBinding> GetBindings(
-        int abc_index,
-        int method_index)
+        int abcIndex,
+        int methodIndex)
     {
-        return by_method.GetValueOrDefault((abc_index, method_index)) ?? Empty;
+        return by_method.GetValueOrDefault((abcIndex, methodIndex)) ?? Empty;
     }
 
     public IReadOnlyList<Avm2MethodBinding> GetBindings(
         ABCFile abc,
-        int method_index)
+        int methodIndex)
     {
         ArgumentNullException.ThrowIfNull(abc);
         return abc_indices.TryGetValue(abc, out int abc_index)
-            ? GetBindings(abc_index, method_index)
+            ? GetBindings(abc_index, methodIndex)
             : Empty;
     }
 
-    public bool TryGetAbcIndex(ABCFile abc, out int abc_index)
+    public bool TryGetAbcIndex(ABCFile abc, out int abcIndex)
     {
         ArgumentNullException.ThrowIfNull(abc);
-        return abc_indices.TryGetValue(abc, out abc_index);
+        return abc_indices.TryGetValue(abc, out abcIndex);
     }
 
     public IReadOnlyList<Avm2MethodBinding> GetBindings(ASMethod method)
@@ -179,26 +179,26 @@ public sealed class Avm2MethodBindingIndex
     }
 
     public Avm2MethodBinding? GetScriptInitializer(
-        int abc_index,
-        int script_index)
+        int abcIndex,
+        int scriptIndex)
     {
         if (!AbcsByIndex.TryGetValue(
-                abc_index,
+                abcIndex,
                 out ABCFile? abc) ||
-            script_index < 0 ||
-            script_index >= abc.Scripts.Count)
+            scriptIndex < 0 ||
+            scriptIndex >= abc.Scripts.Count)
         {
             return null;
         }
-        ASScript script = abc.Scripts[script_index];
+        ASScript script = abc.Scripts[scriptIndex];
         Avm2MethodBinding[] candidates = GetBindings(script)
             .Where(binding =>
                 binding.Resolved &&
                 ReferenceEquals(binding.Abc, abc) &&
-                binding.AbcIndex == abc_index &&
+                binding.AbcIndex == abcIndex &&
                 ReferenceEquals(binding.Owner, script) &&
-                binding.OwnerIndex == script_index &&
-                binding.ContainerIndex == script_index &&
+                binding.OwnerIndex == scriptIndex &&
+                binding.ContainerIndex == scriptIndex &&
                 binding.Trait is null &&
                 binding.TraitIndex is null &&
                 binding.Scope == Avm2MethodBindingScope.Script &&
@@ -213,7 +213,7 @@ public sealed class Avm2MethodBindingIndex
         if (candidates.Length != 1)
             return null;
         Avm2MethodBinding[] method_owners = GetBindings(
-                abc_index,
+                abcIndex,
                 script.InitializerIndex)
             .Where(binding => binding.Resolved)
             .Take(2)

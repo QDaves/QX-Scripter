@@ -150,10 +150,10 @@ public static class FlashHeaderExtractor
         var outgoing = new Dictionary<int, FlashHeaderDefinition>();
         foreach (Registration registration in candidate.Registrations)
         {
-            MessageDirection? direction = registration.Field switch
+            FlashMessageDirection? direction = registration.Field switch
             {
-                var field when field == candidate.IncomingField => MessageDirection.Incoming,
-                var field when field == candidate.OutgoingField => MessageDirection.Outgoing,
+                var field when field == candidate.IncomingField => FlashMessageDirection.Incoming,
+                var field when field == candidate.OutgoingField => FlashMessageDirection.Outgoing,
                 _ => null
             };
             if (direction is null)
@@ -186,7 +186,7 @@ public static class FlashHeaderExtractor
                 ConstructorParameterTypes = constructor_parameter_types
             };
 
-            Dictionary<int, FlashHeaderDefinition> target = direction == MessageDirection.Outgoing ? outgoing : incoming;
+            Dictionary<int, FlashHeaderDefinition> target = direction == FlashMessageDirection.Outgoing ? outgoing : incoming;
             if (target.TryGetValue(definition.Id, out FlashHeaderDefinition? existing))
             {
                 if (!SameRegistration(existing, definition))

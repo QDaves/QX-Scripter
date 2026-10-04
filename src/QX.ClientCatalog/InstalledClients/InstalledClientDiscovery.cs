@@ -70,7 +70,6 @@ internal sealed class InstalledClientDiscovery
             if (!TryModified(path, out DateTimeOffset modified))
                 continue;
             candidates.Add(new InstalledClientCandidate(
-                InstalledClientFamily.Flash,
                 release.Version,
                 path,
                 release.Source.ToString(),
@@ -147,11 +146,7 @@ internal sealed class InstalledClientDiscovery
         }
         else
         {
-            valid = candidate.Family switch
-            {
-                InstalledClientFamily.Flash => VerifySwf(candidate),
-                _ => false
-            };
+            valid = VerifySwf(candidate);
             _verified[content_revision] = valid;
         }
 
@@ -199,7 +194,7 @@ internal sealed class InstalledClientDiscovery
                 observed.Add(state);
             }
             states = observed.ToArray();
-            revision = $"{candidate.Family.ToString().ToLowerInvariant()}:{string.Join(':', hashes)}";
+            revision = $"flash:{string.Join(':', hashes)}";
             return true;
         }
         catch (Exception error) when (IsCandidateError(error))
@@ -253,7 +248,7 @@ internal sealed class InstalledClientDiscovery
         NotSupportedException;
 
     static string CandidateKey(InstalledClientCandidate candidate) =>
-        $"{candidate.Family}:{candidate.Version}:{candidate.Path}";
+        $"Flash:{candidate.Version}:{candidate.Path}";
 
     static long ParseVersion(string version) => long.TryParse(version, out long parsed) ? parsed : -1;
 

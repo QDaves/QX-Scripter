@@ -82,10 +82,10 @@ public sealed class DiagnosticsHub : IApplicationLog, IDisposable
             runtime.Extension.InterceptFailed -= OnInterceptFailed;
     }
 
-    public void ReportInterceptFailure(Header packet_header, Exception error, IMessageManager? messages)
+    public void ReportInterceptFailure(Header packetHeader, Exception error, IMessageManager? messages)
     {
-        if (_intercepts.ShouldReport(packet_header, error))
-            Diag.Error(InterceptFailureLog.Format(InterceptFailureLog.Describe(packet_header, messages), error), "intercept");
+        if (_intercepts.ShouldReport(packetHeader, error))
+            Diag.Error(InterceptFailureLog.Format(InterceptFailureLog.Describe(packetHeader, messages), error), "intercept");
     }
 
     public bool FlushNow(TimeSpan budget)
@@ -103,13 +103,13 @@ public sealed class DiagnosticsHub : IApplicationLog, IDisposable
         Cleared?.Invoke();
     }
 
-    public Task FlushAsync(CancellationToken cancellation_token)
+    public Task FlushAsync(CancellationToken cancellationToken)
     {
         var flushed = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         _flushes.Enqueue(() => flushed.TrySetResult());
         if (!Offer(""))
             flushed.TrySetResult();
-        return flushed.Task.WaitAsync(cancellation_token);
+        return flushed.Task.WaitAsync(cancellationToken);
     }
 
     public void Dispose()

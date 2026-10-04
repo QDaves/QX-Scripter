@@ -9,7 +9,7 @@ using System.Threading.Channels;
 
 namespace Qx.Game.Application;
 
-internal sealed class WiredApplication : IApplicationFeature
+internal sealed partial class WiredApplication : IApplicationFeature
 {
     private static readonly TimeSpan trade_confirmation_delay = TimeSpan.FromSeconds(3);
     private readonly IInterceptor interceptor;
@@ -22,6 +22,7 @@ internal sealed class WiredApplication : IApplicationFeature
     private readonly SemaphoreSlim save_lock = new(1, 1);
     private readonly SemaphoreSlim deposit_lock = new(1, 1);
     private readonly SemaphoreSlim variables_lock = new(1, 1);
+    private readonly SemaphoreSlim web_api_lock = new(1, 1);
     private readonly ApplicationEventSource<WiredChanged> changed;
     private readonly ApplicationEventSource<WiredEvent<WiredPermissions>> permissions_changed;
     private readonly ApplicationEventSource<WiredEvent<WiredEnvironment>> environment_changed;
@@ -103,6 +104,17 @@ internal sealed class WiredApplication : IApplicationFeature
                     WiredApplicationDescriptors.ConfigurationOpen, OpenConfiguration),
                 new ApplicationCallBinding<WiredConfigurationGetRequest, WiredConfigurationSnapshot>(
                     WiredApplicationDescriptors.ConfigurationGet, GetConfiguration),
+                new ApplicationCallBinding<WiredConfigurationGetRequest, WiredFormView>(
+                    WiredApplicationDescriptors.FormGet, get_form),
+                new ApplicationCallBinding<WiredFormSaveRequest, WiredConfigurationSaveResult>(
+                    WiredApplicationDescriptors.FormSave, save_form),
+                new ApplicationCallBinding<WiredFormDefinitionsRequest, IReadOnlyList<WiredFormDefinition>>(
+                    WiredApplicationDescriptors.FormDefinitions, list_form_definitions),
+                new ApplicationCallBinding<WiredFxStylesRequest, IReadOnlyList<WiredFxStyleDefinition>>(
+                    WiredApplicationDescriptors.FxStyles, list_fx_styles),
+                new ApplicationCallBinding<WiredAreaHideGetRequest, WiredAreaHideView>(WiredApplicationDescriptors.AreaHideGet, get_area_hide),
+                new ApplicationCallBinding<WiredAreaHideSetRequest, WiredDispatchResult>(WiredApplicationDescriptors.AreaHideSet, set_area_hide),
+                new ApplicationCallBinding<WiredAreaHideToggleRequest, WiredDispatchResult>(WiredApplicationDescriptors.AreaHideToggle, toggle_area_hide),
                 new ApplicationCallBinding<WiredConfigurationApplySnapshotRequest, WiredDispatchResult>(
                     WiredApplicationDescriptors.ConfigurationSnapshotApply, ApplyConfigurationSnapshot),
                 new ApplicationCallBinding<WiredTriggerSaveRequest, WiredConfigurationSaveResult>(
@@ -157,6 +169,10 @@ internal sealed class WiredApplication : IApplicationFeature
                     WiredApplicationDescriptors.RoomReload, ReloadRoom),
                 new ApplicationCallBinding<WiredCommandRequest, WiredDispatchResult>(
                     WiredApplicationDescriptors.RoomRollback, RollbackRoom),
+                new ApplicationCallBinding<WiredCommandRequest, WiredAccountPreferencesView>(
+                    WiredApplicationDescriptors.PreferencesGet, read_preferences),
+                new ApplicationCallBinding<WiredWebApiKeyRequest, WiredWebApiKeyResult>(
+                    WiredApplicationDescriptors.WebApiKeyGenerate, generate_web_api_key),
                 new ApplicationCallBinding<WiredPreferencesSetRequest, WiredDispatchResult>(
                     WiredApplicationDescriptors.PreferencesSet, SetPreferences),
                 new ApplicationCallBinding<WiredChestRequest, WiredDispatchResult>(
@@ -201,6 +217,10 @@ internal sealed class WiredApplication : IApplicationFeature
                     WiredApplicationDescriptors.TradeItemsAdd, AddTradeItems),
                 new ApplicationCallBinding<WiredTradeItemsRequest, WiredDispatchResult>(
                     WiredApplicationDescriptors.TradeItemsRemove, RemoveTradeItems),
+                new ApplicationCallBinding<WiredTradeCompleteRequest, WiredTradeCompleteResult>(
+                    WiredApplicationDescriptors.TradeComplete, complete_trade),
+                new ApplicationCallBinding<WiredTradeStageRequest, WiredDispatchResult>(
+                    WiredApplicationDescriptors.TradeStageSend, send_trade_stage),
                 new ApplicationCallBinding<WiredTradeConfirmRequest, WiredDispatchResult>(
                     WiredApplicationDescriptors.TradeConfirm, ConfirmTrade),
                 new ApplicationCallBinding<WiredCommandRequest, WiredDispatchResult>(
@@ -459,7 +479,8 @@ internal sealed class WiredApplication : IApplicationFeature
         T update,
         MessageContract<T> message_contract,
         int timeout_milliseconds,
-        CancellationToken cancellation_token)
+        CancellationToken cancellation_token,
+        Action? validation = null)
         where T : WiredConfigWrite, IParserComposer<T>
     {
         ThrowIfDisposed();
@@ -485,7 +506,8 @@ internal sealed class WiredApplication : IApplicationFeature
                 message_contract,
                 update,
                 scope,
-                operation_token);
+                operation_token,
+                validation);
             WiredStateUpdate result = await updates.WaitAsync(
                 candidate => candidate.Kind is
                     WiredStateChangeKind.SaveSucceeded or
@@ -1656,7 +1678,6 @@ internal sealed class WiredApplication : IApplicationFeature
             operation_token);
         WiredSnapshot state = CaptureCurrentState(scope, operation_token);
         return ValueTask.FromResult(new WiredDispatchResult(
-            scope.Session.Client,
             time_provider.GetUtcNow(),
             state.Generation,
             state.Revision));
@@ -2010,16 +2031,22 @@ internal sealed class WiredApplication : IApplicationFeature
         MessageContract<T> message_contract,
         T message,
         WiredOperationScope scope,
-        CancellationToken cancellation_token)
+        CancellationToken cancellation_token,
+        Action? validation = null)
         where T : IParserComposer<T>
     {
         CaptureCurrentState(scope, cancellation_token);
+        validation?.Invoke();
         messages.Dispatch(
             message_contract,
             message,
             scope.Session,
             cancellation_token,
-            () => CaptureCurrentState(scope, cancellation_token));
+            () =>
+            {
+                CaptureCurrentState(scope, cancellation_token);
+                validation?.Invoke();
+            });
         CaptureCurrentState(scope, cancellation_token);
     }
 

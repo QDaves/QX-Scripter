@@ -79,10 +79,6 @@ public sealed record ProfileIdentitySnapshot(
 /// <param name="Generation">The state generation of the hotel session the profile state belongs to.</param>
 /// <param name="Revision">The profile state revision, increased by every stored profile change and every reset.</param>
 /// <param name="Connected">Whether the profile state belongs to the active hotel session.</param>
-/// <param name="Client">
-/// The client type of the hotel session, or <see langword="null"/> when <paramref name="Connected"/> is
-/// <see langword="false"/>.
-/// </param>
 /// <param name="Identity">The local account data, or <see langword="null"/> when the profile was not loaded for the session.</param>
 /// <param name="BlockListLoaded">Whether the block list was received for the session.</param>
 /// <param name="BlockedUserCount">The number of blocked users.</param>
@@ -100,7 +96,6 @@ public sealed record ProfileStateView(
     long Generation,
     long Revision,
     bool Connected,
-    ClientType? Client,
     ProfileIdentitySnapshot? Identity,
     bool BlockListLoaded,
     int BlockedUserCount,
@@ -297,7 +292,6 @@ public sealed record ProfileWardrobeRequest(
 /// <remarks>
 /// Returned by <see cref="ApplicationMemberIds.ProfileWardrobeGet"/>.
 /// </remarks>
-/// <param name="Client">The client type of the hotel session the snapshot was created in.</param>
 /// <param name="Generation">The state generation of the hotel session the snapshot was created in.</param>
 /// <param name="Revision">The profile state revision when the snapshot was created.</param>
 /// <param name="SnapshotRevision">The revision of the retained snapshot, passed back to read the next page.</param>
@@ -307,7 +301,6 @@ public sealed record ProfileWardrobeRequest(
 /// <param name="NextOffset">The offset of the next page, or <see langword="null"/> when this is the last page.</param>
 /// <param name="Outfits">The outfits in the page.</param>
 public sealed record ProfileWardrobePage(
-    ClientType Client,
     long Generation,
     long Revision,
     long SnapshotRevision,
@@ -326,12 +319,6 @@ public sealed record ProfileWardrobePage(
 /// </remarks>
 /// <param name="UserId">The id of the user. Must be positive.</param>
 public sealed record ProfileUserRequest(Id UserId);
-
-/// <summary>
-/// Represents a request that targets one user by name.
-/// </summary>
-/// <param name="UserName">The name of the user.</param>
-public sealed record ProfileUserNameRequest(string UserName);
 
 /// <summary>
 /// Specifies how <see cref="ProfileIgnoreRemoveRequest.Identity"/> identifies a user.
@@ -417,7 +404,6 @@ public sealed record ProfileFavoriteGroupRequest(Id GroupId);
 /// and <see cref="ApplicationMemberIds.ProfileFavoriteGroupDeselect"/>. The hotel's response is not awaited. Block and
 /// ignore results arrive through <see cref="ProfileBlockUpdated"/> and <see cref="ProfileIgnoreUpdated"/>.
 /// </remarks>
-/// <param name="Client">The client type of the hotel session.</param>
 /// <param name="DispatchedAtUtc">The time the message was sent.</param>
 /// <param name="Generation">The state generation of the hotel session the message was sent in.</param>
 /// <param name="Revision">The profile state revision captured before the message was sent.</param>
@@ -429,7 +415,6 @@ public sealed record ProfileFavoriteGroupRequest(Id GroupId);
 /// </param>
 /// <param name="SlotId">The wardrobe slot of a saved outfit; otherwise, <see langword="null"/>.</param>
 public sealed record ProfileDispatchResult(
-    ClientType Client,
     DateTimeOffset DispatchedAtUtc,
     long Generation,
     long Revision,
@@ -549,13 +534,11 @@ public sealed record GroupMemberKickRequest(
 /// <see cref="ApplicationMemberIds.GroupMembershipApprove"/> and <see cref="ApplicationMemberIds.GroupMembershipReject"/>.
 /// The hotel's response is not awaited.
 /// </remarks>
-/// <param name="Client">The client type of the hotel session.</param>
 /// <param name="DispatchedAtUtc">The time the message was sent.</param>
 /// <param name="GroupId">The id of the group.</param>
 /// <param name="UserId">The id of the targeted user, or <see langword="null"/> for a join.</param>
 /// <param name="BlockRejoin">Whether rejoining was blocked for a kick, or <see langword="null"/> for other actions.</param>
 public sealed record GroupMembershipDispatchResult(
-    ClientType Client,
     DateTimeOffset DispatchedAtUtc,
     Id GroupId,
     Id? UserId = null,
@@ -568,7 +551,7 @@ public sealed record GroupMembershipDispatchResult(
 /// Used by <see cref="ApplicationMemberIds.PeopleProfileGet"/>. The request is sent at most twice within the
 /// timeout and does not open the profile window in the game client.
 /// </remarks>
-/// <param name="UserId">The id of the user. Must be positive, and at most 2147483647 on the Flash client.</param>
+/// <param name="UserId">The id of the user. Must be positive and fit in a 32-bit integer.</param>
 /// <param name="TimeoutMilliseconds">The time to wait for the response in milliseconds, from 1 to 120000.</param>
 /// <param name="ExpectedSessionGeneration">
 /// The session generation the request must run in, or <see langword="null"/> to use the active session.
@@ -585,7 +568,7 @@ public sealed record RemoteProfileGetRequest(
 /// Used by <see cref="ApplicationMemberIds.PeopleRelationshipGet"/>. The request is sent at most twice within
 /// the timeout.
 /// </remarks>
-/// <param name="UserId">The id of the user. Must be positive, and at most 2147483647 on the Flash client.</param>
+/// <param name="UserId">The id of the user. Must be positive and fit in a 32-bit integer.</param>
 /// <param name="TimeoutMilliseconds">The time to wait for the response in milliseconds, from 1 to 120000.</param>
 /// <param name="ExpectedSessionGeneration">
 /// The session generation the request must run in, or <see langword="null"/> to use the active session.
@@ -601,7 +584,7 @@ public sealed record RemoteRelationshipGetRequest(
 /// <remarks>
 /// Used by <see cref="ApplicationMemberIds.PeopleBadgesGet"/>. The request is sent at most twice within the timeout.
 /// </remarks>
-/// <param name="UserId">The id of the user. Must be positive, and at most 2147483647 on the Flash client.</param>
+/// <param name="UserId">The id of the user. Must be positive and fit in a 32-bit integer.</param>
 /// <param name="TimeoutMilliseconds">The time to wait for the response in milliseconds, from 1 to 120000.</param>
 /// <param name="ExpectedSessionGeneration">
 /// The session generation the request must run in, or <see langword="null"/> to use the active session.
@@ -618,7 +601,7 @@ public sealed record RemoteBadgesGetRequest(
 /// Used by <see cref="ApplicationMemberIds.PeopleProfileOpen"/>. The profile request is sent with the open
 /// window flag set, and the response is not awaited.
 /// </remarks>
-/// <param name="UserId">The id of the user. Must be positive, and at most 2147483647 on the Flash client.</param>
+/// <param name="UserId">The id of the user. Must be positive and fit in a 32-bit integer.</param>
 /// <param name="ExpectedSessionGeneration">
 /// The session generation the request must run in, or <see langword="null"/> to use the active session.
 /// </param>
@@ -683,12 +666,10 @@ public sealed record RemoteProfileView(
 /// <remarks>
 /// Returned by <see cref="ApplicationMemberIds.PeopleProfileGet"/>.
 /// </remarks>
-/// <param name="Client">The client type of the hotel session.</param>
 /// <param name="SessionGeneration">The state generation of the hotel session the profile was received in.</param>
 /// <param name="ReceivedAtUtc">The time the profile was received.</param>
 /// <param name="Profile">The received profile.</param>
 public sealed record RemoteProfileResult(
-    ClientType Client,
     long SessionGeneration,
     DateTimeOffset ReceivedAtUtc,
     RemoteProfileView Profile);
@@ -699,13 +680,11 @@ public sealed record RemoteProfileResult(
 /// <remarks>
 /// Returned by <see cref="ApplicationMemberIds.PeopleRelationshipGet"/>.
 /// </remarks>
-/// <param name="Client">The client type of the hotel session.</param>
 /// <param name="SessionGeneration">The state generation of the hotel session the summary was received in.</param>
 /// <param name="ReceivedAtUtc">The time the summary was received.</param>
 /// <param name="UserId">The id of the user the summary belongs to.</param>
 /// <param name="Entries">The relationship entries, at most 500.</param>
 public sealed record RemoteRelationshipResult(
-    ClientType Client,
     long SessionGeneration,
     DateTimeOffset ReceivedAtUtc,
     Id UserId,
@@ -717,13 +696,11 @@ public sealed record RemoteRelationshipResult(
 /// <remarks>
 /// Returned by <see cref="ApplicationMemberIds.PeopleBadgesGet"/>.
 /// </remarks>
-/// <param name="Client">The client type of the hotel session.</param>
 /// <param name="SessionGeneration">The state generation of the hotel session the badges were received in.</param>
 /// <param name="ReceivedAtUtc">The time the badges were received.</param>
 /// <param name="UserId">The id of the user the badges belong to.</param>
 /// <param name="Badges">The selected badges, at most 500.</param>
 public sealed record RemoteBadgesResult(
-    ClientType Client,
     long SessionGeneration,
     DateTimeOffset ReceivedAtUtc,
     Id UserId,
@@ -735,12 +712,10 @@ public sealed record RemoteBadgesResult(
 /// <remarks>
 /// Returned by <see cref="ApplicationMemberIds.PeopleProfileOpen"/>.
 /// </remarks>
-/// <param name="Client">The client type of the hotel session.</param>
 /// <param name="SessionGeneration">The state generation of the hotel session the request was sent in.</param>
 /// <param name="DispatchedAtUtc">The time the request was sent.</param>
 /// <param name="UserId">The id of the user whose profile was requested.</param>
 public sealed record RemoteProfileOpenReceipt(
-    ClientType Client,
     long SessionGeneration,
     DateTimeOffset DispatchedAtUtc,
     Id UserId);
@@ -752,7 +727,7 @@ public sealed record RemoteProfileOpenReceipt(
 /// Used by <see cref="ApplicationMemberIds.GroupsDetailsGet"/>. The request is sent at most twice within the
 /// timeout and does not open the group window in the game client.
 /// </remarks>
-/// <param name="GroupId">The id of the group. Must be positive, and at most 2147483647 on the Flash client.</param>
+/// <param name="GroupId">The id of the group. Must be positive and fit in a 32-bit integer.</param>
 /// <param name="TimeoutMilliseconds">The time to wait for the response in milliseconds, from 1 to 120000.</param>
 /// <param name="ExpectedSessionGeneration">
 /// The session generation the request must run in, or <see langword="null"/> to use the active session.
@@ -768,12 +743,10 @@ public sealed record GroupDetailsGetRequest(
 /// <remarks>
 /// Returned by <see cref="ApplicationMemberIds.GroupsDetailsGet"/>.
 /// </remarks>
-/// <param name="Client">The client type of the hotel session.</param>
 /// <param name="SessionGeneration">The state generation of the hotel session the details were received in.</param>
 /// <param name="ReceivedAtUtc">The time the details were received.</param>
 /// <param name="Details">The group details.</param>
 public sealed record GroupDetailsResult(
-    ClientType Client,
     long SessionGeneration,
     DateTimeOffset ReceivedAtUtc,
     GroupData Details);
@@ -785,7 +758,7 @@ public sealed record GroupDetailsResult(
 /// Used by <see cref="ApplicationMemberIds.GroupsMembersPage"/>. The request is sent at most twice within the
 /// timeout, and the page size is chosen by the hotel.
 /// </remarks>
-/// <param name="GroupId">The id of the group. Must be positive, and at most 2147483647 on the Flash client.</param>
+/// <param name="GroupId">The id of the group. Must be positive and fit in a 32-bit integer.</param>
 /// <param name="PageIndex">The zero-based index of the hotel page to load.</param>
 /// <param name="UserNameFilter">
 /// The user name filter sent with the request, at most 65535 UTF-8 bytes, or an empty string for no filter.
@@ -809,7 +782,6 @@ public sealed record GroupMembersPageRequest(
 /// <remarks>
 /// Returned by <see cref="ApplicationMemberIds.GroupsMembersPage"/>.
 /// </remarks>
-/// <param name="Client">The client type of the hotel session.</param>
 /// <param name="SessionGeneration">The state generation of the hotel session the page was received in.</param>
 /// <param name="ReceivedAtUtc">The time the page was received.</param>
 /// <param name="GroupId">The id of the group.</param>
@@ -821,12 +793,9 @@ public sealed record GroupMembersPageRequest(
 /// <param name="IsAllowedToManage">Whether the local user may manage the group's members.</param>
 /// <param name="PageSize">The number of members per page chosen by the hotel.</param>
 /// <param name="PageIndex">The zero-based index of the page.</param>
-/// <param name="SearchType">
-/// The member category echoed by the hotel, or <see langword="null"/> when the client type does not carry it.
-/// </param>
+/// <param name="SearchType">The member category echoed by the hotel.</param>
 /// <param name="UserNameFilter">The user name filter echoed by the hotel.</param>
 public sealed record GroupMembersPage(
-    ClientType Client,
     long SessionGeneration,
     DateTimeOffset ReceivedAtUtc,
     Id GroupId,
@@ -838,7 +807,7 @@ public sealed record GroupMembersPage(
     bool IsAllowedToManage,
     int PageSize,
     int PageIndex,
-    GuildMemberSearchType? SearchType,
+    GuildMemberSearchType SearchType,
     string UserNameFilter);
 
 /// <summary>
@@ -875,7 +844,6 @@ public sealed record GroupMembershipsGetRequest(
 /// <remarks>
 /// Returned by <see cref="ApplicationMemberIds.GroupsMembershipsGet"/>.
 /// </remarks>
-/// <param name="Client">The client type of the hotel session the snapshot was created in.</param>
 /// <param name="SessionGeneration">The state generation of the hotel session the snapshot was created in.</param>
 /// <param name="ReceivedAtUtc">The time the memberships were received.</param>
 /// <param name="SnapshotRevision">The revision of the retained snapshot, passed back to read the next page.</param>
@@ -884,7 +852,6 @@ public sealed record GroupMembershipsGetRequest(
 /// <param name="NextOffset">The offset of the next page, or <see langword="null"/> when this is the last page.</param>
 /// <param name="Memberships">The memberships in the page.</param>
 public sealed record GroupMembershipsPage(
-    ClientType Client,
     long SessionGeneration,
     DateTimeOffset ReceivedAtUtc,
     long SnapshotRevision,

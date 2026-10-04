@@ -4,19 +4,12 @@ namespace Qx.Messages;
 /// <remarks>Header values are assigned per client build, so resolve them through a message manager instead of hard-coding them.</remarks>
 /// <param name="Direction">The direction of the message.</param>
 /// <param name="Value">The numeric message ID in the connected client build.</param>
-public readonly record struct Header(Direction Direction, short Value)
+public readonly record struct Header(MessageDirection Direction, short Value)
 {
-    /// <summary>An unknown header, with <see cref="Qx.Direction.None"/> and a value of 0.</summary>
+    /// <summary>An unknown header, with <see cref="MessageDirection.None"/> and a value of 0.</summary>
     public static readonly Header Unknown = new();
-
-    /// <summary>A header with <see cref="Qx.Direction.Both"/> and a value of 0.</summary>
-    public static readonly Header All = new(Direction.Both, 0);
 
     /// <summary>Converts a direction and value tuple to a header.</summary>
     /// <param name="x">The direction and the numeric message ID.</param>
-    public static implicit operator Header((Direction direction, short value) x) => new(x.direction, x.value);
-
-    /// <summary>Converts a header to a read-only span that contains only that header.</summary>
-    /// <param name="header">The header to wrap.</param>
-    public static implicit operator ReadOnlySpan<Header>(in Header header) => new(in header);
+    public static implicit operator Header((MessageDirection direction, short value) x) => new(x.direction, x.value);
 }

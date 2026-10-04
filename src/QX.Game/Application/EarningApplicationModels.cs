@@ -48,7 +48,6 @@ public sealed record EarningEntryView(
 /// <summary>Represents the earnings vault state read from one snapshot.</summary>
 /// <remarks>Returned by the <c>earnings.state</c> query.</remarks>
 /// <param name="Connected">Whether the snapshot belongs to the active hotel session.</param>
-/// <param name="Client">The client type of the hotel session, or <see langword="null"/> when <paramref name="Connected"/> is <see langword="false"/>.</param>
 /// <param name="SessionGeneration">The generation of the hotel session the snapshot belongs to.</param>
 /// <param name="Revision">The earning state revision, which increases with every change.</param>
 /// <param name="StatusRevision">The revision of the vault contents, which increases when the status is received, a successful claim removes lines or the state is cleared.</param>
@@ -59,7 +58,6 @@ public sealed record EarningEntryView(
 /// <param name="Vault">The summary of the earnings vault.</param>
 public sealed record EarningStateView(
     bool Connected,
-    ClientType? Client,
     long SessionGeneration,
     long Revision,
     long StatusRevision,
@@ -82,7 +80,6 @@ public sealed record EarningEntryPageRequest(
 /// <summary>Represents a page of earnings vault lines read from one snapshot.</summary>
 /// <remarks>Returned by the <c>earnings.entries.list</c> query. The lines keep the order in which the server sent them.</remarks>
 /// <param name="Connected">Whether the snapshot belongs to the active hotel session.</param>
-/// <param name="Client">The client type of the hotel session, or <see langword="null"/> when <paramref name="Connected"/> is <see langword="false"/>.</param>
 /// <param name="SessionGeneration">The generation of the hotel session the snapshot belongs to.</param>
 /// <param name="StateRevision">The earning state revision, which increases with every change.</param>
 /// <param name="StatusRevision">The revision of the vault contents, which increases when the status is received, a successful claim removes lines or the state is cleared.</param>
@@ -95,7 +92,6 @@ public sealed record EarningEntryPageRequest(
 /// <param name="Entries">The vault lines in the page.</param>
 public sealed record EarningEntryPage(
     bool Connected,
-    ClientType? Client,
     long SessionGeneration,
     long StateRevision,
     long StatusRevision,
@@ -123,7 +119,6 @@ public sealed record EarningRefreshRequest(
 
 /// <summary>Represents the result of an earnings vault refresh.</summary>
 /// <remarks>Returned by the <c>earnings.refresh</c> operation.</remarks>
-/// <param name="Client">The client type of the hotel session.</param>
 /// <param name="RefreshedAtUtc">The UTC time the result was created.</param>
 /// <param name="ObservedAtUtc">The UTC time the status was observed.</param>
 /// <param name="SessionGeneration">The generation of the hotel session the refresh ran in.</param>
@@ -134,7 +129,6 @@ public sealed record EarningRefreshRequest(
 /// <param name="MessagesDispatched">1 when the shared request is counted for this call, 0 when the call joined a request counted for another caller.</param>
 /// <param name="FirstPage">The first page of vault lines from the refreshed snapshot.</param>
 public sealed record EarningRefreshResult(
-    ClientType Client,
     DateTimeOffset RefreshedAtUtc,
     DateTimeOffset ObservedAtUtc,
     long SessionGeneration,
@@ -162,7 +156,6 @@ public sealed record EarningClaimActionRequest(
 
 /// <summary>Represents the result of an earnings claim.</summary>
 /// <remarks>Returned by the <c>earnings.claim</c> operation.</remarks>
-/// <param name="Client">The client type of the hotel session.</param>
 /// <param name="DispatchedAtUtc">The UTC time the claim was sent.</param>
 /// <param name="ObservedAtUtc">The UTC time the claim result was observed.</param>
 /// <param name="SessionGeneration">The generation of the hotel session the claim ran in.</param>
@@ -176,7 +169,6 @@ public sealed record EarningClaimActionRequest(
 /// <param name="MessagesDispatched">The number of claim messages the call sent.</param>
 /// <param name="Vault">The summary of the earnings vault after the claim result was applied.</param>
 public sealed record EarningClaimActionResult(
-    ClientType Client,
     DateTimeOffset DispatchedAtUtc,
     DateTimeOffset ObservedAtUtc,
     long SessionGeneration,
@@ -207,7 +199,7 @@ public enum EarningChangeKind
 /// <remarks>Published by the <c>earnings.changed</c> event.</remarks>
 /// <param name="Kind">The kind of change.</param>
 /// <param name="ChangedAtUtc">The UTC time the change was published.</param>
-/// <param name="Client">The client type of the hotel session, or <see langword="null"/> when there is no session.</param>
+/// <param name="Connected">Whether a hotel session is active.</param>
 /// <param name="SessionGeneration">The generation of the hotel session the change belongs to.</param>
 /// <param name="Revision">The earning state revision after the change.</param>
 /// <param name="SourceRevision">The status revision for <see cref="EarningChangeKind.Snapshot"/>, the claim revision for <see cref="EarningChangeKind.Claimed"/>, the notification revision for <see cref="EarningChangeKind.Notification"/>, and <paramref name="Revision"/> for <see cref="EarningChangeKind.Reset"/>.</param>
@@ -218,7 +210,7 @@ public enum EarningChangeKind
 public sealed record EarningChanged(
     EarningChangeKind Kind,
     DateTimeOffset ChangedAtUtc,
-    ClientType? Client,
+    bool Connected,
     long SessionGeneration,
     long Revision,
     long SourceRevision,

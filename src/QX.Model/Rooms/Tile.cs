@@ -9,9 +9,9 @@ namespace Qx.Model;
 public readonly record struct Tile(int X, int Y, float Z) : IParserComposer<Tile>
 {
     /// <summary>Initializes a new instance of the <see cref="Tile"/> struct at height 0.</summary>
-    /// <param name="x">The x coordinate.</param>
-    /// <param name="y">The y coordinate.</param>
-    public Tile(int x, int y) : this(x, y, 0) { }
+    /// <param name="X">The x coordinate.</param>
+    /// <param name="Y">The y coordinate.</param>
+    public Tile(int X, int Y) : this(X, Y, 0) { }
 
     /// <summary>Gets the x and y coordinates without the height.</summary>
     public Point XY => new(X, Y);

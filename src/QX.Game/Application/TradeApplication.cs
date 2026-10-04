@@ -163,7 +163,7 @@ internal sealed class TradeApplication : IApplicationFeature
             false,
             cancellation_token);
         Id[] item_ids = request.ItemIds.ToArray();
-        ValidateItemIds(item_ids, scope.Session.Client);
+        ValidateItemIds(item_ids);
         message_dispatcher.Dispatch(
             MessageContracts.Trade.ItemsAdd,
             new AddTradeItemsRequest(Array.AsReadOnly(item_ids)),
@@ -190,7 +190,7 @@ internal sealed class TradeApplication : IApplicationFeature
             null,
             false,
             cancellation_token);
-        ValidateItemId(request.ItemId, scope.Session.Client, nameof(request.ItemId));
+        ValidateItemId(request.ItemId, nameof(request.ItemId));
         message_dispatcher.Dispatch(
             MessageContracts.Trade.ItemRemove,
             new RemoveTradeItemRequest(request.ItemId),
@@ -345,7 +345,6 @@ internal sealed class TradeApplication : IApplicationFeature
 
     private ValueTask<TradeDispatchResult> DispatchResult(TradeDispatchScope scope) =>
         ValueTask.FromResult(new TradeDispatchResult(
-            scope.Session.Client,
             time_provider.GetUtcNow(),
             scope.SessionGeneration,
             scope.RoomGeneration,
@@ -676,7 +675,6 @@ internal sealed class TradeApplication : IApplicationFeature
         bool connected = lease.Session is not null && ReferenceEquals(connection.Session, lease.Session);
         var page = new TradeNftInventoryPage(
             connected,
-            connected ? lease.Session!.Client : null,
             lease.SessionGeneration,
             lease.StateRevision,
             lease.Revision,
@@ -700,7 +698,6 @@ internal sealed class TradeApplication : IApplicationFeature
         bool connected = state.Session is not null && ReferenceEquals(connection.Session, state.Session);
         return new TradeStateView(
             connected,
-            connected ? state.Session!.Client : null,
             state.Generation,
             room_generation,
             state.Revision,
@@ -714,7 +711,6 @@ internal sealed class TradeApplication : IApplicationFeature
         bool connected = state.Session is not null && ReferenceEquals(connection.Session, state.Session);
         return new TradeStateSummary(
             connected,
-            connected ? state.Session!.Client : null,
             state.Generation,
             state.Revision,
             state.Epoch,
@@ -895,28 +891,23 @@ internal sealed class TradeApplication : IApplicationFeature
             throw new ArgumentOutOfRangeException(nameof(timeout_milliseconds));
     }
 
-    private static void ValidateItemIds(IReadOnlyList<Id> item_ids, ClientType client)
+    private static void ValidateItemIds(IReadOnlyList<Id> item_ids)
     {
         if (item_ids.Count is < 1 or > ushort.MaxValue)
             throw new ArgumentOutOfRangeException(nameof(item_ids));
         var distinct = new HashSet<long>();
         foreach (Id item_id in item_ids)
         {
-            ValidateItemId(item_id, client, nameof(item_ids));
+            ValidateItemId(item_id, nameof(item_ids));
             if (!distinct.Add(item_id))
                 throw new ArgumentException("Trade item identifiers must be distinct.", nameof(item_ids));
         }
     }
 
-    private static void ValidateItemId(Id item_id, ClientType client, string name)
+    private static void ValidateItemId(Id item_id, string name)
     {
         long value = item_id;
-        bool valid = client switch
-        {
-            ClientType.Flash => value != 0 && value is >= int.MinValue and <= int.MaxValue,
-            _ => false
-        };
-        if (!valid)
+        if (value == 0 || value is < int.MinValue or > int.MaxValue)
             throw new ArgumentOutOfRangeException(name);
     }
 

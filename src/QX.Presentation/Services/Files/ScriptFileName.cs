@@ -1,4 +1,4 @@
-using Qx.Scripting;
+using Qx.Scripting.Hosting;
 
 namespace Qx.Presentation.Services.Files;
 
@@ -34,26 +34,26 @@ public static class ScriptFileName
     public static bool IsScript(string path) =>
         path.EndsWith(Extension, StringComparison.OrdinalIgnoreCase);
 
-    public static string NextUntitled(IEnumerable<string> open_names, Func<string, bool> exists_on_disk)
+    public static string NextUntitled(IEnumerable<string> openNames, Func<string, bool> existsOnDisk)
     {
-        ArgumentNullException.ThrowIfNull(open_names);
-        ArgumentNullException.ThrowIfNull(exists_on_disk);
-        var taken = new HashSet<string>(open_names, StringComparer.OrdinalIgnoreCase);
+        ArgumentNullException.ThrowIfNull(openNames);
+        ArgumentNullException.ThrowIfNull(existsOnDisk);
+        var taken = new HashSet<string>(openNames, StringComparer.OrdinalIgnoreCase);
         for (int number = 1; ; number++)
         {
             string candidate = number == 1 ? Untitled : $"{Untitled} {number}";
-            if (!taken.Contains(candidate) && !exists_on_disk(candidate))
+            if (!taken.Contains(candidate) && !existsOnDisk(candidate))
                 return candidate;
         }
     }
 
-    public static string NextCopy(string original, Func<string, bool> exists_on_disk)
+    public static string NextCopy(string original, Func<string, bool> existsOnDisk)
     {
-        ArgumentNullException.ThrowIfNull(exists_on_disk);
+        ArgumentNullException.ThrowIfNull(existsOnDisk);
         for (int number = 1; ; number++)
         {
             string candidate = number == 1 ? $"{original} copy" : $"{original} copy {number}";
-            if (!exists_on_disk(candidate))
+            if (!existsOnDisk(candidate))
                 return candidate;
         }
     }

@@ -313,7 +313,7 @@ public sealed record TradeRequirementNode(int Type, int Amount, ChestItemType? I
     /// <param name="p">The packet reader.</param>
     public static TradeRequirementNode Parse(in PacketReader p)
     {
-        int type = p.ReadByte();
+        int type = unchecked((sbyte)p.ReadByte());
         int amount = p.ReadInt();
         ChestItemType? itemType = type == TypeFurni ? ChestItemType.Parse(p) : null;
         return new TradeRequirementNode(type, amount, itemType);
@@ -323,7 +323,7 @@ public sealed record TradeRequirementNode(int Type, int Amount, ChestItemType? I
     /// <param name="p">The packet writer.</param>
     public void Compose(in PacketWriter p)
     {
-        byte type = checked((byte)Type);
+        byte type = unchecked((byte)checked((sbyte)Type));
         ChestItemType? item_type = ItemType;
         if (Type == TypeFurni)
         {
@@ -849,6 +849,14 @@ public sealed record WiredContractContents(
     bool ShowDialog,
     string RewardText) : IParserComposer<WiredContractContents>
 {
+    /// <summary>Gets or initializes the earnings category of a reward contract; game is 11 and agency is 13.</summary>
+    /// <remarks>The raw RewardCategory short remains available for unknown codes.</remarks>
+    public Qx.Model.Messages.Incoming.EarningCategory EarningsCategory
+    {
+        get => (Qx.Model.Messages.Incoming.EarningCategory)RewardCategory;
+        init => RewardCategory = checked((short)value);
+    }
+
     /// <summary>The contract type of a payment contract.</summary>
     public const int TypePayment = 0;
     /// <summary>The contract type of a trade contract.</summary>
@@ -1100,10 +1108,15 @@ public sealed record WiredTradeInitiate(
 /// <remarks>Received as the Flash <c>WiredTradeItemsUpdate</c> message.</remarks>
 /// <param name="TradingItems">The offers of both users.</param>
 /// <param name="CanAccept">Whether the trade can be accepted.</param>
-/// <param name="Extra">The extra value the hotel sends with the update.</param>
-public sealed record WiredTradeItemsUpdate(WiredTradingItems TradingItems, bool CanAccept, int Extra)
+/// <param name="RequirementsMetCount">The number of times the current offer meets its requirements.</param>
+public sealed record WiredTradeItemsUpdate(WiredTradingItems TradingItems, bool CanAccept, int RequirementsMetCount)
     : IParserComposer<WiredTradeItemsUpdate>
 {
+    /// <summary>Gets or initializes RequirementsMetCount; retained for migration.</summary>
+    [Obsolete("Use RequirementsMetCount.")]
+    [System.Text.Json.Serialization.JsonIgnore]
+    public int Extra { get => RequirementsMetCount; init => RequirementsMetCount = value; }
+
     /// <summary>Parses the message from a packet.</summary>
     /// <param name="p">The packet reader.</param>
     public static WiredTradeItemsUpdate Parse(in PacketReader p) =>
@@ -1122,7 +1135,7 @@ public sealed record WiredTradeItemsUpdate(WiredTradingItems TradingItems, bool 
         WiredChestWire.Validate(value.TradingItems, in p);
         value.TradingItems.Compose(p);
         p.WriteBool(value.CanAccept);
-        p.WriteInt(value.Extra);
+        p.WriteInt(value.RequirementsMetCount);
     }
 }
 
@@ -1172,10 +1185,15 @@ public sealed record WiredTransactionFail(int TransactionFailureTypeId)
 
 /// <summary>Received with a wired trade transaction notification.</summary>
 /// <remarks>Received as the Flash <c>WiredTradeTransactionNotification</c> message.</remarks>
-/// <param name="TradeTransactionNotificationId">The id of the notification.</param>
-public sealed record WiredTradeTransactionNotification(int TradeTransactionNotificationId)
+/// <param name="TradeErrorId">The trade-error localization code.</param>
+public sealed record WiredTradeTransactionNotification(int TradeErrorId)
     : IParserComposer<WiredTradeTransactionNotification>
 {
+    /// <summary>Gets or initializes TradeErrorId; retained for migration.</summary>
+    [Obsolete("Use TradeErrorId.")]
+    [System.Text.Json.Serialization.JsonIgnore]
+    public int TradeTransactionNotificationId { get => TradeErrorId; init => TradeErrorId = value; }
+
     /// <summary>Parses the message from a packet.</summary>
     /// <param name="p">The packet reader.</param>
     public static WiredTradeTransactionNotification Parse(in PacketReader p) =>
@@ -1191,7 +1209,7 @@ public sealed record WiredTradeTransactionNotification(int TradeTransactionNotif
 
     private static void ComposeFlash(
         WiredTradeTransactionNotification value,
-        in PacketWriter p) => p.WriteInt(value.TradeTransactionNotificationId);
+        in PacketWriter p) => p.WriteInt(value.TradeErrorId);
 }
 
 /// <summary>Received when a wired trade completes.</summary>
@@ -1425,20 +1443,52 @@ public sealed record StartAddingToChest(Id ChestId) : IParserComposer<StartAddin
 /// <remarks>Sent as the Flash <c>SetChestNotificationPreferences</c> message. The hotel confirms with <see cref="ChestPreferencesUpdateSuccess"/>.</remarks>
 /// <param name="ChestId">The id of the chest.</param>
 /// <param name="NotificationMode">The notification mode code.</param>
-/// <param name="NotifyFlagA">The first notification flag.</param>
-/// <param name="NotifyFlagB">The second notification flag.</param>
-/// <param name="EventFlagA">The first event flag.</param>
-/// <param name="EventFlagB">The second event flag.</param>
-/// <param name="EventFlagC">The third event flag.</param>
+/// <param name="NotifyWhenFull">Whether to notify when the chest is full.</param>
+/// <param name="NotifyOnDonation">Whether to notify when someone donates.</param>
+/// <param name="NotifyOnWithdrawal">Whether to notify when someone withdraws.</param>
+/// <param name="NotifyWhenEmpty">Whether to notify when the chest is empty.</param>
+/// <param name="NotifyOnWiredTransaction">Whether to notify on a Wired transaction.</param>
 public sealed record SetChestNotificationPreferences(
     int ChestId,
     int NotificationMode,
-    bool NotifyFlagA,
-    bool NotifyFlagB,
-    bool EventFlagA,
-    bool EventFlagB,
-    bool EventFlagC) : IParserComposer<SetChestNotificationPreferences>
+    bool NotifyWhenFull,
+    bool NotifyOnDonation,
+    bool NotifyOnWithdrawal,
+    bool NotifyWhenEmpty,
+    bool NotifyOnWiredTransaction) : IParserComposer<SetChestNotificationPreferences>
 {
+    /// <summary>Gets or initializes the typed notification mode, preserving unknown integer codes.</summary>
+    public WiredChestNotificationMode Notifications
+    {
+        get => (WiredChestNotificationMode)NotificationMode;
+        init => NotificationMode = (int)value;
+    }
+
+    /// <summary>Gets or initializes NotifyWhenFull; retained for migration.</summary>
+    [Obsolete("Use NotifyWhenFull.")]
+    [System.Text.Json.Serialization.JsonIgnore]
+    public bool NotifyFlagA { get => NotifyWhenFull; init => NotifyWhenFull = value; }
+
+    /// <summary>Gets or initializes NotifyOnDonation; retained for migration.</summary>
+    [Obsolete("Use NotifyOnDonation.")]
+    [System.Text.Json.Serialization.JsonIgnore]
+    public bool NotifyFlagB { get => NotifyOnDonation; init => NotifyOnDonation = value; }
+
+    /// <summary>Gets or initializes NotifyOnWithdrawal; retained for migration.</summary>
+    [Obsolete("Use NotifyOnWithdrawal.")]
+    [System.Text.Json.Serialization.JsonIgnore]
+    public bool EventFlagA { get => NotifyOnWithdrawal; init => NotifyOnWithdrawal = value; }
+
+    /// <summary>Gets or initializes NotifyWhenEmpty; retained for migration.</summary>
+    [Obsolete("Use NotifyWhenEmpty.")]
+    [System.Text.Json.Serialization.JsonIgnore]
+    public bool EventFlagB { get => NotifyWhenEmpty; init => NotifyWhenEmpty = value; }
+
+    /// <summary>Gets or initializes NotifyOnWiredTransaction; retained for migration.</summary>
+    [Obsolete("Use NotifyOnWiredTransaction.")]
+    [System.Text.Json.Serialization.JsonIgnore]
+    public bool EventFlagC { get => NotifyOnWiredTransaction; init => NotifyOnWiredTransaction = value; }
+
     /// <summary>Parses the message from a packet.</summary>
     /// <param name="p">The packet reader.</param>
     public static SetChestNotificationPreferences Parse(in PacketReader p) =>
@@ -1462,11 +1512,11 @@ public sealed record SetChestNotificationPreferences(
     {
         p.WriteInt(value.ChestId);
         p.WriteInt(value.NotificationMode);
-        p.WriteBool(value.NotifyFlagA);
-        p.WriteBool(value.NotifyFlagB);
-        p.WriteBool(value.EventFlagA);
-        p.WriteBool(value.EventFlagB);
-        p.WriteBool(value.EventFlagC);
+        p.WriteBool(value.NotifyWhenFull);
+        p.WriteBool(value.NotifyOnDonation);
+        p.WriteBool(value.NotifyOnWithdrawal);
+        p.WriteBool(value.NotifyWhenEmpty);
+        p.WriteBool(value.NotifyOnWiredTransaction);
     }
 
 }
@@ -1509,23 +1559,67 @@ public sealed record SetChestOptions(Id ChestId, bool LockChest, bool AutoLockCh
 /// <param name="ChestId">The id of the chest, written as a 32 bit integer.</param>
 /// <param name="ChestName">The name of the chest.</param>
 /// <param name="ChestDescription">The description of the chest.</param>
-/// <param name="PrefFlagA">The first preference flag.</param>
-/// <param name="PrefFlagB">The second preference flag.</param>
-/// <param name="ChestState">The state code of the chest.</param>
-/// <param name="OpenState">The open state code of the chest.</param>
-/// <param name="AmountPreview">The preview amount setting of the chest.</param>
-/// <param name="DisabledFlag">The disabled flag of the chest.</param>
+/// <param name="EveryoneCanOpen">Whether everyone can open the chest.</param>
+/// <param name="EveryoneCanDonate">Whether everyone can donate to the chest.</param>
+/// <param name="StateControlMode">The raw chest state-control mode; see StateControl.</param>
+/// <param name="PreviewMode">The raw furniture preview mode; see Preview.</param>
+/// <param name="PreviewAmount">The number of items to preview, normally 1 through 4.</param>
+/// <param name="WiredEnabled">Whether Wired is enabled for the chest.</param>
 public sealed record SetChestPreferences(
     Id ChestId,
     string ChestName,
     string ChestDescription,
-    bool PrefFlagA,
-    bool PrefFlagB,
-    int ChestState,
-    int OpenState,
-    int AmountPreview,
-    bool DisabledFlag) : IParserComposer<SetChestPreferences>
+    bool EveryoneCanOpen,
+    bool EveryoneCanDonate,
+    int StateControlMode,
+    int PreviewMode,
+    int PreviewAmount,
+    bool WiredEnabled) : IParserComposer<SetChestPreferences>
 {
+    /// <summary>Gets or initializes the typed state-control mode, preserving unknown integer codes.</summary>
+    public WiredChestStateMode StateControl
+    {
+        get => (WiredChestStateMode)StateControlMode;
+        init => StateControlMode = (int)value;
+    }
+
+    /// <summary>Gets or initializes the typed preview mode, preserving unknown integer codes.</summary>
+    public WiredChestPreviewMode Preview
+    {
+        get => (WiredChestPreviewMode)PreviewMode;
+        init => PreviewMode = (int)value;
+    }
+
+    /// <summary>Gets or initializes EveryoneCanOpen; retained for migration.</summary>
+    [Obsolete("Use EveryoneCanOpen.")]
+    [System.Text.Json.Serialization.JsonIgnore]
+    public bool PrefFlagA { get => EveryoneCanOpen; init => EveryoneCanOpen = value; }
+
+    /// <summary>Gets or initializes EveryoneCanDonate; retained for migration.</summary>
+    [Obsolete("Use EveryoneCanDonate.")]
+    [System.Text.Json.Serialization.JsonIgnore]
+    public bool PrefFlagB { get => EveryoneCanDonate; init => EveryoneCanDonate = value; }
+
+    /// <summary>Gets or initializes StateControlMode; retained for migration.</summary>
+    [Obsolete("Use StateControlMode.")]
+    [System.Text.Json.Serialization.JsonIgnore]
+    public int ChestState { get => StateControlMode; init => StateControlMode = value; }
+
+    /// <summary>Gets or initializes PreviewMode; retained for migration.</summary>
+    [Obsolete("Use PreviewMode.")]
+    [System.Text.Json.Serialization.JsonIgnore]
+    public int OpenState { get => PreviewMode; init => PreviewMode = value; }
+
+    /// <summary>Gets or initializes PreviewAmount; retained for migration.</summary>
+    [Obsolete("Use PreviewAmount.")]
+    [System.Text.Json.Serialization.JsonIgnore]
+    public int AmountPreview { get => PreviewAmount; init => PreviewAmount = value; }
+
+    /// <summary>Gets or initializes WiredEnabled; retained for migration.</summary>
+    [Obsolete("Use WiredEnabled.")]
+    [System.Text.Json.Serialization.JsonIgnore]
+    public bool DisabledFlag { get => WiredEnabled; init => WiredEnabled = value; }
+
     /// <summary>Parses the message from a packet.</summary>
     /// <param name="p">The packet reader.</param>
     public static SetChestPreferences Parse(in PacketReader p) =>
@@ -1555,12 +1649,12 @@ public sealed record SetChestPreferences(
         p.WriteInt(chest_id);
         p.WriteString(value.ChestName);
         p.WriteString(value.ChestDescription);
-        p.WriteBool(value.PrefFlagA);
-        p.WriteBool(value.PrefFlagB);
-        p.WriteInt(value.ChestState);
-        p.WriteInt(value.OpenState);
-        p.WriteInt(value.AmountPreview);
-        p.WriteBool(value.DisabledFlag);
+        p.WriteBool(value.EveryoneCanOpen);
+        p.WriteBool(value.EveryoneCanDonate);
+        p.WriteInt(value.StateControlMode);
+        p.WriteInt(value.PreviewMode);
+        p.WriteInt(value.PreviewAmount);
+        p.WriteBool(value.WiredEnabled);
     }
 }
 
@@ -1752,11 +1846,26 @@ public sealed record WiredTradeCancel : IParserComposer<WiredTradeCancel>
 }
 
 // id 2818
-/// <summary>Sent when the user confirms the open wired trade or withdraws the confirmation.</summary>
+/// <summary>Sent for initial acceptance or final confirmation of an open wired trade.</summary>
 /// <remarks>Sent as the Flash <c>WiredTradeConfirm</c> message.</remarks>
-/// <param name="Confirm">Whether the trade is confirmed.</param>
+/// <param name="Confirm">False for initial acceptance; true for final confirmation after the countdown.</param>
 public sealed record WiredTradeConfirm(bool Confirm) : IParserComposer<WiredTradeConfirm>
 {
+    /// <summary>Creates an explicit acceptance or final-confirmation message.</summary>
+    /// <param name="stage">The stage to send.</param>
+    /// <exception cref="ArgumentOutOfRangeException">The stage is unknown.</exception>
+    public WiredTradeConfirm(WiredTradeConfirmationStage stage) : this(stage switch
+    {
+        WiredTradeConfirmationStage.Accept => false,
+        WiredTradeConfirmationStage.Confirm => true,
+        _ => throw new ArgumentOutOfRangeException(nameof(stage))
+    }) { }
+
+    /// <summary>Gets the confirmation stage represented by the wire flag.</summary>
+    public WiredTradeConfirmationStage Stage => Confirm
+        ? WiredTradeConfirmationStage.Confirm
+        : WiredTradeConfirmationStage.Accept;
+
     /// <summary>Parses the message from a packet.</summary>
     /// <param name="p">The packet reader.</param>
     public static WiredTradeConfirm Parse(in PacketReader p) =>
@@ -1797,19 +1906,11 @@ internal static class WiredChestWire
     public static void Validate(TradeRequirementNode value, in PacketWriter p)
     {
         ArgumentNullException.ThrowIfNull(value);
-        _ = checked((byte)value.Type);
-        switch (value.Type)
-        {
-            case TradeRequirementNode.TypeCoin when value.ItemType is null:
-                return;
-            case TradeRequirementNode.TypeFurni:
-                Validate(value.ItemType, in p);
-                return;
-            case TradeRequirementNode.TypeCoin:
-                throw new InvalidDataException("Coin trade requirement nodes cannot carry an item type.");
-            default:
-                throw new InvalidDataException($"Unsupported trade requirement node type {value.Type}.");
-        }
+        _ = checked((sbyte)value.Type);
+        if (value.Type == TradeRequirementNode.TypeFurni)
+            Validate(value.ItemType, in p);
+        else if (value.ItemType is not null)
+            throw new InvalidDataException("Only furni trade requirement nodes can carry an item type.");
     }
 
     public static void Validate(TradeRequirementRule value, in PacketWriter p)

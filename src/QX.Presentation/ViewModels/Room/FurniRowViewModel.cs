@@ -57,14 +57,14 @@ public sealed partial class FurniRowViewModel(string key) : ObservableObject
         return $"{piece.Placement}/{piece.ItemId}";
     }
 
-    public static FurniRowViewModel From(RoomFurniPiece piece, string web_host)
+    public static FurniRowViewModel From(RoomFurniPiece piece, string webHost)
     {
         var row = new FurniRowViewModel(KeyOf(piece));
-        row.Take(piece, web_host);
+        row.Take(piece, webHost);
         return row;
     }
 
-    public void Take(RoomFurniPiece piece, string web_host)
+    public void Take(RoomFurniPiece piece, string webHost)
     {
         ArgumentNullException.ThrowIfNull(piece);
         Name = piece.Name;

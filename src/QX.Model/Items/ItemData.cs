@@ -89,7 +89,6 @@ public abstract class ItemData : IParserComposer<ItemData>
 
     /// <summary>Writes the payload to a packet, starting with the type and flags integer.</summary>
     /// <param name="p">The packet to write to.</param>
-    /// <exception cref="UnsupportedClientException">Thrown when the packet is not for the Flash client.</exception>
     public void Compose(in PacketWriter p) =>
         FlashWire.Compose(this, in p, ComposeFlash);
 
@@ -109,7 +108,6 @@ public abstract class ItemData : IParserComposer<ItemData>
     /// </remarks>
     /// <param name="p">The packet to read from.</param>
     /// <returns>The payload, as the subclass that matches its type.</returns>
-    /// <exception cref="UnsupportedClientException">Thrown when the packet is not from the Flash client.</exception>
     /// <exception cref="Exception">Thrown when the payload type is not recognized.</exception>
     public static ItemData Parse(in PacketReader p) =>
         FlashWire.Parse(in p, ParseFlash);
@@ -223,11 +221,7 @@ public sealed class StringArrayData() : ItemData(ItemDataType.StringArray)
     /// <inheritdoc/>
     protected override void ReadData(in PacketReader p)
     {
-        int count = p.Client switch
-        {
-            ClientType.Flash => p.ReadInt(),
-            _ => throw new UnsupportedClientException(p.Client)
-        };
+        int count = p.ReadInt();
         count = InventoryWire.RequireCount(count, p.Available, sizeof(short), nameof(Values));
         for (int index = 0; index < count; index++)
             Values.Add(p.ReadString());
@@ -311,11 +305,7 @@ public sealed class IntArrayData() : ItemData(ItemDataType.IntArray)
     /// <inheritdoc/>
     protected override void ReadData(in PacketReader p)
     {
-        int count = p.Client switch
-        {
-            ClientType.Flash => p.ReadInt(),
-            _ => throw new UnsupportedClientException(p.Client)
-        };
+        int count = p.ReadInt();
         count = InventoryWire.RequireCount(count, p.Available, sizeof(int), nameof(Values));
         for (int index = 0; index < count; index++)
             Values.Add(p.ReadInt());
@@ -359,18 +349,8 @@ public sealed class HighScoreData() : ItemData(ItemDataType.HighScore)
         Value = p.ReadString();
         ScoreType = p.ReadInt();
         ClearType = p.ReadInt();
-        int minimum_bytes;
-        int count;
-        switch (p.Client)
-        {
-            case ClientType.Flash:
-                count = p.ReadInt();
-                minimum_bytes = sizeof(int) * 2;
-                break;
-            default:
-                throw new UnsupportedClientException(p.Client);
-        }
-        count = InventoryWire.RequireCount(count, p.Available, minimum_bytes, nameof(Scores));
+        int count = p.ReadInt();
+        count = InventoryWire.RequireCount(count, p.Available, sizeof(int) * 2, nameof(Scores));
         for (int index = 0; index < count; index++)
             Scores.Add(p.Parse<HighScore>());
     }
@@ -401,7 +381,6 @@ public sealed class HighScore : IParserComposer<HighScore>
 
     /// <summary>Reads a high-score entry from a packet.</summary>
     /// <param name="p">The packet to read from.</param>
-    /// <exception cref="UnsupportedClientException">Thrown when the packet is not from the Flash client.</exception>
     public static HighScore Parse(in PacketReader p) =>
         FlashWire.Parse(in p, ParseFlash);
 
@@ -421,7 +400,6 @@ public sealed class HighScore : IParserComposer<HighScore>
 
     /// <summary>Writes the high-score entry to a packet.</summary>
     /// <param name="p">The packet to write to.</param>
-    /// <exception cref="UnsupportedClientException">Thrown when the packet is not for the Flash client.</exception>
     public void Compose(in PacketWriter p) =>
         FlashWire.Compose(this, in p, ComposeFlash);
 

@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using System.IO;
 using System.Text;
 using System.Text.Json;
@@ -5,17 +6,15 @@ using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using Qx.Game;
 using Qx.Game.Application;
+using Qx.Game.Protocol;
 using Qx.Game.Snapshots;
 using Qx.Interception.GEarth;
 using Qx.Mcp;
 using Qx.Model;
-using Qx.Model.Crafting;
-using Qx.Model.Forums;
 using Qx.Model.Messages.Incoming;
-using Qx.Model.Quests;
 using Qx.Protocol;
 using Qx.Scripting;
-using ForumThreadData = Qx.Model.Forums.ForumThread;
+using Qx.Scripting.Hosting;
 
 namespace Qx.Hosting;
 
@@ -24,13 +23,11 @@ internal sealed class McpHost(
     GameState game,
     GameQueryService query_service,
     IApplicationRuntime application,
+    MessageContractCatalog contracts,
     ScriptExecutionService execution_service,
     string scripts_directory,
     IEditorBridge? editor = null) : IMcpHost
 {
-    private const int DefaultTypeSearchLimit = 50;
-    private const int DefaultMemberSearchLimit = 60;
-    private const int ApiSearchCeiling = 500;
     private const int GiftApplicationPageLimit = 500;
     private const int GiftMaximumOffers = 4096;
     private const int GiftMaximumCollectionCount = ushort.MaxValue;
@@ -51,6 +48,8 @@ internal sealed class McpHost(
     private readonly BackgroundRuns background_runs = new(execution_service);
     private readonly GameQueryService queries = query_service;
     private readonly IApplicationRuntime application_runtime = application;
+    private readonly Lazy<IReadOnlyDictionary<MessageKey, MessageRegistryMembers>> message_members =
+        new(() => MessageMembers.Declared(contracts));
 
     public McpRuntimeCapability RuntimeCapabilities =>
         editor is null ? McpRuntimeCapability.None : McpRuntimeCapability.Editor;
@@ -107,8 +106,6 @@ internal sealed class McpHost(
 
     public Task<string> GetTabErrorsAsync(string name, CancellationToken cancellationToken) =>
         editor?.GetTabErrorsAsync(name, cancellationToken) ?? Task.FromResult("editor UI not available");
-
-    private RoomManager room => game.Room;
 
     public async Task<string> RunCodeAsync(string code, CancellationToken cancellationToken)
     {
@@ -223,7 +220,6 @@ internal sealed class McpHost(
     public Task<string> GetProtocolMessagesAsync(
         string query,
         string direction,
-        string client,
         bool explicitOnly,
         bool resolvedOnly,
         int limit,
@@ -235,11 +231,11 @@ internal sealed class McpHost(
             extension.Messages,
             query,
             direction,
-            client,
             explicitOnly,
             resolvedOnly,
             limit,
-            offset);
+            offset,
+            message_members.Value);
         return Task.FromResult(JsonSerializer.Serialize(snapshot, ProtocolJsonOptions));
     }
 
@@ -1923,20 +1919,21 @@ internal sealed class McpHost(
 
     public string GetAvatar(string name)
     {
-        if (room.UserByName(name) is not User u)
-            return $"no user named '{name}' in the room";
-
-        var sb = new StringBuilder($"{u.Name} (#{u.Id}) idx {u.Index} at ({u.X},{u.Y}) facing {u.Direction}");
-        sb.Append($"\n  {u.Gender}, achievement {u.AchievementScore}{(u.IsStaff ? ", staff" : "")}");
-        if (u.GroupName.Length > 0) sb.Append($"\n  group badge: {u.GroupName}");
-        if (u.CurrentUpdate is { } up)
-            sb.Append($"\n  stance {up.Stance}{(up.IsController ? $", controller lvl {up.ControlLevel}" : "")}{(up.IsTrading ? ", trading" : "")}{(up.Sign > 0 ? $", sign {up.Sign}" : "")}");
-        if (u.Dance != 0) sb.Append($"\n  dancing ({u.Dance})");
-        if (u.Effect > 0) sb.Append($"\n  effect: {NameOr(game.GameData.Texts?.EffectName(u.Effect), u.Effect)}");
-        if (u.HandItem > 0) sb.Append($"\n  holding: {NameOr(game.GameData.Texts?.HandItemName(u.HandItem), u.HandItem)}");
-        if (u.IsIdle) sb.Append("\n  afk/idle");
-        if (u.IsTyping) sb.Append("\n  typing");
-        return sb.ToString();
+        QueryEnvelope<AvatarCollectionSnapshot> source = queries.Avatars();
+        AvatarSnapshot? avatar = source.Data?.Avatars.FirstOrDefault(candidate =>
+            candidate.User is not null &&
+            string.Equals(candidate.Name, name, StringComparison.OrdinalIgnoreCase));
+        ExternalTexts? texts = game.GameData.Texts;
+        return QueryJson.Serialize(new QueryEnvelope<McpAvatarState>(
+            "avatar",
+            source.Metadata,
+            avatar is null
+                ? null
+                : new McpAvatarState(
+                    avatar,
+                    avatar.Effect > 0 ? texts?.EffectName(avatar.Effect) : null,
+                    avatar.HandItem > 0 ? texts?.HandItemName(avatar.HandItem) : null),
+            source.Error));
     }
 
     public async Task<string> GetPetInfoAsync(long petId, CancellationToken cancellationToken)
@@ -2139,89 +2136,65 @@ internal sealed class McpHost(
     public IReadOnlyList<string> SearchScripts(string query) =>
         ListScripts().Where(s => s.Contains(query, StringComparison.OrdinalIgnoreCase)).ToList();
 
-    public string ListApi(string filter)
+    public string ListApi(string filter, int limit, int offset)
     {
-        Type type = typeof(ScriptGlobals);
-        var members = new List<string>();
-
-        foreach (System.Reflection.PropertyInfo prop in type.GetProperties(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance))
-            members.Add(Describe($"{Simple(prop.PropertyType)} {prop.Name}", prop));
-
-        foreach (System.Reflection.MethodInfo method in type.GetMethods(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance))
+        ArgumentOutOfRangeException.ThrowIfLessThan(limit, 1);
+        IReadOnlyList<ScriptApiMember> matches = ScriptApiCatalog.Search(filter);
+        int start = NormalizeOffset(offset);
+        ScriptApiMember[] page = [.. matches.Skip(start).Take(limit)];
+        var text = new StringBuilder();
+        if (string.IsNullOrWhiteSpace(filter) && start == 0)
         {
-            if (method.IsSpecialName || method.DeclaringType != type)
-                continue;
-            string args = string.Join(", ", method.GetParameters().Select(p => $"{Simple(p.ParameterType)} {p.Name}"));
-            members.Add(Describe($"{Simple(method.ReturnType)} {method.Name}({args})", method));
+            text.Append($"ScriptGlobals has {matches.Count} members. A filter matches member names first, then groups, signatures and summaries.\nGroups: ")
+                .AppendJoin(", ", matches
+                    .GroupBy(member => member.Group, StringComparer.OrdinalIgnoreCase)
+                    .OrderBy(group => group.Key, StringComparer.OrdinalIgnoreCase)
+                    .Select(group => $"{group.Key} {group.Count()}"))
+                .Append('\n');
         }
-
-        IEnumerable<string> filtered = string.IsNullOrWhiteSpace(filter)
-            ? members
-            : members.Where(m => m.Contains(filter, StringComparison.OrdinalIgnoreCase));
-        return string.Join("\n", filtered.OrderBy(m => m));
-    }
-
-    static string Describe(string signature, System.Reflection.MemberInfo member)
-    {
-        string? summary = ApiTypeCatalog.DocumentationFor(member)?.Summary;
-        return string.IsNullOrWhiteSpace(summary) ? signature : $"{signature}  — {summary}";
+        foreach (ScriptApiMember member in page)
+            text.Append(member.HasSummary ? $"{member.Signature}  — {member.Summary}" : member.Signature).Append('\n');
+        int end = start + page.Length;
+        text.Append($"total {matches.Count}");
+        if (end < matches.Count)
+            text.Append($", nextOffset {end}");
+        return text.ToString();
     }
 
     public string ListLibraries() => JsonSerializer.Serialize(ApiTypes.Assemblies, JsonOptions);
 
-    public string SearchTypes(string query, string assembly, int limit) =>
-        SearchTypes(query, assembly, limit, 0);
+    public string SearchTypes(string query, string assembly, int limit, int offset) =>
+        JsonSerializer.Serialize(ApiTypes.SearchTypes(query, assembly, limit, offset), JsonOptions);
 
-    public string SearchTypes(string query, string assembly, int limit, int offset)
-    {
-        int start = NormalizeOffset(offset);
-        int window = SearchWindow(limit, start, DefaultTypeSearchLimit);
-        return JsonSerializer.Serialize(
-            ApiTypes.SearchTypes(query, assembly, window).Skip(start).ToArray(),
-            JsonOptions);
-    }
+    public string GetTypeInfo(string name, string member) =>
+        JsonSerializer.Serialize(ApiTypes.GetType(name, member), JsonOptions);
 
-    public string GetTypeInfo(string name) =>
-        JsonSerializer.Serialize(ApiTypes.GetType(name), JsonOptions);
-
-    public string SearchMembers(string query, string kind, int limit) =>
-        SearchMembers(query, kind, limit, 0);
-
-    public string SearchMembers(string query, string kind, int limit, int offset)
-    {
-        int start = NormalizeOffset(offset);
-        int window = SearchWindow(limit, start, DefaultMemberSearchLimit);
-        return JsonSerializer.Serialize(
-            ApiTypes.SearchMembers(query, kind, window).Skip(start).ToArray(),
-            JsonOptions);
-    }
+    public string SearchMembers(string query, string kind, bool includeGenerated, int limit, int offset) =>
+        JsonSerializer.Serialize(ApiTypes.SearchMembers(query, kind, limit, offset, includeGenerated), JsonOptions);
 
     public string CompileCheck(string code)
     {
-        var errors = script_execution.Compile(code, "mcp.csx")
-            .Where(d => d.Severity is Microsoft.CodeAnalysis.DiagnosticSeverity.Error or Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
-            .ToList();
-        if (errors.Count == 0)
-            return "OK — compiles with no errors or warnings";
-        return string.Join("\n", errors.Select(d =>
-            $"{d.Severity} {d.Id} (line {d.Location.GetLineSpan().StartLinePosition.Line + 1}): {d.GetMessage()}"));
+        const string file_name = "mcp.csx";
+        string[] lines =
+        [
+            .. script_execution.Compile(code, file_name)
+                .Where(diagnostic => diagnostic.Severity is Microsoft.CodeAnalysis.DiagnosticSeverity.Error or Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
+                .Select(diagnostic => CompileCheckLine(diagnostic, file_name))
+        ];
+        return lines.Length == 0 ? "OK — compiles with no errors or warnings" : string.Join("\n", lines);
+    }
+
+    private static string CompileCheckLine(Microsoft.CodeAnalysis.Diagnostic diagnostic, string file_name)
+    {
+        ScriptExecutionError error = ScriptExecutionError.FromDiagnostic(diagnostic, file_name);
+        string file = error.File is null || error.File == file_name ? "" : error.File + ":";
+        string position = error.Line is null ? "" : $" {file}{error.Line}:{error.Column}";
+        string hint = ScriptEngine.UsingHint(diagnostic) is { } text ? " — " + text : "";
+        return $"{diagnostic.Severity.ToString().ToLowerInvariant()} {error.Type}{position}: {error.Message}{hint}";
     }
 
     public string GetScriptingGuide(string topic) =>
         string.IsNullOrWhiteSpace(topic) ? ScriptingGuide.Overview() : ScriptingGuide.Read(topic);
-
-    private static string Simple(Type type)
-    {
-        if (type.IsGenericType)
-        {
-            string name = type.Name[..type.Name.IndexOf('`')];
-            string args = string.Join(", ", type.GetGenericArguments().Select(Simple));
-            return $"{name}<{args}>";
-        }
-        return type.Name.Replace("&", "");
-    }
-
-    private static string NameOr(string? name, int id) => string.IsNullOrEmpty(name) ? "#" + id : name;
 
     private static string Editor(
         IEditorBridge? editor,
@@ -2371,7 +2344,7 @@ internal sealed class McpHost(
     private static void RequireForumSession(ForumStateView state)
     {
         ValidateForumState(state, null, null);
-        if (!state.Connected || state.Client is null || state.SessionGeneration <= 0)
+        if (!state.Connected || state.SessionGeneration <= 0)
             throw new InvalidOperationException("An active hotel session is required.");
     }
 
@@ -2382,11 +2355,8 @@ internal sealed class McpHost(
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(state.Snapshot);
-        bool connected = state.Connected && state.Client is not null;
         if (state.SnapshotRevision <= 0 ||
             state.SessionGeneration < 0 ||
-            state.Connected != connected ||
-            !state.Connected && state.Client is not null ||
             state.Connected && state.SessionGeneration <= 0 ||
             snapshot_revision is long revision && state.SnapshotRevision != revision ||
             expected_session_generation is long generation &&
@@ -2630,11 +2600,11 @@ internal sealed class McpHost(
         if (source.Data is not { } data)
             return Reshape<ForumSnapshot, McpForumThreadCollectionSnapshot>(source, null, false);
 
-        IReadOnlyList<ForumThreadData> threads = ThreadsOf(data, group_id);
-        ForumThreadData[] page = [.. threads.Skip(offset).Take(limit)];
+        IReadOnlyList<ForumThread> threads = ThreadsOf(data, group_id);
+        ForumThread[] page = [.. threads.Skip(offset).Take(limit)];
         bool truncated = offset + page.Length < threads.Count;
         ForumDetails? forum_details = data.FindDetails(group_id);
-        IReadOnlyList<ForumThreadData>? details = null;
+        IReadOnlyList<ForumThread>? details = null;
         if (detail)
             details = page;
 
@@ -2664,9 +2634,7 @@ internal sealed class McpHost(
         ArgumentNullException.ThrowIfNull(state);
         QuestSummary summary = state.Summary ??
             throw new InvalidDataException("The quest application returned no summary.");
-        bool connected = state.Connected &&
-            state.Client is not null &&
-            state.SessionGeneration > 0;
+        bool connected = state.Connected && state.SessionGeneration > 0;
         if (state.SnapshotRevision <= 0 ||
             state.Revision < 0 ||
             state.AvailableRevision < 0 ||
@@ -2679,7 +2647,6 @@ internal sealed class McpHost(
             summary.SeasonalCount < 0 ||
             state.SessionGeneration < 0 ||
             state.Connected != connected ||
-            !state.Connected && state.Client is not null ||
             require_connected && !connected ||
             snapshot_revision is long revision && state.SnapshotRevision != revision ||
             expected_session_generation is long generation &&
@@ -2716,7 +2683,6 @@ internal sealed class McpHost(
             result.MessagesDispatched is < 0 or > 1 ||
             result.SessionGeneration != expected_session_generation ||
             !page.Connected ||
-            page.Client != result.Client ||
             page.SessionGeneration != result.SessionGeneration ||
             page.StateRevision != result.StateRevision ||
             page.AvailableRevision != result.AvailableRevision ||
@@ -2740,7 +2706,6 @@ internal sealed class McpHost(
             result.MessagesDispatched is < 0 or > 1 ||
             result.SessionGeneration != expected_session_generation ||
             !page.Connected ||
-            page.Client != result.Client ||
             page.SessionGeneration != result.SessionGeneration ||
             page.StateRevision != result.StateRevision ||
             page.SeasonalRevision != result.SeasonalRevision ||
@@ -2761,7 +2726,6 @@ internal sealed class McpHost(
         ArgumentNullException.ThrowIfNull(page);
         ValidateQuestPageShape(page, QuestCollection.Combined, offset, limit);
         if (page.Connected != state.Connected ||
-            page.Client != state.Client ||
             page.SessionGeneration != state.SessionGeneration ||
             page.StateRevision != state.Revision ||
             page.AvailableRevision != state.AvailableRevision ||
@@ -2797,8 +2761,8 @@ internal sealed class McpHost(
         int consumed = checked(offset + entries.Count);
         int? expected_next = consumed < expected_total ? consumed : null;
         if (page.SnapshotRevision <= 0 ||
-            page.Connected && (page.Client is null || page.SessionGeneration <= 0) ||
-            !page.Connected && (page.Client is not null || page.SessionGeneration < 0) ||
+            page.Connected && page.SessionGeneration <= 0 ||
+            !page.Connected && page.SessionGeneration < 0 ||
             summary.AvailableCount < 0 ||
             summary.SeasonalCount < 0 ||
             page.Collection != collection ||
@@ -2857,7 +2821,6 @@ internal sealed class McpHost(
             result.RequestedCraftingFurnitureId != requested_furni_id ||
             result.MessagesDispatched != 1 ||
             page.Connected is false ||
-            page.Client != result.Client ||
             page.SessionGeneration != result.SessionGeneration ||
             page.StateRevision != result.StateRevision ||
             page.ProductsRevision != result.ProductsRevision ||
@@ -2883,15 +2846,13 @@ internal sealed class McpHost(
         ArgumentNullException.ThrowIfNull(state);
         if (state.SnapshotRevision <= 0 ||
             snapshot_revision is long expected_revision &&
-            state.SnapshotRevision != expected_revision ||
-            state.Connected != state.Client.HasValue)
+            state.SnapshotRevision != expected_revision)
         {
             throw new InvalidDataException(
                 "The crafting state returned an inconsistent application snapshot.");
         }
         if (refresh is not null &&
             (state.Connected is false ||
-             state.Client != refresh.Client ||
              state.SessionGeneration != refresh.SessionGeneration ||
              state.Revision != refresh.StateRevision ||
              state.ProductsRevision != refresh.ProductsRevision ||
@@ -2929,7 +2890,6 @@ internal sealed class McpHost(
             ? page.UsableInventoryFurnitureClasses.Count != 0
             : page.Products.Count != 0;
         if (page.Connected != state.Connected ||
-            page.Client != state.Client ||
             page.SessionGeneration != state.SessionGeneration ||
             page.StateRevision != state.Revision ||
             page.ProductsRevision != state.ProductsRevision ||
@@ -2961,7 +2921,6 @@ internal sealed class McpHost(
         int consumed = checked(offset + page.Ingredients.Count);
         int? expected_next = consumed < total ? consumed : null;
         if (page.Connected != state.Connected ||
-            page.Client != state.Client ||
             page.SessionGeneration != state.SessionGeneration ||
             page.StateRevision != state.Revision ||
             page.RecipeRevision != state.RecipeRevision ||
@@ -3045,7 +3004,7 @@ internal sealed class McpHost(
             truncated || detail_result?.Metadata.Truncated is true);
     }
 
-    private static IReadOnlyList<ForumThreadData> ThreadsOf(
+    private static IReadOnlyList<ForumThread> ThreadsOf(
         ForumSnapshot snapshot,
         Id group_id) =>
         [
@@ -3080,7 +3039,7 @@ internal sealed class McpHost(
             forum.LastMessageAuthorName,
             forum.LastMessageSecondsAgo);
 
-    private static McpForumThread CompactForumThread(ForumThreadData thread) =>
+    private static McpForumThread CompactForumThread(ForumThread thread) =>
         new(
             thread.ThreadId,
             thread.Header,
@@ -3148,12 +3107,10 @@ internal sealed class McpHost(
     {
         ArgumentNullException.ThrowIfNull(state);
         if (state.Connected != page.Connected ||
-            state.Client != page.Client ||
             state.SessionGeneration != page.SessionGeneration ||
             state.OfferGiftability is null ||
             state.OfferGiftability.Count > 500 ||
-            state.Connected && (state.Client is null || state.SessionGeneration <= 0) ||
-            !state.Connected && state.Client is not null)
+            state.Connected && state.SessionGeneration <= 0)
         {
             throw new InvalidDataException("Gift state does not match the snapshot session.");
         }
@@ -3277,7 +3234,6 @@ internal sealed class McpHost(
         if (page.Values is null ||
             page.SnapshotRevision != club_page.SnapshotRevision ||
             page.Connected != club_page.Connected ||
-            page.Client != club_page.Client ||
             page.SessionGeneration != club_page.SessionGeneration ||
             page.WrappingRevision < 0 ||
             page.Collection != collection ||
@@ -3335,11 +3291,7 @@ internal sealed class McpHost(
             page.TotalOffers is < 0 or > GiftMaximumOffers ||
             page.TotalEligibility is < 0 or > GiftMaximumCollectionCount ||
             page.TotalProducts is < 0 or > GiftMaximumCollectionCount ||
-            page.Connected &&
-                (!page.Client.HasValue ||
-                 !ClientTypes.IsSupported(page.Client.GetValueOrDefault()) ||
-                 page.SessionGeneration <= 0) ||
-            !page.Connected && page.Client is not null ||
+            page.Connected && page.SessionGeneration <= 0 ||
             page.Loaded && (page.DaysUntilNextGift is null || page.GiftsAvailable is null) ||
             !page.Loaded &&
                 (page.DaysUntilNextGift is not null ||
@@ -3391,7 +3343,6 @@ internal sealed class McpHost(
         GiftClubInfoPage page,
         GiftClubInfoPage source) =>
         page.Connected == source.Connected &&
-        page.Client == source.Client &&
         page.SessionGeneration == source.SessionGeneration &&
         page.ClubInfoRevision == source.ClubInfoRevision &&
         page.SnapshotRevision == source.SnapshotRevision &&
@@ -3768,7 +3719,6 @@ internal sealed class McpHost(
             snapshot_revision is long revision && page.SnapshotRevision != revision ||
             first is not null &&
             (page.Connected != first.Connected ||
-             page.Client != first.Client ||
              page.SessionGeneration != first.SessionGeneration ||
              page.StateRevision != first.StateRevision ||
              page.InventoryRevision != first.InventoryRevision ||
@@ -3801,7 +3751,6 @@ internal sealed class McpHost(
             snapshot_revision is long revision && page.SnapshotRevision != revision ||
             first is not null &&
             (page.Connected != first.Connected ||
-             page.Client != first.Client ||
              page.SessionGeneration != first.SessionGeneration ||
              page.StateRevision != first.StateRevision ||
              page.ListRevision != first.ListRevision ||
@@ -3821,7 +3770,6 @@ internal sealed class McpHost(
         ValidateBadgePage(refreshed.FirstPage, 0, 500, refreshed.SnapshotRevision, null);
         if (refreshed.SnapshotRevision <= 0 ||
             !refreshed.FirstPage.Connected ||
-            refreshed.FirstPage.Client != refreshed.Client ||
             refreshed.FirstPage.SessionGeneration != refreshed.SessionGeneration ||
             refreshed.FirstPage.StateRevision != refreshed.StateRevision ||
             refreshed.FirstPage.InventoryRevision != refreshed.InventoryRevision ||
@@ -3845,7 +3793,6 @@ internal sealed class McpHost(
             null);
         if (refreshed.SnapshotRevision <= 0 ||
             !refreshed.FirstPage.Connected ||
-            refreshed.FirstPage.Client != refreshed.Client ||
             refreshed.FirstPage.SessionGeneration != refreshed.SessionGeneration ||
             refreshed.FirstPage.StateRevision != refreshed.StateRevision ||
             refreshed.FirstPage.ListRevision != refreshed.ListRevision ||
@@ -3917,12 +3864,6 @@ internal sealed class McpHost(
 
     private static int? AchievementNextOffset(int total, int offset, int returned) =>
         (long)offset + returned < total ? checked(offset + returned) : null;
-
-    private static int SearchWindow(int limit, int offset, int fallback)
-    {
-        int effective = limit < 1 ? fallback : limit;
-        return (int)Math.Min((long)offset + effective, ApiSearchCeiling);
-    }
 
     private static string WithNextOffset(string envelope, int? next_offset)
     {
@@ -4102,7 +4043,6 @@ internal sealed class McpHost(
                     data.MessageCatalogLoaded,
                     data.WireProfileAnalyzed,
                     data.WireProfileExact,
-                    data.Client,
                     data.MissingWireCapabilities.Count),
             false);
 
@@ -4174,14 +4114,19 @@ internal sealed class McpHost(
 
 }
 
+internal sealed record ScriptExecutionSnapshot(
+    ScriptRunState State,
+    bool Faulted,
+    double RuntimeMs,
+    string Output,
+    ImmutableArray<ScriptExecutionError> Errors);
+
 internal sealed record McpConnectionSnapshot(
     bool InterceptorConnected,
     bool HotelConnected,
     bool MessageCatalogLoaded,
     bool WireProfileAnalyzed,
     bool WireProfileExact,
-    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    string? Client,
     int MissingWireCapabilityCount);
 
 internal sealed record McpFloorPlanSummary(
@@ -4239,6 +4184,13 @@ internal sealed record McpAvatar(
     string? Gender,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     string? OwnerName);
+
+internal sealed record McpAvatarState(
+    AvatarSnapshot Avatar,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    string? EffectName,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    string? HandItemName);
 
 internal sealed record McpAvatarCollectionSnapshot(
     Id? RoomId,
@@ -4327,7 +4279,7 @@ internal sealed record McpForumThreadCollectionSnapshot(
     ForumPermissions? Permissions,
     IReadOnlyList<McpForumThread> Threads,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    IReadOnlyList<ForumThreadData>? Details);
+    IReadOnlyList<ForumThread>? Details);
 
 internal sealed record McpQuest(
     int Id,

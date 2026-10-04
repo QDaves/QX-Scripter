@@ -455,27 +455,27 @@ public static class Avm2DataFlowAnalyzer
 
     public static Avm2DataFlowAnalysis Analyze(
         ASMethodBody body,
-        Avm2MethodAnalysis method_analysis) =>
-        Analyze(body, method_analysis, null, null, null);
+        Avm2MethodAnalysis methodAnalysis) =>
+        Analyze(body, methodAnalysis, null, null, null);
 
     public static Avm2DataFlowAnalysis Analyze(
         ASMethodBody body,
-        Avm2MethodAnalysis method_analysis,
-        Avm2DataFlowScopeContext scope_context) =>
-        Analyze(body, method_analysis, null, null, scope_context);
+        Avm2MethodAnalysis methodAnalysis,
+        Avm2DataFlowScopeContext scopeContext) =>
+        Analyze(body, methodAnalysis, null, null, scopeContext);
 
     public static Avm2DataFlowAnalysis Analyze(
         ASMethodBody body,
-        Avm2MethodAnalysis method_analysis,
+        Avm2MethodAnalysis methodAnalysis,
         Avm2MethodBinding? binding) =>
-        Analyze(body, method_analysis, binding, null, null);
+        Analyze(body, methodAnalysis, binding, null, null);
 
     public static Avm2DataFlowAnalysis Analyze(
         ASMethodBody body,
-        Avm2MethodAnalysis method_analysis,
+        Avm2MethodAnalysis methodAnalysis,
         Avm2MethodBinding? binding,
-        Avm2DataFlowScopeContext scope_context) =>
-        Analyze(body, method_analysis, binding, null, scope_context);
+        Avm2DataFlowScopeContext scopeContext) =>
+        Analyze(body, methodAnalysis, binding, null, scopeContext);
 
     internal static Avm2DataFlowAnalysis Analyze(
         ASMethodBody body,

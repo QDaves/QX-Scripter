@@ -5,7 +5,6 @@ using Qx.Messages;
 namespace Qx.ClientCatalog;
 
 internal sealed record HeaderCatalogExtractionTarget(
-    ClientType Client,
     string SourcePath,
     string NameDatabaseSha256,
     string ExtractorRevision);
@@ -19,7 +18,6 @@ internal interface IHeaderCatalogExtractor
     HeaderCatalogExtractionTarget Resolve(InstalledClientCandidate candidate);
 
     Task<HeaderCatalogExtractionResult> ExtractAsync(
-        InstalledClientCandidate candidate,
         HeaderCatalogExtractionTarget target,
         HeaderCatalogProvenance provenance,
         CancellationToken cancellation_token);
@@ -39,32 +37,21 @@ internal sealed class HeaderCatalogExtractor : IHeaderCatalogExtractor
     public HeaderCatalogExtractionTarget Resolve(InstalledClientCandidate candidate)
     {
         ArgumentNullException.ThrowIfNull(candidate);
-        return candidate.Family switch
-        {
-            InstalledClientFamily.Flash => new HeaderCatalogExtractionTarget(
-                ClientCatalogClients.FromFamily(candidate.Family),
-                FlashSource(candidate),
-                _flash_names.CatalogSha256,
-                FlashExtractorRevision),
-            _ => throw new ArgumentOutOfRangeException(nameof(candidate))
-        };
+        return new HeaderCatalogExtractionTarget(
+            FlashSource(candidate),
+            _flash_names.CatalogSha256,
+            FlashExtractorRevision);
     }
 
     public Task<HeaderCatalogExtractionResult> ExtractAsync(
-        InstalledClientCandidate candidate,
         HeaderCatalogExtractionTarget target,
         HeaderCatalogProvenance provenance,
         CancellationToken cancellation_token)
     {
-        ArgumentNullException.ThrowIfNull(candidate);
         ArgumentNullException.ThrowIfNull(target);
         ArgumentNullException.ThrowIfNull(provenance);
         return Task.Run(
-            () => candidate.Family switch
-            {
-                InstalledClientFamily.Flash => ExtractFlash(target.SourcePath, provenance, cancellation_token),
-                _ => throw new ArgumentOutOfRangeException(nameof(candidate))
-            },
+            () => ExtractFlash(target.SourcePath, provenance, cancellation_token),
             cancellation_token);
     }
 
@@ -81,14 +68,14 @@ internal sealed class HeaderCatalogExtractor : IHeaderCatalogExtractor
         return new HeaderCatalogExtractionResult(
             new HeaderCatalogSnapshot(
                 provenance,
-                messages.Incoming.Select(message => FlashEntry(Direction.In, message))
-                    .Concat(messages.Outgoing.Select(message => FlashEntry(Direction.Out, message))),
+                messages.Incoming.Select(message => FlashEntry(MessageDirection.In, message))
+                    .Concat(messages.Outgoing.Select(message => FlashEntry(MessageDirection.Out, message))),
                 messages.BuildIds,
                 marketplace_layout),
             messages.SourceSha256);
     }
 
-    static HeaderCatalogEntry FlashEntry(Direction direction, FlashHeaderDefinition message)
+    static HeaderCatalogEntry FlashEntry(MessageDirection direction, FlashHeaderDefinition message)
     {
         if ((uint)message.Id > ushort.MaxValue)
             throw new InvalidDataException($"Flash header ID {message.Id} is outside the wire range.");
@@ -99,7 +86,7 @@ internal sealed class HeaderCatalogExtractor : IHeaderCatalogExtractor
     }
 
     static HeaderCatalogEntry Entry(
-        Direction direction,
+        MessageDirection direction,
         ushort header_id,
         params string?[] names)
     {

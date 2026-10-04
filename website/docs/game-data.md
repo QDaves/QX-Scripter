@@ -4,8 +4,8 @@ Game data is the hotel's list of furni, products, badges and effects. It turns i
 
 | Method | Description |
 | --- | --- |
-| `FurniName(item)` | The display name of a floor or wall item. |
-| `FurniOf(item)` | The furni data entry of an item, or `null`. |
+| `FurniName(item)` | The display name of a floor, wall, inventory or trade item. |
+| `FurniOf(item)` | The furni data entry of a floor, wall, inventory or trade item, or `null`. |
 | `IsIdentifier(item, identifier)` | Whether an item is of a furni class, such as `"edice"`. |
 | `ProductName(code)`, `ProductDescription(code)` | A catalog product's name and description. |
 | `BadgeName(code)` | A badge's name. |

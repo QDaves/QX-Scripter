@@ -83,8 +83,8 @@ public sealed record GuildMemberships : IParserComposer<GuildMemberships>
         Array.AsReadOnly(Array.Empty<GuildMembership>());
 
     /// <summary>Initializes a new instance of the <see cref="GuildMemberships"/> record.</summary>
-    /// <param name="Items">The groups, copied into a read only list.</param>
-    public GuildMemberships(IReadOnlyList<GuildMembership> Items) => this.Items = Items;
+    /// <param name="items">The groups, copied into a read only list.</param>
+    public GuildMemberships(IReadOnlyList<GuildMembership> items) => Items = items;
 
     /// <summary>Gets the groups, as a read only copy.</summary>
     public IReadOnlyList<GuildMembership> Items
@@ -94,8 +94,8 @@ public sealed record GuildMemberships : IParserComposer<GuildMemberships>
     }
 
     /// <summary>Deconstructs the message into its groups.</summary>
-    /// <param name="Items">The groups.</param>
-    public void Deconstruct(out IReadOnlyList<GuildMembership> Items) => Items = this.Items;
+    /// <param name="items">The groups.</param>
+    public void Deconstruct(out IReadOnlyList<GuildMembership> items) => items = Items;
 
     /// <summary>Parses the message from a packet.</summary>
     /// <param name="p">The packet reader.</param>

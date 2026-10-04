@@ -66,9 +66,9 @@ public readonly record struct WallLocation(Point Wall, Point Offset, WallOrienta
     /// <param name="wy">The y coordinate of the wall tile.</param>
     /// <param name="lx">The x offset on the wall tile.</param>
     /// <param name="ly">The y offset on the wall tile.</param>
-    /// <param name="orientation">Whether the item hangs on a left or a right wall.</param>
-    public WallLocation(int wx, int wy, int lx, int ly, WallOrientation orientation)
-        : this((wx, wy), (lx, ly), orientation) { }
+    /// <param name="Orientation">Whether the item hangs on a left or a right wall.</param>
+    public WallLocation(int wx, int wy, int lx, int ly, WallOrientation Orientation)
+        : this((wx, wy), (lx, ly), Orientation) { }
 
     /// <summary>Returns the same location on the opposite wall orientation.</summary>
     /// <returns>A copy with <see cref="WallOrientation.Opposite"/> as its orientation.</returns>
@@ -213,7 +213,7 @@ internal static class RoomPlacementWire
         string name,
         in PacketWriter p)
     {
-        RequireId(value, name, in p);
+        RequireId(value, name);
         int identifier = checked((int)(long)value);
         p.WriteString(identifier.ToString(CultureInfo.InvariantCulture));
     }
@@ -225,22 +225,15 @@ internal static class RoomPlacementWire
             throw new ArgumentException($"{name} exceeds the wire string limit.", name);
     }
 
-    public static void RequireId(Id value, string name, in PacketWriter p)
+    public static void RequireId(Id value, string name)
     {
-        switch (p.Client)
+        try
         {
-            case ClientType.Flash:
-                try
-                {
-                    _ = checked((int)(long)value);
-                }
-                catch (OverflowException error)
-                {
-                    throw new InvalidDataException($"{name} exceeds the Flash identifier range.", error);
-                }
-                break;
-            default:
-                throw new UnsupportedClientException(p.Client);
+            _ = checked((int)(long)value);
+        }
+        catch (OverflowException error)
+        {
+            throw new InvalidDataException($"{name} exceeds the Flash identifier range.", error);
         }
     }
 
@@ -250,9 +243,9 @@ internal static class RoomPlacementWire
         in PacketWriter p)
     {
         ArgumentNullException.ThrowIfNull(item);
-        RequireId(item.Id, nameof(item.Id), in p);
-        RequireId(item.Extra, nameof(item.Extra), in p);
-        RequireId(item.OwnerId, nameof(item.OwnerId), in p);
+        RequireId(item.Id, nameof(item.Id));
+        RequireId(item.Extra, nameof(item.Extra));
+        RequireId(item.OwnerId, nameof(item.OwnerId));
         InventoryWire.ValidateItemData(
             item.Data,
             in p);
@@ -268,8 +261,8 @@ internal static class RoomPlacementWire
         in PacketWriter p)
     {
         ArgumentNullException.ThrowIfNull(item);
-        RequireId(item.Id, nameof(item.Id), in p);
-        RequireId(item.OwnerId, nameof(item.OwnerId), in p);
+        RequireId(item.Id, nameof(item.Id));
+        RequireId(item.OwnerId, nameof(item.OwnerId));
         WallLocation location = RequireWallLocation(item.Location, nameof(item.Location));
         RequireString(location.ToString(), nameof(item.Location), in p);
         RequireString(item.Data, nameof(item.Data), in p);

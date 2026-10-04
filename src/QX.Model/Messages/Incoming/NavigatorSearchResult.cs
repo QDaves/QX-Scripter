@@ -45,29 +45,6 @@ public sealed record NavigatorSearchBlock(
     int ViewMode,
     IReadOnlyList<RoomData> Rooms) : IParserComposer<NavigatorSearchBlock>
 {
-    /// <summary>Deconstructs the block into its values.</summary>
-    /// <param name="SearchCode">The search code of the block.</param>
-    /// <param name="Text">The title text of the block.</param>
-    /// <param name="ActionAllowed">The action code the hotel allows for the block.</param>
-    /// <param name="ForceClosed">Whether the block is shown collapsed.</param>
-    /// <param name="ViewMode">The view mode the block is shown in.</param>
-    /// <param name="Rooms">The rooms in the block.</param>
-    public void Deconstruct(
-        out string SearchCode,
-        out string Text,
-        out int ActionAllowed,
-        out bool ForceClosed,
-        out int ViewMode,
-        out IReadOnlyList<RoomData> Rooms)
-    {
-        SearchCode = this.SearchCode;
-        Text = this.Text;
-        ActionAllowed = this.ActionAllowed;
-        ForceClosed = this.ForceClosed;
-        ViewMode = this.ViewMode;
-        Rooms = this.Rooms;
-    }
-
     /// <summary>Parses the block from a packet.</summary>
     /// <param name="p">The packet reader.</param>
     public static NavigatorSearchBlock Parse(in PacketReader p)

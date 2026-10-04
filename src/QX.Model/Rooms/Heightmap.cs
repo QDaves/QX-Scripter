@@ -4,7 +4,8 @@ namespace Qx.Model;
 
 /// <summary>Represents the live stacking heights of a room's tiles, which decide where avatars can walk.</summary>
 /// <remarks>
-/// Each tile holds a raw value; see <see cref="HeightmapTile.Value"/> for how it is encoded.
+/// Received as the Flash <c>HeightMap</c> message. Each tile holds a raw value; see
+/// <see cref="HeightmapTile.Value"/> for how it is encoded.
 /// </remarks>
 public sealed class Heightmap : IParserComposer<Heightmap>
 {
@@ -72,7 +73,6 @@ public sealed class Heightmap : IParserComposer<Heightmap>
 
     /// <summary>Reads a heightmap from a packet.</summary>
     /// <param name="p">The packet to read from.</param>
-    /// <exception cref="UnsupportedClientException">Thrown when the packet is not from the Flash client.</exception>
     public static Heightmap Parse(in PacketReader p) =>
         FlashWire.Parse(in p, ParseFlash);
 
@@ -90,7 +90,6 @@ public sealed class Heightmap : IParserComposer<Heightmap>
 
     /// <summary>Writes the heightmap to a packet.</summary>
     /// <param name="p">The packet to write to.</param>
-    /// <exception cref="UnsupportedClientException">Thrown when the packet is not for the Flash client.</exception>
     public void Compose(in PacketWriter p) =>
         FlashWire.Compose(this, in p, ComposeFlash);
 

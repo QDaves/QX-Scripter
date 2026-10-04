@@ -100,10 +100,10 @@ public sealed partial class GameDataViewModel : PageViewModel
         return cleared;
     }
 
-    protected override async Task OnActivatedAsync(CancellationToken cancellation_token)
+    protected override async Task OnActivatedAsync(CancellationToken cancellationToken)
     {
         Furni.RefreshGates();
-        await RefreshAsync(cancellation_token);
+        await RefreshAsync(cancellationToken);
     }
 
     KeyValueTabViewModel Entries(KeyValueLabels labels, IClipboardService clipboard, IUiDispatcher dispatcher, TimeProvider time, CancellationToken lifetime) =>

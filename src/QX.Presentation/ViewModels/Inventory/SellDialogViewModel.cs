@@ -4,7 +4,6 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Qx.Game.Application;
 using Qx.Model;
-using Qx.Model.Marketplace;
 using Qx.Model.Messages.Incoming;
 using Qx.Presentation.Dialogs;
 using Qx.Presentation.Services.Game;

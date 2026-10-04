@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Qx.Messages;
 using Qx.Model;
 using Qx.Protocol;
@@ -17,14 +18,14 @@ internal static class NavigatorApplicationDescriptors
         ApplicationExposure.All,
         typeof(NavigatorStateRequest),
         typeof(NavigatorState),
-        state_effects:
+        stateEffects:
         [
             new(ApplicationStateKey.NavigatorMetadataLoaded, ApplicationStateEffectKind.Reads),
             new(ApplicationStateKey.NavigatorFlatCategoriesLoaded, ApplicationStateEffectKind.Reads)
         ],
         messages: StateMessages(),
-        tool_hints: new(true, false, true, false),
-        invocation_scope: ApplicationInvocationScope.Persistent);
+        toolHints: new(true, false, true, false),
+        invocationScope: ApplicationInvocationScope.Persistent);
 
     public static ApplicationDescriptor MetadataRefresh { get; } = new(
         ApplicationMemberIds.NavigatorMetadataRefresh,
@@ -38,8 +39,8 @@ internal static class NavigatorApplicationDescriptors
         [ApplicationStateKey.HotelConnected],
         [new(ApplicationStateKey.NavigatorMetadataLoaded, ApplicationStateEffectKind.Changes)],
         [
-            new(MessageKeys.Navigator.State.MetadataRequest, Direction.Out, ApplicationMessageRole.Send),
-            new(MessageKeys.Navigator.State.Metadata, Direction.In, ApplicationMessageRole.Observe)
+            new(MessageKeys.Navigator.State.MetadataRequest, MessageDirection.Out, ApplicationMessageRole.Send),
+            new(MessageKeys.Navigator.State.Metadata, MessageDirection.In, ApplicationMessageRole.Observe)
         ],
         new(true, false, true, true));
 
@@ -55,8 +56,8 @@ internal static class NavigatorApplicationDescriptors
         [ApplicationStateKey.HotelConnected],
         [new(ApplicationStateKey.NavigatorFlatCategoriesLoaded, ApplicationStateEffectKind.Changes)],
         [
-            new(MessageKeys.Navigator.State.FlatCategoriesRequest, Direction.Out, ApplicationMessageRole.Send),
-            new(MessageKeys.Navigator.State.FlatCategories, Direction.In, ApplicationMessageRole.Observe)
+            new(MessageKeys.Navigator.State.FlatCategoriesRequest, MessageDirection.Out, ApplicationMessageRole.Send),
+            new(MessageKeys.Navigator.State.FlatCategories, MessageDirection.In, ApplicationMessageRole.Observe)
         ],
         new(true, false, true, true));
 
@@ -187,7 +188,8 @@ internal static class NavigatorApplicationDescriptors
         MessageKeys.Navigator.RoomCreate,
         [
             RequiredText("name", "Room name."),
-            OptionalText("description", "Room description."),
+            new("description", typeof(string), true, null, "Room description, which may be empty.",
+                new(MaxUtf8Bytes: ushort.MaxValue)),
             RequiredText("model", "Floor-plan model name."),
             new("category", typeof(int), true, null, "Navigator category identifier."),
             new("max_visitors", typeof(int), true, null, "Maximum visitor count."),
@@ -216,7 +218,7 @@ internal static class NavigatorApplicationDescriptors
         event_exposure,
         null,
         typeof(NavigatorChanged),
-        state_effects:
+        stateEffects:
         [
             new(ApplicationStateKey.NavigatorMetadataLoaded, ApplicationStateEffectKind.Changes),
             new(ApplicationStateKey.NavigatorFlatCategoriesLoaded, ApplicationStateEffectKind.Changes)
@@ -233,8 +235,8 @@ internal static class NavigatorApplicationDescriptors
         typeof(NavigatorSearchReceived),
         messages:
         [
-            new(MessageKeys.Navigator.Search.Result, Direction.In, ApplicationMessageRole.Observe),
-            new(MessageKeys.Navigator.Search.LegacyResult, Direction.In, ApplicationMessageRole.Observe)
+            new(MessageKeys.Navigator.Search.Result, MessageDirection.In, ApplicationMessageRole.Observe),
+            new(MessageKeys.Navigator.Search.LegacyResult, MessageDirection.In, ApplicationMessageRole.Observe)
         ]);
 
     private static ApplicationDescriptor QuickSearch(
@@ -249,7 +251,7 @@ internal static class NavigatorApplicationDescriptors
             [TimeoutParameter()],
             MessageKeys.Navigator.Search.LegacyResult);
 
-    private static ApplicationDescriptor Search<TRequest>(
+    private static ApplicationDescriptor Search<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TRequest>(
         string id,
         string title,
         string description,
@@ -267,15 +269,15 @@ internal static class NavigatorApplicationDescriptors
             [ApplicationStateKey.HotelConnected],
             messages:
             [
-                new(request_key, Direction.Out, ApplicationMessageRole.Send),
+                new(request_key, MessageDirection.Out, ApplicationMessageRole.Send),
                 new(
                     result_key ?? MessageKeys.Navigator.Search.Result,
-                    Direction.In,
+                    MessageDirection.In,
                     ApplicationMessageRole.Observe)
             ],
-            tool_hints: new(true, false, true, true));
+            toolHints: new(true, false, true, true));
 
-    private static ApplicationDescriptor Personalization<TRequest>(
+    private static ApplicationDescriptor Personalization<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TRequest>(
         string id,
         string title,
         string description,
@@ -291,10 +293,10 @@ internal static class NavigatorApplicationDescriptors
             typeof(NavigatorOperationResult),
             parameters,
             [ApplicationStateKey.HotelConnected],
-            messages: [new(request_key, Direction.Out, ApplicationMessageRole.Send)],
-            tool_hints: hints);
+            messages: [new(request_key, MessageDirection.Out, ApplicationMessageRole.Send)],
+            toolHints: hints);
 
-    private static ApplicationDescriptor RoomOperation<TRequest>(
+    private static ApplicationDescriptor RoomOperation<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TRequest>(
         string id,
         string title,
         string description,
@@ -309,8 +311,8 @@ internal static class NavigatorApplicationDescriptors
             typeof(NavigatorRoomOperationResult),
             parameters,
             [ApplicationStateKey.HotelConnected],
-            messages: [new(request_key, Direction.Out, ApplicationMessageRole.Send)],
-            tool_hints: new(false, true, false, true));
+            messages: [new(request_key, MessageDirection.Out, ApplicationMessageRole.Send)],
+            toolHints: new(false, true, false, true));
 
     private static ApplicationParameterDescriptor TimeoutParameter() => new(
         "timeout_milliseconds",
@@ -346,12 +348,12 @@ internal static class NavigatorApplicationDescriptors
 
     private static ApplicationMessageRequirement[] StateMessages() =>
     [
-        new(MessageKeys.Navigator.State.Metadata, Direction.In, ApplicationMessageRole.Observe),
-        new(MessageKeys.Navigator.State.FlatCategories, Direction.In, ApplicationMessageRole.Observe),
-        new(MessageKeys.Navigator.State.LiftedRooms, Direction.In, ApplicationMessageRole.Observe),
-        new(MessageKeys.Navigator.State.Settings, Direction.In, ApplicationMessageRole.Observe),
-        new(MessageKeys.Navigator.State.Preferences, Direction.In, ApplicationMessageRole.Observe),
-        new(MessageKeys.Navigator.Personalization.SavedSearches, Direction.In, ApplicationMessageRole.Observe),
-        new(MessageKeys.Navigator.Personalization.CollapsedCategories, Direction.In, ApplicationMessageRole.Observe)
+        new(MessageKeys.Navigator.State.Metadata, MessageDirection.In, ApplicationMessageRole.Observe),
+        new(MessageKeys.Navigator.State.FlatCategories, MessageDirection.In, ApplicationMessageRole.Observe),
+        new(MessageKeys.Navigator.State.LiftedRooms, MessageDirection.In, ApplicationMessageRole.Observe),
+        new(MessageKeys.Navigator.State.Settings, MessageDirection.In, ApplicationMessageRole.Observe),
+        new(MessageKeys.Navigator.State.Preferences, MessageDirection.In, ApplicationMessageRole.Observe),
+        new(MessageKeys.Navigator.Personalization.SavedSearches, MessageDirection.In, ApplicationMessageRole.Observe),
+        new(MessageKeys.Navigator.Personalization.CollapsedCategories, MessageDirection.In, ApplicationMessageRole.Observe)
     ];
 }

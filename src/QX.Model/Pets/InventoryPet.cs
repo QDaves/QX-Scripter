@@ -11,7 +11,6 @@ public readonly record struct PetCustomPart(int LayerId, int PartId, int Palette
 {
     /// <summary>Reads a custom part from a packet as three integers.</summary>
     /// <param name="p">The packet to read from.</param>
-    /// <exception cref="UnsupportedClientException">Thrown when the packet is not from the Flash client.</exception>
     public static PetCustomPart Parse(in PacketReader p) =>
         FlashWire.Parse(in p, ParseFlash);
 
@@ -20,7 +19,6 @@ public readonly record struct PetCustomPart(int LayerId, int PartId, int Palette
 
     /// <summary>Writes the custom part to a packet as three integers.</summary>
     /// <param name="p">The packet to write to.</param>
-    /// <exception cref="UnsupportedClientException">Thrown when the packet is not for the Flash client.</exception>
     public void Compose(in PacketWriter p) =>
         FlashWire.Compose(this, in p, ComposeFlash);
 
@@ -86,7 +84,6 @@ public sealed class InventoryPet : IParserComposer<InventoryPet>
 
     /// <summary>Reads an inventory pet from a packet.</summary>
     /// <param name="p">The packet to read from.</param>
-    /// <exception cref="UnsupportedClientException">Thrown when the packet is not from the Flash client.</exception>
     /// <exception cref="InvalidDataException">Thrown when the custom part count is invalid.</exception>
     public static InventoryPet Parse(in PacketReader p) =>
         FlashWire.Parse(in p, ParseFlash);
@@ -118,7 +115,6 @@ public sealed class InventoryPet : IParserComposer<InventoryPet>
 
     /// <summary>Writes the inventory pet to a packet.</summary>
     /// <param name="p">The packet to write to.</param>
-    /// <exception cref="UnsupportedClientException">Thrown when the packet is not for the Flash client.</exception>
     /// <exception cref="OverflowException">Thrown when <see cref="Id"/> does not fit in 32 bits.</exception>
     public void Compose(in PacketWriter p) =>
         FlashWire.Compose(this, in p, ComposeFlash);

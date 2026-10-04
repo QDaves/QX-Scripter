@@ -20,7 +20,7 @@ public static class RoomReading
         }
 
         RoomData? data = readout.Data;
-        FurniData? furni_data = game.GameData.Furni ?? game.Room.GameData?.Furni;
+        FurniData? furni_data = game.GameData.Furni;
         RoomFurniPiece[] furni = Pieces(readout, furni_data);
         return new RoomSnapshot(
             RoomPresence.Inside,

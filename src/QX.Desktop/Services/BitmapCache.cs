@@ -21,7 +21,7 @@ public sealed class BitmapCache(IImageService images)
             return _memory.TryGetValue(url, out (Bitmap Image, LinkedListNode<string> Node) entry) ? entry.Image : null;
     }
 
-    public async Task<Bitmap?> LoadAsync(string url, bool exact_pixels, CancellationToken cancellation_token)
+    public async Task<Bitmap?> LoadAsync(string url, bool exactPixels, CancellationToken cancellationToken)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(url);
         if (Cached(url) is { } image)
@@ -31,8 +31,8 @@ public sealed class BitmapCache(IImageService images)
         var created = new TaskCompletionSource<Bitmap?>(TaskCreationOptions.RunContinuationsAsynchronously);
         Task<Bitmap?> loading = _loading.GetOrAdd(url, created.Task);
         if (ReferenceEquals(loading, created.Task))
-            FillAsync(url, exact_pixels, created).Observe("images");
-        return await loading.WaitAsync(cancellation_token).ConfigureAwait(false);
+            FillAsync(url, exactPixels, created).Observe("images");
+        return await loading.WaitAsync(cancellationToken).ConfigureAwait(false);
     }
 
     async Task FillAsync(string url, bool exact_pixels, TaskCompletionSource<Bitmap?> loading)

@@ -32,7 +32,7 @@ public sealed record BadgeReceived(
         AchievementBadgeWire.RequireRemaining(
             in p,
             checked(
-                AchievementBadgeWire.UserIdWidth(p.Client) +
+                AchievementBadgeWire.UserIdWidth +
                 AchievementBadgeWire.StringPrefixBytes),
             0,
             nameof(BadgeReceived));
@@ -69,7 +69,7 @@ public sealed record BadgeReceived(
     {
         if (OwnerCount.HasValue != RarityId.HasValue)
             throw new InvalidOperationException("Badge rarity data must be either complete or absent.");
-        AchievementBadgeWire.RequireUserId(BadgeId, p.Client);
+        AchievementBadgeWire.RequireUserId(BadgeId);
         var strings = AchievementBadgeWire.NewStringBudget();
         strings.Require(Code, nameof(Code), in p);
 

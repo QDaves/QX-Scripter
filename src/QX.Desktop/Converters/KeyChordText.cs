@@ -9,7 +9,7 @@ public sealed class KeyChordText : IValueConverter
 {
     static readonly PlatformKeyGestureConverter _platform = new();
 
-    public object? Convert(object? value, Type target_type, object? parameter, CultureInfo culture) => value switch
+    public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture) => value switch
     {
         null => null,
         string text => text,
@@ -17,6 +17,6 @@ public sealed class KeyChordText : IValueConverter
         _ => null
     };
 
-    public object? ConvertBack(object? value, Type target_type, object? parameter, CultureInfo culture) =>
+    public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) =>
         throw new NotSupportedException();
 }

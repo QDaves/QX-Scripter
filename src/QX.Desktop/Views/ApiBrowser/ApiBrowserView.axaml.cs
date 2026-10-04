@@ -6,7 +6,7 @@ using Avalonia.Interactivity;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
 using Qx.Presentation.ViewModels.ApiBrowser;
-using Qx.Scripting;
+using Qx.Scripting.Hosting;
 
 namespace Qx.Desktop.Views.ApiBrowser;
 

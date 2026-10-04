@@ -9,11 +9,11 @@ public static class GestureText
 
     static readonly string[] _windows_modifiers = ["Ctrl+", "Alt+", "Shift+"];
 
-    public static string Describe(KeyChord chord, bool apple_glyphs)
+    public static string Describe(KeyChord chord, bool appleGlyphs)
     {
         ChordModifiers modifiers = chord.Modifiers;
         var text = new StringBuilder();
-        if (apple_glyphs)
+        if (appleGlyphs)
         {
             if (modifiers.HasFlag(ChordModifiers.Control))
                 text.Append('⌃');

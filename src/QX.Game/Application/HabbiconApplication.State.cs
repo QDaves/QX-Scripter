@@ -16,7 +16,6 @@ internal sealed partial class HabbiconApplication
         bool connected = Connected(state);
         HabbiconStateView result = new(
             connected,
-            connected ? state.Session!.Client : null,
             state.SessionGeneration,
             state.Revision,
             state.ShopRevision,
@@ -54,7 +53,6 @@ internal sealed partial class HabbiconApplication
         bool connected = Connected(state);
         HabbiconCollectionPage result = new(
             connected,
-            connected ? state.Session!.Client : null,
             state.SessionGeneration,
             state.Revision,
             state.ShopRevision,
@@ -89,7 +87,6 @@ internal sealed partial class HabbiconApplication
         bool connected = Connected(state);
         return new HabbiconEntryPage(
             connected,
-            connected ? state.Session!.Client : null,
             state.SessionGeneration,
             state.Revision,
             state.ShopRevision,
@@ -115,7 +112,6 @@ internal sealed partial class HabbiconApplication
         bool connected = Connected(state);
         return new HabbiconCollectionPage(
             connected,
-            connected ? state.Session!.Client : null,
             state.SessionGeneration,
             state.Revision,
             state.ShopRevision,

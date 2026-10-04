@@ -28,86 +28,86 @@ public readonly record struct OwnedBadge : IParserComposer<OwnedBadge>
     public bool HasRarityData { get; init; }
 
     /// <summary>Initializes a new instance of the <see cref="OwnedBadge"/> struct with rarity data.</summary>
-    /// <param name="BadgeId">The identifier of the badge.</param>
-    /// <param name="Code">The badge code.</param>
-    /// <param name="OwnerCount">The number of users who own the badge.</param>
-    /// <param name="RarityId">The rarity of the badge.</param>
-    public OwnedBadge(int BadgeId, string Code, int OwnerCount, int RarityId)
-        : this((Id)BadgeId, Code, OwnerCount, RarityId, true)
+    /// <param name="badgeId">The identifier of the badge.</param>
+    /// <param name="code">The badge code.</param>
+    /// <param name="ownerCount">The number of users who own the badge.</param>
+    /// <param name="rarityId">The rarity of the badge.</param>
+    public OwnedBadge(int badgeId, string code, int ownerCount, int rarityId)
+        : this((Id)badgeId, code, ownerCount, rarityId, true)
     {
     }
 
     /// <summary>Initializes a new instance of the <see cref="OwnedBadge"/> struct.</summary>
-    /// <param name="BadgeId">The identifier of the badge.</param>
-    /// <param name="Code">The badge code.</param>
-    /// <param name="OwnerCount">The number of users who own the badge.</param>
-    /// <param name="RarityId">The rarity of the badge.</param>
-    /// <param name="HasRarityData">Whether the owner count and rarity are present.</param>
+    /// <param name="badgeId">The identifier of the badge.</param>
+    /// <param name="code">The badge code.</param>
+    /// <param name="ownerCount">The number of users who own the badge.</param>
+    /// <param name="rarityId">The rarity of the badge.</param>
+    /// <param name="hasRarityData">Whether the owner count and rarity are present.</param>
     public OwnedBadge(
-        int BadgeId,
-        string Code,
-        int OwnerCount,
-        int RarityId,
-        bool HasRarityData)
-        : this((Id)BadgeId, Code, OwnerCount, RarityId, HasRarityData)
+        int badgeId,
+        string code,
+        int ownerCount,
+        int rarityId,
+        bool hasRarityData)
+        : this((Id)badgeId, code, ownerCount, rarityId, hasRarityData)
     {
     }
 
     /// <summary>Initializes a new instance of the <see cref="OwnedBadge"/> struct.</summary>
-    /// <param name="BadgeId">The identifier of the badge.</param>
-    /// <param name="Code">The badge code.</param>
-    /// <param name="OwnerCount">The number of users who own the badge.</param>
-    /// <param name="RarityId">The rarity of the badge.</param>
-    /// <param name="HasRarityData">Whether the owner count and rarity are present.</param>
+    /// <param name="badgeId">The identifier of the badge.</param>
+    /// <param name="code">The badge code.</param>
+    /// <param name="ownerCount">The number of users who own the badge.</param>
+    /// <param name="rarityId">The rarity of the badge.</param>
+    /// <param name="hasRarityData">Whether the owner count and rarity are present.</param>
     public OwnedBadge(
-        Id BadgeId,
-        string Code,
-        int OwnerCount,
-        int RarityId,
-        bool HasRarityData = true)
+        Id badgeId,
+        string code,
+        int ownerCount,
+        int rarityId,
+        bool hasRarityData = true)
     {
-        NativeBadgeId = BadgeId;
-        this.Code = Code;
-        this.OwnerCount = OwnerCount;
-        this.RarityId = RarityId;
-        this.HasRarityData = HasRarityData;
+        NativeBadgeId = badgeId;
+        Code = code;
+        OwnerCount = ownerCount;
+        RarityId = rarityId;
+        HasRarityData = hasRarityData;
     }
 
     /// <summary>Deconstructs the badge into its parts, with a 32 bit identifier.</summary>
-    /// <param name="BadgeId">The identifier of the badge.</param>
-    /// <param name="Code">The badge code.</param>
-    /// <param name="OwnerCount">The number of users who own the badge.</param>
-    /// <param name="RarityId">The rarity of the badge.</param>
+    /// <param name="badgeId">The identifier of the badge.</param>
+    /// <param name="code">The badge code.</param>
+    /// <param name="ownerCount">The number of users who own the badge.</param>
+    /// <param name="rarityId">The rarity of the badge.</param>
     public void Deconstruct(
-        out int BadgeId,
-        out string Code,
-        out int OwnerCount,
-        out int RarityId)
+        out int badgeId,
+        out string code,
+        out int ownerCount,
+        out int rarityId)
     {
-        BadgeId = this.BadgeId;
-        Code = this.Code;
-        OwnerCount = this.OwnerCount;
-        RarityId = this.RarityId;
+        badgeId = BadgeId;
+        code = Code;
+        ownerCount = OwnerCount;
+        rarityId = RarityId;
     }
 
     /// <summary>Deconstructs the badge into its parts, including whether rarity data is present.</summary>
-    /// <param name="BadgeId">The identifier of the badge.</param>
-    /// <param name="Code">The badge code.</param>
-    /// <param name="OwnerCount">The number of users who own the badge.</param>
-    /// <param name="RarityId">The rarity of the badge.</param>
-    /// <param name="HasRarityData">Whether the owner count and rarity are present.</param>
+    /// <param name="badgeId">The identifier of the badge.</param>
+    /// <param name="code">The badge code.</param>
+    /// <param name="ownerCount">The number of users who own the badge.</param>
+    /// <param name="rarityId">The rarity of the badge.</param>
+    /// <param name="hasRarityData">Whether the owner count and rarity are present.</param>
     public void Deconstruct(
-        out Id BadgeId,
-        out string Code,
-        out int OwnerCount,
-        out int RarityId,
-        out bool HasRarityData)
+        out Id badgeId,
+        out string code,
+        out int ownerCount,
+        out int rarityId,
+        out bool hasRarityData)
     {
-        BadgeId = NativeBadgeId;
-        Code = this.Code;
-        OwnerCount = this.OwnerCount;
-        RarityId = this.RarityId;
-        HasRarityData = this.HasRarityData;
+        badgeId = NativeBadgeId;
+        code = Code;
+        ownerCount = OwnerCount;
+        rarityId = RarityId;
+        hasRarityData = HasRarityData;
     }
 
     /// <summary>Parses a badge from a packet.</summary>
@@ -207,17 +207,17 @@ public sealed record BadgeInventory : IParserComposer<BadgeInventory>
         Array.AsReadOnly(Array.Empty<OwnedBadge>());
 
     /// <summary>Initializes a new instance of the <see cref="BadgeInventory"/> record.</summary>
-    /// <param name="TotalPages">The total number of pages in the badge inventory.</param>
-    /// <param name="CurrentPage">The zero based index of this page.</param>
-    /// <param name="Badges">The badges on this page, copied into a read only list.</param>
+    /// <param name="totalPages">The total number of pages in the badge inventory.</param>
+    /// <param name="currentPage">The zero based index of this page.</param>
+    /// <param name="badges">The badges on this page, copied into a read only list.</param>
     public BadgeInventory(
-        int TotalPages,
-        int CurrentPage,
-        IReadOnlyList<OwnedBadge> Badges)
+        int totalPages,
+        int currentPage,
+        IReadOnlyList<OwnedBadge> badges)
     {
-        this.TotalPages = TotalPages;
-        this.CurrentPage = CurrentPage;
-        this.Badges = Badges;
+        TotalPages = totalPages;
+        CurrentPage = currentPage;
+        Badges = badges;
     }
 
     /// <summary>Gets the total number of pages in the badge inventory.</summary>
@@ -233,17 +233,17 @@ public sealed record BadgeInventory : IParserComposer<BadgeInventory>
     }
 
     /// <summary>Deconstructs the message into its parts.</summary>
-    /// <param name="TotalPages">The total number of pages in the badge inventory.</param>
-    /// <param name="CurrentPage">The zero based index of this page.</param>
-    /// <param name="Badges">The badges on this page.</param>
+    /// <param name="totalPages">The total number of pages in the badge inventory.</param>
+    /// <param name="currentPage">The zero based index of this page.</param>
+    /// <param name="badges">The badges on this page.</param>
     public void Deconstruct(
-        out int TotalPages,
-        out int CurrentPage,
-        out IReadOnlyList<OwnedBadge> Badges)
+        out int totalPages,
+        out int currentPage,
+        out IReadOnlyList<OwnedBadge> badges)
     {
-        TotalPages = this.TotalPages;
-        CurrentPage = this.CurrentPage;
-        Badges = this.Badges;
+        totalPages = TotalPages;
+        currentPage = CurrentPage;
+        badges = Badges;
     }
 
     /// <summary>Parses the message from a packet.</summary>
@@ -299,7 +299,7 @@ public sealed record BadgeInventory : IParserComposer<BadgeInventory>
     {
         AchievementBadgeWire.RequireRemaining(
             in p,
-            checked(sizeof(int) * 2 + AchievementBadgeWire.CountWidth(p.Client)),
+            checked(sizeof(int) * 2 + AchievementBadgeWire.CountWidth),
             0,
             nameof(BadgeInventory));
         total_pages = p.ReadInt();

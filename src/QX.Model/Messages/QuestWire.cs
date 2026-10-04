@@ -9,24 +9,8 @@ internal static class QuestWire
     public const int MaximumStringBytes = 16 * 1024 * 1024;
     public const int StringPrefixBytes = sizeof(short);
     public const int QuestMinimumBytes = 47;
-
-    public static void RequireSupportedClient(ClientType client)
-    {
-        if (client is not (ClientType.Flash))
-            throw new UnsupportedClientException(client);
-    }
-
-    public static int CountWidth(ClientType client) => client switch
-    {
-        ClientType.Flash => sizeof(int),
-        _ => throw new UnsupportedClientException(client)
-    };
-
-    public static int IdWidth(ClientType client) => client switch
-    {
-        ClientType.Flash => sizeof(int),
-        _ => throw new UnsupportedClientException(client)
-    };
+    public const int CountWidth = sizeof(int);
+    public const int IdWidth = sizeof(int);
 
     public static int ReadCount(
         in PacketReader p,
@@ -36,12 +20,8 @@ internal static class QuestWire
     {
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(minimum_element_bytes);
         ArgumentOutOfRangeException.ThrowIfNegative(trailing_bytes);
-        RequireRemaining(in p, CountWidth(p.Client), trailing_bytes, name);
-        int count = p.Client switch
-        {
-            ClientType.Flash => p.ReadInt(),
-            _ => throw new UnsupportedClientException(p.Client)
-        };
+        RequireRemaining(in p, CountWidth, trailing_bytes, name);
+        int count = p.ReadInt();
         RequireCount(count, name);
         int available = p.Available - trailing_bytes;
         if (available < 0 || count > available / minimum_element_bytes)
@@ -108,13 +88,12 @@ internal static class QuestWire
 
     public static Id ReadId(in PacketReader p, int trailing_bytes, string name)
     {
-        RequireRemaining(in p, IdWidth(p.Client), trailing_bytes, name);
+        RequireRemaining(in p, IdWidth, trailing_bytes, name);
         return p.ReadId();
     }
 
-    public static void RequireId(Id value, ClientType client)
+    public static void RequireId(Id value)
     {
-        RequireSupportedClient(client);
         _ = checked((int)(long)value);
     }
 
@@ -125,7 +104,6 @@ internal static class QuestWire
 
     public static void WriteCount(int count, in PacketWriter p)
     {
-        RequireSupportedClient(p.Client);
         RequireCount(count, nameof(count));
         p.WriteInt(count);
     }

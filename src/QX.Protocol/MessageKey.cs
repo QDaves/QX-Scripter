@@ -88,11 +88,11 @@ public readonly struct MessageKey : IComparable<MessageKey>, IEquatable<MessageK
     /// <param name="right">The second key.</param>
     public static bool operator !=(MessageKey left, MessageKey right) => !left.Equals(right);
 
-    internal static MessageKey Legacy(Direction direction, string identity, int occurrence)
+    internal static MessageKey Legacy(MessageDirection direction, string identity, int occurrence)
     {
         byte[] digest = SHA256.HashData(Encoding.UTF8.GetBytes(identity));
         string suffix = Convert.ToHexStringLower(digest);
-        string direction_name = direction == Direction.In ? "in" : "out";
+        string direction_name = direction == MessageDirection.In ? "in" : "out";
         string duplicate = occurrence > 1 ? $".{occurrence}" : string.Empty;
         return new MessageKey($"legacy.{direction_name}.{suffix}{duplicate}");
     }

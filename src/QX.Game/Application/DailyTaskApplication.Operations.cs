@@ -39,7 +39,6 @@ internal sealed partial class DailyTaskApplication
         {
             DailyTaskPage first_page = PageFor(lease, 0, request.Limit);
             var result = new DailyTaskRefreshResult(
-                scope.Session.Client,
                 time_provider.GetUtcNow(),
                 observed.ObservedAtUtc,
                 scope.SessionGeneration,
@@ -85,7 +84,6 @@ internal sealed partial class DailyTaskApplication
                 RequireScope(scope);
             });
         return new DailyTaskClaimDispatchReceipt(
-            scope.Session.Client,
             time_provider.GetUtcNow(),
             scope.SessionGeneration,
             request.TaskId,

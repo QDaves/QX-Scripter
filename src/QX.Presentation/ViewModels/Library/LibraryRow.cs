@@ -4,7 +4,7 @@ using Qx.Presentation.Mvvm;
 using Qx.Presentation.Services.Library;
 using Qx.Presentation.Services.Status;
 using Qx.Presentation.Visuals;
-using Qx.Scripting;
+using Qx.Scripting.Hosting;
 
 namespace Qx.Presentation.ViewModels.Library;
 
@@ -116,10 +116,10 @@ public sealed partial class LibraryScriptRow : LibraryRow
 
     public bool IsNeverRun => RunState == LibraryRunState.Never;
 
-    public void Apply(DateTimeOffset edited_at, string? category, LastRun? run, bool running, bool armed, DateTimeOffset now)
+    public void Apply(DateTimeOffset editedAt, string? category, LastRun? run, bool running, bool armed, DateTimeOffset now)
     {
         Category = string.IsNullOrWhiteSpace(category) ? null : category.Trim();
-        EditedAt = edited_at;
+        EditedAt = editedAt;
         LastRun = run;
         RunState = StateOf(run, running, armed);
         CanDelete = !running;

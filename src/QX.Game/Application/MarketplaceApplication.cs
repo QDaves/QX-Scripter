@@ -1,7 +1,7 @@
 using Qx.Game.Protocol;
 using Qx.Interception;
 using Qx.Messages;
-using Qx.Model.Marketplace;
+using Qx.Model;
 using Qx.Model.Messages.Incoming;
 using Qx.Model.Messages.Outgoing;
 using System.Text;
@@ -219,8 +219,7 @@ internal sealed class MarketplaceApplication : IApplicationFeature
         ValidateText(request.ExtraData, nameof(request.ExtraData));
         ValidateTimeout(request.TimeoutMilliseconds);
         Session session = RequireSession(cancellation_token);
-        if (session.Client is ClientType.Flash &&
-            FlashLayout() is FlashMarketplaceWireLayout.Legacy &&
+        if (FlashLayout() is FlashMarketplaceWireLayout.Legacy &&
             request.ExtraData.Length != 0)
         {
             throw new NotSupportedException(
@@ -344,8 +343,7 @@ internal sealed class MarketplaceApplication : IApplicationFeature
             throw new ArgumentOutOfRangeException(nameof(request.ItemIds));
         ValidateTimeout(request.TimeoutMilliseconds);
         Session session = RequireSession(cancellation_token);
-        if (session.Client is ClientType.Flash &&
-            FlashLayout() is FlashMarketplaceWireLayout.Legacy &&
+        if (FlashLayout() is FlashMarketplaceWireLayout.Legacy &&
             item_ids.Length != 1)
         {
             throw new NotSupportedException(
@@ -413,7 +411,7 @@ internal sealed class MarketplaceApplication : IApplicationFeature
             outgoing,
             session,
             cancellation_token);
-        return DispatchResult(session, request.OfferId);
+        return DispatchResult(request.OfferId);
     }
 
     public ValueTask<MarketplaceCancelOfferResult> CancelOffer(
@@ -425,11 +423,6 @@ internal sealed class MarketplaceApplication : IApplicationFeature
         ValidateOfferId(request.OfferId);
         ValidateTimeout(request.TimeoutMilliseconds);
         Session session = RequireSession(cancellation_token);
-        if (session.Client is not ClientType.Flash)
-        {
-            throw new NotSupportedException(
-                "Marketplace cancellation requires a Flash session.");
-        }
         return Request<
             CancelMarketplaceOffer,
             MarketplaceCancelOfferResult,
@@ -460,7 +453,7 @@ internal sealed class MarketplaceApplication : IApplicationFeature
             new CancelMarketplaceOffer(request.OfferId),
             session,
             cancellation_token);
-        return DispatchResult(session, request.OfferId);
+        return DispatchResult(request.OfferId);
     }
 
     public ValueTask<MarketplaceCancelAllOffersSnapshot> CancelAllOffers(
@@ -498,8 +491,7 @@ internal sealed class MarketplaceApplication : IApplicationFeature
             HistoryCategory(request.Category);
         ValidateTimeout(request.TimeoutMilliseconds);
         Session session = RequireSession(cancellation_token);
-        if (session.Client is not ClientType.Flash ||
-            FlashLayout() is not FlashMarketplaceWireLayout.Modern)
+        if (FlashLayout() is not FlashMarketplaceWireLayout.Modern)
         {
             throw new NotSupportedException(
                 "Marketplace history clearing requires the modern Flash marketplace layout.");
@@ -533,7 +525,7 @@ internal sealed class MarketplaceApplication : IApplicationFeature
             new RedeemMarketplaceOfferCredits(),
             session,
             cancellation_token);
-        return DispatchResult(session);
+        return DispatchResult();
     }
 
     public ValueTask<MarketplaceDispatchResult> BuyTokens(
@@ -548,7 +540,7 @@ internal sealed class MarketplaceApplication : IApplicationFeature
             new BuyMarketplaceTokens(),
             session,
             cancellation_token);
-        return DispatchResult(session);
+        return DispatchResult();
     }
 
     public void Dispose()
@@ -676,7 +668,7 @@ internal sealed class MarketplaceApplication : IApplicationFeature
     }
 
     private FlashMarketplaceWireLayout FlashLayout() => interceptor.Messages
-        .GetWireProfile(ClientType.Flash)
+        .GetWireProfile()
         .RequireFlashMarketplaceLayout();
 
     private Session RequireSession(CancellationToken cancellation_token)
@@ -698,11 +690,9 @@ internal sealed class MarketplaceApplication : IApplicationFeature
     }
 
     private ValueTask<MarketplaceDispatchResult> DispatchResult(
-        Session session,
         Id? offer_id = null,
         MarketplaceOwnOffersCategory? category = null) =>
         ValueTask.FromResult(new MarketplaceDispatchResult(
-            session.Client,
             time_provider.GetUtcNow(),
             offer_id,
             category));

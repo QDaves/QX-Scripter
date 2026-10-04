@@ -109,7 +109,7 @@ public sealed class ScriptWorkspace : IScriptWorkspace, IDisposable
         return document;
     }
 
-    public Task<OpenResult> OpenAsync(string path, CancellationToken cancellation_token)
+    public Task<OpenResult> OpenAsync(string path, CancellationToken cancellationToken)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(path);
         string full = PathComparison.Full(path);
@@ -119,8 +119,8 @@ public sealed class ScriptWorkspace : IScriptWorkspace, IDisposable
             return Task.FromResult(new OpenResult(OpenOutcome.AlreadyOpen, open));
         }
         if (_opening.TryGetValue(full, out Task<OpenResult>? running))
-            return AwaitSharedAsync(running, cancellation_token);
-        return ReadAndAddAsync(full, cancellation_token);
+            return AwaitSharedAsync(running, cancellationToken);
+        return ReadAndAddAsync(full, cancellationToken);
     }
 
     public ScriptDocument? FindByPath(string path) =>
@@ -248,14 +248,14 @@ public sealed class ScriptWorkspace : IScriptWorkspace, IDisposable
         };
     }
 
-    public IReadOnlyList<Draft> CaptureDrafts(bool include_modified_files)
+    public IReadOnlyList<Draft> CaptureDrafts(bool includeModifiedFiles)
     {
         var drafts = new List<Draft>();
         foreach (ScriptDocument document in _documents)
         {
             if (document.FilePath is { } path)
             {
-                if (include_modified_files && document.IsModified)
+                if (includeModifiedFiles && document.IsModified)
                     drafts.Add(new Draft(document.Name, document.Text, path));
                 continue;
             }
@@ -265,7 +265,7 @@ public sealed class ScriptWorkspace : IScriptWorkspace, IDisposable
         return drafts;
     }
 
-    public async Task RestoreAsync(CancellationToken cancellation_token)
+    public async Task RestoreAsync(CancellationToken cancellationToken)
     {
         try
         {
@@ -274,14 +274,14 @@ public sealed class ScriptWorkspace : IScriptWorkspace, IDisposable
                 foreach (string path in session.Open)
                 {
                     if (_files.Exists(path))
-                        await OpenAsync(path, cancellation_token);
+                        await OpenAsync(path, cancellationToken);
                 }
                 if (session.Active is { Length: > 0 } active && FindByPath(active) is { } selected)
                     Active = selected;
             }
-            IReadOnlyList<Draft> drafts = await _drafts.LoadAsync(cancellation_token);
+            IReadOnlyList<Draft> drafts = await _drafts.LoadAsync(cancellationToken);
             foreach (Draft draft in drafts)
-                await RestoreDraftAsync(draft, cancellation_token);
+                await RestoreDraftAsync(draft, cancellationToken);
         }
         finally
         {
@@ -290,13 +290,13 @@ public sealed class ScriptWorkspace : IScriptWorkspace, IDisposable
         }
     }
 
-    public Task SaveDraftsAsync(bool include_modified_files, CancellationToken cancellation_token) =>
-        _drafts.SaveAsync(CaptureDrafts(include_modified_files), cancellation_token);
+    public Task SaveDraftsAsync(bool includeModifiedFiles, CancellationToken cancellationToken) =>
+        _drafts.SaveAsync(CaptureDrafts(includeModifiedFiles), cancellationToken);
 
-    public Task ClearDraftsAsync(CancellationToken cancellation_token) => _drafts.ClearAsync(cancellation_token);
+    public Task ClearDraftsAsync(CancellationToken cancellationToken) => _drafts.ClearAsync(cancellationToken);
 
-    public bool SaveDraftsNow(bool include_modified_files, TimeSpan budget) =>
-        _drafts.SaveNow(CaptureDrafts(include_modified_files), budget);
+    public bool SaveDraftsNow(bool includeModifiedFiles, TimeSpan budget) =>
+        _drafts.SaveNow(CaptureDrafts(includeModifiedFiles), budget);
 
     public void SealDrafts() => _drafts.Seal();
 
@@ -383,7 +383,7 @@ public sealed class ScriptWorkspace : IScriptWorkspace, IDisposable
         try
         {
             while (await ticks.WaitForNextTickAsync(cancellation_token))
-                await _drafts.SaveAsync(CaptureDrafts(include_modified_files: false), cancellation_token);
+                await _drafts.SaveAsync(CaptureDrafts(includeModifiedFiles: false), cancellation_token);
         }
         catch (OperationCanceledException)
         {

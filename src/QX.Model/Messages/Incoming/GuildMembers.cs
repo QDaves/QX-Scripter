@@ -104,41 +104,41 @@ public sealed record GuildMembers : IParserComposer<GuildMembers>
         Array.AsReadOnly(Array.Empty<GuildMember>());
 
     /// <summary>Initializes a new instance of the <see cref="GuildMembers"/> record.</summary>
-    /// <param name="GroupId">The identifier of the group.</param>
-    /// <param name="GroupName">The name of the group.</param>
-    /// <param name="BaseRoomId">The identifier of the group's home room.</param>
-    /// <param name="BadgeCode">The group's badge code.</param>
-    /// <param name="TotalEntries">The number of members matching the filter and category.</param>
-    /// <param name="Entries">The members in the page, copied into a read only list.</param>
-    /// <param name="IsAllowedToManage">Whether the local user may manage the group's members.</param>
-    /// <param name="PageSize">The number of members per page chosen by the hotel.</param>
-    /// <param name="PageIndex">The zero based index of the page.</param>
-    /// <param name="SearchType">The member category echoed by the hotel.</param>
-    /// <param name="UserNameFilter">The user name filter echoed by the hotel.</param>
+    /// <param name="groupId">The identifier of the group.</param>
+    /// <param name="groupName">The name of the group.</param>
+    /// <param name="baseRoomId">The identifier of the group's home room.</param>
+    /// <param name="badgeCode">The group's badge code.</param>
+    /// <param name="totalEntries">The number of members matching the filter and category.</param>
+    /// <param name="entries">The members in the page, copied into a read only list.</param>
+    /// <param name="isAllowedToManage">Whether the local user may manage the group's members.</param>
+    /// <param name="pageSize">The number of members per page chosen by the hotel.</param>
+    /// <param name="pageIndex">The zero based index of the page.</param>
+    /// <param name="searchType">The member category echoed by the hotel.</param>
+    /// <param name="userNameFilter">The user name filter echoed by the hotel.</param>
     public GuildMembers(
-        Id GroupId,
-        string GroupName,
-        Id BaseRoomId,
-        string BadgeCode,
-        int TotalEntries,
-        IReadOnlyList<GuildMember> Entries,
-        bool IsAllowedToManage,
-        int PageSize,
-        int PageIndex,
-        GuildMemberSearchType? SearchType,
-        string UserNameFilter)
+        Id groupId,
+        string groupName,
+        Id baseRoomId,
+        string badgeCode,
+        int totalEntries,
+        IReadOnlyList<GuildMember> entries,
+        bool isAllowedToManage,
+        int pageSize,
+        int pageIndex,
+        GuildMemberSearchType searchType,
+        string userNameFilter)
     {
-        this.GroupId = GroupId;
-        this.GroupName = GroupName;
-        this.BaseRoomId = BaseRoomId;
-        this.BadgeCode = BadgeCode;
-        this.TotalEntries = TotalEntries;
-        this.Entries = Entries;
-        this.IsAllowedToManage = IsAllowedToManage;
-        this.PageSize = PageSize;
-        this.PageIndex = PageIndex;
-        this.SearchType = SearchType;
-        this.UserNameFilter = UserNameFilter;
+        GroupId = groupId;
+        GroupName = groupName;
+        BaseRoomId = baseRoomId;
+        BadgeCode = badgeCode;
+        TotalEntries = totalEntries;
+        Entries = entries;
+        IsAllowedToManage = isAllowedToManage;
+        PageSize = pageSize;
+        PageIndex = pageIndex;
+        SearchType = searchType;
+        UserNameFilter = userNameFilter;
     }
 
     /// <summary>Gets the identifier of the group.</summary>
@@ -166,46 +166,46 @@ public sealed record GuildMembers : IParserComposer<GuildMembers>
     /// <summary>Gets the zero based index of the page.</summary>
     public int PageIndex { get; init; }
     /// <summary>Gets the member category echoed by the hotel.</summary>
-    public GuildMemberSearchType? SearchType { get; init; }
+    public GuildMemberSearchType SearchType { get; init; }
     /// <summary>Gets the user name filter echoed by the hotel.</summary>
     public string UserNameFilter { get; init; }
 
     /// <summary>Deconstructs the message into its parts.</summary>
-    /// <param name="GroupId">The identifier of the group.</param>
-    /// <param name="GroupName">The name of the group.</param>
-    /// <param name="BaseRoomId">The identifier of the group's home room.</param>
-    /// <param name="BadgeCode">The group's badge code.</param>
-    /// <param name="TotalEntries">The number of members matching the filter and category.</param>
-    /// <param name="Entries">The members in the page.</param>
-    /// <param name="IsAllowedToManage">Whether the local user may manage the group's members.</param>
-    /// <param name="PageSize">The number of members per page.</param>
-    /// <param name="PageIndex">The zero based index of the page.</param>
-    /// <param name="SearchType">The member category.</param>
-    /// <param name="UserNameFilter">The user name filter.</param>
+    /// <param name="groupId">The identifier of the group.</param>
+    /// <param name="groupName">The name of the group.</param>
+    /// <param name="baseRoomId">The identifier of the group's home room.</param>
+    /// <param name="badgeCode">The group's badge code.</param>
+    /// <param name="totalEntries">The number of members matching the filter and category.</param>
+    /// <param name="entries">The members in the page.</param>
+    /// <param name="isAllowedToManage">Whether the local user may manage the group's members.</param>
+    /// <param name="pageSize">The number of members per page.</param>
+    /// <param name="pageIndex">The zero based index of the page.</param>
+    /// <param name="searchType">The member category.</param>
+    /// <param name="userNameFilter">The user name filter.</param>
     public void Deconstruct(
-        out Id GroupId,
-        out string GroupName,
-        out Id BaseRoomId,
-        out string BadgeCode,
-        out int TotalEntries,
-        out IReadOnlyList<GuildMember> Entries,
-        out bool IsAllowedToManage,
-        out int PageSize,
-        out int PageIndex,
-        out GuildMemberSearchType? SearchType,
-        out string UserNameFilter)
+        out Id groupId,
+        out string groupName,
+        out Id baseRoomId,
+        out string badgeCode,
+        out int totalEntries,
+        out IReadOnlyList<GuildMember> entries,
+        out bool isAllowedToManage,
+        out int pageSize,
+        out int pageIndex,
+        out GuildMemberSearchType searchType,
+        out string userNameFilter)
     {
-        GroupId = this.GroupId;
-        GroupName = this.GroupName;
-        BaseRoomId = this.BaseRoomId;
-        BadgeCode = this.BadgeCode;
-        TotalEntries = this.TotalEntries;
-        Entries = this.Entries;
-        IsAllowedToManage = this.IsAllowedToManage;
-        PageSize = this.PageSize;
-        PageIndex = this.PageIndex;
-        SearchType = this.SearchType;
-        UserNameFilter = this.UserNameFilter;
+        groupId = GroupId;
+        groupName = GroupName;
+        baseRoomId = BaseRoomId;
+        badgeCode = BadgeCode;
+        totalEntries = TotalEntries;
+        entries = Entries;
+        isAllowedToManage = IsAllowedToManage;
+        pageSize = PageSize;
+        pageIndex = PageIndex;
+        searchType = SearchType;
+        userNameFilter = UserNameFilter;
     }
 
     /// <summary>
@@ -263,7 +263,7 @@ public sealed record GuildMembers : IParserComposer<GuildMembers>
     /// <summary>Composes the message into a packet.</summary>
     /// <param name="p">The packet writer.</param>
     /// <exception cref="InvalidDataException">
-    /// Thrown when <see cref="SearchType"/> is <see langword="null"/> or not a defined value.
+    /// Thrown when <see cref="SearchType"/> is not a defined value.
     /// </exception>
     public void Compose(in PacketWriter p) =>
         FlashWire.Compose(this, in p, ComposeFlash);
@@ -282,7 +282,7 @@ public sealed record GuildMembers : IParserComposer<GuildMembers>
         p.WriteBool(prepared.IsAllowedToManage);
         p.WriteInt(prepared.PageSize);
         p.WriteInt(prepared.PageIndex);
-        p.WriteInt((int)prepared.SearchType!.Value);
+        p.WriteInt((int)prepared.SearchType);
         p.WriteString(prepared.UserNameFilter);
     }
 
@@ -306,15 +306,10 @@ public sealed record GuildMembers : IParserComposer<GuildMembers>
         PeopleWire.RequireString(prepared.GroupName, nameof(GroupName), in p);
         PeopleWire.RequireString(prepared.BadgeCode, nameof(BadgeCode), in p);
         PeopleWire.RequireString(prepared.UserNameFilter, nameof(UserNameFilter), in p);
-        {
-            _ = PeopleWire.RequireFlashId(prepared.GroupId, nameof(GroupId));
-            _ = PeopleWire.RequireFlashId(prepared.BaseRoomId, nameof(BaseRoomId));
-            if (prepared.SearchType is not GuildMemberSearchType search_type ||
-                !Enum.IsDefined(search_type))
-            {
-                throw new InvalidDataException("Flash GuildMembers requires a valid search type.");
-            }
-        }
+        _ = PeopleWire.RequireFlashId(prepared.GroupId, nameof(GroupId));
+        _ = PeopleWire.RequireFlashId(prepared.BaseRoomId, nameof(BaseRoomId));
+        if (!Enum.IsDefined(prepared.SearchType))
+            throw new InvalidDataException("Flash GuildMembers requires a valid search type.");
         foreach (GuildMember entry in prepared.Entries)
             GuildMember.Validate(entry, in p);
         return prepared;

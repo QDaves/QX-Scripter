@@ -194,7 +194,7 @@ internal static class ApplicationCommands
                 nameof(args));
         }
         using JsonDocument document = JsonDocument.Parse(args[3]);
-        object request = ApplicationJson.Deserialize(document.RootElement, descriptor.RequestType!);
+        object request = ApplicationJson.Deserialize(document.RootElement, descriptor);
 
         await runtime.StartAsync(cancellation_token).ConfigureAwait(false);
         if (RequiresConnection(descriptor))

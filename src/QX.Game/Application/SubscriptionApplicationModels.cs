@@ -83,9 +83,6 @@ public sealed record SubscriptionKickbackView(
 /// <summary>
 /// Represents the Builders Club membership status the hotel sent.
 /// </summary>
-/// <remarks>
-/// Only received on the Flash client.
-/// </remarks>
 /// <param name="SecondsLeft">The number of seconds left in the membership.</param>
 /// <param name="FurniLimit">The number of Builders Club furni the user can place.</param>
 /// <param name="MaxFurniLimit">The maximum Builders Club furni limit.</param>
@@ -116,9 +113,6 @@ public enum SubscriptionPlacementKind
 /// <summary>
 /// Represents a Builders Club placement warning the hotel sent.
 /// </summary>
-/// <remarks>
-/// Only received on the Flash client.
-/// </remarks>
 /// <param name="PageId">The catalog page id of the placement.</param>
 /// <param name="OfferId">The offer id of the placement.</param>
 /// <param name="ExtraParam">The extra parameter of the placement.</param>
@@ -230,10 +224,6 @@ public sealed record SubscriptionClubOffersRefreshRequest(
 /// <see cref="ApplicationMemberIds.SubscriptionsClubOffersRefresh"/>.
 /// </remarks>
 /// <param name="Connected">Whether the snapshot belongs to the active hotel session.</param>
-/// <param name="Client">
-/// The client type of the hotel session, or <see langword="null"/> when <paramref name="Connected"/> is
-/// <see langword="false"/>.
-/// </param>
 /// <param name="SessionGeneration">The state generation of the hotel session the snapshot was captured in.</param>
 /// <param name="Revision">The subscription state revision of the snapshot.</param>
 /// <param name="ClubOffersRevision">The revision increased when club offers are received or the state resets.</param>
@@ -249,7 +239,6 @@ public sealed record SubscriptionClubOffersRefreshRequest(
 /// <param name="Offers">The offers in the page, in the order the hotel sent them.</param>
 public sealed record SubscriptionClubOffersPage(
     bool Connected,
-    ClientType? Client,
     long SessionGeneration,
     long Revision,
     long ClubOffersRevision,
@@ -303,7 +292,7 @@ public sealed record SubscriptionBuildersClubFloorPlaceRequest(
 /// </remarks>
 /// <param name="PageId">The catalog page id, sent unchanged.</param>
 /// <param name="OfferId">The Builders Club offer id, sent unchanged.</param>
-/// <param name="WallLocation">The wall location in the active client's format, not blank and at most 65535 UTF-8 bytes.</param>
+/// <param name="WallLocation">The wall location in the Flash text form, not blank and at most 65535 UTF-8 bytes.</param>
 /// <param name="ExtraData">The offer selection data, at most 65535 UTF-8 bytes.</param>
 /// <param name="IsRetry">Whether the placement is flagged to the hotel as a retry.</param>
 /// <param name="ExpectedSessionGeneration">
@@ -330,7 +319,6 @@ public sealed record SubscriptionBuildersClubWallPlaceRequest(
 /// the hotel accepted the placement.
 /// </remarks>
 /// <param name="PlacementKind">Whether the placement targets the floor or a wall.</param>
-/// <param name="Client">The client type of the hotel session.</param>
 /// <param name="DispatchedAtUtc">The time the receipt was created after the message was sent.</param>
 /// <param name="SessionGeneration">The state generation of the hotel session the message was sent in.</param>
 /// <param name="RoomId">The id of the room the placement was sent for.</param>
@@ -342,7 +330,6 @@ public sealed record SubscriptionBuildersClubWallPlaceRequest(
 /// <param name="MessagesDispatched">The number of messages sent.</param>
 public sealed record SubscriptionBuildersClubPlacementDispatchReceipt(
     SubscriptionPlacementKind PlacementKind,
-    ClientType Client,
     DateTimeOffset DispatchedAtUtc,
     long SessionGeneration,
     Id RoomId,
@@ -361,10 +348,6 @@ public sealed record SubscriptionBuildersClubPlacementDispatchReceipt(
 /// without regard to case. The other values are the last ones received, independent of the page.
 /// </remarks>
 /// <param name="Connected">Whether the snapshot belongs to the active hotel session.</param>
-/// <param name="Client">
-/// The client type of the hotel session, or <see langword="null"/> when <paramref name="Connected"/> is
-/// <see langword="false"/>.
-/// </param>
 /// <param name="SessionGeneration">The state generation of the hotel session the snapshot was captured in.</param>
 /// <param name="Revision">The subscription state revision, increased by every received value and every reset.</param>
 /// <param name="UserInfoRevision">The revision increased when product info is received or the state resets.</param>
@@ -396,7 +379,6 @@ public sealed record SubscriptionBuildersClubPlacementDispatchReceipt(
 /// </param>
 public sealed record SubscriptionStateView(
     bool Connected,
-    ClientType? Client,
     long SessionGeneration,
     long Revision,
     long UserInfoRevision,
@@ -484,14 +466,12 @@ public sealed record SubscriptionBuildersClubFurniCountRefreshRequest(
 /// <remarks>
 /// Returned by <see cref="ApplicationMemberIds.SubscriptionsUserInfoRefresh"/>.
 /// </remarks>
-/// <param name="Client">The client type of the hotel session.</param>
 /// <param name="SessionGeneration">The state generation of the hotel session the refresh ran in.</param>
 /// <param name="Revision">The subscription state revision after the response was stored.</param>
 /// <param name="UserInfoRevision">The user info revision after the response was stored.</param>
 /// <param name="ObservedAtUtc">The time the matching response was stored.</param>
 /// <param name="Product">The subscription info received for the product.</param>
 public sealed record SubscriptionUserInfoRefreshResult(
-    ClientType Client,
     long SessionGeneration,
     long Revision,
     long UserInfoRevision,
@@ -504,14 +484,12 @@ public sealed record SubscriptionUserInfoRefreshResult(
 /// <remarks>
 /// Returned by <see cref="ApplicationMemberIds.SubscriptionsKickbackRefresh"/>.
 /// </remarks>
-/// <param name="Client">The client type of the hotel session.</param>
 /// <param name="SessionGeneration">The state generation of the hotel session the refresh ran in.</param>
 /// <param name="Revision">The subscription state revision after the response was stored.</param>
 /// <param name="KickbackRevision">The kickback revision after the response was stored.</param>
 /// <param name="ObservedAtUtc">The time the matching response was stored.</param>
 /// <param name="Kickback">The kickback info received.</param>
 public sealed record SubscriptionKickbackRefreshResult(
-    ClientType Client,
     long SessionGeneration,
     long Revision,
     long KickbackRevision,
@@ -524,14 +502,12 @@ public sealed record SubscriptionKickbackRefreshResult(
 /// <remarks>
 /// Returned by <see cref="ApplicationMemberIds.SubscriptionsBuildersClubFurniCountRefresh"/>.
 /// </remarks>
-/// <param name="Client">The client type of the hotel session.</param>
 /// <param name="SessionGeneration">The state generation of the hotel session the refresh ran in.</param>
 /// <param name="Revision">The subscription state revision after the response was stored.</param>
 /// <param name="BuildersClubFurniCountRevision">The Builders Club furni count revision after the response was stored.</param>
 /// <param name="ObservedAtUtc">The time the matching response was stored.</param>
 /// <param name="FurniCount">The number of Builders Club furni placed.</param>
 public sealed record SubscriptionBuildersClubFurniCountRefreshResult(
-    ClientType Client,
     long SessionGeneration,
     long Revision,
     long BuildersClubFurniCountRevision,
@@ -568,7 +544,7 @@ public enum SubscriptionChangeKind
 /// </remarks>
 /// <param name="Kind">The kind of change.</param>
 /// <param name="ChangedAtUtc">The time the change was published.</param>
-/// <param name="Client">The client type of the hotel session, or <see langword="null"/> when no session is active.</param>
+/// <param name="Connected">Whether a hotel session is active.</param>
 /// <param name="SessionGeneration">The state generation of the hotel session.</param>
 /// <param name="Revision">The subscription state revision after the change.</param>
 /// <param name="SourceRevision">
@@ -599,7 +575,7 @@ public enum SubscriptionChangeKind
 public sealed record SubscriptionChanged(
     SubscriptionChangeKind Kind,
     DateTimeOffset ChangedAtUtc,
-    ClientType? Client,
+    bool Connected,
     long SessionGeneration,
     long Revision,
     long SourceRevision,

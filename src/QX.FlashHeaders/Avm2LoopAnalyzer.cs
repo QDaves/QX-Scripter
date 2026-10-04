@@ -22,7 +22,7 @@ public static class Avm2LoopAnalyzer
     readonly record struct TraversalFrame(int Block, int NextTarget);
 
     public static Avm2LoopAnalysis Analyze(
-        int entry_block,
+        int entryBlock,
         IReadOnlyList<Avm2BasicBlockInventory> blocks,
         IReadOnlyList<Avm2ControlFlowEdgeInventory> edges)
     {
@@ -32,7 +32,7 @@ public static class Avm2LoopAnalyzer
         HashSet<int> block_ids = blocks
             .Select(block => block.Id)
             .ToHashSet();
-        if (!block_ids.Contains(entry_block))
+        if (!block_ids.Contains(entryBlock))
             return Empty();
 
         List<(int Source, int Target)> normal_edges = edges
@@ -60,7 +60,7 @@ public static class Avm2LoopAnalyzer
             incoming[target].Add(source);
         }
 
-        HashSet<int> reachable = Reachable(entry_block, outgoing);
+        HashSet<int> reachable = Reachable(entryBlock, outgoing);
         foreach (int block in block_ids)
         {
             outgoing[block] = outgoing[block]
@@ -75,17 +75,17 @@ public static class Avm2LoopAnalyzer
                 .ToList();
         }
 
-        List<int> postorder = Postorder(entry_block, outgoing, reachable);
+        List<int> postorder = Postorder(entryBlock, outgoing, reachable);
         List<int> reverse_postorder = postorder
             .AsEnumerable()
             .Reverse()
             .ToList();
         Dictionary<int, int> immediate_dominators = ImmediateDominators(
-            entry_block,
+            entryBlock,
             reverse_postorder,
             incoming);
         Dictionary<int, List<int>> dominator_chains = DominatorChains(
-            entry_block,
+            entryBlock,
             reachable,
             immediate_dominators);
         List<Avm2DominatorInventory> dominators = reachable
@@ -93,7 +93,7 @@ public static class Avm2LoopAnalyzer
             .Select(block => new Avm2DominatorInventory
             {
                 Block = block,
-                ImmediateDominator = block == entry_block
+                ImmediateDominator = block == entryBlock
                     ? null
                     : immediate_dominators.GetValueOrDefault(block),
                 Dominators = dominator_chains[block]
@@ -111,7 +111,7 @@ public static class Avm2LoopAnalyzer
             outgoing);
         List<Avm2IrreducibleCycleInventory> irreducible_cycles =
             IrreducibleCycles(
-                entry_block,
+                entryBlock,
                 reachable,
                 outgoing,
                 incoming,

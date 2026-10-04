@@ -9,14 +9,14 @@ namespace Qx.Interception.GEarth;
 /// The text form is four tab-separated fields: the blocked flag, the index, <c>TOCLIENT</c> or
 /// <c>TOSERVER</c>, and the edited flag directly followed by the raw packet bytes as Latin-1 text.
 /// </remarks>
-public sealed class HMessage
+internal sealed class HMessage
 {
     /// <summary>Gets or sets whether the packet is blocked.</summary>
     public bool IsBlocked { get; set; }
     /// <summary>Gets or sets the index G-Earth assigned to the packet.</summary>
     public int Index { get; set; }
     /// <summary>Gets or sets the direction of the packet.</summary>
-    public Direction Direction { get; set; }
+    public MessageDirection Direction { get; set; }
     /// <summary>Gets or sets whether the packet was modified.</summary>
     public bool IsEdited { get; set; }
     /// <summary>Gets or sets the packet.</summary>
@@ -24,14 +24,13 @@ public sealed class HMessage
 
     /// <summary>Parses a message from G-Earth's text form.</summary>
     /// <param name="value">The text form of the message.</param>
-    /// <param name="client">The client type the packet belongs to.</param>
     /// <returns>The parsed message.</returns>
     /// <exception cref="InvalidDataException">Thrown when the raw packet is incomplete.</exception>
     /// <exception cref="FormatException">Thrown when the index is not an integer.</exception>
-    public static HMessage Parse(string value, ClientType client)
+    public static HMessage Parse(string value)
     {
         string[] parts = value.Split('\t', 4);
-        Direction direction = parts[2] == "TOCLIENT" ? Direction.In : Direction.Out;
+        MessageDirection direction = parts[2] == "TOCLIENT" ? MessageDirection.In : MessageDirection.Out;
 
         string hpacket = parts[3];
         bool edited = hpacket.Length > 0 && hpacket[0] == '1';
@@ -43,7 +42,7 @@ public sealed class HMessage
             Index = int.Parse(parts[1], CultureInfo.InvariantCulture),
             Direction = direction,
             IsEdited = edited,
-            Packet = EvaWire.ToPacket(raw, client, direction)
+            Packet = EvaWire.ToPacket(raw, direction)
         };
     }
 
@@ -53,7 +52,7 @@ public sealed class HMessage
     {
         byte[] raw = EvaWire.FromPacket(Packet);
         string hpacket = (IsEdited ? "1" : "0") + Encoding.Latin1.GetString(raw);
-        string direction = Direction == Direction.In ? "TOCLIENT" : "TOSERVER";
+        string direction = Direction == MessageDirection.In ? "TOCLIENT" : "TOSERVER";
         return $"{(IsBlocked ? "1" : "0")}\t{Index}\t{direction}\t{hpacket}";
     }
 }

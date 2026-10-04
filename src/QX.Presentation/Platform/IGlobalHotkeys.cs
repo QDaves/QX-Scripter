@@ -6,5 +6,5 @@ public interface IGlobalHotkeys
 {
     bool IsSupported { get; }
 
-    Task<IDisposable?> TryRegisterAsync(KeyChord chord, Action pressed, CancellationToken cancellation_token = default);
+    Task<IDisposable?> TryRegisterAsync(KeyChord chord, Action pressed, CancellationToken cancellationToken = default);
 }

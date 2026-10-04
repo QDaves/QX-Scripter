@@ -1,5 +1,6 @@
+using Qx.Model;
 using Qx.Model.Messages.Incoming;
-using Qx.Model.Polls;
+using Qx.Model.Messages.Outgoing;
 using Qx.Game.Application;
 
 namespace Qx.Scripting;
@@ -74,13 +75,13 @@ public partial class ScriptGlobals
     /// This is what the game client sends when the user clicks through a poll offer dialog. It
     /// returns immediately; the questions arrive later as poll contents.
     /// </remarks>
-    /// <param name="poll_id">The poll id taken from the offer.</param>
+    /// <param name="pollId">The poll id taken from the offer.</param>
     /// <exception cref="InvalidOperationException">Thrown when there is no active hotel session.</exception>
-    public void AcceptPoll(Id poll_id)
+    public void AcceptPoll(Id pollId)
     {
-        _ = Application.Invoke<PollStartRequest, PollDispatchReceipt>(
+        _ = _application.Invoke<PollStartRequest, PollDispatchReceipt>(
             ApplicationMemberIds.PollsStart,
-            new PollStartRequest(poll_id),
+            new PollStartRequest(pollId),
             Ct);
     }
 
@@ -88,38 +89,39 @@ public partial class ScriptGlobals
     /// Declines a poll offer without answering any question.
     /// </summary>
     /// <remarks>It returns immediately; the server sends nothing back.</remarks>
-    /// <param name="poll_id">The poll id taken from the offer.</param>
+    /// <param name="pollId">The poll id taken from the offer.</param>
     /// <exception cref="InvalidOperationException">Thrown when there is no active hotel session.</exception>
-    public void RejectPoll(Id poll_id)
+    public void RejectPoll(Id pollId)
     {
-        _ = Application.Invoke<PollRejectRequest, PollDispatchReceipt>(
+        _ = _application.Invoke<PollRejectRequest, PollDispatchReceipt>(
             ApplicationMemberIds.PollsReject,
-            new PollRejectRequest(poll_id),
+            new PollRejectRequest(pollId),
             Ct);
     }
 
     /// <summary>
     /// Accepts a poll offer and waits for the poll contents the server sends back.
     /// </summary>
-    /// <param name="poll_id">The poll id taken from the offer.</param>
-    /// <param name="timeout_ms">The timeout in milliseconds, from 1 to 120000.</param>
-    /// <returns>The poll contents whose poll id matches <paramref name="poll_id"/>.</returns>
-    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="timeout_ms"/> is outside 1 to 120000.</exception>
+    /// <param name="pollId">The poll id taken from the offer.</param>
+    /// <param name="timeoutMs">The timeout in milliseconds, from 1 to 120000.</param>
+    /// <returns>The poll contents whose poll id matches <paramref name="pollId"/>.</returns>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="timeoutMs"/> is outside 1 to 120000.</exception>
     /// <exception cref="Qx.Game.RequestTimeoutException">Thrown when no matching poll contents arrived in time.</exception>
     /// <exception cref="Qx.Game.RequestDisconnectedException">Thrown when the connection closed while waiting.</exception>
     /// <exception cref="OperationCanceledException">Thrown when the script was stopped while waiting.</exception>
     /// <remarks>
-    /// The reply is not blocked, so the game client still receives and shows the poll as usual.
+    /// This is the awaited form of <see cref="AcceptPoll"/> and sends the same start message. The
+    /// reply is not blocked, so the game client still receives and shows the poll as usual.
     /// </remarks>
-    public async Task<PollContents> RequestPollContents(Id poll_id, int timeout_ms = 10000)
+    public async Task<PollContents> AcceptPollAsync(Id pollId, int timeoutMs = 10000)
     {
-        PollStateView state = await Application
+        PollStateView state = await _application
             .InvokeAsync<PollContentsGetRequest, PollStateView>(
                 ApplicationMemberIds.PollsContentsGet,
-                new PollContentsGetRequest(poll_id, timeout_ms),
+                new PollContentsGetRequest(pollId, timeoutMs),
                 Ct)
             .ConfigureAwait(false);
-        if (state.Contents is not { } contents || contents.PollId != poll_id)
+        if (state.Contents is not { } contents || contents.PollId != pollId)
             throw new InvalidOperationException("The poll request returned different contents.");
         return LegacyPollContents(contents);
     }
@@ -128,21 +130,21 @@ public partial class ScriptGlobals
     /// Answers a single poll question.
     /// </summary>
     /// <remarks>
-    /// On Flash the client sends one message per question, so a multi-question poll is answered
-    /// by calling this once per question.
+    /// The game client sends one message per question, so a multi-question poll is answered by
+    /// calling this once per question.
     /// </remarks>
-    /// <param name="poll_id">The poll being answered.</param>
-    /// <param name="question_id">The question being answered.</param>
+    /// <param name="pollId">The poll being answered.</param>
+    /// <param name="questionId">The question being answered.</param>
     /// <param name="answers">
     /// The answers. Radio button and text questions take exactly one entry; checkbox questions may
     /// take several. For choice questions the answer is the choice's value string, not its display
     /// text.
     /// </param>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="answers"/> is <see langword="null"/>.</exception>
-    public void AnswerPoll(Id poll_id, Id question_id, params string[] answers)
+    public void AnswerPoll(Id pollId, Id questionId, params string[] answers)
     {
         ArgumentNullException.ThrowIfNull(answers);
-        AnswerPoll(new PollAnswer(poll_id, [new PollResponse(question_id, answers)]));
+        AnswerPoll(new PollAnswer(pollId, [new PollResponse(questionId, answers)]));
     }
 
     /// <summary>
@@ -169,25 +171,25 @@ public partial class ScriptGlobals
     }
 
     /// <summary>
-    /// Sends a prepared poll answer that can carry responses to several questions.
+    /// Sends a prepared poll answer for one question.
     /// </summary>
     /// <remarks>
-    /// Other clients send every response in one message. On Flash the answer has to carry exactly
-    /// one response, because the Flash client answers one question per message.
+    /// The answer has to carry exactly one response, because the game client answers one question
+    /// per message.
     /// </remarks>
     /// <param name="answer">The poll id and the responses to send.</param>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="answer"/> or its responses are <see langword="null"/>.</exception>
     /// <exception cref="ArgumentException">Thrown when the responses contain a <see langword="null"/> entry.</exception>
-    /// <exception cref="InvalidDataException">Thrown when the client is Flash and the answer does not carry exactly one response.</exception>
+    /// <exception cref="InvalidDataException">Thrown when the answer does not carry exactly one response.</exception>
     public void AnswerPoll(PollAnswer answer)
     {
         ArgumentNullException.ThrowIfNull(answer);
         ArgumentNullException.ThrowIfNull(answer.Responses);
         PollStateView state = ReadPollState();
-        if (state.Client is ClientType.Flash && answer.Responses.Count != 1)
+        if (answer.Responses.Count != 1)
         {
             throw new InvalidDataException(
-                "Flash PollAnswer requires exactly one question response.");
+                "A poll answer carries exactly one question response.");
         }
         SendPollAnswer(answer, state.SessionGeneration);
     }
@@ -204,7 +206,7 @@ public partial class ScriptGlobals
     public IDisposable OnPollOffer(Action<PollOffer> handler)
     {
         ArgumentNullException.ThrowIfNull(handler);
-        return Track(Application.Subscribe<PollChanged>(
+        return Track(_application.Subscribe<PollChanged>(
             ApplicationMemberIds.PollsChanged,
             Guarded<PollChanged>(change =>
             {
@@ -223,7 +225,7 @@ public partial class ScriptGlobals
     public IDisposable OnPollContents(Action<PollContents> handler)
     {
         ArgumentNullException.ThrowIfNull(handler);
-        return Track(Application.Subscribe<PollChanged>(
+        return Track(_application.Subscribe<PollChanged>(
             ApplicationMemberIds.PollsChanged,
             Guarded<PollChanged>(change =>
             {
@@ -250,7 +252,7 @@ public partial class ScriptGlobals
     public IDisposable OnPollError(Action handler)
     {
         ArgumentNullException.ThrowIfNull(handler);
-        return Track(Application.Subscribe<PollChanged>(
+        return Track(_application.Subscribe<PollChanged>(
             ApplicationMemberIds.PollsChanged,
             Guarded<PollChanged>(change =>
             {
@@ -260,7 +262,7 @@ public partial class ScriptGlobals
     }
 
     private PollStateView ReadPollState() =>
-        Application.Invoke<PollStateRequest, PollStateView>(
+        _application.Invoke<PollStateRequest, PollStateView>(
             ApplicationMemberIds.PollsState,
             new PollStateRequest(),
             Ct);
@@ -278,7 +280,7 @@ public partial class ScriptGlobals
                 response.QuestionId,
                 response.Answers);
         }
-        _ = Application.Invoke<PollAnswerRequest, PollDispatchReceipt>(
+        _ = _application.Invoke<PollAnswerRequest, PollDispatchReceipt>(
             ApplicationMemberIds.PollsAnswer,
             new PollAnswerRequest(
                 answer.PollId,

@@ -79,10 +79,6 @@ public sealed record LeaderboardPeriodView(
 /// Returned by <see cref="ApplicationMemberIds.LeaderboardsState"/>.
 /// </remarks>
 /// <param name="Connected">Whether the snapshot belongs to the active hotel session.</param>
-/// <param name="Client">
-/// The client type of the hotel session, or <see langword="null"/> when <paramref name="Connected"/> is
-/// <see langword="false"/>.
-/// </param>
 /// <param name="SessionGeneration">The state generation of the hotel session the snapshot was captured in.</param>
 /// <param name="Revision">
 /// The leaderboard state revision, increased when a board is stored, the week offset is set or the state resets.
@@ -106,7 +102,6 @@ public sealed record LeaderboardPeriodView(
 /// <param name="WindowSize">The window size sent with each leaderboard request.</param>
 public sealed record LeaderboardStateView(
     bool Connected,
-    ClientType? Client,
     long SessionGeneration,
     long Revision,
     long BoardsRevision,
@@ -150,10 +145,6 @@ public sealed record LeaderboardEntryPageRequest(
 /// Returned by <see cref="ApplicationMemberIds.LeaderboardsEntriesList"/>.
 /// </remarks>
 /// <param name="Connected">Whether the snapshot belongs to the active hotel session.</param>
-/// <param name="Client">
-/// The client type of the hotel session, or <see langword="null"/> when <paramref name="Connected"/> is
-/// <see langword="false"/>.
-/// </param>
 /// <param name="SessionGeneration">The state generation of the hotel session the snapshot was captured in.</param>
 /// <param name="StateRevision">The leaderboard state revision of the snapshot.</param>
 /// <param name="BoardsRevision">The revision increased when a board is stored or the state resets.</param>
@@ -167,7 +158,6 @@ public sealed record LeaderboardEntryPageRequest(
 /// <param name="Entries">The entries in the page.</param>
 public sealed record LeaderboardEntryPage(
     bool Connected,
-    ClientType? Client,
     long SessionGeneration,
     long StateRevision,
     long BoardsRevision,
@@ -215,7 +205,6 @@ public sealed record LeaderboardRefreshRequest(
 /// <remarks>
 /// Returned by <see cref="ApplicationMemberIds.LeaderboardsRefresh"/>.
 /// </remarks>
-/// <param name="Client">The client type of the hotel session.</param>
 /// <param name="RefreshedAtUtc">The time the result was created.</param>
 /// <param name="ObservedAtUtc">The time the matching board was received.</param>
 /// <param name="SessionGeneration">The state generation of the hotel session the refresh ran in.</param>
@@ -225,7 +214,6 @@ public sealed record LeaderboardRefreshRequest(
 /// <param name="MessagesDispatched">The number of request messages sent.</param>
 /// <param name="FirstPage">The first page of entries of the received board.</param>
 public sealed record LeaderboardRefreshResult(
-    ClientType Client,
     DateTimeOffset RefreshedAtUtc,
     DateTimeOffset ObservedAtUtc,
     long SessionGeneration,
@@ -284,7 +272,7 @@ public enum LeaderboardChangeKind
 /// </remarks>
 /// <param name="Kind">The kind of change.</param>
 /// <param name="ChangedAtUtc">The time the change was published.</param>
-/// <param name="Client">The client type of the hotel session, or <see langword="null"/> when no session is active.</param>
+/// <param name="Connected">Whether a hotel session is active.</param>
 /// <param name="SessionGeneration">The state generation of the hotel session.</param>
 /// <param name="Revision">The leaderboard state revision after the change.</param>
 /// <param name="SourceRevision">
@@ -310,7 +298,7 @@ public enum LeaderboardChangeKind
 public sealed record LeaderboardChanged(
     LeaderboardChangeKind Kind,
     DateTimeOffset ChangedAtUtc,
-    ClientType? Client,
+    bool Connected,
     long SessionGeneration,
     long Revision,
     long SourceRevision,

@@ -15,6 +15,6 @@ public static class PanelPress
         if (run.IsAlive)
             run.RequestStop();
         else
-            run.Start(null, panel_mode: true);
+            run.Start(null, panelMode: true);
     }
 }

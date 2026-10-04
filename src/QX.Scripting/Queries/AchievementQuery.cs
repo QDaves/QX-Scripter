@@ -54,19 +54,19 @@ public sealed class AchievementQuery : QueryCollection<Achievement>
     /// <summary>
     /// Filters the achievements to those with any of the specified badge codes, ignoring case.
     /// </summary>
-    /// <param name="badge_codes">The badge codes to keep, compared with <see cref="Achievement.BadgeCode"/>.</param>
+    /// <param name="badgeCodes">The badge codes to keep, compared with <see cref="Achievement.BadgeCode"/>.</param>
     /// <returns>A new query with the matching achievements.</returns>
-    public AchievementQuery WithBadgeCode(params string[] badge_codes) =>
-        WithBadgeCode((IEnumerable<string>)badge_codes);
+    public AchievementQuery WithBadgeCode(params string[] badgeCodes) =>
+        WithBadgeCode((IEnumerable<string>)badgeCodes);
 
     /// <summary>
     /// Filters the achievements to those with any of the specified badge codes, ignoring case.
     /// </summary>
-    /// <param name="badge_codes">The badge codes to keep, compared with <see cref="Achievement.BadgeCode"/>.</param>
+    /// <param name="badgeCodes">The badge codes to keep, compared with <see cref="Achievement.BadgeCode"/>.</param>
     /// <returns>A new query with the matching achievements.</returns>
-    public AchievementQuery WithBadgeCode(IEnumerable<string> badge_codes)
+    public AchievementQuery WithBadgeCode(IEnumerable<string> badgeCodes)
     {
-        HashSet<string> values = QueryValues.Strings(badge_codes);
+        HashSet<string> values = QueryValues.Strings(badgeCodes);
         return Where(achievement => values.Contains(achievement.BadgeCode));
     }
 
@@ -160,19 +160,19 @@ public sealed class AchievementQuery : QueryCollection<Achievement>
     /// <summary>
     /// Filters the achievements to those whose level reward is paid in any of the specified point types.
     /// </summary>
-    /// <param name="point_types">The point types to keep, compared with <see cref="Achievement.LevelRewardPointType"/>.</param>
+    /// <param name="pointTypes">The point types to keep, compared with <see cref="Achievement.LevelRewardPointType"/>.</param>
     /// <returns>A new query with the matching achievements.</returns>
-    public AchievementQuery WithRewardPointType(params int[] point_types) =>
-        WithRewardPointType((IEnumerable<int>)point_types);
+    public AchievementQuery WithRewardPointType(params int[] pointTypes) =>
+        WithRewardPointType((IEnumerable<int>)pointTypes);
 
     /// <summary>
     /// Filters the achievements to those whose level reward is paid in any of the specified point types.
     /// </summary>
-    /// <param name="point_types">The point types to keep, compared with <see cref="Achievement.LevelRewardPointType"/>.</param>
+    /// <param name="pointTypes">The point types to keep, compared with <see cref="Achievement.LevelRewardPointType"/>.</param>
     /// <returns>A new query with the matching achievements.</returns>
-    public AchievementQuery WithRewardPointType(IEnumerable<int> point_types)
+    public AchievementQuery WithRewardPointType(IEnumerable<int> pointTypes)
     {
-        HashSet<int> values = QueryValues.Set(point_types);
+        HashSet<int> values = QueryValues.Set(pointTypes);
         return Where(achievement => values.Contains(achievement.LevelRewardPointType));
     }
 

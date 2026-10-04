@@ -12,10 +12,6 @@ internal static class DailyTaskWire
     public const int TaskMinimumBytes = sizeof(long) + StringPrefixBytes * 4 + sizeof(byte) * 2
         + sizeof(int) * 4;
 
-    public static void RequireSupportedClient(ClientType client)
-    {
-    }
-
     public static int ReadCount(
         in PacketReader p,
         int minimum_element_bytes,
@@ -92,7 +88,6 @@ internal static class DailyTaskWire
 
     public static void WriteCount(int count, in PacketWriter p)
     {
-        RequireSupportedClient(p.Client);
         RequireCount(count, nameof(count));
         p.WriteInt(count);
     }

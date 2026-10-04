@@ -45,7 +45,6 @@ internal sealed partial class EarningApplication
         {
             EarningEntryPage first_page = EntryPageFor(lease, 0, request.Limit);
             var result = new EarningRefreshResult(
-                scope.Session.Client,
                 time_provider.GetUtcNow(),
                 observed.ObservedAtUtc,
                 scope.SessionGeneration,
@@ -94,7 +93,6 @@ internal sealed partial class EarningApplication
         try
         {
             var result = new EarningClaimActionResult(
-                scope.Session.Client,
                 operation.DispatchedAtUtc,
                 observed.ObservedAtUtc,
                 scope.SessionGeneration,

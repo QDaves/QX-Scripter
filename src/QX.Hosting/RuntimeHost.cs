@@ -19,7 +19,7 @@ public sealed class RuntimeHost : IDisposable, IAsyncDisposable
     readonly RuntimeHostOptions _options;
     readonly CancellationTokenSource _lifetime = new();
     readonly object _gate = new();
-    readonly Dictionary<(ClientType Client, string Path), Exception> _header_catalog_errors = [];
+    readonly Dictionary<string, Exception> _header_catalog_errors = [];
     readonly ApplicationRuntime application_runtime;
     readonly bool _owns_keyboard;
     Task _transport_task = Task.CompletedTask;
@@ -27,7 +27,7 @@ public sealed class RuntimeHost : IDisposable, IAsyncDisposable
     Task _header_task = Task.CompletedTask;
     Task? _startup;
     Task? _disposal;
-    IReadOnlyList<ClientCatalogLoadResult> _fallback_catalogs = [];
+    ClientCatalogLoadResult? _fallback_catalog;
     Exception? _mcp_error;
     bool _mcp_started;
     bool _mcp_initialized;
@@ -45,7 +45,7 @@ public sealed class RuntimeHost : IDisposable, IAsyncDisposable
         _options = options ?? throw new ArgumentNullException(nameof(options));
         _options.Validate();
         _owns_keyboard = _options.Keyboard is null;
-        Keyboard = _options.Keyboard ?? Keyboard.Create();
+        Keyboard = _options.Keyboard ?? KeyboardReader.Create();
 
         string scripts_directory = Path.GetFullPath(_options.ScriptsDirectory);
         Directory.CreateDirectory(scripts_directory);
@@ -65,13 +65,11 @@ public sealed class RuntimeHost : IDisposable, IAsyncDisposable
             Application,
             () => Extension.Session,
             () => Extension.IsInterceptorConnected,
-            () => Extension.Session is { } session && Messages.HasCatalog(session.Client),
-            () => Extension.Session is { } session &&
-                  Messages.GetWireProfile(session.Client).IsAnalyzed,
-            () => Extension.Session is { } session &&
-                  Messages.GetWireProfile(session.Client).HasExactIncomingLayout(session.Client),
-            () => Extension.Session is { } session
-                ? Messages.GetWireProfile(session.Client).MissingIncomingCapabilities(session.Client)
+            () => Extension.Session is not null && Messages.HasCatalog(),
+            () => Extension.Session is not null && Messages.GetWireProfile().IsAnalyzed,
+            () => Extension.Session is not null && Messages.GetWireProfile().HasExactIncomingLayout(),
+            () => Extension.Session is not null
+                ? Messages.GetWireProfile().MissingIncomingCapabilities()
                 : []);
         Rules = new SessionRules(
             Extension,
@@ -86,6 +84,7 @@ public sealed class RuntimeHost : IDisposable, IAsyncDisposable
             Game,
             Queries,
             Application,
+            Contracts,
             ScriptExecution,
             scripts_directory,
             editor);
@@ -111,7 +110,7 @@ public sealed class RuntimeHost : IDisposable, IAsyncDisposable
 
     public MessageManager Messages { get; }
 
-    public Keyboard Keyboard { get; }
+    public KeyboardReader Keyboard { get; }
 
     public MessageContractCatalog Contracts { get; }
 
@@ -164,8 +163,8 @@ public sealed class RuntimeHost : IDisposable, IAsyncDisposable
         }
     }
 
-    public IReadOnlyList<ClientCatalogLoadResult> FallbackCatalogs =>
-        Volatile.Read(ref _fallback_catalogs);
+    public ClientCatalogLoadResult? FallbackCatalog =>
+        Volatile.Read(ref _fallback_catalog);
 
     public IReadOnlyList<RuntimeHeaderCatalogFailure> HeaderCatalogErrors
     {
@@ -174,12 +173,8 @@ public sealed class RuntimeHost : IDisposable, IAsyncDisposable
             lock (_gate)
             {
                 return _header_catalog_errors
-                    .OrderBy(value => value.Key.Client)
-                    .ThenBy(value => value.Key.Path, StringComparer.OrdinalIgnoreCase)
-                    .Select(value => new RuntimeHeaderCatalogFailure(
-                        value.Key.Client,
-                        value.Key.Path,
-                        value.Value))
+                    .OrderBy(value => value.Key, StringComparer.OrdinalIgnoreCase)
+                    .Select(value => new RuntimeHeaderCatalogFailure(value.Key, value.Value))
                     .ToArray();
             }
         }
@@ -202,9 +197,9 @@ public sealed class RuntimeHost : IDisposable, IAsyncDisposable
         }
     }
 
-    public Task StartAsync(CancellationToken cancellation_token = default)
+    public Task StartAsync(CancellationToken cancellationToken = default)
     {
-        cancellation_token.ThrowIfCancellationRequested();
+        cancellationToken.ThrowIfCancellationRequested();
         Task startup;
         lock (_gate)
         {
@@ -216,7 +211,7 @@ public sealed class RuntimeHost : IDisposable, IAsyncDisposable
             }
             startup = _startup;
         }
-        return startup.WaitAsync(cancellation_token);
+        return startup.WaitAsync(cancellationToken);
     }
 
     Task StartCoreAsync()
@@ -228,7 +223,7 @@ public sealed class RuntimeHost : IDisposable, IAsyncDisposable
         }
         if (_options.EnableFallbackCatalogs && HeaderCatalogs is null)
         {
-            Task fallback = LoadFallbackCatalogsAsync();
+            Task fallback = LoadFallbackCatalogAsync();
             lock (_gate)
                 _fallback_task = fallback;
         }
@@ -325,25 +320,22 @@ public sealed class RuntimeHost : IDisposable, IAsyncDisposable
         }
     }
 
-    async Task LoadFallbackCatalogsAsync()
+    async Task LoadFallbackCatalogAsync()
     {
         var resolver = new ClientCatalogResolver(
             Http,
             _options.InstalledClients.LauncherDataPath,
             _options.InstalledClients.CacheRootPath);
-        IReadOnlyList<ClientCatalogLoadResult> catalogs = await ClientCatalogBootstrapper.LoadInstalledAsync(
+        ClientCatalogLoadResult catalog = await ClientCatalogBootstrapper.LoadInstalledAsync(
             Messages,
             resolver,
             _ => Extension.RebindInterceptors(),
-            cancellation_token: _lifetime.Token).ConfigureAwait(false);
-        Volatile.Write(ref _fallback_catalogs, catalogs);
-        foreach (ClientCatalogLoadResult catalog in catalogs)
-        {
-            if (catalog.Resolution is { } loaded)
-                Diag.Info($"Loaded {loaded.Client} {loaded.Version} header fallback from {loaded.Source}", "protocol");
-            else if (catalog.Error is not null)
-                Diag.Warn($"{catalog.Client} header fallback unavailable: {catalog.Error.Message}", "protocol");
-        }
+            cancellationToken: _lifetime.Token).ConfigureAwait(false);
+        Volatile.Write(ref _fallback_catalog, catalog);
+        if (catalog.Resolution is { } loaded)
+            Diag.Info($"Loaded {loaded.Version} header fallback from {loaded.Source}", "protocol");
+        else if (catalog.Error is not null)
+            Diag.Warn($"Header fallback unavailable: {catalog.Error.Message}", "protocol");
     }
 
     void HeaderPreparationChanged(object? sender, HeaderCatalogPreparationChangedEventArgs args)
@@ -352,22 +344,22 @@ public sealed class RuntimeHost : IDisposable, IAsyncDisposable
         if (status.Stage == HeaderCatalogPreparationStage.Failed)
         {
             Exception error = status.Error ?? new InvalidDataException(
-                $"{status.Client} {status.Candidate.Version} header preparation failed.");
+                $"{status.Candidate.Version} header preparation failed.");
             lock (_gate)
-                _header_catalog_errors[(status.Client, status.NormalizedPath)] = error;
+                _header_catalog_errors[status.NormalizedPath] = error;
             Diag.Warn(
-                $"{status.Client} {status.Candidate.Version} header preparation failed: {error.Message}",
+                $"{status.Candidate.Version} header preparation failed: {error.Message}",
                 "protocol");
             return;
         }
         if (status.Stage == HeaderCatalogPreparationStage.Ready)
         {
             lock (_gate)
-                _header_catalog_errors.Remove((status.Client, status.NormalizedPath));
+                _header_catalog_errors.Remove(status.NormalizedPath);
         }
         if (status.Stage != HeaderCatalogPreparationStage.Ready)
             return;
-        if (!HeaderCatalogs!.TryGetByPath(status.Client, status.NormalizedPath, out PreparedHeaderCatalog? prepared) ||
+        if (!HeaderCatalogs!.TryGetByPath(status.NormalizedPath, out PreparedHeaderCatalog? prepared) ||
             prepared is null)
             return;
         IntegratePreparedCatalog(prepared);
@@ -376,25 +368,23 @@ public sealed class RuntimeHost : IDisposable, IAsyncDisposable
     internal bool IntegratePreparedCatalog(PreparedHeaderCatalog prepared)
     {
         ArgumentNullException.ThrowIfNull(prepared);
-        var identity = (prepared.Key.Client, prepared.NormalizedPath);
         try
         {
             MessageCatalog catalog = ClientCatalogFactory.Create(prepared);
-            Messages.LoadVerifiedFallbackCatalog(prepared.Key.Client, catalog, preferred: false);
             lock (_gate)
-                _header_catalog_errors.Remove(identity);
+                _header_catalog_errors.Remove(prepared.NormalizedPath);
             string build = prepared.Catalog.ClientBuildIds.Count == 0 ? "unknown" : string.Join(", ", prepared.Catalog.ClientBuildIds);
             Diag.Info(
-                $"Prepared {prepared.Key.Client} catalog from {prepared.Candidate.Source} release {prepared.Candidate.Version} (build {build}) with {catalog.HeaderCount} headers",
+                $"Prepared catalog from {prepared.Candidate.Source} release {prepared.Candidate.Version} (build {build}) with {catalog.HeaderCount} headers",
                 "protocol");
             return true;
         }
         catch (Exception error)
         {
             lock (_gate)
-                _header_catalog_errors[identity] = error;
+                _header_catalog_errors[prepared.NormalizedPath] = error;
             Diag.Error(
-                $"Unable to load prepared {prepared.Key.Client} {prepared.Candidate.Version} headers: {error.Message}",
+                $"Unable to load prepared {prepared.Candidate.Version} headers: {error.Message}",
                 "protocol");
             return false;
         }
@@ -496,7 +486,7 @@ public sealed class RuntimeHost : IDisposable, IAsyncDisposable
 
         Rules.Dispose();
         application_runtime.Dispose();
-        Game.Dispose();
+        ((IDisposable)Game).Dispose();
         Extension.Dispose();
         Http.Dispose();
         if (_owns_keyboard)

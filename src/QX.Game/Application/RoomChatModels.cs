@@ -33,7 +33,7 @@ public sealed record RoomChatHistoryPage
     /// <param name="next">The sequence to read after for the next page.</param>
     /// <param name="oldest">The sequence of the oldest retained entry, or 0 when the journal is empty.</param>
     /// <param name="latest">The sequence of the latest recorded entry, or 0 when none was recorded.</param>
-    /// <param name="has_more">Whether more entries follow the page.</param>
+    /// <param name="hasMore">Whether more entries follow the page.</param>
     /// <param name="gap">Whether entries after the cursor were dropped or the cursor is ahead of the latest entry.</param>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="entries"/> is <see langword="null"/>.</exception>
     public RoomChatHistoryPage(
@@ -42,7 +42,7 @@ public sealed record RoomChatHistoryPage
         long next,
         long oldest,
         long latest,
-        bool has_more,
+        bool hasMore,
         bool gap)
     {
         ArgumentNullException.ThrowIfNull(entries);
@@ -51,7 +51,7 @@ public sealed record RoomChatHistoryPage
         Next = next;
         Oldest = oldest;
         Latest = latest;
-        HasMore = has_more;
+        HasMore = hasMore;
         Gap = gap;
     }
 
@@ -102,41 +102,38 @@ public sealed record RoomChatEntry
     /// Initializes a new instance of the <see cref="RoomChatEntry"/> record.
     /// </summary>
     /// <param name="sequence">The journal sequence of the entry.</param>
-    /// <param name="received_at_utc">The time the message was received.</param>
-    /// <param name="client">The client type of the hotel session.</param>
-    /// <param name="room_id">The id of the room the message was received in, or <see langword="null"/> when unknown.</param>
-    /// <param name="room_generation">The room state generation the message was received in.</param>
-    /// <param name="speaker_index">The room index of the speaking avatar.</param>
-    /// <param name="speaker_id">The id of the speaker, or <see langword="null"/> when the avatar was not found.</param>
-    /// <param name="speaker_name">The name of the speaker, or <see langword="null"/> when the avatar was not found.</param>
-    /// <param name="speaker_type">The avatar type of the speaker, or <see langword="null"/> when the avatar was not found.</param>
-    /// <param name="speaker_figure">The figure string of the speaker, or <see langword="null"/> when the avatar was not found.</param>
+    /// <param name="receivedAtUtc">The time the message was received.</param>
+    /// <param name="roomId">The id of the room the message was received in, or <see langword="null"/> when unknown.</param>
+    /// <param name="roomGeneration">The room state generation the message was received in.</param>
+    /// <param name="speakerIndex">The room index of the speaking avatar.</param>
+    /// <param name="speakerId">The id of the speaker, or <see langword="null"/> when the avatar was not found.</param>
+    /// <param name="speakerName">The name of the speaker, or <see langword="null"/> when the avatar was not found.</param>
+    /// <param name="speakerType">The avatar type of the speaker, or <see langword="null"/> when the avatar was not found.</param>
+    /// <param name="speakerFigure">The figure string of the speaker, or <see langword="null"/> when the avatar was not found.</param>
     /// <param name="chat">The chat message as received from the hotel.</param>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="chat"/> is <see langword="null"/>.</exception>
     public RoomChatEntry(
         long sequence,
-        DateTimeOffset received_at_utc,
-        ClientType client,
-        Id? room_id,
-        long room_generation,
-        int speaker_index,
-        Id? speaker_id,
-        string? speaker_name,
-        AvatarType? speaker_type,
-        string? speaker_figure,
+        DateTimeOffset receivedAtUtc,
+        Id? roomId,
+        long roomGeneration,
+        int speakerIndex,
+        Id? speakerId,
+        string? speakerName,
+        AvatarType? speakerType,
+        string? speakerFigure,
         AvatarChat chat)
     {
         ArgumentNullException.ThrowIfNull(chat);
         Sequence = sequence;
-        ReceivedAtUtc = received_at_utc;
-        Client = client;
-        RoomId = room_id;
-        RoomGeneration = room_generation;
-        SpeakerIndex = speaker_index;
-        SpeakerId = speaker_id;
-        SpeakerName = speaker_name;
-        SpeakerType = speaker_type;
-        SpeakerFigure = speaker_figure;
+        ReceivedAtUtc = receivedAtUtc;
+        RoomId = roomId;
+        RoomGeneration = roomGeneration;
+        SpeakerIndex = speakerIndex;
+        SpeakerId = speakerId;
+        SpeakerName = speakerName;
+        SpeakerType = speakerType;
+        SpeakerFigure = speakerFigure;
         Chat = CopyChat(chat);
     }
 
@@ -148,10 +145,6 @@ public sealed record RoomChatEntry
     /// Gets the time the message was received.
     /// </summary>
     public DateTimeOffset ReceivedAtUtc { get; }
-    /// <summary>
-    /// Gets the client type of the hotel session.
-    /// </summary>
-    public ClientType Client { get; }
     /// <summary>
     /// Gets the id of the room the message was received in, or <see langword="null"/> when no room id was known.
     /// </summary>
@@ -240,14 +233,12 @@ public sealed record RoomChatShoutRequest(string Message, int Bubble = 0);
 /// The message is only sent while the room is ready and its generation is unchanged, and the hotel's
 /// response is not awaited.
 /// </remarks>
-/// <param name="Client">The client type of the hotel session.</param>
 /// <param name="RoomId">The id of the current room, or <see langword="null"/> when no room id is known.</param>
 /// <param name="RoomGeneration">The room state generation the message was sent in.</param>
 /// <param name="Dispatched">Whether the message was sent.</param>
 /// <param name="ServerConfirmed">Whether the hotel confirmed the message, which is always <see langword="false"/>.</param>
 /// <param name="DispatchedAtUtc">The time the message was sent.</param>
 public sealed record RoomChatSendResult(
-    ClientType Client,
     Id? RoomId,
     long RoomGeneration,
     bool Dispatched,
@@ -261,14 +252,12 @@ public sealed record RoomChatSendResult(
 /// Returned by <see cref="ApplicationMemberIds.RoomChatWhisper"/>. The message is only sent while the
 /// room is ready and its generation is unchanged, and the hotel's response is not awaited.
 /// </remarks>
-/// <param name="Client">The client type of the hotel session.</param>
 /// <param name="RoomId">The id of the current room, or <see langword="null"/> when no room id is known.</param>
 /// <param name="RoomGeneration">The room state generation the message was sent in.</param>
 /// <param name="Dispatched">Whether the message was sent.</param>
 /// <param name="ServerConfirmed">Whether the hotel confirmed the message, which is always <see langword="false"/>.</param>
 /// <param name="DispatchedAtUtc">The time the message was sent.</param>
 public sealed record RoomChatWhisperResult(
-    ClientType Client,
     Id? RoomId,
     long RoomGeneration,
     bool Dispatched,

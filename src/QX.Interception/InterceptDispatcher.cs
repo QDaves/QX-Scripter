@@ -8,7 +8,7 @@ namespace Qx.Interception;
 /// <summary>Provides the dispatch of intercepted packets to the callbacks registered for their header.</summary>
 /// <remarks>
 /// Registrations by identifier or semantic key are resolved to headers again after every registration
-/// change or rebind, against the message manager that is bound at that time.
+/// change or rebind, against the message resolver that is bound at that time.
 /// </remarks>
 public sealed class InterceptDispatcher
 {
@@ -20,7 +20,6 @@ public sealed class InterceptDispatcher
         public Identifier? Identifier;
         public MessageKey? Key;
         public required Action<Intercept> Callback;
-        public bool Removed;
     }
 
     private sealed class Bindings
@@ -42,19 +41,15 @@ public sealed class InterceptDispatcher
     private readonly HashSet<MessageKey> _reported_keys = [];
     private readonly object _sync = new();
     private volatile Bindings? _bindings;
-    private IMessageManager? _manager;
-    private ISemanticMessageResolver? _semantic_resolver;
+    private IMessageResolver? _resolver;
     private bool _messages_available;
 
-    /// <summary>Gets the identifiers that the bound message manager could not resolve to a header.</summary>
+    /// <summary>Gets the identifiers that the bound message resolver could not resolve to a header.</summary>
     /// <remarks>Callbacks registered under these identifiers are bound to nothing and never run.</remarks>
     public IReadOnlyList<Identifier> UnresolvedIdentifiers => Snapshot().Unresolved;
 
     /// <summary>Gets the semantic message keys that the bound resolver could not resolve to a header.</summary>
-    /// <remarks>
-    /// Callbacks registered under these keys are bound to nothing and never run. Keys that are known but
-    /// do not apply to the current client are left out.
-    /// </remarks>
+    /// <remarks>Callbacks registered under these keys are bound to nothing and never run.</remarks>
     public IReadOnlyList<MessageKey> UnresolvedKeys => Snapshot().UnresolvedKeys;
 
     /// <summary>Occurs when an intercept callback throws.</summary>
@@ -81,22 +76,22 @@ public sealed class InterceptDispatcher
     /// <summary>Registers a callback for packets of a named message.</summary>
     /// <param name="identifier">The message to intercept.</param>
     /// <param name="callback">The callback that receives each matching packet.</param>
-    /// <param name="manager">The message manager that resolves identifiers, which replaces the one used for every identifier registration.</param>
+    /// <param name="resolver">The resolver that maps identifiers and keys to headers, which replaces the one used for every registration.</param>
     /// <returns>A handle that removes the callback when disposed.</returns>
     /// <exception cref="ArgumentException">Thrown when <paramref name="identifier"/> has no message name or no direction.</exception>
-    /// <exception cref="ArgumentNullException">Thrown when <paramref name="callback"/> or <paramref name="manager"/> is <see langword="null"/>.</exception>
-    public IDisposable Add(Identifier identifier, Action<Intercept> callback, IMessageManager manager)
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="callback"/> or <paramref name="resolver"/> is <see langword="null"/>.</exception>
+    public IDisposable Add(Identifier identifier, Action<Intercept> callback, IMessageResolver resolver)
     {
         if (string.IsNullOrWhiteSpace(identifier.Name))
             throw new ArgumentException("An intercept requires a message name.", nameof(identifier));
-        if (identifier.Direction is not (Direction.In or Direction.Out or Direction.Both))
+        if (identifier.Direction is not (MessageDirection.In or MessageDirection.Out or MessageDirection.Both))
             throw new ArgumentException("An intercept requires the in, out or both direction.", nameof(identifier));
         ArgumentNullException.ThrowIfNull(callback);
-        ArgumentNullException.ThrowIfNull(manager);
+        ArgumentNullException.ThrowIfNull(resolver);
         var registration = new Registration { Identifier = identifier, Callback = callback };
         lock (_sync)
         {
-            _manager = manager;
+            _resolver = resolver;
             _registrations.Add(registration);
             _bindings = null;
         }
@@ -106,11 +101,11 @@ public sealed class InterceptDispatcher
     /// <summary>Registers a callback for packets of a semantic message.</summary>
     /// <param name="key">The semantic message key to intercept.</param>
     /// <param name="callback">The callback that receives each matching packet.</param>
-    /// <param name="resolver">The resolver that maps keys to headers, which replaces the one used for every key registration.</param>
+    /// <param name="resolver">The resolver that maps identifiers and keys to headers, which replaces the one used for every registration.</param>
     /// <returns>A handle that removes the callback when disposed.</returns>
     /// <exception cref="ArgumentException">Thrown when <paramref name="key"/> is empty.</exception>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="callback"/> or <paramref name="resolver"/> is <see langword="null"/>.</exception>
-    public IDisposable Add(MessageKey key, Action<Intercept> callback, ISemanticMessageResolver resolver)
+    public IDisposable Add(MessageKey key, Action<Intercept> callback, IMessageResolver resolver)
     {
         if (key.IsEmpty)
             throw new ArgumentException("An intercept requires a semantic message key.", nameof(key));
@@ -119,7 +114,7 @@ public sealed class InterceptDispatcher
         var registration = new Registration { Key = key, Callback = callback };
         lock (_sync)
         {
-            _semantic_resolver = resolver;
+            _resolver = resolver;
             _registrations.Add(registration);
             _bindings = null;
         }
@@ -127,27 +122,22 @@ public sealed class InterceptDispatcher
     }
 
     /// <summary>
-    /// Rebinds every identifier and semantic key registration against <paramref name="manager"/>.
+    /// Rebinds every identifier and semantic key registration against <paramref name="resolver"/>.
     /// </summary>
-    /// <remarks>
-    /// Semantic keys resolve only when <paramref name="manager"/> also implements
-    /// <see cref="ISemanticMessageResolver"/>.
-    /// </remarks>
-    /// <param name="manager">The message manager used to resolve identifiers to headers.</param>
-    /// <param name="messages_available">
-    /// Whether a message catalog is currently loaded for the active client. When false and nothing
+    /// <param name="resolver">The resolver used to map identifiers and keys to headers.</param>
+    /// <param name="messagesAvailable">
+    /// Whether a message catalog is currently loaded for the active session. When false and nothing
     /// resolves, unresolved registrations are expected and are reported at debug level; otherwise each
     /// unresolved identifier or key is a real defect and is reported as a warning once until the next rebind.
     /// </param>
-    /// <exception cref="ArgumentNullException">Thrown when <paramref name="manager"/> is <see langword="null"/>.</exception>
-    public void Rebind(IMessageManager manager, bool messages_available = true)
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="resolver"/> is <see langword="null"/>.</exception>
+    public void Rebind(IMessageResolver resolver, bool messagesAvailable = true)
     {
-        ArgumentNullException.ThrowIfNull(manager);
+        ArgumentNullException.ThrowIfNull(resolver);
         lock (_sync)
         {
-            _manager = manager;
-            _semantic_resolver = manager as ISemanticMessageResolver;
-            _messages_available = messages_available;
+            _resolver = resolver;
+            _messages_available = messagesAvailable;
             _bindings = null;
             _reported.Clear();
             _reported_keys.Clear();
@@ -215,9 +205,6 @@ public sealed class InterceptDispatcher
 
         foreach (Registration registration in _registrations)
         {
-            if (registration.Removed)
-                continue;
-
             IReadOnlyList<Header> headers;
             if (registration.Header is Header header)
             {
@@ -238,8 +225,8 @@ public sealed class InterceptDispatcher
             }
             else if (registration.Key is { } key)
             {
-                if (_semantic_resolver is not null &&
-                    _semantic_resolver.TryGetHeaders(key, out IReadOnlyList<Header> resolved) &&
+                if (_resolver is not null &&
+                    _resolver.TryGetHeaders(key, out IReadOnlyList<Header> resolved) &&
                     resolved.Count > 0)
                 {
                     headers = resolved;
@@ -247,12 +234,6 @@ public sealed class InterceptDispatcher
                 }
                 else
                 {
-                    if (_semantic_resolver is not null &&
-                        _semantic_resolver.IsKnown(key) &&
-                        !_semantic_resolver.IsApplicable(key))
-                    {
-                        continue;
-                    }
                     (unresolved_keys ??= []).Add(key);
                     continue;
                 }
@@ -293,13 +274,13 @@ public sealed class InterceptDispatcher
     private bool TryResolve(Identifier identifier, out IReadOnlyList<Header> headers)
     {
         headers = [];
-        if (_manager is null)
+        if (_resolver is null)
             return false;
-        if (identifier.Direction is not Direction.Both)
-            return _manager.TryGetHeaders(identifier, out headers) && headers.Count > 0;
+        if (identifier.Direction is not MessageDirection.Both)
+            return _resolver.TryGetHeaders(identifier, out headers) && headers.Count > 0;
 
-        _manager.TryGetHeaders(identifier with { Direction = Direction.In }, out IReadOnlyList<Header> incoming);
-        _manager.TryGetHeaders(identifier with { Direction = Direction.Out }, out IReadOnlyList<Header> outgoing);
+        _resolver.TryGetHeaders(identifier with { Direction = MessageDirection.In }, out IReadOnlyList<Header> incoming);
+        _resolver.TryGetHeaders(identifier with { Direction = MessageDirection.Out }, out IReadOnlyList<Header> outgoing);
         headers = [.. incoming, .. outgoing];
         return headers.Count > 0;
     }
@@ -326,7 +307,7 @@ public sealed class InterceptDispatcher
             if (!_reported.Add(identifier))
                 continue;
             Diag.Warn(
-                $"Unresolved intercept identifier '{identifier.ToString(identifier.Direction is not Direction.Both)}'; " +
+                $"Unresolved intercept identifier '{identifier.ToString(true)}'; " +
                 "no header matched it, so its callbacks will never run.",
                 Category);
         }
@@ -365,20 +346,20 @@ public sealed class InterceptDispatcher
 
     private string Describe(Header header)
     {
-        IMessageManager? manager;
+        IMessageResolver? resolver;
         lock (_sync)
-            manager = _manager;
+            resolver = _resolver;
 
         string direction = header.Direction switch
         {
-            Direction.In => "in",
-            Direction.Out => "out",
+            MessageDirection.In => "in",
+            MessageDirection.Out => "out",
             _ => "unknown"
         };
 
         try
         {
-            if (manager is not null && manager.TryGetIdentifier(header, out Identifier identifier))
+            if (resolver is not null && resolver.TryGetIdentifier(header, out Identifier identifier))
                 return $"{identifier.ToString(true)} ({direction}:{header.Value})";
         }
         catch
@@ -392,13 +373,19 @@ public sealed class InterceptDispatcher
     {
         lock (_sync)
         {
-            registration.Removed = true;
-            _bindings = null;
+            if (_registrations.Remove(registration))
+                _bindings = null;
         }
     }
 
     private sealed class Subscription(InterceptDispatcher dispatcher, Registration registration) : IDisposable
     {
-        public void Dispose() => dispatcher.Remove(registration);
+        private Registration? _registration = registration;
+
+        public void Dispose()
+        {
+            if (Interlocked.Exchange(ref _registration, null) is { } current)
+                dispatcher.Remove(current);
+        }
     }
 }

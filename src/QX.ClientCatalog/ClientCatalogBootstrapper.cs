@@ -1,10 +1,8 @@
-using Qx;
 using Qx.Protocol;
 
 namespace Qx.ClientCatalog;
 
 public sealed record ClientCatalogLoadResult(
-    ClientType Client,
     ClientCatalogResolution? Resolution,
     Exception? Error)
 {
@@ -13,41 +11,28 @@ public sealed record ClientCatalogLoadResult(
 
 public static class ClientCatalogBootstrapper
 {
-    public static async Task<IReadOnlyList<ClientCatalogLoadResult>> LoadInstalledAsync(
+    public static async Task<ClientCatalogLoadResult> LoadInstalledAsync(
         MessageManager messages,
         ClientCatalogResolver resolver,
         Action<ClientCatalogResolution>? loaded = null,
-        CancellationToken cancellation_token = default)
+        CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(messages);
-        Task<ClientCatalogLoadResult>[] tasks = ClientCatalogClients.Supported
-            .Select(client => LoadAsync(messages, resolver, client, loaded, cancellation_token))
-            .ToArray();
-        return await Task.WhenAll(tasks).ConfigureAwait(false);
-    }
-
-    static async Task<ClientCatalogLoadResult> LoadAsync(
-        MessageManager messages,
-        ClientCatalogResolver resolver,
-        ClientType client,
-        Action<ClientCatalogResolution>? loaded,
-        CancellationToken cancellation_token)
-    {
         try
         {
             ClientCatalogResolution? resolution = await resolver
-                .ResolveHeadersAsync(client, true, cancellation_token)
+                .ResolveHeadersAsync(true, cancellationToken)
                 .ConfigureAwait(false);
             if (resolution is not null)
             {
-                messages.LoadVerifiedFallbackCatalog(client, resolution.Catalog);
+                messages.LoadVerifiedFallbackCatalog(resolution.Catalog);
                 loaded?.Invoke(resolution);
             }
-            return new ClientCatalogLoadResult(client, resolution, null);
+            return new ClientCatalogLoadResult(resolution, null);
         }
         catch (Exception error) when (error is not OperationCanceledException)
         {
-            return new ClientCatalogLoadResult(client, null, error);
+            return new ClientCatalogLoadResult(null, error);
         }
     }
 }

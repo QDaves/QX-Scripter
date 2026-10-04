@@ -184,10 +184,6 @@ public sealed record RoomBanPage(
 /// <see cref="ApplicationMemberIds.RoomModerationRefresh"/>.
 /// </remarks>
 /// <param name="Connected">Whether a hotel session is active.</param>
-/// <param name="Client">
-/// The client type of the hotel session, or <see langword="null"/> when <paramref name="Connected"/> is
-/// <see langword="false"/>.
-/// </param>
 /// <param name="SessionGeneration">The session generation of the ban list state, increased when the hotel session changes.</param>
 /// <param name="Revision">The ban list state revision, increased by every committed change.</param>
 /// <param name="RoomGeneration">The generation of the room the ban list is bound to.</param>
@@ -199,7 +195,6 @@ public sealed record RoomBanPage(
 /// <param name="BanList">The requested page of the ban list.</param>
 public sealed record RoomModerationStateView(
     bool Connected,
-    ClientType? Client,
     long SessionGeneration,
     long Revision,
     long RoomGeneration,
@@ -216,7 +211,6 @@ public sealed record RoomModerationStateView(
 /// <see cref="ApplicationMemberIds.RoomModerationBan"/>, <see cref="ApplicationMemberIds.RoomModerationUnban"/> and
 /// <see cref="ApplicationMemberIds.RoomModerationBounce"/>. The hotel's reaction is not awaited.
 /// </remarks>
-/// <param name="Client">The client type of the hotel session.</param>
 /// <param name="DispatchedAtUtc">The time the result was created after the messages were sent.</param>
 /// <param name="SessionGeneration">The session generation of the ban list state the action ran in.</param>
 /// <param name="StateRevision">The ban list state revision checked when the message was sent.</param>
@@ -228,7 +222,6 @@ public sealed record RoomModerationStateView(
 /// <param name="UserIndex">The room index of the target user, or <see langword="null"/> for an unban.</param>
 /// <param name="MessagesDispatched">The number of messages sent, which is 2 for a bounce and 1 otherwise.</param>
 public sealed record RoomModerationDispatchResult(
-    ClientType Client,
     DateTimeOffset DispatchedAtUtc,
     long SessionGeneration,
     long StateRevision,
@@ -259,10 +252,6 @@ public enum RoomModerationChangeKind
 /// Represents a summary of the room moderation state.
 /// </summary>
 /// <param name="Connected">Whether the ban list state is bound to a hotel session.</param>
-/// <param name="Client">
-/// The client type of the hotel session, or <see langword="null"/> when <paramref name="Connected"/> is
-/// <see langword="false"/>.
-/// </param>
 /// <param name="SessionGeneration">The session generation of the ban list state, increased when the hotel session changes.</param>
 /// <param name="Revision">The ban list state revision, increased by every committed change.</param>
 /// <param name="RoomGeneration">The generation of the room the ban list is bound to.</param>
@@ -273,7 +262,6 @@ public enum RoomModerationChangeKind
 /// <param name="TotalBans">The number of bans in the loaded list.</param>
 public sealed record RoomModerationStateSummary(
     bool Connected,
-    ClientType? Client,
     long SessionGeneration,
     long Revision,
     long RoomGeneration,

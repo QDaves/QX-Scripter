@@ -116,12 +116,12 @@ public sealed record HabboClubOffers : IParserComposer<HabboClubOffers>
         Array.AsReadOnly(Array.Empty<HabboClubOffer>());
 
     /// <summary>Initializes a new instance of the <see cref="HabboClubOffers"/> record.</summary>
-    /// <param name="Offers">The offers, copied into a read only list.</param>
-    /// <param name="DaysLeft">The number of membership days the account has left.</param>
-    public HabboClubOffers(IReadOnlyList<HabboClubOffer> Offers, int DaysLeft)
+    /// <param name="offers">The offers, copied into a read only list.</param>
+    /// <param name="daysLeft">The number of membership days the account has left.</param>
+    public HabboClubOffers(IReadOnlyList<HabboClubOffer> offers, int daysLeft)
     {
-        this.Offers = Offers;
-        this.DaysLeft = DaysLeft;
+        Offers = offers;
+        DaysLeft = daysLeft;
     }
 
     /// <summary>Gets the offers, in the order the hotel sent them, as a read only copy.</summary>
@@ -149,7 +149,7 @@ public sealed record HabboClubOffers : IParserComposer<HabboClubOffers>
     {
         SubscriptionAdjunctWire.RequireMinimum(
             in p,
-            CatalogWire.CountWidth(p.Client) + sizeof(int),
+            CatalogWire.CountWidth + sizeof(int),
             nameof(HabboClubOffers));
         int count = CatalogWire.ReadCount(
             in p,
@@ -205,80 +205,13 @@ public sealed record HabboClubOffers : IParserComposer<HabboClubOffers>
     }
 
     /// <summary>Deconstructs the message into its parts.</summary>
-    /// <param name="Offers">The offers.</param>
-    /// <param name="DaysLeft">The number of membership days the account has left.</param>
+    /// <param name="offers">The offers.</param>
+    /// <param name="daysLeft">The number of membership days the account has left.</param>
     public void Deconstruct(
-        out IReadOnlyList<HabboClubOffer> Offers,
-        out int DaysLeft)
+        out IReadOnlyList<HabboClubOffer> offers,
+        out int daysLeft)
     {
-        Offers = this.Offers;
-        DaysLeft = this.DaysLeft;
-    }
-}
-
-/// <summary>Represents the <c>GetClubOffers</c> message, sent to request the club membership offers.</summary>
-/// <param name="OfferType">The offer set selector sent to the hotel.</param>
-public sealed record GetClubOffers(int OfferType) : IParserComposer<GetClubOffers>
-{
-    /// <summary>Parses the message from a packet.</summary>
-    /// <param name="p">The packet reader.</param>
-    public static GetClubOffers Parse(in PacketReader p) =>
-        FlashWire.Parse(in p, ParseFlash);
-
-    private static GetClubOffers ParseFlash(in PacketReader p) => ParseRequest(in p);
-
-    private static GetClubOffers ParseRequest(in PacketReader p)
-    {
-        SubscriptionAdjunctWire.RequireSize(in p, sizeof(int), nameof(GetClubOffers));
-        var value = new GetClubOffers(p.ReadInt());
-        SubscriptionAdjunctWire.RequireEmpty(in p, nameof(GetClubOffers));
-        return value;
-    }
-
-    /// <summary>Composes the message into a packet.</summary>
-    /// <param name="p">The packet writer.</param>
-    public void Compose(in PacketWriter p) =>
-        FlashWire.Compose(this, in p, ComposeFlash);
-
-    private static void ComposeFlash(GetClubOffers value, in PacketWriter p) =>
-        p.WriteInt(value.OfferType);
-}
-
-internal static class SubscriptionAdjunctWire
-{
-    public const int MaximumOfferCount = ushort.MaxValue;
-    public const int MaximumStringBytes = 8 * 1024 * 1024;
-    public const int MinimumOfferSize = 45;
-    public const int MinimumOfferTailSize = 39;
-
-    public static void RequireEmpty(in PacketReader p, string name)
-    {
-        if (p.Available != 0)
-            throw new InvalidDataException($"{name} contains {p.Available} unexpected bytes.");
-    }
-
-    public static void RequireSize(in PacketReader p, int expected, string name)
-    {
-        if (p.Available != expected)
-        {
-            throw new InvalidDataException(
-                $"{name} requires exactly {expected} bytes, received {p.Available}.");
-        }
-    }
-
-    public static void RequireMinimum(in PacketReader p, int minimum, string name)
-    {
-        if (p.Available < minimum)
-        {
-            throw new InvalidDataException(
-                $"{name} requires at least {minimum} bytes, received {p.Available}.");
-        }
-    }
-
-    public static void RequireString(string value, string name, in PacketWriter p)
-    {
-        ArgumentNullException.ThrowIfNull(value, name);
-        if (p.Encoding.GetByteCount(value) > ushort.MaxValue)
-            throw new InvalidDataException($"{name} exceeds the wire string limit.");
+        offers = Offers;
+        daysLeft = DaysLeft;
     }
 }

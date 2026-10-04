@@ -9,7 +9,7 @@ namespace Qx.Desktop.Converters;
 
 public sealed class NoticeBrush : IValueConverter
 {
-    public object? Convert(object? value, Type target_type, object? parameter, CultureInfo culture)
+    public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
     {
         if (value is not NoticeSeverity severity || Application.Current is not { } application)
             return null;
@@ -24,6 +24,6 @@ public sealed class NoticeBrush : IValueConverter
         return application.TryGetResource(key, application.ActualThemeVariant, out object? resource) && resource is IBrush brush ? brush : null;
     }
 
-    public object? ConvertBack(object? value, Type target_type, object? parameter, CultureInfo culture) =>
+    public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) =>
         throw new NotSupportedException();
 }

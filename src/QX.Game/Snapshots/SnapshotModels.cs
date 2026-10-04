@@ -5,8 +5,8 @@ using Qx.Model;
 namespace Qx.Game.Snapshots;
 
 /// <summary>
-/// Represents the load state that accompanies every snapshot, describing how complete and how
-/// trustworthy the payload next to it is.
+/// Represents the load state that accompanies every payload of the MCP read tools, describing how
+/// complete and how trustworthy it is.
 /// </summary>
 /// <remarks>
 /// This is what separates "the room genuinely has no furni" from "the furni packets have
@@ -48,13 +48,14 @@ public sealed record QueryMetadataSnapshot(
     IReadOnlyList<string> Pending);
 
 /// <summary>
-/// A failed query, classified so a caller can react without parsing an exception message.
+/// Represents a failed MCP read query, classified so a caller can react without parsing an
+/// exception message.
 /// </summary>
 /// <param name="Code">
 /// The stable failure class. One of <c>cancelled</c>, <c>timeout</c>, <c>disconnected</c>,
-/// <c>invalid_response</c>, <c>correlation_error</c>, <c>unsupported_client</c>,
-/// <c>unsupported</c>, <c>not_found</c>, <c>invalid_request</c>, <c>connection_error</c>,
-/// <c>unavailable</c> or <c>request_failed</c>. Prefer this over <paramref name="Type"/>.
+/// <c>invalid_response</c>, <c>correlation_error</c>, <c>unsupported</c>, <c>not_found</c>,
+/// <c>invalid_request</c>, <c>connection_error</c>, <c>unavailable</c> or <c>request_failed</c>.
+/// Prefer this over <paramref name="Type"/>.
 /// </param>
 /// <param name="Type">The full CLR type name of the originating exception.</param>
 /// <param name="Message">The exception message, for diagnostics only.</param>
@@ -99,7 +100,8 @@ public sealed record QueryErrorSnapshot(
     long? ActiveRequestEpoch);
 
 /// <summary>
-/// Represents the wrapper every read query returns: the payload plus its load state, or an error.
+/// Represents the wrapper every MCP read query returns: the payload plus its load state, or an
+/// error.
 /// </summary>
 /// <remarks>
 /// On success <paramref name="Error"/> is <see langword="null"/>; on failure
@@ -119,17 +121,17 @@ public sealed record QueryEnvelope<T>(
     T? Data,
     QueryErrorSnapshot? Error);
 
-/// <summary>Represents the state of the interceptor link, the hotel session and the analysis of the connected client build.</summary>
+/// <summary>
+/// Represents the JSON projection of the interceptor link, the hotel session and the analysis of
+/// the connected client build for the MCP read tools; scripts use the <c>IsConnected</c> and
+/// <c>Session</c> globals.
+/// </summary>
 /// <param name="InterceptorConnected">Whether the packet interceptor is attached.</param>
 /// <param name="HotelConnected">Whether a hotel session is open.</param>
 /// <param name="MessageCatalogLoaded">Whether the message name catalog is available.</param>
 /// <param name="WireProfileAnalyzed">Whether the connected client build has been analyzed.</param>
 /// <param name="WireProfileExact">Whether the analysis matched this build exactly rather than falling back.</param>
 /// <param name="MissingWireCapabilities">The wire capabilities the connected build lacks; empty when it lacks none.</param>
-/// <param name="Client">
-/// The client type of the session, for example <c>Flash</c>, or <see langword="null"/> when no
-/// session is open.
-/// </param>
 /// <param name="Host">The hotel server host name, or <see langword="null"/> when no session is open.</param>
 /// <param name="Port">The hotel server port, or <see langword="null"/> when no session is open.</param>
 /// <param name="HotelVersion">The hotel client version string, or <see langword="null"/> when no session is open.</param>
@@ -144,13 +146,15 @@ public sealed record ConnectionSnapshot(
     bool WireProfileAnalyzed,
     bool WireProfileExact,
     IReadOnlyList<string> MissingWireCapabilities,
-    string? Client,
     string? Host,
     int? Port,
     string? HotelVersion,
     string? ClientIdentifier);
 
-/// <summary>Represents a point in room space.</summary>
+/// <summary>
+/// Represents the JSON projection of a point in room space for the MCP read tools; scripts use
+/// <see cref="Tile"/>.
+/// </summary>
 /// <param name="X">The tile column.</param>
 /// <param name="Y">The tile row.</param>
 /// <param name="Z">
@@ -159,15 +163,18 @@ public sealed record ConnectionSnapshot(
 /// </param>
 public sealed record PositionSnapshot(int X, int Y, float Z);
 
-/// <summary>Represents the rectangle of tiles an object occupies.</summary>
+/// <summary>
+/// Represents the JSON projection of the rectangle of tiles an object occupies for the MCP read
+/// tools; scripts use <see cref="Area"/>.
+/// </summary>
 /// <param name="Origin">The anchor tile, which is the object's own position.</param>
 /// <param name="Width">The extent along X in tiles, already rotated for the object's direction.</param>
 /// <param name="Length">The extent along Y in tiles, already rotated for the object's direction.</param>
 public sealed record AreaSnapshot(PositionSnapshot Origin, int Width, int Length);
 
 /// <summary>
-/// Represents the navigator record of a room: everything shown in a room listing or on the room's
-/// info card.
+/// Represents the JSON projection of a room's navigator record used by the MCP read tools and the
+/// application-layer results; scripts that read live state use <see cref="RoomData"/>.
 /// </summary>
 /// <param name="Id">The room identifier.</param>
 /// <param name="Name">The room name.</param>
@@ -233,8 +240,8 @@ public sealed record RoomDataSnapshot(
     bool DisplayRoomEntryAd);
 
 /// <summary>
-/// Represents one rectangular hole cut into the floor by an area-hider furni, as fed to the client's
-/// floor-hole update.
+/// Represents the JSON projection of one rectangular hole an area-hider furni cuts into the floor
+/// for the MCP read tools; scripts use <see cref="AreaHideData"/>.
 /// </summary>
 /// <param name="FurniId">The identifier of the furni that owns the hole.</param>
 /// <param name="On">Whether the hider is currently switched on.</param>
@@ -255,7 +262,10 @@ public sealed record HiddenAreaSnapshot(
     int Length,
     bool Invert);
 
-/// <summary>Represents the static floor plan of the current room as the hotel sends it.</summary>
+/// <summary>
+/// Represents the JSON projection of the current room's static floor plan for the MCP read tools;
+/// scripts use <see cref="FloorPlan"/>.
+/// </summary>
 /// <param name="UseLegacyScale">Whether the room is drawn at the legacy 32 pixel tile scale instead of 64.</param>
 /// <param name="WallHeight">The fixed wall height the hotel sends with the floor plan.</param>
 /// <param name="Map">
@@ -289,8 +299,8 @@ public sealed record FloorPlanSnapshot(
     float? CameraZ);
 
 /// <summary>
-/// Represents aggregate counts over the live heightmap, so walkability can be judged without shipping
-/// every tile.
+/// Represents aggregate counts over the live heightmap, so the MCP read tools can judge walkability
+/// without shipping every tile; scripts use <see cref="Heightmap"/>.
 /// </summary>
 /// <param name="Width">The heightmap's column count.</param>
 /// <param name="Length">The heightmap's row count.</param>
@@ -308,7 +318,10 @@ public sealed record HeightmapSummarySnapshot(
     int BlockedTileCount,
     int NonFloorTileCount);
 
-/// <summary>Represents which pieces of the current room session have arrived.</summary>
+/// <summary>
+/// Represents the JSON projection of which pieces of the current room session have arrived for the
+/// MCP read tools; scripts use the loaded flags of <see cref="RoomManager"/>.
+/// </summary>
 /// <remarks>
 /// Each flag is the per-piece counterpart of the envelope's <c>Loaded</c> flag: a value of
 /// <see langword="false"/> means "not received yet", never "empty".
@@ -351,13 +364,19 @@ public sealed record RoomContentStateSnapshot(
     bool HeightmapLoaded,
     bool DefinitionsLoaded);
 
-/// <summary>Represents the tile an avatar is placed on when entering the room.</summary>
+/// <summary>
+/// Represents the JSON projection of the tile an avatar is placed on when entering the room for the
+/// MCP read tools; scripts use <see cref="Qx.Model.Messages.Incoming.RoomEntryTile"/>.
+/// </summary>
 /// <param name="X">The door tile's column.</param>
 /// <param name="Y">The door tile's row.</param>
 /// <param name="Direction">The facing the avatar is given on arrival, 0-7 clockwise from north.</param>
 public sealed record RoomEntryTileSnapshot(int X, int Y, int Direction);
 
-/// <summary>Represents the settings that decide how the room's walls and floor are drawn.</summary>
+/// <summary>
+/// Represents the JSON projection of how the room's walls and floor are drawn for the MCP read
+/// tools; scripts use <see cref="Qx.Model.Messages.Incoming.RoomVisualizationSettings"/>.
+/// </summary>
 /// <param name="WallsHidden">Whether the room is rendered without walls.</param>
 /// <param name="WallThickness">
 /// The numeric value of <see cref="RoomThickness"/>: -2 thinnest, -1 thin, 0 normal, 1 thick.
@@ -380,7 +399,10 @@ public sealed record RoomVisualizationSettingsSnapshot(
     float WallThicknessMultiplier,
     float FloorThicknessMultiplier);
 
-/// <summary>Represents the room's chat configuration.</summary>
+/// <summary>
+/// Represents the JSON projection of the room's chat configuration for the MCP read tools; scripts
+/// use <see cref="RoomChatSettings"/>.
+/// </summary>
 /// <remarks>
 /// On the compact Flash guest-room layout the hotel only sends the flood setting; the other
 /// four fields then carry their defaults rather than server values.
@@ -407,7 +429,10 @@ public sealed record RoomChatSettingsSnapshot(
     int TalkHearingDistance,
     int FloodProtection);
 
-/// <summary>Represents who is allowed to moderate in the room.</summary>
+/// <summary>
+/// Represents the JSON projection of who is allowed to moderate in the room for the MCP read tools;
+/// scripts use <see cref="RoomModerationSettings"/>.
+/// </summary>
 /// <remarks>
 /// Each field is the numeric value of <see cref="RoomModerationPermission"/>: 0 owner only,
 /// 1 rights holders, 2 everyone (offered for kick only), 4 group admins and 5 group admins
@@ -418,13 +443,19 @@ public sealed record RoomChatSettingsSnapshot(
 /// <param name="Ban">Who may ban other users; the hotel only offers 0 and 1 outside group rooms.</param>
 public sealed record RoomModerationSettingsSnapshot(int Mute, int Kick, int Ban);
 
-/// <summary>Represents a room's navigator thumbnail.</summary>
+/// <summary>
+/// Represents the JSON projection of a room's navigator thumbnail for the MCP read tools; scripts
+/// use <see cref="RoomThumbnailData"/>.
+/// </summary>
 /// <param name="RoomId">The room the thumbnail belongs to.</param>
 /// <param name="Reference">The thumbnail reference as sent by the hotel.</param>
 /// <param name="ImageUrl">The URL of the thumbnail image.</param>
 public sealed record RoomThumbnailSnapshot(Id RoomId, string Reference, string ImageUrl);
 
-/// <summary>Represents the detail block the hotel sends with a guest room result.</summary>
+/// <summary>
+/// Represents the JSON projection of the detail block the hotel sends with a guest room result for
+/// the MCP read tools; scripts use <see cref="RoomResultDetails"/>.
+/// </summary>
 /// <param name="Forward">Whether the result was sent as a room forward, echoing the request's room-forward flag.</param>
 /// <param name="IsStaffPick">Whether the room is a staff pick.</param>
 /// <param name="IsGroupMember">Whether the local user is a member of the room's group.</param>
@@ -446,7 +477,10 @@ public sealed record RoomResultDetailsSnapshot(
     RoomChatSettingsSnapshot Chat,
     bool? OpeningConnection);
 
-/// <summary>Represents the decoration and layout of the room the session is inside.</summary>
+/// <summary>
+/// Represents the JSON projection of the decoration and layout of the current room for the MCP read
+/// tools; scripts use <see cref="RoomEnvironmentState"/>.
+/// </summary>
 /// <remarks>
 /// Every member is <see langword="null"/>, and the property map empty, until the corresponding
 /// packet has arrived.
@@ -472,7 +506,10 @@ public sealed record RoomEnvironmentSnapshot(
     RoomVisualizationSettingsSnapshot? Visualization,
     RoomChatSettingsSnapshot? Chat);
 
-/// <summary>Represents what the local user is permitted to do in the current room.</summary>
+/// <summary>
+/// Represents the JSON projection of what the local user is permitted to do in the current room for
+/// the MCP read tools; scripts use <see cref="RoomAuthorityState"/>.
+/// </summary>
 /// <param name="IsOwner">Whether the local user owns the room.</param>
 /// <param name="RightsLevel">
 /// The controller level granted to the local user, or <see langword="null"/> while it is
@@ -510,7 +547,10 @@ public sealed record RoomAuthoritySnapshot(
     bool? CanMute,
     RoomModerationSettingsSnapshot? Moderation);
 
-/// <summary>Represents one line of a door queue.</summary>
+/// <summary>
+/// Represents the JSON projection of one line of a door queue for the MCP read tools; scripts use
+/// <see cref="Qx.Model.Messages.Incoming.RoomQueueEntry"/>.
+/// </summary>
 /// <param name="Type">The queue's identifier as sent by the hotel, for example <c>visitors</c>.</param>
 /// <param name="Size">
 /// The local user's zero-based place in this queue, or a negative value when the hotel
@@ -518,7 +558,10 @@ public sealed record RoomAuthoritySnapshot(
 /// </param>
 public sealed record RoomQueueEntrySnapshot(string Type, int Size);
 
-/// <summary>Represents a group of door queues sharing one entry target.</summary>
+/// <summary>
+/// Represents the JSON projection of a group of door queues sharing one entry target for the MCP
+/// read tools; scripts use <see cref="Qx.Model.Messages.Incoming.RoomQueueSet"/>.
+/// </summary>
 /// <param name="Name">The set's name as sent by the hotel.</param>
 /// <param name="Target">
 /// What entering this set grants, as the numeric value of <c>RoomQueueTarget</c>:
@@ -539,7 +582,10 @@ public sealed record RoomQueueSetSnapshot(
     int? Position,
     IReadOnlyList<RoomQueueEntrySnapshot> Queues);
 
-/// <summary>Represents the door-queue status for a room the local user is waiting to enter.</summary>
+/// <summary>
+/// Represents the JSON projection of the door queue the local user waits in for the MCP read tools;
+/// scripts use <see cref="Qx.Model.Messages.Incoming.RoomQueueStatus"/>.
+/// </summary>
 /// <param name="RoomId">The room being queued for.</param>
 /// <param name="ActiveTarget">
 /// The target of the set currently being waited in, as the numeric value of
@@ -556,7 +602,10 @@ public sealed record RoomQueueSnapshot(
     int? Position,
     IReadOnlyList<RoomQueueSetSnapshot> Sets);
 
-/// <summary>Represents the reason a room could not be entered.</summary>
+/// <summary>
+/// Represents the JSON projection of the reason a room could not be entered for the MCP read tools;
+/// scripts use <see cref="RoomConnectionFailure"/>.
+/// </summary>
 /// <param name="Kind">
 /// The classified reason: <c>Full</c>, <c>QueueError</c>, <c>Banned</c>, <c>Blocked</c>
 /// or <c>Unknown</c>.
@@ -573,7 +622,10 @@ public sealed record RoomConnectionFailureSnapshot(
     int ReasonCode,
     string Parameter);
 
-/// <summary>Represents a kick of the local user out of a room.</summary>
+/// <summary>
+/// Represents the JSON projection of a kick of the local user out of a room for the MCP read tools;
+/// scripts use <see cref="RoomKick"/>.
+/// </summary>
 /// <param name="RoomId">The room the local user was removed from.</param>
 /// <param name="ErrorCode">
 /// The generic error code that announced the kick; 4008 is the client's
@@ -585,7 +637,10 @@ public sealed record RoomKickSnapshot(
     int ErrorCode,
     bool WasEntered);
 
-/// <summary>Represents how the previous room session ended.</summary>
+/// <summary>
+/// Represents the JSON projection of how the previous room session ended for the MCP read tools;
+/// scripts use <see cref="RoomExitState"/>.
+/// </summary>
 /// <param name="RoomId">The room that was left.</param>
 /// <param name="WasEntered">Whether the room had been fully entered before the exit.</param>
 /// <param name="Source">
@@ -613,8 +668,9 @@ public sealed record RoomExitSnapshot(
     RoomKickSnapshot? Kick);
 
 /// <summary>
-/// Represents the entry side of the room session: getting in, waiting at the door, and how the last
-/// attempt or the last session ended.
+/// Represents the JSON projection of the entry side of the room session, from getting in and
+/// waiting at the door to how the last attempt or session ended, for the MCP read tools; scripts
+/// use the access members of <see cref="RoomManager"/>.
 /// </summary>
 /// <param name="State">
 /// The access state: <c>Idle</c>, <c>Connecting</c>, <c>RingingDoorbell</c>, <c>Queued</c>,
@@ -645,8 +701,9 @@ public sealed record RoomAccessSnapshot(
     bool WasKicked);
 
 /// <summary>
-/// Represents the whole room session in one object: where the session stands, who the local user is
-/// in it, and how much of the room's content has arrived.
+/// Represents the JSON projection of the whole room session, where it stands, who the local user is
+/// in it and how much of the room's content has arrived, for the MCP read tools; scripts use
+/// <see cref="RoomManager"/>.
 /// </summary>
 /// <remarks>
 /// This is a point-in-time copy, not a live view. Item and avatar collections are reported
@@ -701,7 +758,10 @@ public sealed record RoomSnapshot(
     FloorPlanSnapshot? FloorPlan,
     HeightmapSummarySnapshot? Heightmap);
 
-/// <summary>Represents the decoded last status update of an avatar.</summary>
+/// <summary>
+/// Represents the JSON projection of the decoded last status update of an avatar for the MCP read
+/// tools; scripts use <see cref="AvatarStatus"/>.
+/// </summary>
 /// <param name="StatusId">
 /// The extra integer of the status entry: <see cref="TargetId"/> when that is not 0, otherwise
 /// <see cref="JumpingPower"/>.
@@ -758,7 +818,10 @@ public sealed record AvatarStatusSnapshot(
     public double? ActionHeight { get; init; }
 }
 
-/// <summary>Represents the fields that only a user avatar has.</summary>
+/// <summary>
+/// Represents the JSON projection of the fields that only a user avatar has for the MCP read tools;
+/// scripts use <see cref="User"/>.
+/// </summary>
 /// <param name="Gender">
 /// The user's gender: <c>Male</c>, <c>Female</c>, <c>Unisex</c>, or <c>None</c> when the hotel
 /// sent an unrecognized value.
@@ -891,7 +954,10 @@ public sealed record UserAvatarSnapshot(
     }
 }
 
-/// <summary>Represents the fields that only a pet avatar has.</summary>
+/// <summary>
+/// Represents the JSON projection of the fields that only a pet avatar has for the MCP read tools;
+/// scripts use <see cref="Pet"/>.
+/// </summary>
 /// <remarks>
 /// The pet's breed variant is not on the room entity; it only comes from a pet info
 /// request. <see cref="PetType"/> plus that breed together resolve the displayed breed.
@@ -1013,7 +1079,10 @@ public sealed record PetAvatarSnapshot(
     }
 }
 
-/// <summary>Represents the fields that only a bot avatar has.</summary>
+/// <summary>
+/// Represents the JSON projection of the fields that only a bot avatar has for the MCP read tools;
+/// scripts use <see cref="Bot"/>.
+/// </summary>
 /// <remarks>
 /// Public bots carry no owner or skills: the hotel only sends those for private (rentable)
 /// bots, so on a public bot the owner is -1, the name empty and the skill list empty.
@@ -1077,7 +1146,10 @@ public sealed record BotAvatarSnapshot(
     }
 }
 
-/// <summary>Represents one entity standing in the room: a user, a pet or a bot.</summary>
+/// <summary>
+/// Represents the JSON projection of a user, pet or bot standing in the room for the MCP read
+/// tools; scripts use <see cref="Avatar"/>.
+/// </summary>
 /// <remarks>
 /// Exactly one of <paramref name="User"/>, <paramref name="Pet"/> and <paramref name="Bot"/> is
 /// populated, matching <paramref name="Type"/>.
@@ -1269,7 +1341,10 @@ public sealed record AvatarSnapshot(
     }
 }
 
-/// <summary>Represents every avatar currently tracked in the room, ordered by room index.</summary>
+/// <summary>
+/// Represents the JSON projection of every avatar in the room, ordered by room index, for the MCP
+/// read tools; scripts use <see cref="RoomManager.Avatars"/>.
+/// </summary>
 /// <param name="RoomId">The room the avatars belong to, or <see langword="null"/> when not in a room.</param>
 /// <param name="Generation">
 /// The room session counter the projection was taken under. Compare it against a later
@@ -1302,8 +1377,8 @@ public sealed record AvatarCollectionSnapshot(
 }
 
 /// <summary>
-/// Represents a user's profile card as returned by a profile request, which is more than the room
-/// avatar carries.
+/// Represents the JSON projection of the local user's account data for the MCP read tools; scripts
+/// use <see cref="UserData"/>.
 /// </summary>
 /// <param name="Id">The user identifier.</param>
 /// <param name="Name">The user name.</param>
@@ -1469,7 +1544,10 @@ public sealed record ProfileSnapshot(
     }
 }
 
-/// <summary>Represents one entry of the messenger friend list.</summary>
+/// <summary>
+/// Represents the JSON projection of one entry of the friend list used by the MCP read tools and the
+/// application-layer results; scripts that read live state use <see cref="Friend"/>.
+/// </summary>
 /// <param name="Id">The friend's user identifier.</param>
 /// <param name="Name">The friend's user name.</param>
 /// <param name="Figure">The friend's figure string.</param>
@@ -1586,12 +1664,18 @@ public sealed record FriendSnapshot(
     }
 }
 
-/// <summary>Represents a user-defined friend-list category.</summary>
+/// <summary>
+/// Represents the JSON projection of a user-defined friend list category used by the MCP read tools
+/// and the application-layer results; scripts that read live state use <see cref="FriendCategory"/>.
+/// </summary>
 /// <param name="Id">The category identifier, matched by <see cref="FriendSnapshot.CategoryId"/>.</param>
 /// <param name="Name">The category name the user chose.</param>
 public sealed record FriendCategorySnapshot(Id Id, string Name);
 
-/// <summary>Represents the messenger friend list with its capacity limits.</summary>
+/// <summary>
+/// Represents the JSON projection of the friend list and its capacity limits for the MCP read
+/// tools; scripts use <see cref="FriendManager"/>.
+/// </summary>
 /// <param name="Total">The number of entries in <paramref name="Friends"/>. This projection is not capped.</param>
 /// <param name="Online">How many of those friends are online right now.</param>
 /// <param name="UserLimit">The friend slots this account actually has; 0 when the hotel has not reported it.</param>
@@ -1635,7 +1719,10 @@ public sealed record FriendCollectionSnapshot(
     }
 }
 
-/// <summary>Represents the local user's balances.</summary>
+/// <summary>
+/// Represents the JSON projection of the local user's balances for the MCP read tools; scripts use
+/// the <c>Credits</c>, <c>Diamonds</c>, <c>Duckets</c> and <c>Points</c> globals.
+/// </summary>
 /// <remarks>
 /// Each amount is <see langword="null"/> until the hotel has sent the matching packet, which is
 /// what the two loaded flags distinguish from a real zero.
@@ -1701,12 +1788,18 @@ public sealed record CurrencySnapshot(
     }
 }
 
-/// <summary>Represents a user who holds rights in the room.</summary>
+/// <summary>
+/// Represents the JSON projection of a user who holds rights in the room for the MCP read tools;
+/// scripts use <see cref="Qx.Model.Messages.Incoming.IdName"/>.
+/// </summary>
 /// <param name="Id">The user identifier.</param>
 /// <param name="Name">The user name.</param>
 public sealed record ControllerSnapshot(Id Id, string Name);
 
-/// <summary>Represents the room's rights list.</summary>
+/// <summary>
+/// Represents the JSON projection of the room's rights list for the MCP read tools; scripts use
+/// <see cref="RoomManager.Controllers"/>.
+/// </summary>
 /// <remarks>
 /// The hotel only sends this list to the room owner, so on a room the local user does not
 /// own it stays empty and the room content state reports controllers as not loaded.
@@ -1724,8 +1817,9 @@ public sealed record ControllerCollectionSnapshot(
     IReadOnlyList<ControllerSnapshot> Controllers);
 
 /// <summary>
-/// Represents the catalog definition behind a furni kind, loaded from the hotel's furni data
-/// rather than from the room packets.
+/// Represents the JSON projection of the furni data definition behind a furni kind used by the MCP
+/// read tools and the application-layer results; scripts that read live state use
+/// <see cref="FurniInfo"/>.
 /// </summary>
 /// <remarks>Present on an item snapshot only once definitions are loaded.</remarks>
 /// <param name="Type">Whether the definition describes a <c>Floor</c> or a <c>Wall</c> item.</param>
@@ -1841,14 +1935,21 @@ public sealed record FurniDefinitionSnapshot(
     public bool IsUnwalkable { get; init; }
 }
 
-/// <summary>Represents one row of a game furni's high-score table.</summary>
+/// <summary>
+/// Represents the JSON projection of one row of a game furni's high-score table used by the MCP read
+/// tools and the application-layer results; scripts that read live state use <see cref="HighScore"/>.
+/// </summary>
 /// <param name="Score">The score achieved.</param>
 /// <param name="Names">The names of the users who achieved it, since a score can be shared by a team.</param>
 public sealed record HighScoreSnapshot(
     int Score,
     IReadOnlyList<string> Names);
 
-/// <summary>Represents a furni payload, flattened into one record whose shape-specific members are set only where they apply.</summary>
+/// <summary>
+/// Represents the JSON projection of a furni payload, flattened into one record whose
+/// shape-specific members are set only where they apply, used by the MCP read tools and the
+/// application-layer results; scripts that read live state use <see cref="ItemData"/>.
+/// </summary>
 /// <remarks>
 /// The map, string list, integer list, vote, high-score and crackable members are
 /// <see langword="null"/> unless the payload is of the matching type, and are then omitted
@@ -1914,7 +2015,10 @@ public sealed record ItemDataSnapshot(
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     int? Target);
 
-/// <summary>Represents a furni standing on the room floor.</summary>
+/// <summary>
+/// Represents the JSON projection of a furni standing on the room floor for the MCP read tools;
+/// scripts use <see cref="FloorItem"/>.
+/// </summary>
 /// <param name="Id">The item identifier, unique within the hotel.</param>
 /// <param name="IsRemoved">
 /// Whether this snapshot describes an item that has already been picked up. Set on the copy
@@ -2085,7 +2189,10 @@ public sealed record FloorItemSnapshot(
     }
 }
 
-/// <summary>Represents the position of a wall item on the wall.</summary>
+/// <summary>
+/// Represents the JSON projection of the position of a wall item on the wall for the MCP read
+/// tools; scripts use <see cref="WallLocation"/>.
+/// </summary>
 /// <param name="WallX">The wall segment's column.</param>
 /// <param name="WallY">The wall segment's row.</param>
 /// <param name="OffsetX">The horizontal offset within that segment, in wall pixels.</param>
@@ -2103,7 +2210,10 @@ public sealed record WallLocationSnapshot(
     string Orientation,
     string Raw);
 
-/// <summary>Represents a furni hanging on a room wall.</summary>
+/// <summary>
+/// Represents the JSON projection of a furni hanging on a room wall for the MCP read tools; scripts
+/// use <see cref="WallItem"/>.
+/// </summary>
 /// <param name="Id">The item identifier, unique within the hotel.</param>
 /// <param name="IsRemoved">
 /// Whether this snapshot describes an item that has already been picked up. Set on the copy
@@ -2239,8 +2349,9 @@ public sealed record WallItemSnapshot(
 }
 
 /// <summary>
-/// Represents the furni in the current room, floor and wall items projected separately and each capped
-/// on its own.
+/// Represents the JSON projection of the furni in the current room, floor and wall items each
+/// capped on their own, for the MCP read tools; scripts use <see cref="RoomManager.FloorItems"/>
+/// and <see cref="RoomManager.WallItems"/>.
 /// </summary>
 /// <remarks>
 /// When a truncation flag is set the corresponding list holds the items with the lowest
@@ -2346,7 +2457,11 @@ public sealed record FurniCollectionSnapshot(
     }
 }
 
-/// <summary>Represents one item in the local user's hand.</summary>
+/// <summary>
+/// Represents the JSON projection of one item in the local user's inventory used by the MCP read
+/// tools and the application-layer results; scripts that read live state use
+/// <see cref="InventoryItem"/>.
+/// </summary>
 /// <param name="ItemId">
 /// The inventory item identifier, which inventory requests such as placement address and which
 /// the inventory snapshot orders by.
@@ -2389,8 +2504,8 @@ public sealed record InventoryItemSnapshot(
     long Extra);
 
 /// <summary>
-/// Represents the local user's hand, together with the fragmented-load bookkeeping that says whether it
-/// can be trusted yet.
+/// Represents the JSON projection of the local user's inventory and its load state for the MCP read
+/// tools; scripts use the <c>InventoryItems</c> global.
 /// </summary>
 /// <remarks>
 /// The inventory arrives in fragments. A snapshot taken mid-load returns whatever fragments
@@ -2435,7 +2550,10 @@ public sealed record InventorySnapshot(
     bool Truncated,
     IReadOnlyList<InventoryItemSnapshot> Items);
 
-/// <summary>Represents one tile of the live heightmap, which is what walkability must be judged from.</summary>
+/// <summary>
+/// Represents the JSON projection of one tile of the live heightmap for the MCP read tools; scripts
+/// use <see cref="HeightmapTile"/>.
+/// </summary>
 /// <param name="X">The tile column.</param>
 /// <param name="Y">The tile row.</param>
 /// <param name="Value">
@@ -2456,7 +2574,8 @@ public sealed record HeightmapTileSnapshot(
     double Height);
 
 /// <summary>
-/// Represents the live heightmap of the current room, with per-tile detail and aggregate counts.
+/// Represents the JSON projection of the live heightmap of the current room, with per-tile detail
+/// and aggregate counts, for the MCP read tools; scripts use <see cref="Heightmap"/>.
 /// </summary>
 /// <remarks>
 /// Truncation here keeps the first tiles in the heightmap's own row-major order and drops the
@@ -2492,7 +2611,8 @@ public sealed record HeightmapSnapshot(
     IReadOnlyList<HeightmapTileSnapshot> Tiles);
 
 /// <summary>
-/// Represents the detailed statistics of one pet, as returned by a pet info request.
+/// Represents the JSON projection of the detailed statistics of one pet for the MCP read tools;
+/// scripts use <see cref="PetInfo"/>.
 /// </summary>
 /// <remarks>
 /// The request does not carry the pet type, only the breed variant. What kind of animal it

@@ -1,5 +1,6 @@
 using Qx.Game.Protocol;
 using Qx.Model.Messages.Incoming;
+using Qx.Model.Messages.Outgoing;
 
 namespace Qx.Game.Application;
 
@@ -33,7 +34,6 @@ internal sealed partial class CraftingApplication
             cancellation_token);
         ValidateTypedId(
             request.CraftingFurnitureId,
-            scope.Session.Client,
             nameof(request.CraftingFurnitureId));
         var await_state = new RouteAwaitState();
         await requests.RequestAsync(
@@ -66,7 +66,6 @@ internal sealed partial class CraftingApplication
                 0,
                 request.Limit);
             var result = new CraftingProductsRefreshResult(
-                scope.Session.Client,
                 time_provider.GetUtcNow(),
                 observed.ObservedAtUtc,
                 scope.SessionGeneration,
@@ -135,7 +134,6 @@ internal sealed partial class CraftingApplication
         {
             CraftingRecipePage first_page = RecipePage(lease, 0, request.Limit);
             var result = new CraftingRecipeRefreshResult(
-                scope.Session.Client,
                 time_provider.GetUtcNow(),
                 observed.ObservedAtUtc,
                 scope.SessionGeneration,
@@ -178,13 +176,11 @@ internal sealed partial class CraftingApplication
             cancellation_token);
         ValidateTypedId(
             request.CraftingFurnitureId,
-            scope.Session.Client,
             nameof(request.CraftingFurnitureId));
         ArgumentNullException.ThrowIfNull(request.IngredientItemIds);
         Id[] ingredient_item_ids = request.IngredientItemIds.ToArray();
         ValidateTypedItems(
             ingredient_item_ids,
-            scope.Session.Client,
             nameof(request.IngredientItemIds));
         var await_state = new RouteAwaitState();
         await requests.RequestAsync(
@@ -213,7 +209,6 @@ internal sealed partial class CraftingApplication
             await_state,
             "crafting-availability");
         var result = new CraftingAvailabilityRefreshResult(
-            scope.Session.Client,
             time_provider.GetUtcNow(),
             observed.ObservedAtUtc,
             scope.SessionGeneration,
@@ -249,14 +244,13 @@ internal sealed partial class CraftingApplication
             cancellation_token);
         ValidateTypedId(
             request.CraftingFurnitureId,
-            scope.Session.Client,
             nameof(request.CraftingFurnitureId));
         long request_baseline = CaptureRequestEpoch(
             CraftingRequestRoute.Result,
             scope);
         message_dispatcher.Dispatch(
             MessageContracts.Crafting.Craft,
-            new Qx.Model.Messages.Incoming.Craft(
+            new Craft(
                 request.CraftingFurnitureId,
                 request.RecipeCode),
             scope.Session,
@@ -266,7 +260,6 @@ internal sealed partial class CraftingApplication
                 request_baseline,
                 scope));
         return new CraftingCraftDispatchReceipt(
-            scope.Session.Client,
             time_provider.GetUtcNow(),
             scope.SessionGeneration,
             scope.RoomId,
@@ -295,20 +288,18 @@ internal sealed partial class CraftingApplication
             cancellation_token);
         ValidateTypedId(
             request.CraftingFurnitureId,
-            scope.Session.Client,
             nameof(request.CraftingFurnitureId));
         ArgumentNullException.ThrowIfNull(request.IngredientItemIds);
         Id[] ingredient_item_ids = request.IngredientItemIds.ToArray();
         ValidateTypedItems(
             ingredient_item_ids,
-            scope.Session.Client,
             nameof(request.IngredientItemIds));
         long request_baseline = CaptureRequestEpoch(
             CraftingRequestRoute.Result,
             scope);
         message_dispatcher.Dispatch(
             MessageContracts.Crafting.SecretCraft,
-            new Qx.Model.Messages.Incoming.CraftSecret(
+            new CraftSecret(
                 request.CraftingFurnitureId,
                 ingredient_item_ids),
             scope.Session,
@@ -318,7 +309,6 @@ internal sealed partial class CraftingApplication
                 request_baseline,
                 scope));
         return new CraftingSecretCraftDispatchReceipt(
-            scope.Session.Client,
             time_provider.GetUtcNow(),
             scope.SessionGeneration,
             scope.RoomId,
@@ -390,7 +380,7 @@ internal sealed partial class CraftingApplication
                 scope);
             message_dispatcher.Dispatch(
                 MessageContracts.Crafting.Craft,
-                new Qx.Model.Messages.Incoming.Craft(
+                new Craft(
                     crafting_furniture_id,
                     recipe_code),
                 scope.Session,
@@ -419,7 +409,7 @@ internal sealed partial class CraftingApplication
                 scope);
             message_dispatcher.Dispatch(
                 MessageContracts.Crafting.SecretCraft,
-                new Qx.Model.Messages.Incoming.CraftSecret(
+                new CraftSecret(
                     crafting_furniture_id,
                     item_ids),
                 scope.Session,
@@ -730,7 +720,7 @@ internal sealed partial class CraftingApplication
                 new CraftingChanged(
                     ChangeKind(update.Kind),
                     time_provider.GetUtcNow(),
-                    update.State.Session?.Client,
+                    update.State.Session is not null,
                     update.State.SessionGeneration,
                     update.State.Revision,
                     SourceRevision(update),

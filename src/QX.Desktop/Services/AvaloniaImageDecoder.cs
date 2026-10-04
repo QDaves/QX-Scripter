@@ -10,13 +10,13 @@ public static class AvaloniaImageDecoder
 {
     static readonly Vector _standard_dpi = new(96, 96);
 
-    public static Bitmap? Decode(byte[] raw, bool exact_pixels)
+    public static Bitmap? Decode(byte[] raw, bool exactPixels)
     {
         ArgumentNullException.ThrowIfNull(raw);
         try
         {
             using var stream = new MemoryStream(raw, writable: false);
-            if (!exact_pixels)
+            if (!exactPixels)
                 return new Bitmap(stream);
             using WriteableBitmap source = WriteableBitmap.Decode(stream);
             return Normalize(source);

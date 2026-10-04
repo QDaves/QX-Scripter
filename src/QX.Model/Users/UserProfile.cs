@@ -23,7 +23,6 @@ public sealed record ProfileGroup(
 {
     /// <summary>Reads a profile group from a packet.</summary>
     /// <param name="p">The packet to read from.</param>
-    /// <exception cref="UnsupportedClientException">Thrown when the packet is not from the Flash client.</exception>
     public static ProfileGroup Parse(in PacketReader p) =>
         FlashWire.Parse(in p, ParseFlash);
 
@@ -40,7 +39,6 @@ public sealed record ProfileGroup(
 
     /// <summary>Writes the profile group to a packet.</summary>
     /// <param name="p">The packet to write to.</param>
-    /// <exception cref="UnsupportedClientException">Thrown when the packet is not for the Flash client.</exception>
     /// <exception cref="InvalidDataException">Thrown when an identifier does not fit in 32 bits or a string is too long.</exception>
     public void Compose(in PacketWriter p) =>
         FlashWire.Compose(this, in p, ComposeFlash);
@@ -78,6 +76,7 @@ public sealed record ProfileGroup(
 public readonly record struct BadgeRarity(byte RarityId, int Count);
 
 /// <summary>Represents a user's extended profile.</summary>
+/// <remarks>Received as the Flash <c>ExtendedProfile</c> message.</remarks>
 public sealed class UserProfile : IParserComposer<UserProfile>
 {
     private IReadOnlyList<ProfileGroup> _groups = Array.AsReadOnly(Array.Empty<ProfileGroup>());
@@ -153,7 +152,6 @@ public sealed class UserProfile : IParserComposer<UserProfile>
 
     /// <summary>Reads a user profile from a packet.</summary>
     /// <param name="p">The packet to read from.</param>
-    /// <exception cref="UnsupportedClientException">Thrown when the packet is not from the Flash client.</exception>
     /// <exception cref="InvalidDataException">Thrown when a count is invalid or bytes remain after the last field.</exception>
     public static UserProfile Parse(in PacketReader p) =>
         FlashWire.Parse(in p, ParseFlash);
@@ -213,7 +211,6 @@ public sealed class UserProfile : IParserComposer<UserProfile>
 
     /// <summary>Writes the user profile to a packet.</summary>
     /// <param name="p">The packet to write to.</param>
-    /// <exception cref="UnsupportedClientException">Thrown when the packet is not for the Flash client.</exception>
     /// <exception cref="InvalidDataException">
     /// Thrown when an identifier does not fit in 32 bits, a string is too long or
     /// <see cref="OnlineStatus"/> is outside 0 to 255.

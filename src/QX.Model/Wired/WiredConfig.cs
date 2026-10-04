@@ -289,7 +289,7 @@ public sealed class WiredConditionConfig : WiredConfig, IParserComposer<WiredCon
 {
     /// <summary>Gets or sets the quantifier code.</summary>
     public int QuantifierCode { get; set; }
-    /// <summary>Gets or sets the quantifier type, which is written as a single byte.</summary>
+    /// <summary>Gets or sets the quantifier type, which is written as a signed byte.</summary>
     public int QuantifierType { get; set; } // 1 byte on the wire
     /// <summary>Gets or sets whether the condition definition is inverted.</summary>
     /// <remarks>The value is not read from or written to the packet, so it is <see langword="false"/> after parsing.</remarks>
@@ -314,7 +314,7 @@ public sealed class WiredConditionConfig : WiredConfig, IParserComposer<WiredCon
     /// <param name="p">The packet reader.</param>
     protected override void ReadTypeSpecifics(in PacketReader p)
     {
-        QuantifierType = p.ReadByte();
+        QuantifierType = unchecked((sbyte)p.ReadByte());
         IsInvert = p.ReadBool();
     }
 
@@ -322,13 +322,13 @@ public sealed class WiredConditionConfig : WiredConfig, IParserComposer<WiredCon
     /// <param name="p">The packet writer.</param>
     protected override void WriteTypeSpecifics(in PacketWriter p)
     {
-        p.WriteByte(checked((byte)QuantifierType));
+        p.WriteByte(unchecked((byte)checked((sbyte)QuantifierType)));
         p.WriteBool(IsInvert);
     }
     /// <summary>Checks that <see cref="QuantifierType"/> fits in a byte.</summary>
-    /// <exception cref="OverflowException">Thrown when <see cref="QuantifierType"/> is outside 0 to 255.</exception>
+    /// <exception cref="OverflowException">Thrown when <see cref="QuantifierType"/> is outside -128 to 127.</exception>
     protected override void ValidateFlashSpecifics() =>
-        _ = checked((byte)QuantifierType);
+        _ = checked((sbyte)QuantifierType);
     /// <summary>Parses the configuration from a packet.</summary>
     /// <param name="p">The packet reader.</param>
     public static WiredConditionConfig Parse(in PacketReader p) =>

@@ -214,19 +214,19 @@ public sealed class AreaSet : IReadOnlyCollection<Area>
         new(_areas.Select(area => area.Expand(amount)));
 
     /// <summary>Enumerates every tile the set covers, ordered by y and then by x, without caching them.</summary>
-    /// <param name="maximum_tile_count">The largest number of tiles the caller accepts.</param>
+    /// <param name="maximumTileCount">The largest number of tiles the caller accepts.</param>
     /// <returns>The covered tiles.</returns>
-    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="maximum_tile_count"/> is negative.</exception>
-    /// <exception cref="InvalidOperationException">Thrown when <see cref="TileCount"/> exceeds <paramref name="maximum_tile_count"/>.</exception>
-    public IEnumerable<Point> EnumerateTiles(long maximum_tile_count)
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="maximumTileCount"/> is negative.</exception>
+    /// <exception cref="InvalidOperationException">Thrown when <see cref="TileCount"/> exceeds <paramref name="maximumTileCount"/>.</exception>
+    public IEnumerable<Point> EnumerateTiles(long maximumTileCount)
     {
-        if (maximum_tile_count < 0)
+        if (maximumTileCount < 0)
             throw new ArgumentOutOfRangeException(
-                nameof(maximum_tile_count),
-                maximum_tile_count,
+                nameof(maximumTileCount),
+                maximumTileCount,
                 "The maximum tile count must not be negative.");
 
-        EnsureTileBudget(maximum_tile_count);
+        EnsureTileBudget(maximumTileCount);
         return EnumerateTilesCore();
     }
 

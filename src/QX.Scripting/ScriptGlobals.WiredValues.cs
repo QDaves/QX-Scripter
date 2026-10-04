@@ -225,7 +225,7 @@ public partial class ScriptGlobals
     {
         WiredVariableCollectionSnapshot definitions = await get_room_variables(timeoutMs);
         WiredVariablesObjectSnapshot data =
-            await GetVariablesForObject((int)target, objectId, timeoutMs);
+            await GetVariablesForObject(target, objectId, timeoutMs);
         if (definitions.Generation != data.Generation)
         {
             throw new RequestDisconnectedException(
@@ -363,34 +363,6 @@ public partial class ScriptGlobals
     private static bool writable(WiredVariableSnapshot variable, WiredTarget target) =>
         variable.VariableTarget == (int)target && variable.HasValue && variable.CanWriteValue;
 
-    /// <summary>
-    /// Polls the room's wired variable definitions in the background and calls a handler whenever
-    /// they change.
-    /// </summary>
-    /// <remarks>
-    /// <para>
-    /// Every <paramref name="intervalMs"/> milliseconds, while the room is ready, the cheap
-    /// all-variables hash is requested; the full definitions are fetched only when the hash or the
-    /// room changed since the last poll. The handler runs on the polling task, first with the
-    /// initial definitions and then after each change.
-    /// </para>
-    /// <para>
-    /// Timeouts, disconnects and leaving the room are skipped over and polling continues. An
-    /// exception thrown by <paramref name="onChange"/>, or any other request error, ends the watch
-    /// and is reported as a background error. Same as
-    /// <see cref="WatchRoomVariables(Action{WiredVariableCollectionSnapshot}, int)"/>.
-    /// </para>
-    /// </remarks>
-    /// <param name="onChange">The handler to call with the complete definitions after each change.</param>
-    /// <param name="intervalMs">The delay between polls in milliseconds.</param>
-    /// <returns>A handle that stops the polling when disposed.</returns>
-    /// <exception cref="ArgumentNullException">Thrown when <paramref name="onChange"/> is <see langword="null"/>.</exception>
-    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="intervalMs"/> is zero or negative.</exception>
-    public IDisposable WatchVariables(
-        Action<WiredVariableCollectionSnapshot> onChange,
-        int intervalMs = 1000) =>
-        watch_variable_collections(onChange, intervalMs);
-
     private IDisposable watch_variable_collections(
         Action<WiredVariableCollectionSnapshot> on_change,
         int interval_ms)
@@ -420,14 +392,14 @@ public partial class ScriptGlobals
                 {
                     long room_generation = Room.Generation;
                     WiredAllVariablesHash hash =
-                        await Application.InvokeAsync<WiredTimeoutRequest, WiredAllVariablesHash>(
+                        await _application.InvokeAsync<WiredTimeoutRequest, WiredAllVariablesHash>(
                             ApplicationMemberIds.WiredVariablesHashGet,
                             new WiredTimeoutRequest(),
                             cancellation_token);
                     var poll = (room_generation, hash.AllVariablesHash);
                     if (last_poll != poll)
                     {
-                        current = await Application.InvokeAsync<
+                        current = await _application.InvokeAsync<
                             WiredVariableListRequest,
                             WiredVariableCollectionSnapshot>(
                             ApplicationMemberIds.WiredVariablesList,

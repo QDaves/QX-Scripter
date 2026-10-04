@@ -14,7 +14,7 @@ public interface ISettingsStore
 
     void ForgetPanel(string path);
 
-    Task FlushAsync(CancellationToken cancellation_token);
+    Task FlushAsync(CancellationToken cancellationToken);
 
     bool FlushNow(TimeSpan budget);
 }

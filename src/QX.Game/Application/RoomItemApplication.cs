@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Qx.Interception;
 using Qx.Messages;
 using Qx.Model;
@@ -193,7 +194,6 @@ internal sealed class RoomItemApplication : IApplicationFeature
         });
         send(session, room.Generation, cancellation_token);
         return new RoomItemDispatchResult(
-            session.Client,
             room.RoomId,
             room.Generation,
             true,
@@ -215,14 +215,14 @@ internal sealed class RoomItemApplication : IApplicationFeature
         ApplicationMemberIds.RoomItemFloorUse,
         "Use floor item",
         "Uses an interaction state on a floor item in the current room.",
-        [IdParameter(), IntegerParameter(nameof(RoomFloorItemUseRequest.State).ToLowerInvariant())],
+        [IdParameter(), StateParameter()],
         MessageKeys.Room.FloorItem.Use);
 
     private static ApplicationDescriptor WallUseDescriptor() => Descriptor<RoomWallItemUseRequest>(
         ApplicationMemberIds.RoomItemWallUse,
         "Use wall item",
         "Uses an interaction state on a wall item in the current room.",
-        [IdParameter(), IntegerParameter(nameof(RoomWallItemUseRequest.State).ToLowerInvariant())],
+        [IdParameter(), StateParameter()],
         MessageKeys.Room.WallItem.Use);
 
     private static ApplicationDescriptor FloorClickDescriptor() => Descriptor<RoomFloorItemClickRequest>(
@@ -297,7 +297,7 @@ internal sealed class RoomItemApplication : IApplicationFeature
         ],
         MessageKeys.Room.WallItem.SpamPostItAdd);
 
-    private static ApplicationDescriptor Descriptor<TRequest>(
+    private static ApplicationDescriptor Descriptor<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TRequest>(
         string id,
         string title,
         string description,
@@ -316,10 +316,10 @@ internal sealed class RoomItemApplication : IApplicationFeature
             [
                 new ApplicationMessageRequirement(
                     message,
-                    Direction.Out,
+                    MessageDirection.Out,
                     ApplicationMessageRole.Send)
             ],
-            tool_hints: new(false, true, false, true));
+            toolHints: new(false, true, false, true));
 
     private static ApplicationParameterDescriptor IdParameter() => new(
         "item_id",
@@ -328,12 +328,12 @@ internal sealed class RoomItemApplication : IApplicationFeature
         null,
         "Room item identifier.");
 
-    private static ApplicationParameterDescriptor IntegerParameter(string name) => new(
-        name,
+    private static ApplicationParameterDescriptor StateParameter() => new(
+        "state",
         typeof(int),
-        true,
-        null,
-        "Integer value sent to Flash.");
+        false,
+        0,
+        "Interaction state sent to Flash.");
 
     private static ApplicationParameterDescriptor StringParameter(string name) => new(
         name,

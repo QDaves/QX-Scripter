@@ -7,6 +7,7 @@ using Qx.Presentation.Services.Runs;
 using Qx.Presentation.Services.Workspace;
 using Qx.Presentation.Threading;
 using Qx.Scripting;
+using Qx.Scripting.Hosting;
 
 namespace Qx.Presentation.Services.Panels;
 
@@ -220,18 +221,18 @@ public sealed partial class PanelDocument : ObservableObject, IPanelRunTarget, I
             node.IsBusy = busy;
     }
 
-    public void BeginStarting(string? pressed_button)
+    public void BeginStarting(string? pressedButton)
     {
         IsStarting = true;
-        if (pressed_button is { Length: > 0 })
-            SetButtonBusy(pressed_button, true);
+        if (pressedButton is { Length: > 0 })
+            SetButtonBusy(pressedButton, true);
     }
 
-    public void EndStarting(string? pressed_button)
+    public void EndStarting(string? pressedButton)
     {
         IsStarting = false;
-        if (pressed_button is { Length: > 0 })
-            SetButtonBusy(pressed_button, false);
+        if (pressedButton is { Length: > 0 })
+            SetButtonBusy(pressedButton, false);
     }
 
     public void SetRunBusy(bool busy)
@@ -240,12 +241,12 @@ public sealed partial class PanelDocument : ObservableObject, IPanelRunTarget, I
         ApplyBusy();
     }
 
-    public IDisposable Attach(ScriptUi ui, string code, long run_epoch, string file_name, string? pressed_button, CancellationToken run_token)
+    public IDisposable Attach(ScriptUi ui, string code, long runEpoch, string fileName, string? pressedButton, CancellationToken runToken)
     {
         ArgumentNullException.ThrowIfNull(ui);
         Rebuild(code);
-        _run_epoch = run_epoch;
-        return new PanelRunLink(this, ui, _dispatcher, pressed_button, run_token);
+        _run_epoch = runEpoch;
+        return new PanelRunLink(this, ui, _dispatcher, pressedButton, runToken);
     }
 
     public void Dispose()

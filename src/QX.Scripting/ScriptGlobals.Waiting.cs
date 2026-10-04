@@ -59,7 +59,7 @@ public partial class ScriptGlobals
     /// <param name="timeoutMs">The timeout in milliseconds; -1 waits without a limit.</param>
     /// <returns><see langword="true"/> once the room is ready, <see langword="false"/> when the time ran out.</returns>
     /// <exception cref="OperationCanceledException">Thrown when the script was stopped while waiting.</exception>
-    public Task<bool> WaitRoomReady(long roomId = 0, int timeoutMs = 20000) =>
+    public Task<bool> WaitRoomReady(Id roomId = default, int timeoutMs = 20000) =>
         WaitUntil(
             () => Room.Capture(room =>
                 room.IsReady &&

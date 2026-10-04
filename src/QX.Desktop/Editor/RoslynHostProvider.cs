@@ -1,24 +1,29 @@
 using Qx.Diagnostics;
 using Qx.Presentation.Platform;
+using Qx.Presentation.Runtime;
 using Qx.Presentation.Services.Editor;
 using Qx.Presentation.Threading;
+using Qx.Protocol;
 
 namespace Qx.Desktop.Editor;
 
 public sealed class RoslynHostProvider : IEditorWarmup
 {
     readonly AsyncOnce<QxRoslynHost?> _host;
+    readonly IMessageResolver _messages;
 
-    public RoslynHostProvider(IAppPaths paths)
+    public RoslynHostProvider(IAppPaths paths, DesktopRuntime runtime)
     {
         ArgumentNullException.ThrowIfNull(paths);
+        ArgumentNullException.ThrowIfNull(runtime);
         WorkingDirectory = paths.ScriptsDirectory;
+        _messages = runtime.Messages;
         _host = new AsyncOnce<QxRoslynHost?>(BuildAsync);
     }
 
     public string WorkingDirectory { get; }
 
-    public Task<QxRoslynHost?> GetAsync(CancellationToken cancellation_token) => _host.GetAsync(cancellation_token);
+    public Task<QxRoslynHost?> GetAsync(CancellationToken cancellationToken) => _host.GetAsync(cancellationToken);
 
     public void WarmUp() => _host.GetAsync().Observe("editor");
 
@@ -27,7 +32,7 @@ public sealed class RoslynHostProvider : IEditorWarmup
         QxRoslynHost host;
         try
         {
-            host = new QxRoslynHost();
+            host = new QxRoslynHost(_messages);
         }
         catch (Exception error) when (error is not OutOfMemoryException)
         {

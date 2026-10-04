@@ -16,11 +16,11 @@ public delegate T MessageParser<T>(in PacketReader reader);
 public delegate void MessageComposer<T>(T message, in PacketWriter writer);
 
 /// <summary>Represents a method that checks whether a message can be used with the active message set.</summary>
-/// <param name="messages">The message manager that holds the client's message set and wire profile.</param>
+/// <param name="messages">The message resolver that holds the client's message set and wire profile.</param>
 /// <param name="header">The header the message resolves to.</param>
 /// <returns>The capability of the message for that header.</returns>
 public delegate MessageCapability MessageCapabilityProbe(
-    MessageManager messages,
+    IMessageResolver messages,
     Header header);
 
 /// <summary>Represents whether a message can be used on the wire and, when it cannot, why.</summary>
@@ -44,7 +44,7 @@ public readonly record struct MessageCapability(
     public static MessageCapability Missing(string name, string reason) => new(name, false, reason);
 }
 
-/// <summary>Provides the parser, composer and capability check for one message model on the Flash client.</summary>
+/// <summary>Provides the parser, composer and capability check for one message model.</summary>
 /// <typeparam name="T">The message model type.</typeparam>
 public sealed class MessageCodec<T> where T : IParserComposer<T>
 {
@@ -73,31 +73,24 @@ public sealed class MessageCodec<T> where T : IParserComposer<T>
     /// <summary>Parses a message from a packet.</summary>
     /// <param name="reader">The packet reader.</param>
     /// <returns>The parsed message.</returns>
-    /// <exception cref="UnsupportedClientException">Thrown when the reader's client is not the Flash client.</exception>
-    public T Parse(in PacketReader reader)
-    {
-        RequireClient(reader.Client);
-        return _parser(in reader);
-    }
+    public T Parse(in PacketReader reader) => _parser(in reader);
 
     /// <summary>Writes a message to a packet.</summary>
     /// <param name="message">The message to write.</param>
     /// <param name="writer">The packet writer.</param>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="message"/> is <see langword="null"/>.</exception>
-    /// <exception cref="UnsupportedClientException">Thrown when the writer's client is not the Flash client.</exception>
     public void Compose(T message, in PacketWriter writer)
     {
         ArgumentNullException.ThrowIfNull(message);
-        RequireClient(writer.Client);
         _composer(message, in writer);
     }
 
-    /// <summary>Gets the capability of the message for the specified message manager and header.</summary>
-    /// <param name="messages">The message manager that holds the client's message set and wire profile.</param>
+    /// <summary>Gets the capability of the message for the specified message resolver and header.</summary>
+    /// <param name="messages">The message resolver that holds the client's message set and wire profile.</param>
     /// <param name="header">The header the message resolves to.</param>
     /// <returns>The result of the capability check, or an available capability without a name when the codec has no check.</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="messages"/> is <see langword="null"/>.</exception>
-    public MessageCapability Capability(MessageManager messages, Header header)
+    public MessageCapability Capability(IMessageResolver messages, Header header)
     {
         ArgumentNullException.ThrowIfNull(messages);
         return _capability?.Invoke(messages, header) ?? MessageCapability.Ready();
@@ -112,10 +105,4 @@ public sealed class MessageCodec<T> where T : IParserComposer<T>
             static (in PacketReader reader) => T.Parse(in reader),
             static (T message, in PacketWriter writer) => message.Compose(in writer),
             capability);
-
-    private static void RequireClient(ClientType client)
-    {
-        if (client is not ClientType.Flash)
-            throw new UnsupportedClientException(client);
-    }
 }

@@ -1,5 +1,4 @@
 using Microsoft.Extensions.DependencyInjection;
-using Qx.Diagnostics;
 using Qx.Presentation.Navigation;
 using Qx.Presentation.Platform;
 using Qx.Presentation.Services.BugReports;

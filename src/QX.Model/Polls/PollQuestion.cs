@@ -1,6 +1,6 @@
 using Qx.Messages;
 
-namespace Qx.Model.Polls;
+namespace Qx.Model;
 
 /// <summary>Specifies how a poll question is answered.</summary>
 public enum PollQuestionType

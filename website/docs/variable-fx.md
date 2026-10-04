@@ -47,3 +47,20 @@ also be its display name.
 ```csharp
 long? points = await GetVariableValue(SelfAvatar!, "points");
 ```
+
+## Edit the display
+
+`WiredFxStyles` defines 38 styles across six categories with typed style/color/width/renderer enums.
+
+```csharp
+var review = await GetWiredForm(123);
+var form = (WiredVariableFxProgressBarAddonForm)review.CreateForm();
+WiredFxStyles.Get(WiredFxProgressStyle.BlockBar).ApplyTo(form, color: WiredFxColor.Blue);
+form.Segments = 10;
+Log((await SaveWiredForm(review, form)).Success);
+```
+
+`ApplyTo` validates choices and atomically sets defaults/dependencies, including level sub-renderers
+and segment support. Reads preserve unknown values. `StandardIcons` lists number-display icons;
+`CampaignIcons` requires the campaign setting or security permission 4.
+`GetWiredFxStyles(category)` / `wired.fx.styles` / `application_wired_fx_styles` reads the catalog.

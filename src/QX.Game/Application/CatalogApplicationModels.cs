@@ -131,7 +131,6 @@ public sealed record CatalogCacheClearRequest(
 /// <summary>Represents the cache state of one catalog type.</summary>
 /// <remarks>Returned by the <c>catalog.state</c> query.</remarks>
 /// <param name="Connected">Whether the catalog state belongs to the active hotel session.</param>
-/// <param name="Client">The client type of the hotel session, or <see langword="null"/> when <paramref name="Connected"/> is <see langword="false"/>.</param>
 /// <param name="SessionGeneration">The generation of the hotel session the catalog state belongs to.</param>
 /// <param name="CatalogGeneration">The catalog generation, which increases whenever a new index is received or the cache is invalidated.</param>
 /// <param name="Revision">The catalog cache revision, which increases whenever an index or page is cached or the cache is invalidated.</param>
@@ -145,7 +144,6 @@ public sealed record CatalogCacheClearRequest(
 /// <param name="LastPublishedAtUtc">The UTC time of the last catalog publication, or <see langword="null"/> when there is none.</param>
 public sealed record CatalogStateView(
     bool Connected,
-    ClientType? Client,
     long SessionGeneration,
     long CatalogGeneration,
     long Revision,
@@ -184,7 +182,6 @@ public sealed record CatalogNodeView(
 /// Returned by the <c>catalog.index.get</c> operation. The nodes are listed depth first, each parent
 /// before its children, and at most 500 nodes are returned.
 /// </remarks>
-/// <param name="Client">The client type of the hotel session.</param>
 /// <param name="SessionGeneration">The generation of the hotel session the index belongs to.</param>
 /// <param name="CatalogGeneration">The catalog generation the index belongs to.</param>
 /// <param name="Revision">The catalog cache revision when the index was read or stored.</param>
@@ -196,7 +193,6 @@ public sealed record CatalogNodeView(
 /// <param name="NodesTruncated">Whether the tree has more nodes than <paramref name="Nodes"/> holds.</param>
 /// <param name="Nodes">The nodes of the index tree, depth first.</param>
 public sealed record CatalogIndexView(
-    ClientType Client,
     long SessionGeneration,
     long CatalogGeneration,
     long Revision,
@@ -283,7 +279,6 @@ public sealed record CatalogFrontPageItemView(
 /// page items are returned, and at most 500 products across all returned offers. The offer requested
 /// with the page is always included with all its products.
 /// </remarks>
-/// <param name="Client">The client type of the hotel session.</param>
 /// <param name="SessionGeneration">The generation of the hotel session the page belongs to.</param>
 /// <param name="CatalogGeneration">The catalog generation the page belongs to.</param>
 /// <param name="Revision">The catalog cache revision when the page was read or stored.</param>
@@ -307,7 +302,6 @@ public sealed record CatalogFrontPageItemView(
 /// <param name="FrontPageItemsTruncated">Whether the page has more front page items than <paramref name="FrontPageItems"/> holds.</param>
 /// <param name="FrontPageItems">The front page items of the page.</param>
 public sealed record CatalogPageView(
-    ClientType Client,
     long SessionGeneration,
     long CatalogGeneration,
     long Revision,
@@ -333,7 +327,6 @@ public sealed record CatalogPageView(
 
 /// <summary>Represents the result of loading every catalog page into the cache.</summary>
 /// <remarks>Returned by the <c>catalog.pages.load</c> operation.</remarks>
-/// <param name="Client">The client type of the hotel session.</param>
 /// <param name="SessionGeneration">The generation of the hotel session the load ran in.</param>
 /// <param name="CatalogGeneration">The catalog generation the pages were loaded for.</param>
 /// <param name="Revision">The catalog cache revision after the load.</param>
@@ -346,7 +339,6 @@ public sealed record CatalogPageView(
 /// <param name="Total">The number of pages the index listed for loading.</param>
 /// <param name="Available">The number of pages that were loaded or already cached, the sum of <paramref name="Loaded"/> and <paramref name="AlreadyCached"/>.</param>
 public sealed record CatalogLoadView(
-    ClientType Client,
     long SessionGeneration,
     long CatalogGeneration,
     long Revision,
@@ -379,7 +371,6 @@ public sealed record CatalogPageSummaryView(
 /// <summary>Represents a page of cached catalog page summaries read from one snapshot.</summary>
 /// <remarks>Returned by the <c>catalog.pages.list</c> query.</remarks>
 /// <param name="Connected">Whether the snapshot belongs to the active hotel session.</param>
-/// <param name="Client">The client type of the hotel session, or <see langword="null"/> when <paramref name="Connected"/> is <see langword="false"/>.</param>
 /// <param name="SessionGeneration">The generation of the hotel session the snapshot belongs to.</param>
 /// <param name="CatalogGeneration">The catalog generation the snapshot belongs to.</param>
 /// <param name="StateRevision">The catalog cache revision when the snapshot was captured.</param>
@@ -391,7 +382,6 @@ public sealed record CatalogPageSummaryView(
 /// <param name="Pages">The page summaries in the result, ordered by page id.</param>
 public sealed record CatalogPageListView(
     bool Connected,
-    ClientType? Client,
     long SessionGeneration,
     long CatalogGeneration,
     long StateRevision,
@@ -446,7 +436,6 @@ public sealed record CatalogOfferSearchMatchView(
 /// <summary>Represents a page of cached catalog offers that matched a search, read from one snapshot.</summary>
 /// <remarks>Returned by the <c>catalog.offers.search</c> query.</remarks>
 /// <param name="Connected">Whether the snapshot belongs to the active hotel session.</param>
-/// <param name="Client">The client type of the hotel session, or <see langword="null"/> when <paramref name="Connected"/> is <see langword="false"/>.</param>
 /// <param name="SessionGeneration">The generation of the hotel session the snapshot belongs to.</param>
 /// <param name="CatalogGeneration">The catalog generation the snapshot belongs to.</param>
 /// <param name="StateRevision">The catalog cache revision when the snapshot was captured.</param>
@@ -459,7 +448,6 @@ public sealed record CatalogOfferSearchMatchView(
 /// <param name="Offers">The matching offers in the result.</param>
 public sealed record CatalogOfferSearchPage(
     bool Connected,
-    ClientType? Client,
     long SessionGeneration,
     long CatalogGeneration,
     long StateRevision,
@@ -473,14 +461,14 @@ public sealed record CatalogOfferSearchPage(
 
 /// <summary>Represents the result of clearing the catalog cache.</summary>
 /// <remarks>Returned by the <c>catalog.cache.clear</c> operation.</remarks>
-/// <param name="Client">The client type of the hotel session, or <see langword="null"/> when there is no session.</param>
+/// <param name="Connected">Whether a hotel session is active.</param>
 /// <param name="SessionGeneration">The generation of the hotel session the catalog state belongs to.</param>
 /// <param name="CatalogGeneration">The catalog generation after the cache was cleared.</param>
 /// <param name="Revision">The catalog cache revision after the cache was cleared.</param>
 /// <param name="ClearedAtUtc">The UTC time the cache was cleared.</param>
 /// <param name="CatalogType">The catalog type that was cleared, or <see langword="null"/> when every type was cleared.</param>
 public sealed record CatalogCacheClearView(
-    ClientType? Client,
+    bool Connected,
     long SessionGeneration,
     long CatalogGeneration,
     long Revision,
@@ -492,14 +480,12 @@ public sealed record CatalogCacheClearView(
 /// Published by the <c>catalog.published</c> event after the catalog cache has been invalidated, so
 /// the reported catalog generation already reflects the publication.
 /// </remarks>
-/// <param name="Client">The client type of the hotel session.</param>
 /// <param name="SessionGeneration">The generation of the hotel session the publication was received in.</param>
 /// <param name="CatalogGeneration">The catalog generation after the cache was invalidated.</param>
 /// <param name="Revision">The catalog cache revision after the cache was invalidated.</param>
 /// <param name="ReceivedAtUtc">The UTC time the publication was applied.</param>
 /// <param name="Publication">The publication message the hotel sent.</param>
 public sealed record CatalogPublishedEvent(
-    ClientType Client,
     long SessionGeneration,
     long CatalogGeneration,
     long Revision,
@@ -532,7 +518,6 @@ public sealed record CatalogPurchaseSendRequest(
 
 /// <summary>Represents the receipt for a catalog purchase that was sent.</summary>
 /// <remarks>Returned by the <c>catalog.purchase.send</c> operation.</remarks>
-/// <param name="Client">The client type of the hotel session.</param>
 /// <param name="SessionGeneration">The generation of the hotel session the purchase was sent in.</param>
 /// <param name="CatalogGeneration">The catalog generation the purchase was sent in.</param>
 /// <param name="PageId">The id of the catalog page.</param>
@@ -541,7 +526,6 @@ public sealed record CatalogPurchaseSendRequest(
 /// <param name="MessagesDispatched">The number of messages sent.</param>
 /// <param name="DispatchedAtUtc">The UTC time the purchase was sent.</param>
 public sealed record CatalogPurchaseDispatchReceipt(
-    ClientType Client,
     long SessionGeneration,
     long CatalogGeneration,
     int PageId,
@@ -600,14 +584,12 @@ public sealed record CatalogPurchaseOutcomeView(
 /// <summary>Represents the latest catalog purchase outcome of the session.</summary>
 /// <remarks>Returned by the <c>catalog.purchase.state</c> query.</remarks>
 /// <param name="Connected">Whether the purchase state belongs to the active hotel session.</param>
-/// <param name="Client">The client type of the hotel session, or <see langword="null"/> when <paramref name="Connected"/> is <see langword="false"/>.</param>
 /// <param name="SessionGeneration">The generation of the hotel session the purchase state belongs to.</param>
 /// <param name="Revision">The purchase state revision, which increases with each outcome and when the state is cleared.</param>
 /// <param name="LastOutcome">The latest outcome, or <see langword="null"/> when none has been received or <paramref name="Connected"/> is <see langword="false"/>.</param>
 /// <param name="LastOutcomeAtUtc">The UTC time the latest outcome was received, or <see langword="null"/> when there is none.</param>
 public sealed record CatalogPurchaseStateView(
     bool Connected,
-    ClientType? Client,
     long SessionGeneration,
     long Revision,
     CatalogPurchaseOutcomeView? LastOutcome,
@@ -618,13 +600,11 @@ public sealed record CatalogPurchaseStateView(
 /// Published by the <c>catalog.purchase.outcome</c> event. The outcome is not matched to the purchase
 /// that caused it.
 /// </remarks>
-/// <param name="Client">The client type of the hotel session.</param>
 /// <param name="SessionGeneration">The generation of the hotel session the outcome was received in.</param>
 /// <param name="Revision">The purchase state revision after the outcome.</param>
 /// <param name="ReceivedAtUtc">The UTC time the outcome was received.</param>
 /// <param name="Outcome">The outcome the hotel reported.</param>
 public sealed record CatalogPurchaseOutcomeEvent(
-    ClientType Client,
     long SessionGeneration,
     long Revision,
     DateTimeOffset ReceivedAtUtc,
@@ -671,13 +651,11 @@ internal interface ICatalogBrowseOperations
 
 internal interface ICatalogPurchaseOperations
 {
-    Task<CatalogPurchaseOutcome> PurchaseAsync(
+    void Purchase(
         PurchaseFromCatalogRequest request,
-        int timeout_ms,
         CancellationToken cancellation_token);
 
-    Task<CatalogPurchaseOutcome> DispatchCompatibility(
+    void DispatchCompatibility(
         Action send,
-        int timeout_ms,
         CancellationToken cancellation_token);
 }

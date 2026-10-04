@@ -7,7 +7,7 @@ namespace Qx.Interception.GEarth;
 /// <summary>Represents a builder for one G-Earth control frame.</summary>
 /// <remarks>Numbers are written big-endian.</remarks>
 /// <param name="header">The control header of the frame, one of the <see cref="GControl"/> constants.</param>
-public sealed class GControlWriter(short header)
+internal sealed class GControlWriter(short header)
 {
     private readonly ArrayBufferWriter<byte> _body = new();
 
@@ -28,14 +28,6 @@ public sealed class GControlWriter(short header)
     {
         _body.GetSpan(1)[0] = (byte)(value ? 1 : 0);
         _body.Advance(1);
-    }
-
-    /// <summary>Writes a 16-bit integer.</summary>
-    /// <param name="value">The value to write.</param>
-    public void WriteShort(short value)
-    {
-        BinaryPrimitives.WriteInt16BigEndian(_body.GetSpan(2), value);
-        _body.Advance(2);
     }
 
     /// <summary>Writes a 32-bit integer.</summary>
@@ -78,17 +70,6 @@ public sealed class GControlWriter(short header)
         BinaryPrimitives.WriteInt32BigEndian(_body.GetSpan(4), len);
         _body.Advance(4);
         Encoding.Latin1.GetBytes(value, _body.GetSpan(len));
-        _body.Advance(len);
-    }
-
-    /// <summary>Writes a UTF-8 string prefixed with a 32-bit byte length.</summary>
-    /// <param name="value">The string to write.</param>
-    public void WriteLongStringUtf8(string value)
-    {
-        int len = Encoding.UTF8.GetByteCount(value);
-        BinaryPrimitives.WriteInt32BigEndian(_body.GetSpan(4), len);
-        _body.Advance(4);
-        Encoding.UTF8.GetBytes(value, _body.GetSpan(len));
         _body.Advance(len);
     }
 

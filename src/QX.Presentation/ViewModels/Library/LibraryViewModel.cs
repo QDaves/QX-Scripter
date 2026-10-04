@@ -133,13 +133,13 @@ public sealed partial class LibraryViewModel : PageViewModel
         return wanted;
     }
 
-    protected override async Task OnActivatedAsync(CancellationToken cancellation_token)
+    protected override async Task OnActivatedAsync(CancellationToken cancellationToken)
     {
         SearchText = "";
         _watch ??= _files.Watch(_rescan.Trigger);
         _clock ??= _time.CreateTimer(static state => ((LibraryViewModel)state!).Tick(), this, ClockPeriod, ClockPeriod);
         SearchFocusRequested = true;
-        await ReloadAsync(cancellation_token);
+        await ReloadAsync(cancellationToken);
     }
 
     protected override void OnDeactivated()
@@ -268,7 +268,7 @@ public sealed partial class LibraryViewModel : PageViewModel
             "Clear category",
             $"Take {scripts} out of “{group.Name}”? The scripts stay.",
             "Clear",
-            cancellation_token: cancellation_token);
+            cancellationToken: cancellation_token);
         if (!confirmed)
             return;
         _library.RemoveCategory(group.Name);

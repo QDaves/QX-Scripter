@@ -6,12 +6,6 @@ namespace Qx.Scripting;
 public partial class ScriptGlobals
 {
     /// <summary>
-    /// Gets the achievement tracker, which holds the list, the score, the categories and the point
-    /// limits behind each badge.
-    /// </summary>
-    public AchievementManager AchievementState => Game.Achievements;
-
-    /// <summary>
     /// Loads the achievement list from the hotel when it has not been loaded yet.
     /// </summary>
     /// <remarks>
@@ -244,44 +238,38 @@ public partial class ScriptGlobals
     public void RefreshAchievements() => Game.Achievements.Request();
 
     /// <summary>Registers a handler that runs whenever the whole achievement list arrives.</summary>
-    /// <remarks>The handler stays registered until the script stops.</remarks>
     /// <param name="handler">The handler to call with the list as the hotel sent it.</param>
+    /// <returns>A handle that removes the handler when disposed.</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="handler"/> is <see langword="null"/>.</exception>
-    public void OnAchievementList(Action<IReadOnlyList<Achievement>> handler)
-    {
-        _ = Subscribe(
+    public IDisposable OnAchievementList(Action<IReadOnlyList<Achievement>> handler)
+        => Subscribe(
             handler,
             value => Game.Achievements.ListChanged += value,
             value => Game.Achievements.ListChanged -= value);
-    }
 
     /// <summary>
     /// Registers a handler that runs whenever an achievement gains a level.
     /// </summary>
     /// <remarks>
     /// The level change is worked out from the achievement update itself, so the handler runs
-    /// whether or not the hotel sends a level-up notification alongside it. It stays registered
-    /// until the script stops.
+    /// whether or not the hotel sends a level-up notification alongside it.
     /// </remarks>
     /// <param name="handler">The handler to call with the achievement as it was and as it now stands.</param>
+    /// <returns>A handle that removes the handler when disposed.</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="handler"/> is <see langword="null"/>.</exception>
-    public void OnAchievementLevelUp(Action<Achievement, Achievement> handler)
-    {
-        _ = Subscribe(
+    public IDisposable OnAchievementLevelUp(Action<Achievement, Achievement> handler)
+        => Subscribe(
             handler,
             value => Game.Achievements.LevelUp += value,
             value => Game.Achievements.LevelUp -= value);
-    }
 
     /// <summary>Registers a handler that runs whenever the hotel reports the achievement score.</summary>
-    /// <remarks>The handler stays registered until the script stops.</remarks>
     /// <param name="handler">The handler to call with the new score.</param>
+    /// <returns>A handle that removes the handler when disposed.</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="handler"/> is <see langword="null"/>.</exception>
-    public void OnAchievementScore(Action<int> handler)
-    {
-        _ = Subscribe(
+    public IDisposable OnAchievementScore(Action<int> handler)
+        => Subscribe(
             handler,
             value => Game.Achievements.ScoreChanged += value,
             value => Game.Achievements.ScoreChanged -= value);
-    }
 }

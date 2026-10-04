@@ -75,13 +75,13 @@ public sealed class ShopCatalog : IDisposable
         IsComplete = complete;
     }
 
-    public async Task<CatalogStateView> StateAsync(CancellationToken cancellation_token) =>
+    public async Task<CatalogStateView> StateAsync(CancellationToken cancellationToken) =>
         await _gateway.QueryAsync<CatalogStateRequest, CatalogStateView>(
             ApplicationMemberIds.CatalogState,
             new CatalogStateRequest(),
-            cancellation_token);
+            cancellationToken);
 
-    public async Task<CatalogLoadView> LoadPagesAsync(long session_generation, long catalog_generation, CancellationToken cancellation_token) =>
+    public async Task<CatalogLoadView> LoadPagesAsync(long sessionGeneration, long catalogGeneration, CancellationToken cancellationToken) =>
         await _gateway.InvokeAsync<CatalogLoadRequest, CatalogLoadView>(
             ApplicationMemberIds.CatalogPagesLoad,
             new CatalogLoadRequest(
@@ -89,24 +89,24 @@ public sealed class ShopCatalog : IDisposable
                 DelayMilliseconds: PageDelayMilliseconds,
                 MaxAgeMilliseconds: IsLoaded ? 0 : FreshPageAgeMilliseconds,
                 TimeoutMilliseconds: PageTimeoutMilliseconds,
-                ExpectedSessionGeneration: session_generation,
-                ExpectedCatalogGeneration: catalog_generation),
-            cancellation_token);
+                ExpectedSessionGeneration: sessionGeneration,
+                ExpectedCatalogGeneration: catalogGeneration),
+            cancellationToken);
 
     public async Task<IReadOnlyDictionary<FurniKey, IReadOnlyList<FurniShopOffer>>?> MergeAsync(
-        long? expected_session,
-        long? expected_catalog,
-        CancellationToken cancellation_token)
+        long? expectedSession,
+        long? expectedCatalog,
+        CancellationToken cancellationToken)
     {
-        CatalogStateView before = await StateAsync(cancellation_token);
-        if ((expected_session is { } session && before.SessionGeneration != session) ||
-            (expected_catalog is { } catalog && before.CatalogGeneration != catalog))
+        CatalogStateView before = await StateAsync(cancellationToken);
+        if ((expectedSession is { } session && before.SessionGeneration != session) ||
+            (expectedCatalog is { } catalog && before.CatalogGeneration != catalog))
         {
             return null;
         }
         if (Group() is not { } offers)
             return null;
-        CatalogStateView after = await StateAsync(cancellation_token);
+        CatalogStateView after = await StateAsync(cancellationToken);
         if (after.SessionGeneration != before.SessionGeneration || after.CatalogGeneration != before.CatalogGeneration)
             return null;
         SessionGeneration = after.SessionGeneration;
@@ -114,7 +114,7 @@ public sealed class ShopCatalog : IDisposable
         return offers;
     }
 
-    public async Task<FurniShopOffer?> FreshOfferAsync(FurniShopOffer shown, FurniKey key, CancellationToken cancellation_token)
+    public async Task<FurniShopOffer?> FreshOfferAsync(FurniShopOffer shown, FurniKey key, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(shown);
         CatalogPageView page = await _gateway.InvokeAsync<CatalogPageGetRequest, CatalogPageView>(
@@ -126,7 +126,7 @@ public sealed class ShopCatalog : IDisposable
                 TimeoutMilliseconds: PageTimeoutMilliseconds,
                 ExpectedSessionGeneration: SessionGeneration,
                 ExpectedCatalogGeneration: CatalogGeneration),
-            cancellation_token);
+            cancellationToken);
         CatalogOfferView? offer = page.Offers.FirstOrDefault(candidate => candidate.OfferId == shown.OfferId);
         CatalogProductView? product = offer?.Products.FirstOrDefault(candidate =>
             candidate.FurniClassId == key.Kind && ProductType(candidate.ProductType) == key.Type);
@@ -143,7 +143,7 @@ public sealed class ShopCatalog : IDisposable
                 offer.PriceInSilver);
     }
 
-    public async Task<CatalogPurchaseDispatchReceipt> SendPurchaseAsync(FurniShopOffer offer, CancellationToken cancellation_token)
+    public async Task<CatalogPurchaseDispatchReceipt> SendPurchaseAsync(FurniShopOffer offer, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(offer);
         return await _gateway.InvokeAsync<CatalogPurchaseSendRequest, CatalogPurchaseDispatchReceipt>(
@@ -153,7 +153,7 @@ public sealed class ShopCatalog : IDisposable
                 offer.OfferId,
                 ExpectedSessionGeneration: SessionGeneration,
                 ExpectedCatalogGeneration: CatalogGeneration),
-            cancellation_token);
+            cancellationToken);
     }
 
     public static bool ReceiptMatches(CatalogPurchaseDispatchReceipt receipt, FurniShopOffer offer)
@@ -166,9 +166,9 @@ public sealed class ShopCatalog : IDisposable
             receipt.Quantity == 1;
     }
 
-    public static ItemType? ProductType(string product_type)
+    public static ItemType? ProductType(string productType)
     {
-        return product_type switch
+        return productType switch
         {
             CatalogProduct.TypeStuff => ItemType.Floor,
             CatalogProduct.TypeItem => ItemType.Wall,

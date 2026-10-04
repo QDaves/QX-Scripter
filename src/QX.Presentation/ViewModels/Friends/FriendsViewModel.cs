@@ -174,11 +174,11 @@ public sealed partial class FriendsViewModel : PageViewModel
         RemoveTip = remove.Available ? "" : remove.Reason;
     }
 
-    protected override async Task OnActivatedAsync(CancellationToken cancellation_token)
+    protected override async Task OnActivatedAsync(CancellationToken cancellationToken)
     {
-        await RefreshAsync(cancellation_token);
+        await RefreshAsync(cancellationToken);
         if (!_loaded)
-            await AskAsync(null, cancellation_token);
+            await AskAsync(null, cancellationToken);
     }
 
     partial void OnSearchTextChanged(string value) => _search.Trigger();
@@ -323,7 +323,7 @@ public sealed partial class FriendsViewModel : PageViewModel
                 : $"{picked.Length} friends will be removed from your friend list.",
             "Remove",
             DialogTone.Destructive,
-            cancellation_token: cancellation_token);
+            cancellationToken: cancellation_token);
         if (!confirmed || IsDisposed)
             return;
         try

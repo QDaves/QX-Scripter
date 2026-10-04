@@ -22,7 +22,7 @@ public static class ShellCommands
         IScriptRunRegistry runs,
         IScriptWorkspace workspace,
         PanicKey panic,
-        EditorPreferences editor_preferences,
+        EditorPreferences editorPreferences,
         ICommandPalette palette)
     {
         ArgumentNullException.ThrowIfNull(registry);
@@ -33,7 +33,7 @@ public static class ShellCommands
         ArgumentNullException.ThrowIfNull(runs);
         ArgumentNullException.ThrowIfNull(workspace);
         ArgumentNullException.ThrowIfNull(panic);
-        ArgumentNullException.ThrowIfNull(editor_preferences);
+        ArgumentNullException.ThrowIfNull(editorPreferences);
         ArgumentNullException.ThrowIfNull(palette);
         WorkspaceViewModel Editor() => (WorkspaceViewModel)pages.Get(PageKey.Editor);
         RelayCommand OnEditor(Action<WorkspaceViewModel> work) => new(() =>
@@ -82,14 +82,14 @@ public static class ShellCommands
         {
             if (!bindings.TryGetValue(spec.Id, out Binding? binding))
                 continue;
-            string title = spec.Id == ShellCommandCatalog.ViewEditorWrap ? editor_preferences.WrapTitle : spec.Title;
+            string title = spec.Id == ShellCommandCatalog.ViewEditorWrap ? editorPreferences.WrapTitle : spec.Title;
             string? gesture = spec.Id == ShellCommandCatalog.RunStopAll ? panic.GestureText : spec.GestureText;
             registry.Register(new AppCommand(spec.Id, title, spec.Group, binding.Command, binding.Available, spec.Chords, spec.Route, spec.InPalette, spec.Scope, gesture));
         }
-        editor_preferences.PropertyChanged += (_, args) =>
+        editorPreferences.PropertyChanged += (_, args) =>
         {
             if (args.PropertyName == nameof(EditorPreferences.WrapTitle))
-                registry.Update(ShellCommandCatalog.ViewEditorWrap, command => command with { Title = editor_preferences.WrapTitle });
+                registry.Update(ShellCommandCatalog.ViewEditorWrap, command => command with { Title = editorPreferences.WrapTitle });
         };
     }
 

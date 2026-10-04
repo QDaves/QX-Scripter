@@ -13,9 +13,9 @@ namespace Qx.Game;
 /// </summary>
 /// <remarks>
 /// <para>
-/// A derived manager registers its message handlers in <see cref="OnAttach"/> and clears its state in
-/// <see cref="Reset"/>. Handlers run on the thread that delivers the intercepted message and stay
-/// registered across reconnects until the manager is disposed.
+/// A derived manager registers its message handlers in <see cref="OnAttach"/>, clears its state in
+/// <see cref="Reset"/> and releases resources of its own in <see cref="Close"/>. Handlers run on the thread
+/// that delivers the intercepted message and stay registered across reconnects until the manager is disposed.
 /// </para>
 /// <para>
 /// While the hotel connection is closing, handlers are skipped and sends throw
@@ -109,7 +109,7 @@ public abstract class GameStateManager : IDisposable
     }
 
     /// <summary>
-    /// Registers a handler for an incoming message, identified by name, from any client.
+    /// Registers a handler for an incoming message, identified by name.
     /// </summary>
     /// <remarks>
     /// A message that leaves unread bytes after parsing throws <see cref="InvalidOperationException"/>
@@ -120,13 +120,10 @@ public abstract class GameStateManager : IDisposable
     /// <param name="handler">The handler to run with the parsed message.</param>
     /// <exception cref="InvalidOperationException">Thrown when the manager is not attached.</exception>
     protected void OnIncoming<T>(string name, Action<T> handler) where T : IParserComposer<T>
-        => OnIncoming<T>(
-            ClientType.None,
-            name,
-            (message, _) => handler(message));
+        => OnIncoming<T>(name, (message, _) => handler(message));
 
     /// <summary>
-    /// Registers a handler for an incoming message, identified by key, from any client.
+    /// Registers a handler for an incoming message, identified by key.
     /// </summary>
     /// <remarks>
     /// A message that leaves unread bytes after parsing throws <see cref="InvalidOperationException"/>
@@ -140,7 +137,7 @@ public abstract class GameStateManager : IDisposable
         => OnIncoming<T>(key, (message, _) => handler(message));
 
     /// <summary>
-    /// Registers a handler for an incoming message, parsed through its contract, from any client.
+    /// Registers a handler for an incoming message, parsed through its contract.
     /// </summary>
     /// <remarks>
     /// A message that leaves unread bytes after parsing throws <see cref="InvalidOperationException"/>
@@ -186,73 +183,6 @@ public abstract class GameStateManager : IDisposable
     }
 
     /// <summary>
-    /// Registers a handler for an incoming message, parsed through its contract, from one client type only.
-    /// </summary>
-    /// <remarks>
-    /// The interception is active only while the connected session uses <paramref name="client"/>. A
-    /// message that leaves unread bytes after parsing throws <see cref="InvalidOperationException"/>
-    /// instead of reaching the handler.
-    /// </remarks>
-    /// <typeparam name="T">The type the message is parsed as.</typeparam>
-    /// <param name="client">The client type the handler applies to.</param>
-    /// <param name="contract">The contract of the incoming message.</param>
-    /// <param name="handler">The handler to run with the parsed message.</param>
-    /// <exception cref="ArgumentNullException">Thrown when <paramref name="contract"/> is <see langword="null"/>.</exception>
-    /// <exception cref="UnsupportedClientException">Thrown when <paramref name="contract"/> does not support <paramref name="client"/>.</exception>
-    /// <exception cref="InvalidOperationException">Thrown when the manager is not attached.</exception>
-    protected void OnIncoming<T>(
-        ClientType client,
-        MessageContract<T> contract,
-        Action<T> handler) where T : IParserComposer<T> =>
-        OnIncoming(client, contract, (message, _) => handler(message));
-
-    /// <summary>
-    /// Registers a handler for an incoming message, parsed through its contract, from one client type only, that also receives the state generation.
-    /// </summary>
-    /// <remarks>
-    /// The interception is active only while the connected session uses <paramref name="client"/>. The
-    /// second handler argument is the <see cref="CurrentStateGeneration"/> at the time the message
-    /// arrived. A message that leaves unread bytes after parsing throws
-    /// <see cref="InvalidOperationException"/> instead of reaching the handler.
-    /// </remarks>
-    /// <typeparam name="T">The type the message is parsed as.</typeparam>
-    /// <param name="client">The client type the handler applies to.</param>
-    /// <param name="contract">The contract of the incoming message.</param>
-    /// <param name="handler">The handler to run with the parsed message and the state generation.</param>
-    /// <exception cref="ArgumentNullException">Thrown when <paramref name="contract"/> is <see langword="null"/>.</exception>
-    /// <exception cref="UnsupportedClientException">Thrown when <paramref name="contract"/> does not support <paramref name="client"/>.</exception>
-    /// <exception cref="InvalidOperationException">Thrown when the manager is not attached.</exception>
-    protected void OnIncoming<T>(
-        ClientType client,
-        MessageContract<T> contract,
-        Action<T, long> handler) where T : IParserComposer<T>
-    {
-        ArgumentNullException.ThrowIfNull(contract);
-        if (!contract.Supports(client))
-            throw new UnsupportedClientException(client);
-        IInterceptor interceptor = Interceptor;
-        Subscribe(generation =>
-        {
-            IDisposable Bind() => interceptor.Intercept(contract.Key, intercept =>
-            {
-                InvokeCallback(generation, state_generation =>
-                {
-                    if (intercept.Packet.Client != client)
-                        return;
-                    PublishMessage(
-                        contract.Key.Value,
-                        state_generation,
-                        intercept.Packet,
-                        handler,
-                        contract.Parse);
-                });
-            });
-
-            return new ClientScopedSubscription(interceptor, client, Bind);
-        });
-    }
-
-    /// <summary>
     /// Registers a handler for an incoming message, identified by key, that also receives the state generation.
     /// </summary>
     /// <remarks>
@@ -279,65 +209,6 @@ public abstract class GameStateManager : IDisposable
     }
 
     /// <summary>
-    /// Registers a handler for an incoming message, identified by key, from one client type only.
-    /// </summary>
-    /// <remarks>
-    /// The interception is active only while the connected session uses <paramref name="client"/>. A
-    /// message that leaves unread bytes after parsing throws <see cref="InvalidOperationException"/>
-    /// instead of reaching the handler.
-    /// </remarks>
-    /// <typeparam name="T">The type the message is parsed as.</typeparam>
-    /// <param name="client">The client type the handler applies to.</param>
-    /// <param name="key">The key of the incoming message.</param>
-    /// <param name="handler">The handler to run with the parsed message.</param>
-    /// <exception cref="InvalidOperationException">Thrown when the manager is not attached.</exception>
-    protected void OnIncoming<T>(
-        ClientType client,
-        MessageKey key,
-        Action<T> handler) where T : IParserComposer<T> =>
-        OnIncoming<T>(client, key, (message, _) => handler(message));
-
-    /// <summary>
-    /// Registers a handler for an incoming message, identified by key, from one client type only, that also receives the state generation.
-    /// </summary>
-    /// <remarks>
-    /// The interception is active only while the connected session uses <paramref name="client"/>. The
-    /// second handler argument is the <see cref="CurrentStateGeneration"/> at the time the message
-    /// arrived. A message that leaves unread bytes after parsing throws
-    /// <see cref="InvalidOperationException"/> instead of reaching the handler.
-    /// </remarks>
-    /// <typeparam name="T">The type the message is parsed as.</typeparam>
-    /// <param name="client">The client type the handler applies to.</param>
-    /// <param name="key">The key of the incoming message.</param>
-    /// <param name="handler">The handler to run with the parsed message and the state generation.</param>
-    /// <exception cref="InvalidOperationException">Thrown when the manager is not attached.</exception>
-    protected void OnIncoming<T>(
-        ClientType client,
-        MessageKey key,
-        Action<T, long> handler) where T : IParserComposer<T>
-    {
-        IInterceptor interceptor = Interceptor;
-        Subscribe(generation =>
-        {
-            IDisposable Bind() => interceptor.Intercept(key, intercept =>
-            {
-                InvokeCallback(generation, state_generation =>
-                {
-                    if (intercept.Packet.Client != client)
-                        return;
-                    PublishMessage<T>(
-                        key.Value,
-                        state_generation,
-                        intercept.Packet,
-                        handler);
-                });
-            });
-
-            return new ClientScopedSubscription(interceptor, client, Bind);
-        });
-    }
-
-    /// <summary>
     /// Registers a handler for an incoming message, identified by name, that also receives the state generation.
     /// </summary>
     /// <remarks>
@@ -351,77 +222,19 @@ public abstract class GameStateManager : IDisposable
     /// <exception cref="InvalidOperationException">Thrown when the manager is not attached.</exception>
     protected void OnIncoming<T>(
         string name,
-        Action<T, long> handler) where T : IParserComposer<T> =>
-        OnIncoming<T>(ClientType.None, name, handler);
-
-    /// <summary>
-    /// Registers a handler for an incoming message, identified by name, from one client type.
-    /// </summary>
-    /// <remarks>
-    /// <see cref="ClientType.None"/> accepts the message from any client. Otherwise the interception is
-    /// active only while the connected session uses <paramref name="client"/>. A message that leaves
-    /// unread bytes after parsing throws <see cref="InvalidOperationException"/> instead of reaching
-    /// the handler.
-    /// </remarks>
-    /// <typeparam name="T">The type the message is parsed as.</typeparam>
-    /// <param name="client">The client type the handler applies to, or <see cref="ClientType.None"/> for any client.</param>
-    /// <param name="name">The name of the incoming message.</param>
-    /// <param name="handler">The handler to run with the parsed message.</param>
-    /// <exception cref="InvalidOperationException">Thrown when the manager is not attached.</exception>
-    protected void OnIncoming<T>(
-        ClientType client,
-        string name,
-        Action<T> handler) where T : IParserComposer<T> =>
-        OnIncoming<T>(
-            client,
-            name,
-            (message, _) => handler(message));
-
-    /// <summary>
-    /// Registers a handler for an incoming message, identified by name, from one client type, that also receives the state generation.
-    /// </summary>
-    /// <remarks>
-    /// <see cref="ClientType.None"/> accepts the message from any client. Otherwise the interception is
-    /// active only while the connected session uses <paramref name="client"/>. The second handler
-    /// argument is the <see cref="CurrentStateGeneration"/> at the time the message arrived. A message
-    /// that leaves unread bytes after parsing throws <see cref="InvalidOperationException"/> instead of
-    /// reaching the handler.
-    /// </remarks>
-    /// <typeparam name="T">The type the message is parsed as.</typeparam>
-    /// <param name="client">The client type the handler applies to, or <see cref="ClientType.None"/> for any client.</param>
-    /// <param name="name">The name of the incoming message.</param>
-    /// <param name="handler">The handler to run with the parsed message and the state generation.</param>
-    /// <exception cref="InvalidOperationException">Thrown when the manager is not attached.</exception>
-    protected void OnIncoming<T>(
-        ClientType client,
-        string name,
         Action<T, long> handler) where T : IParserComposer<T>
     {
-        var identifier = new Identifier(client, Direction.In, name);
+        var identifier = new Identifier(MessageDirection.In, name);
         IInterceptor interceptor = Interceptor;
         Subscribe(generation =>
-        {
-            IDisposable Bind() => interceptor.Intercept(identifier, intercept =>
-            {
-                InvokeCallback(generation, state_generation =>
-                {
-                    if (client is not ClientType.None &&
-                        intercept.Packet.Client != client)
-                    {
-                        return;
-                    }
-                    PublishMessage<T>(
+            interceptor.Intercept(identifier, intercept =>
+                InvokeCallback(
+                    generation,
+                    state_generation => PublishMessage<T>(
                         name,
                         state_generation,
                         intercept.Packet,
-                        handler);
-                });
-            });
-
-            return client is ClientType.None
-                ? Bind()
-                : new ClientScopedSubscription(interceptor, client, Bind);
-        });
+                        handler))));
     }
 
     /// <summary>
@@ -436,7 +249,7 @@ public abstract class GameStateManager : IDisposable
     /// <exception cref="InvalidOperationException">Thrown when the manager is not attached.</exception>
     protected void OnIncoming(string name, Action handler)
     {
-        var identifier = new Identifier(ClientType.None, Direction.In, name);
+        var identifier = new Identifier(MessageDirection.In, name);
         IInterceptor interceptor = Interceptor;
         Subscribe(generation =>
             interceptor.Intercept(identifier, intercept =>
@@ -462,7 +275,7 @@ public abstract class GameStateManager : IDisposable
     /// <exception cref="InvalidOperationException">Thrown when the manager is not attached.</exception>
     protected void OnOutgoing<T>(string name, Action<T> handler) where T : IParserComposer<T>
     {
-        var identifier = new Identifier(ClientType.None, Direction.Out, name);
+        var identifier = new Identifier(MessageDirection.Out, name);
         IInterceptor interceptor = Interceptor;
         Subscribe(generation =>
             interceptor.Intercept(identifier, intercept =>
@@ -487,7 +300,7 @@ public abstract class GameStateManager : IDisposable
     /// <exception cref="InvalidOperationException">Thrown when the manager is not attached.</exception>
     protected void OnOutgoing(string name, Action handler)
     {
-        var identifier = new Identifier(ClientType.None, Direction.Out, name);
+        var identifier = new Identifier(MessageDirection.Out, name);
         IInterceptor interceptor = Interceptor;
         Subscribe(generation =>
             interceptor.Intercept(identifier, intercept =>
@@ -536,19 +349,11 @@ public abstract class GameStateManager : IDisposable
             InterceptorSessionCatalog session_catalog = interceptor.CaptureSessionCatalog();
             expected_session = session_catalog.Session;
             SessionCatalogBinding? expected_catalog = session_catalog.Catalog;
-            if (!TryGetHeader(interceptor.Messages, Direction.Out, key, name, out Header header))
+            if (!TryGetHeader(interceptor.Messages, MessageDirection.Out, key, name, out Header header))
                 throw new InvalidOperationException($"Unknown outgoing message '{RouteName(key, name)}'.");
 
-            ClientType client = ResolveClient(interceptor, expected_session);
-
-            using var packet = new Packet(header, client);
-            packet.Context = new ParserContext(
-                interceptor.Messages,
-                interceptor.Messages.GetWireProfile(client));
-            PacketWriter writer = packet.Writer();
-            {
-                writer.WriteValues(values);
-            }
+            using Packet packet = interceptor.Messages.CreatePacket(header);
+            packet.Writer().WriteValues(values);
             interceptor.Send(packet, expected_session, expected_catalog);
         }
         finally
@@ -639,15 +444,10 @@ public abstract class GameStateManager : IDisposable
             InterceptorSessionCatalog session_catalog = interceptor.CaptureSessionCatalog();
             expected_session = session_catalog.Session;
             SessionCatalogBinding? expected_catalog = session_catalog.Catalog;
-            if (!TryGetHeader(interceptor.Messages, Direction.In, key, name, out Header header))
+            if (!TryGetHeader(interceptor.Messages, MessageDirection.In, key, name, out Header header))
                 throw new InvalidOperationException($"Unknown incoming message '{RouteName(key, name)}'.");
 
-            ClientType client = ResolveClient(interceptor, expected_session);
-
-            using var packet = new Packet(header, client);
-            packet.Context = new ParserContext(
-                interceptor.Messages,
-                interceptor.Messages.GetWireProfile(client));
+            using Packet packet = interceptor.Messages.CreatePacket(header);
             PacketWriter writer = packet.Writer();
             compose(in writer);
             interceptor.Send(packet, expected_session, expected_catalog);
@@ -743,33 +543,33 @@ public abstract class GameStateManager : IDisposable
     /// <typeparam name="T">The type of the message.</typeparam>
     /// <param name="contract">The contract of the outgoing message.</param>
     /// <param name="message">The message to send.</param>
-    /// <param name="expected_session">The session the message is meant for.</param>
-    /// <param name="cancellation_token">The token to monitor for cancellation requests.</param>
-    /// <param name="dispatch_guard">An action that runs under the interceptor's send lock just before the message is written, and can throw to stop the send.</param>
-    /// <exception cref="ArgumentNullException">Thrown when <paramref name="contract"/>, <paramref name="message"/> or <paramref name="expected_session"/> is <see langword="null"/>.</exception>
+    /// <param name="expectedSession">The session the message is meant for.</param>
+    /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+    /// <param name="dispatchGuard">An action that runs under the interceptor's send lock just before the message is written, and can throw to stop the send.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="contract"/>, <paramref name="message"/> or <paramref name="expectedSession"/> is <see langword="null"/>.</exception>
     /// <exception cref="ObjectDisposedException">Thrown when the manager has been disposed.</exception>
     /// <exception cref="InvalidOperationException">Thrown when the session is no longer current, the message is not known, the manager is not attached, or the hotel connection is closing.</exception>
-    /// <exception cref="OperationCanceledException">Thrown when <paramref name="cancellation_token"/> is canceled before the message is written.</exception>
+    /// <exception cref="OperationCanceledException">Thrown when <paramref name="cancellationToken"/> is canceled before the message is written.</exception>
     protected void SendMessage<T>(
         MessageContract<T> contract,
         T message,
-        Session expected_session,
-        CancellationToken cancellation_token = default,
-        Action? dispatch_guard = null)
+        Session expectedSession,
+        CancellationToken cancellationToken = default,
+        Action? dispatchGuard = null)
         where T : IParserComposer<T>
     {
         ArgumentNullException.ThrowIfNull(contract);
         ArgumentNullException.ThrowIfNull(message);
-        ArgumentNullException.ThrowIfNull(expected_session);
+        ArgumentNullException.ThrowIfNull(expectedSession);
         SendMessageCore(
             contract.Key,
             null,
             message,
             (in PacketWriter writer) => contract.Compose(message, in writer),
             contract,
-            expected_session,
-            cancellation_token,
-            dispatch_guard);
+            expectedSession,
+            cancellationToken,
+            dispatchGuard);
     }
 
     /// <summary>
@@ -837,15 +637,14 @@ public abstract class GameStateManager : IDisposable
             if (required_session is not null && !ReferenceEquals(expected_session, required_session))
                 throw new InvalidOperationException("The hotel session changed before dispatch.");
             expected_session = required_session ?? expected_session;
-            ClientType client = ResolveClient(interceptor, expected_session);
-            if (!TryGetHeader(interceptor.Messages, Direction.Out, key, name, out Header header))
+            if (!TryGetHeader(interceptor.Messages, MessageDirection.Out, key, name, out Header header))
                 throw new InvalidOperationException($"Unknown outgoing message '{RouteName(key, name)}'.");
-            Packet packet = ComposePacket(interceptor.Messages, client, header, compose);
-            using (packet)
-            {
-                cancellation_token.ThrowIfCancellationRequested();
-                interceptor.Send(packet, expected_session, expected_catalog, dispatch_guard);
-            }
+
+            using Packet packet = interceptor.Messages.CreatePacket(header);
+            PacketWriter writer = packet.Writer();
+            compose(in writer);
+            cancellation_token.ThrowIfCancellationRequested();
+            interceptor.Send(packet, expected_session, expected_catalog, dispatch_guard);
         }
         finally
         {
@@ -853,68 +652,20 @@ public abstract class GameStateManager : IDisposable
         }
     }
 
-    private static Packet ComposePacket(
-        MessageManager messages,
-        ClientType client,
-        Header header,
-        PacketComposer compose)
-    {
-        var packet = new Packet(header, client)
-        {
-            Context = new ParserContext(messages, messages.GetWireProfile(client))
-        };
-        try
-        {
-            PacketWriter writer = packet.Writer();
-            compose(in writer);
-            return packet;
-        }
-        catch
-        {
-            packet.Dispose();
-            throw;
-        }
-    }
-
     private static bool TryGetHeader(
-        MessageManager messages,
-        Direction direction,
+        IMessageResolver messages,
+        MessageDirection direction,
         MessageKey key,
         string? name,
         out Header header)
     {
         bool found = key.IsEmpty
-            ? messages.TryGetHeader(new Identifier(ClientType.None, direction, name!), out header)
+            ? messages.TryGetHeader(new Identifier(direction, name!), out header)
             : messages.TryGetHeader(key, out header);
         return found && header.Direction == direction;
     }
 
     private static string RouteName(MessageKey key, string? name) => name ?? key.Value;
-
-    /// <summary>
-    /// Gets the client type of the current hotel session.
-    /// </summary>
-    /// <remarks>
-    /// Falls back to the active client of the interceptor's message manager when no session is connected, and to
-    /// <see cref="ClientType.Flash"/> when neither is known.
-    /// </remarks>
-    /// <exception cref="ObjectDisposedException">Thrown when the manager has been disposed.</exception>
-    /// <exception cref="InvalidOperationException">Thrown when the manager is not attached.</exception>
-    protected ClientType CurrentClient
-    {
-        get
-        {
-            IInterceptor interceptor;
-            lock (_lifecycle_sync)
-            {
-                ObjectDisposedException.ThrowIf(_disposed, this);
-                if (!_attached)
-                    throw new InvalidOperationException("The state manager is not attached.");
-                interceptor = Interceptor;
-            }
-            return ResolveClient(interceptor, interceptor.Session);
-        }
-    }
 
     /// <summary>
     /// Gets the current state generation of the manager.
@@ -950,13 +701,13 @@ public abstract class GameStateManager : IDisposable
     /// <remarks>
     /// The action runs under the manager's lifecycle lock, so no disconnect or dispose can start while it runs.
     /// </remarks>
-    /// <param name="state_generation">The state generation the action belongs to.</param>
+    /// <param name="stateGeneration">The state generation the action belongs to.</param>
     /// <param name="session">The session the action belongs to.</param>
     /// <param name="action">The action to run.</param>
     /// <returns><see langword="true"/> if the action ran; otherwise, <see langword="false"/>.</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="session"/> or <paramref name="action"/> is <see langword="null"/>.</exception>
     protected bool ApplyIfCurrent(
-        long state_generation,
+        long stateGeneration,
         Session session,
         Action action)
     {
@@ -966,7 +717,7 @@ public abstract class GameStateManager : IDisposable
         {
             if (!_attached ||
                 _disposed ||
-                _state_generation != state_generation ||
+                _state_generation != stateGeneration ||
                 !ReferenceEquals(Interceptor.Session, session))
             {
                 return false;
@@ -1042,7 +793,17 @@ public abstract class GameStateManager : IDisposable
     /// Waits for sends and message handlers running on other threads to finish before <see cref="Reset"/> runs. Later
     /// calls have no effect. An error from removing a message handler is thrown after the state is cleared.
     /// </remarks>
-    public virtual void Dispose()
+    void IDisposable.Dispose() => Close();
+
+    /// <summary>
+    /// Releases the manager when it is disposed.
+    /// </summary>
+    /// <remarks>
+    /// Runs on every call to <see cref="IDisposable.Dispose"/>, and the base implementation acts only on the first. A
+    /// derived manager overrides it to release resources of its own and calls the base implementation, which detaches
+    /// the manager, removes its message handlers and clears its state.
+    /// </remarks>
+    protected internal virtual void Close()
     {
         CallbackGeneration? callbacks;
         OperationGeneration? operations;
@@ -1228,16 +989,6 @@ public abstract class GameStateManager : IDisposable
         lock (_lifecycle_sync)
             ObjectDisposedException.ThrowIf(_disposed, this);
         throw new InvalidOperationException("The state manager is not accepting operations.");
-    }
-
-    private static ClientType ResolveClient(
-        IInterceptor interceptor,
-        Session? expected_session)
-    {
-        ClientType client =
-            expected_session?.Client ??
-            interceptor.Messages.ActiveClient;
-        return client is ClientType.None ? ClientType.Flash : client;
     }
 
     private void RollbackAttachment(long attachment_generation)
@@ -1637,192 +1388,5 @@ public abstract class GameStateManager : IDisposable
     private sealed class Unsubscriber(Action dispose) : IDisposable
     {
         public void Dispose() => dispose();
-    }
-
-    private sealed class ClientScopedSubscription : IDisposable
-    {
-        private readonly object _sync = new();
-        private readonly IInterceptor _interceptor;
-        private readonly ClientType _client;
-        private readonly Func<IDisposable> _bind;
-        private IDisposable? _active;
-        private ClientType _desired_client;
-        private long _event_revision;
-        private bool _reconciling;
-        private bool _disposed;
-
-        public ClientScopedSubscription(
-            IInterceptor interceptor,
-            ClientType client,
-            Func<IDisposable> bind)
-        {
-            _interceptor = interceptor;
-            _client = client;
-            _bind = bind;
-            _interceptor.Connected += Connected;
-            _interceptor.Disconnected += Disconnected;
-            try
-            {
-                long revision;
-                lock (_sync)
-                    revision = _event_revision;
-                ClientType active_client =
-                    _interceptor.Session?.Client ?? _interceptor.Messages.ActiveClient;
-                SetInitialClient(active_client, revision);
-            }
-            catch
-            {
-                _interceptor.Connected -= Connected;
-                _interceptor.Disconnected -= Disconnected;
-                throw;
-            }
-        }
-
-        private void Connected(Session session) => SetClient(session.Client);
-
-        private void Disconnected() => SetClient(ClientType.None);
-
-        private void SetClient(ClientType client)
-        {
-            bool reconcile;
-            lock (_sync)
-            {
-                if (_disposed)
-                    return;
-                _event_revision++;
-                _desired_client = client;
-                reconcile = StartReconcile();
-            }
-            if (reconcile)
-                Reconcile();
-        }
-
-        private void SetInitialClient(ClientType client, long revision)
-        {
-            bool reconcile;
-            lock (_sync)
-            {
-                if (_disposed || revision != _event_revision)
-                    return;
-                _desired_client = client;
-                reconcile = StartReconcile();
-            }
-            if (reconcile)
-                Reconcile();
-        }
-
-        private bool StartReconcile()
-        {
-            if (_reconciling)
-                return false;
-            _reconciling = true;
-            return true;
-        }
-
-        private void Reconcile()
-        {
-            while (true)
-            {
-                IDisposable? removed = null;
-                bool bind = false;
-                lock (_sync)
-                {
-                    if (_disposed)
-                    {
-                        _reconciling = false;
-                        return;
-                    }
-                    if (_desired_client != _client)
-                    {
-                        if (_active is null)
-                        {
-                            _reconciling = false;
-                            return;
-                        }
-                        removed = _active;
-                        _active = null;
-                    }
-                    else if (_active is null)
-                    {
-                        bind = true;
-                    }
-                    else
-                    {
-                        _reconciling = false;
-                        return;
-                    }
-                }
-
-                if (removed is not null)
-                {
-                    try
-                    {
-                        removed.Dispose();
-                    }
-                    catch
-                    {
-                        EndReconcile();
-                        throw;
-                    }
-                    continue;
-                }
-
-                if (!bind)
-                    continue;
-
-                IDisposable active;
-                try
-                {
-                    active = _bind();
-                }
-                catch
-                {
-                    EndReconcile();
-                    throw;
-                }
-
-                bool keep;
-                lock (_sync)
-                {
-                    keep = !_disposed && _desired_client == _client && _active is null;
-                    if (keep)
-                        _active = active;
-                }
-                if (!keep)
-                {
-                    try
-                    {
-                        active.Dispose();
-                    }
-                    catch
-                    {
-                        EndReconcile();
-                        throw;
-                    }
-                }
-            }
-        }
-
-        private void EndReconcile()
-        {
-            lock (_sync)
-                _reconciling = false;
-        }
-
-        public void Dispose()
-        {
-            IDisposable? active;
-            lock (_sync)
-            {
-                if (_disposed)
-                    return;
-                _disposed = true;
-                active = _active;
-                _active = null;
-            }
-            _interceptor.Connected -= Connected;
-            _interceptor.Disconnected -= Disconnected;
-            active?.Dispose();
-        }
     }
 }

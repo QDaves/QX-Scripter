@@ -1,5 +1,4 @@
 using Qx.Game;
-using Qx.Game.Snapshots;
 using Qx.Model;
 using Qx.Model.Messages.Incoming;
 
@@ -9,165 +8,52 @@ namespace Qx.Scripting;
 /// The current room's decoration, layout, chat rules and the local user's authority in it.
 /// <para>
 /// Everything here is read from the room tracker and reflects what the server pushed while
-/// entering and staying in the room. Nothing is requested: a member stays <see langword="null"/>
+/// entering and staying in the room. Nothing is requested: a value stays <see langword="null"/>
 /// until the packet that carries it has arrived, and every value is reset on leaving the room.
 /// </para>
 /// <para>
-/// The plain properties read the live tracker; the snapshot properties take a consistent copy
-/// under the tracker's lock and are the safe choice when several related values have to agree.
+/// Each property takes a consistent copy under the tracker's lock, so related values always
+/// agree. The single live values are on <see cref="Room"/>, for example
+/// <see cref="RoomManager.EntryTile"/> or <see cref="RoomManager.ChatSettings"/>.
 /// </para>
 /// </content>
 public partial class ScriptGlobals
 {
     /// <summary>
-    /// Gets the extra room flags the server sends alongside the room data, or
-    /// <see langword="null"/> until the room result has arrived.
+    /// Gets the room's decoration, layout and chat rules captured in one consistent value.
     /// </summary>
     /// <remarks>
-    /// The flags cover forward on enter, staff pick, group membership, room mute, the moderation
-    /// permission levels, whether the local user may mute, and the chat settings.
-    /// </remarks>
-    public RoomResultDetails? RoomDetails => Room.Details;
-
-    /// <summary>
-    /// Gets the room's door tile, or <see langword="null"/> while it has not arrived.
-    /// </summary>
-    /// <remarks>
-    /// The door tile is where avatars appear on entering and which way they face.
-    /// </remarks>
-    public RoomEntryTile? RoomEntryTile => Room.EntryTile;
-
-    /// <summary>
-    /// Gets every room property keyed exactly as the hotel sends it, for example <c>floor</c>,
-    /// <c>wallpaper</c>, <c>landscape</c> and <c>landscapeanim</c>.
-    /// </summary>
-    /// <remarks>Every read returns a copy taken under the room lock, not a live view.</remarks>
-    public IReadOnlyDictionary<string, string> RoomProperties => Room.Properties;
-
-    /// <summary>
-    /// Gets the <c>floor</c> property, which is the floor pattern identifier, or
-    /// <see langword="null"/> when the room has not set one.
-    /// </summary>
-    public string? RoomFloor => Room.FloorProperty;
-
-    /// <summary>
-    /// Gets the <c>wallpaper</c> property, which is the wall pattern identifier, or
-    /// <see langword="null"/> when the room has not set one.
-    /// </summary>
-    public string? RoomWallpaper => Room.WallpaperProperty;
-
-    /// <summary>
-    /// Gets the <c>landscape</c> property, which is the window backdrop identifier, or
-    /// <see langword="null"/> when the room has not set one.
-    /// </summary>
-    public string? RoomLandscape => Room.LandscapeProperty;
-
-    /// <summary>
-    /// Gets the <c>landscapeanim</c> property, which is the animated backdrop identifier, or
-    /// <see langword="null"/> when the room has not set one.
-    /// </summary>
-    public string? RoomAnimatedLandscape => Room.AnimatedLandscapeProperty;
-
-    /// <summary>
-    /// Gets whether the walls are hidden and how thick the walls and floor are drawn, or
-    /// <see langword="null"/> before the visualization settings arrive.
-    /// </summary>
-    public RoomVisualizationSettings? RoomVisualization => Room.VisualizationSettings;
-
-    /// <summary>
-    /// Gets the room's chat rules, or <see langword="null"/> before the room result or a chat
-    /// settings message arrives.
-    /// </summary>
-    /// <remarks>
-    /// <para>
-    /// The rules cover bubble flow mode, bubble width, scroll speed, hearing distance in tiles and
-    /// flood filter strength. They are taken from the room result and from the chat settings
-    /// message, whichever arrived last.
-    /// </para>
-    /// <para>
-    /// One Flash wire layout carries only the flood filter setting; on such a build the other
-    /// fields hold their defaults rather than the room's real values.
-    /// </para>
-    /// </remarks>
-    public RoomChatSettings? RoomChatSettings => Room.ChatSettings;
-
-    /// <summary>
-    /// Gets the controller level the server granted the local user in this room, or
-    /// <see langword="null"/> while it is still unknown.
-    /// </summary>
-    /// <remarks>
-    /// The client's scale is 0 not a controller, 1 room controller (rights), 2 group member,
-    /// 3 group admin, 4 room owner, 5 moderator. A revoke of the local user's rights sets it to 0.
-    /// </remarks>
-    public int? RoomRightsLevel => Room.RightsLevel;
-
-    /// <summary>
-    /// Gets whether the local user's rights in the room are settled.
-    /// </summary>
-    /// <remarks>
-    /// They are settled once the local user is known to own the room or a controller level has
-    /// arrived. While this is <see langword="false"/>, a rights check of <see langword="false"/>
-    /// only means "not confirmed yet".
-    /// </remarks>
-    public bool RoomRightsAreKnown => Room.RightsAreKnown;
-
-    /// <summary>
-    /// Gets whether the local user owns the room or holds a controller level above 0.
-    /// </summary>
-    /// <remarks>This is the check to make before attempting anything that needs rights.</remarks>
-    public bool HasRoomRights => Room.HasRights;
-
-    /// <summary>
-    /// Gets whether the local user entered as a spectator, or <see langword="null"/> while unknown.
-    /// </summary>
-    /// <remarks>Spectators cannot act in the room.</remarks>
-    public bool? IsRoomSpectating => Room.IsSpectating;
-
-    /// <summary>
-    /// Gets who may mute, kick and ban in this room as the three permission levels the server
-    /// sent, or <see langword="null"/> before the room result arrives.
-    /// </summary>
-    public RoomModerationSettings? RoomModeration => Room.Details?.Moderation;
-
-    /// <summary>
-    /// Gets whether the local user may mute others in this room, or <see langword="null"/> while
-    /// the room details have not been loaded.
-    /// </summary>
-    /// <remarks>
-    /// <see langword="null"/> is deliberately different from a loaded <see langword="false"/>.
-    /// </remarks>
-    public bool? CanMuteInRoom => Room.DetailsAreLoaded ? Room.Details?.CanMute : null;
-
-    /// <summary>
-    /// Gets the room's decoration and layout captured in one consistent snapshot.
-    /// </summary>
-    /// <remarks>
-    /// The snapshot holds the door tile, every room property, the four well known decoration
+    /// The value holds the door tile, every room property, the four well known decoration
     /// properties, the visualization settings and the chat settings. Every read returns a new
-    /// immutable copy taken under the room lock.
+    /// detached copy taken under the room lock.
     /// </remarks>
-    public RoomEnvironmentSnapshot RoomEnvironment =>
-        Room.Capture(SnapshotFactory.RoomEnvironment);
+    public RoomEnvironmentState RoomEnvironment =>
+        Room.Capture(room => room.Environment);
 
     /// <summary>
-    /// Gets what the local user is permitted to do in this room, captured in one consistent snapshot.
+    /// Gets what the local user is permitted to do in this room, captured in one consistent value.
     /// </summary>
     /// <remarks>
-    /// The snapshot holds ownership, controller level, whether rights are known, the effective
-    /// rights flag, spectator status, room mute state, mute permission and the moderation levels.
-    /// Every read returns a new immutable copy taken under the room lock.
+    /// The value holds ownership, controller level, whether rights are known, the effective
+    /// rights flag, spectator status, room mute state, whether the user may mute others and the
+    /// moderation levels. It is the same type <see cref="RoomManager.Authority"/> returns and
+    /// <see cref="OnRoomAuthorityChanged"/> passes, read under the room lock.
     /// </remarks>
-    public RoomAuthoritySnapshot RoomAuthority =>
-        Room.Capture(SnapshotFactory.RoomAuthority);
+    public RoomAuthorityState RoomAuthority =>
+        Room.Capture(room => room.Authority);
 
     /// <summary>
-    /// Gets the room detail flags as an immutable snapshot, or <see langword="null"/> when the
-    /// room result has not arrived.
+    /// Gets a detached copy of the room detail flags, or <see langword="null"/> when the room
+    /// result has not arrived.
     /// </summary>
-    /// <remarks>Every read returns a new copy taken under the room lock.</remarks>
-    public RoomResultDetailsSnapshot? RoomDetailsSnapshot =>
-        Room.Capture(current => current.Details is { } details
-            ? SnapshotFactory.From(details)
+    /// <remarks>
+    /// Every read returns a new copy taken under the room lock. Unlike
+    /// <see cref="RoomManager.Details"/>, which is the instance the room tracker keeps, the copy is
+    /// the same type but stays as it was read, and changing it changes nothing in the room.
+    /// </remarks>
+    public RoomResultDetails? RoomDetailsSnapshot =>
+        Room.Capture(room => room.Details is { } details
+            ? RoomObjectSnapshot.Copy(details)
             : null);
 
     /// <summary>
@@ -234,9 +120,16 @@ public partial class ScriptGlobals
             value => Room.ChatSettingsUpdated -= value);
 
     /// <summary>
-    /// Registers a handler that runs whenever the local user's ownership, controller level or
-    /// spectator status in the room changes.
+    /// Registers a handler that runs whenever a member of <see cref="RoomAuthority"/> changes in the
+    /// current room: the local user's ownership, controller level, spectator status or whether the
+    /// user may mute others, the room's mute state or its moderation levels.
     /// </summary>
+    /// <remarks>
+    /// Mute and moderation changes arrive with the room result, which the server also sends again
+    /// while the user stays in the room. The room result applied as the room is entered and the reset
+    /// on leaving do not raise the event, so read <see cref="RoomAuthority"/> once the room is entered
+    /// to get the starting value.
+    /// </remarks>
     /// <param name="handler">
     /// The handler to call with the whole new authority state rather than just the field that moved.
     /// </param>

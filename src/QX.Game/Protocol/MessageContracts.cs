@@ -1,6 +1,5 @@
 using Qx.Messages;
 using Qx.Model;
-using Qx.Model.Forums;
 using Qx.Model.Messages.Incoming;
 using Qx.Model.Messages.Outgoing;
 using Qx.Model.Wired;
@@ -8,7 +7,7 @@ using Qx.Protocol;
 
 namespace Qx.Game.Protocol;
 
-/// <summary>Provides the message contracts for the Flash client, grouped by feature.</summary>
+/// <summary>Provides the message contracts, grouped by feature.</summary>
 public static class MessageContracts
 {
     /// <summary>Gets every contract declared in <see cref="MessageContracts"/>.</summary>
@@ -69,18 +68,18 @@ public static class MessageContracts
         Habbicons.Claim,
         Habbicons.Favorite,
         Habbicons.Unfavorite,
-        Leaderboards.TotalRequest,
-        Leaderboards.TotalSnapshot,
-        Leaderboards.FriendsRequest,
-        Leaderboards.FriendsSnapshot,
-        Leaderboards.GroupsRequest,
-        Leaderboards.GroupsSnapshot,
-        Leaderboards.WeeklyTotalRequest,
-        Leaderboards.WeeklyTotalSnapshot,
-        Leaderboards.WeeklyFriendsRequest,
-        Leaderboards.WeeklyFriendsSnapshot,
-        Leaderboards.WeeklyGroupsRequest,
-        Leaderboards.WeeklyGroupsSnapshot,
+        Leaderboards.Total.Request,
+        Leaderboards.Total.Snapshot,
+        Leaderboards.Friends.Request,
+        Leaderboards.Friends.Snapshot,
+        Leaderboards.Groups.Request,
+        Leaderboards.Groups.Snapshot,
+        Leaderboards.WeeklyTotal.Request,
+        Leaderboards.WeeklyTotal.Snapshot,
+        Leaderboards.WeeklyFriends.Request,
+        Leaderboards.WeeklyFriends.Snapshot,
+        Leaderboards.WeeklyGroups.Request,
+        Leaderboards.WeeklyGroups.Snapshot,
         Forums.Stats,
         Forums.List,
         Forums.Threads,
@@ -109,9 +108,9 @@ public static class MessageContracts
         Catalog.PageRequest,
         Catalog.PageSnapshot,
         Catalog.Purchase,
-        Catalog.Accepted,
-        Catalog.Failed,
-        Catalog.Forbidden,
+        Catalog.PurchaseAccepted,
+        Catalog.PurchaseFailed,
+        Catalog.PurchaseForbidden,
         Catalog.Published,
         Catalog.RoomAdInfoRequest,
         Catalog.RoomAdInfo,
@@ -155,6 +154,9 @@ public static class MessageContracts
         Crafting.Result,
         Recycler.Status,
         Recycler.Finished,
+        Wired.Account.Preferences,
+        Wired.WebApi.KeyGenerate,
+        Wired.WebApi.KeyResult,
         Wired.State.Permissions,
         Wired.State.Environment,
         Wired.State.ClickSettings,
@@ -281,6 +283,8 @@ public static class MessageContracts
         Room.Environment.Visualization,
         Room.Environment.ChatSettings,
         Room.Environment.FloorPlan,
+        Room.Environment.AreaHide,
+        Room.Environment.AreaHideSet,
         Room.Chat.Talk,
         Room.Chat.Shout,
         Room.Chat.Whisper,
@@ -327,23 +331,28 @@ public static class MessageContracts
         Room.HandItem.Received,
         Room.HandItem.Drop,
         Room.HandItem.Pass,
+        Room.Objects,
+        Room.WallItems,
         Room.SnapshotRequest,
         Room.Snapshot,
         Room.StaffPickUpdateRequest,
-        Room.FloorItemUse,
-        Room.WallItemUse,
-        Room.WallItemRemove,
-        Room.ItemPlace,
+        Room.FloorItem.Use,
+        Room.WallItem.Use,
+        Room.WallItem.Remove,
+        Room.Item.Place,
         Room.WallItem.StickyDataSet,
         Room.WallItem.StickyDataRequest,
         Room.WallItem.StickyData,
         Room.WallItem.PostItPlace,
         Room.WallItem.SpamPostItAdd,
-        Room.FloorItemMove,
-        Room.WallItemMove,
+        Room.FloorItem.Move,
+        Room.WallItem.Move,
         Room.FloorItem.Added,
         Room.FloorItem.Removed,
+        Room.FloorItem.RemovedMultiple,
         Room.FloorItem.Updated,
+        Room.FloorItem.DataUpdated,
+        Room.FloorItem.DataBatchUpdated,
         Room.FloorItem.ThrowDice,
         Room.FloorItem.DiceOff,
         Room.FloorItem.DiceValue,
@@ -355,19 +364,24 @@ public static class MessageContracts
         Room.Movement.Wired,
         Room.Typing.Start,
         Room.Typing.Cancel,
-        Room.ItemPickup,
-        Room.ItemClick,
-        Room.ItemPickupConfirmation,
+        Room.Item.Pickup,
+        Room.Item.Click,
+        Room.Item.PickupConfirmation,
         Room.WallItem.Added,
         Room.WallItem.Removed,
+        Room.WallItem.RemovedMultiple,
         Room.WallItem.Updated,
+        Room.WallItem.DataUpdated,
+        Room.WallItem.DataBatchUpdated,
+        Room.Heightmap.Snapshot,
+        Room.Heightmap.Diff,
         Room.Moderation.BansRequest,
         Room.Moderation.BansSnapshot,
         Room.Moderation.UserUnbanned,
-        Room.Moderation.UserMute,
-        Room.Moderation.UserKick,
-        Room.Moderation.UserBan,
-        Room.Moderation.UserUnban,
+        Room.Moderation.Mute,
+        Room.Moderation.Kick,
+        Room.Moderation.Ban,
+        Room.Moderation.Unban,
         Friends.InitializeRequest,
         Friends.Initialized,
         Friends.ListFragment,
@@ -773,53 +787,77 @@ public static class MessageContracts
     /// <summary>Contains the leaderboard message contracts.</summary>
     public static class Leaderboards
     {
-        /// <summary>The contract for the outgoing <c>Game2GetTotalLeaderboard</c> message, which requests the all-time leaderboard covering everyone.</summary>
-        public static readonly MessageContract<LeaderboardRequest> TotalRequest =
-            Flash<LeaderboardRequest>(MessageKeys.Leaderboards.Total.Request);
+        /// <summary>Contains the total leaderboard message contracts.</summary>
+        public static class Total
+        {
+            /// <summary>The contract for the outgoing <c>Game2GetTotalLeaderboard</c> message, which requests the all-time leaderboard covering everyone.</summary>
+            public static readonly MessageContract<LeaderboardRequest> Request =
+                Flash<LeaderboardRequest>(MessageKeys.Leaderboards.Total.Request);
 
-        /// <summary>The contract for the incoming <c>Game2TotalLeaderboard</c> message, which carries the all-time leaderboard covering everyone.</summary>
-        public static readonly MessageContract<TotalLeaderboard> TotalSnapshot =
-            Flash<TotalLeaderboard>(MessageKeys.Leaderboards.Total.Snapshot);
+            /// <summary>The contract for the incoming <c>Game2TotalLeaderboard</c> message, which carries the all-time leaderboard covering everyone.</summary>
+            public static readonly MessageContract<TotalLeaderboard> Snapshot =
+                Flash<TotalLeaderboard>(MessageKeys.Leaderboards.Total.Snapshot);
+        }
 
-        /// <summary>The contract for the outgoing <c>Game2GetFriendsLeaderboard</c> message, which requests the all-time leaderboard covering the local user's friends.</summary>
-        public static readonly MessageContract<LeaderboardRequest> FriendsRequest =
-            Flash<LeaderboardRequest>(MessageKeys.Leaderboards.Friends.Request);
+        /// <summary>Contains the friends leaderboard message contracts.</summary>
+        public static class Friends
+        {
+            /// <summary>The contract for the outgoing <c>Game2GetFriendsLeaderboard</c> message, which requests the all-time leaderboard covering the local user's friends.</summary>
+            public static readonly MessageContract<LeaderboardRequest> Request =
+                Flash<LeaderboardRequest>(MessageKeys.Leaderboards.Friends.Request);
 
-        /// <summary>The contract for the incoming <c>Game2FriendsLeaderboard</c> message, which carries the all-time leaderboard covering the local user's friends.</summary>
-        public static readonly MessageContract<FriendsLeaderboard> FriendsSnapshot =
-            Flash<FriendsLeaderboard>(MessageKeys.Leaderboards.Friends.Snapshot);
+            /// <summary>The contract for the incoming <c>Game2FriendsLeaderboard</c> message, which carries the all-time leaderboard covering the local user's friends.</summary>
+            public static readonly MessageContract<FriendsLeaderboard> Snapshot =
+                Flash<FriendsLeaderboard>(MessageKeys.Leaderboards.Friends.Snapshot);
+        }
 
-        /// <summary>The contract for the outgoing <c>Game2GetTotalGroupLeaderboard</c> message, which requests the all-time leaderboard covering groups.</summary>
-        public static readonly MessageContract<LeaderboardRequest> GroupsRequest =
-            Flash<LeaderboardRequest>(MessageKeys.Leaderboards.Groups.Request);
+        /// <summary>Contains the group leaderboard message contracts.</summary>
+        public static class Groups
+        {
+            /// <summary>The contract for the outgoing <c>Game2GetTotalGroupLeaderboard</c> message, which requests the all-time leaderboard covering groups.</summary>
+            public static readonly MessageContract<LeaderboardRequest> Request =
+                Flash<LeaderboardRequest>(MessageKeys.Leaderboards.Groups.Request);
 
-        /// <summary>The contract for the incoming <c>Game2TotalGroupLeaderboard</c> message, which carries the all-time leaderboard covering groups.</summary>
-        public static readonly MessageContract<TotalGroupLeaderboard> GroupsSnapshot =
-            Flash<TotalGroupLeaderboard>(MessageKeys.Leaderboards.Groups.Snapshot);
+            /// <summary>The contract for the incoming <c>Game2TotalGroupLeaderboard</c> message, which carries the all-time leaderboard covering groups.</summary>
+            public static readonly MessageContract<TotalGroupLeaderboard> Snapshot =
+                Flash<TotalGroupLeaderboard>(MessageKeys.Leaderboards.Groups.Snapshot);
+        }
 
-        /// <summary>The contract for the outgoing <c>Game2GetWeeklyLeaderboard</c> message, which requests the weekly leaderboard covering everyone.</summary>
-        public static readonly MessageContract<WeeklyLeaderboardRequest> WeeklyTotalRequest =
-            Flash<WeeklyLeaderboardRequest>(MessageKeys.Leaderboards.WeeklyTotal.Request);
+        /// <summary>Contains the weekly total leaderboard message contracts.</summary>
+        public static class WeeklyTotal
+        {
+            /// <summary>The contract for the outgoing <c>Game2GetWeeklyLeaderboard</c> message, which requests the weekly leaderboard covering everyone.</summary>
+            public static readonly MessageContract<WeeklyLeaderboardRequest> Request =
+                Flash<WeeklyLeaderboardRequest>(MessageKeys.Leaderboards.WeeklyTotal.Request);
 
-        /// <summary>The contract for the incoming <c>Game2WeeklyLeaderboard</c> message, which carries the weekly leaderboard covering everyone.</summary>
-        public static readonly MessageContract<WeeklyLeaderboard> WeeklyTotalSnapshot =
-            Flash<WeeklyLeaderboard>(MessageKeys.Leaderboards.WeeklyTotal.Snapshot);
+            /// <summary>The contract for the incoming <c>Game2WeeklyLeaderboard</c> message, which carries the weekly leaderboard covering everyone.</summary>
+            public static readonly MessageContract<WeeklyLeaderboard> Snapshot =
+                Flash<WeeklyLeaderboard>(MessageKeys.Leaderboards.WeeklyTotal.Snapshot);
+        }
 
-        /// <summary>The contract for the outgoing <c>Game2GetWeeklyFriendsLeaderboard</c> message, which requests the weekly leaderboard covering the local user's friends.</summary>
-        public static readonly MessageContract<WeeklyLeaderboardRequest> WeeklyFriendsRequest =
-            Flash<WeeklyLeaderboardRequest>(MessageKeys.Leaderboards.WeeklyFriends.Request);
+        /// <summary>Contains the weekly friends leaderboard message contracts.</summary>
+        public static class WeeklyFriends
+        {
+            /// <summary>The contract for the outgoing <c>Game2GetWeeklyFriendsLeaderboard</c> message, which requests the weekly leaderboard covering the local user's friends.</summary>
+            public static readonly MessageContract<WeeklyLeaderboardRequest> Request =
+                Flash<WeeklyLeaderboardRequest>(MessageKeys.Leaderboards.WeeklyFriends.Request);
 
-        /// <summary>The contract for the incoming <c>Game2WeeklyFriendsLeaderboard</c> message, which carries the weekly leaderboard covering the local user's friends.</summary>
-        public static readonly MessageContract<WeeklyFriendsLeaderboard> WeeklyFriendsSnapshot =
-            Flash<WeeklyFriendsLeaderboard>(MessageKeys.Leaderboards.WeeklyFriends.Snapshot);
+            /// <summary>The contract for the incoming <c>Game2WeeklyFriendsLeaderboard</c> message, which carries the weekly leaderboard covering the local user's friends.</summary>
+            public static readonly MessageContract<WeeklyFriendsLeaderboard> Snapshot =
+                Flash<WeeklyFriendsLeaderboard>(MessageKeys.Leaderboards.WeeklyFriends.Snapshot);
+        }
 
-        /// <summary>The contract for the outgoing <c>Game2GetWeeklyGroupLeaderboard</c> message, which requests the weekly leaderboard covering groups.</summary>
-        public static readonly MessageContract<WeeklyLeaderboardRequest> WeeklyGroupsRequest =
-            Flash<WeeklyLeaderboardRequest>(MessageKeys.Leaderboards.WeeklyGroups.Request);
+        /// <summary>Contains the weekly group leaderboard message contracts.</summary>
+        public static class WeeklyGroups
+        {
+            /// <summary>The contract for the outgoing <c>Game2GetWeeklyGroupLeaderboard</c> message, which requests the weekly leaderboard covering groups.</summary>
+            public static readonly MessageContract<WeeklyLeaderboardRequest> Request =
+                Flash<WeeklyLeaderboardRequest>(MessageKeys.Leaderboards.WeeklyGroups.Request);
 
-        /// <summary>The contract for the incoming <c>Game2WeeklyGroupLeaderboard</c> message, which carries the weekly leaderboard covering groups.</summary>
-        public static readonly MessageContract<WeeklyGroupLeaderboard> WeeklyGroupsSnapshot =
-            Flash<WeeklyGroupLeaderboard>(MessageKeys.Leaderboards.WeeklyGroups.Snapshot);
+            /// <summary>The contract for the incoming <c>Game2WeeklyGroupLeaderboard</c> message, which carries the weekly leaderboard covering groups.</summary>
+            public static readonly MessageContract<WeeklyGroupLeaderboard> Snapshot =
+                Flash<WeeklyGroupLeaderboard>(MessageKeys.Leaderboards.WeeklyGroups.Snapshot);
+        }
     }
 
     /// <summary>Contains the group forum message contracts.</summary>
@@ -942,15 +980,15 @@ public static class MessageContracts
             Flash<PurchaseFromCatalogRequest>(MessageKeys.Catalog.Purchase);
 
         /// <summary>The contract for the incoming <c>PurchaseOk</c> message, which confirms a catalog purchase and carries the purchased offer.</summary>
-        public static readonly MessageContract<PurchaseOK> Accepted =
+        public static readonly MessageContract<PurchaseOK> PurchaseAccepted =
             Flash<PurchaseOK>(MessageKeys.Catalog.PurchaseAccepted);
 
         /// <summary>The contract for the incoming <c>PurchaseError</c> message, which reports that a catalog purchase failed, with an error code.</summary>
-        public static readonly MessageContract<PurchaseError> Failed =
+        public static readonly MessageContract<PurchaseError> PurchaseFailed =
             Flash<PurchaseError>(MessageKeys.Catalog.PurchaseFailed);
 
         /// <summary>The contract for the incoming <c>PurchaseNotAllowed</c> message, which reports that a catalog purchase is not allowed, with an error code.</summary>
-        public static readonly MessageContract<PurchaseNotAllowed> Forbidden =
+        public static readonly MessageContract<PurchaseNotAllowed> PurchaseForbidden =
             Flash<PurchaseNotAllowed>(MessageKeys.Catalog.PurchaseForbidden);
 
         /// <summary>The contract for the incoming <c>CatalogPublished</c> message, which announces that the catalog was updated.</summary>
@@ -1530,8 +1568,8 @@ public static class MessageContracts
             Flash<CraftingRecipe>(MessageKeys.Crafting.RecipeSnapshot);
 
         /// <summary>The contract for the outgoing <c>Craft</c> message, which crafts a known recipe on a crafting furni.</summary>
-        public static readonly MessageContract<Qx.Model.Messages.Incoming.Craft> Craft =
-            Flash<Qx.Model.Messages.Incoming.Craft>(MessageKeys.Crafting.Craft);
+        public static readonly MessageContract<Craft> Craft =
+            Flash<Craft>(MessageKeys.Crafting.Craft);
 
         /// <summary>The contract for the outgoing <c>CraftSecret</c> message, which crafts a secret recipe from the chosen ingredient items.</summary>
         public static readonly MessageContract<CraftSecret> SecretCraft =
@@ -1565,6 +1603,25 @@ public static class MessageContracts
     /// <summary>Contains the wired message contracts.</summary>
     public static class Wired
     {
+        /// <summary>Contains Wired Account messages.</summary>
+        public static class Account
+        {
+            /// <summary>The AccountPreferences message contract.</summary>
+            public static readonly MessageContract<AccountPreferences> Preferences =
+                Flash<AccountPreferences>(MessageKeys.Wired.Account.Preferences);
+        }
+
+        /// <summary>Contains Wired WebApi messages.</summary>
+        public static class WebApi
+        {
+            /// <summary>The WiredGenerateWebApiKey message contract.</summary>
+            public static readonly MessageContract<WiredGenerateWebApiKey> KeyGenerate =
+                Flash<WiredGenerateWebApiKey>(MessageKeys.Wired.WebApi.KeyGenerate);
+            /// <summary>The WiredWebApiKeyResult message contract.</summary>
+            public static readonly MessageContract<WiredWebApiKeyResult> KeyResult =
+                Flash<WiredWebApiKeyResult>(MessageKeys.Wired.WebApi.KeyResult);
+        }
+
         /// <summary>Contains the wired state message contracts.</summary>
         public static class State
         {
@@ -2021,6 +2078,14 @@ public static class MessageContracts
     /// <summary>Contains the room message contracts.</summary>
     public static class Room
     {
+        /// <summary>The contract for the incoming <c>Objects</c> message, which carries a batch of floor items loaded into the room.</summary>
+        public static readonly MessageContract<FloorItems> Objects =
+            Flash<FloorItems>(MessageKeys.Room.Objects);
+
+        /// <summary>The contract for the incoming <c>Items</c> message, which carries a batch of wall items loaded into the room.</summary>
+        public static readonly MessageContract<WallItems> WallItems =
+            Flash<WallItems>(MessageKeys.Room.WallItems);
+
         /// <summary>The contract for the outgoing <c>GetGuestRoom</c> message, which requests the navigator data of a room.</summary>
         public static readonly MessageContract<GetGuestRoomRequest> SnapshotRequest =
             Flash<GetGuestRoomRequest>(MessageKeys.Room.SnapshotRequest);
@@ -2155,6 +2220,14 @@ public static class MessageContracts
             /// <summary>The contract for the incoming <c>FloorHeightmap</c> message, which carries the room's floor plan.</summary>
             public static readonly MessageContract<FloorPlan> FloorPlan =
                 Flash<FloorPlan>(MessageKeys.Room.Environment.FloorPlan);
+
+            /// <summary>The incoming AreaHide live region update.</summary>
+            public static readonly MessageContract<AreaHideData> AreaHide =
+                Flash<AreaHideData>(MessageKeys.Room.Environment.AreaHide);
+
+            /// <summary>The outgoing SetAreaHideData editor update.</summary>
+            public static readonly MessageContract<SetAreaHideData> AreaHideSet =
+                Flash<SetAreaHideData>(MessageKeys.Room.Environment.AreaHideSet);
         }
 
         /// <summary>Contains the room chat message contracts.</summary>
@@ -2308,8 +2381,8 @@ public static class MessageContracts
                     Flash<UserNameChanged>(MessageKeys.Room.Occupants.Identity.Name);
 
                 /// <summary>The contract for the incoming <c>FavouriteMembershipUpdate</c> message, which reports the favorite group an avatar in the room displays.</summary>
-                public static readonly MessageContract<FavoriteMembershipUpdate> FavoriteGroup =
-                    Flash<FavoriteMembershipUpdate>(MessageKeys.Room.Occupants.Identity.FavoriteGroup);
+                public static readonly MessageContract<FavouriteMembershipUpdate> FavoriteGroup =
+                    Flash<FavouriteMembershipUpdate>(MessageKeys.Room.Occupants.Identity.FavoriteGroup);
             }
 
             /// <summary>Contains the room pet message contracts.</summary>
@@ -2373,46 +2446,28 @@ public static class MessageContracts
                 Flash<PassHandItemRequest>(MessageKeys.Room.HandItem.Pass);
         }
 
-        /// <summary>The contract for the outgoing <c>UseFurniture</c> message, which uses a floor item.</summary>
-        public static readonly MessageContract<UseFloorItemRequest> FloorItemUse =
-            Flash<UseFloorItemRequest>(MessageKeys.Room.FloorItem.Use);
+        /// <summary>Contains the room item message contracts.</summary>
+        public static class Item
+        {
+            /// <summary>The contract for the outgoing <c>PlaceObject</c> message, which places a floor or wall item from the inventory in the room.</summary>
+            public static readonly MessageContract<PlaceRoomItemRequest> Place =
+                new(
+                    MessageKeys.Room.Item.Place,
+                    new MessageCodec<PlaceRoomItemRequest>(PlaceRoomItemRequest.ParseFlash,
+                        PlaceRoomItemRequest.ComposeFlash));
 
-        /// <summary>The contract for the outgoing <c>UseWallItem</c> message, which uses a wall item.</summary>
-        public static readonly MessageContract<UseWallItemRequest> WallItemUse =
-            Flash<UseWallItemRequest>(MessageKeys.Room.WallItem.Use);
+            /// <summary>The contract for the outgoing <c>PickupObject</c> message, which picks up a floor or wall item from the room.</summary>
+            public static readonly MessageContract<PickupRoomItemRequest> Pickup =
+                Flash<PickupRoomItemRequest>(MessageKeys.Room.Item.Pickup);
 
-        /// <summary>The contract for the outgoing <c>RemoveItem</c> message, which deletes a wall item, such as a post-it note, from the room.</summary>
-        public static readonly MessageContract<RemoveWallItemRequest> WallItemRemove =
-            Flash<RemoveWallItemRequest>(MessageKeys.Room.WallItem.Remove);
+            /// <summary>The contract for the outgoing <c>ClickFurni</c> message, which reports a click on a floor or wall item.</summary>
+            public static readonly MessageContract<ClickRoomItemRequest> Click =
+                Flash<ClickRoomItemRequest>(MessageKeys.Room.Item.Click);
 
-        /// <summary>The contract for the outgoing <c>PlaceObject</c> message, which places a floor or wall item from the inventory in the room.</summary>
-        public static readonly MessageContract<PlaceRoomItemRequest> ItemPlace =
-            new(
-                MessageKeys.Room.Item.Place,
-                new MessageCodec<PlaceRoomItemRequest>(PlaceRoomItemRequest.ParseFlash,
-                    PlaceRoomItemRequest.ComposeFlash));
-
-        /// <summary>The contract for the outgoing <c>MoveObject</c> message, which moves a floor item to a tile and direction.</summary>
-        public static readonly MessageContract<MoveFloorItemRequest> FloorItemMove =
-            Flash<MoveFloorItemRequest>(MessageKeys.Room.FloorItem.Move);
-
-        /// <summary>The contract for the outgoing <c>MoveWallItem</c> message, which moves a wall item to a wall location.</summary>
-        public static readonly MessageContract<MoveWallItemRequest> WallItemMove =
-            new(
-                MessageKeys.Room.WallItem.Move,
-                MessageCodec<MoveWallItemRequest>.FromModel());
-
-        /// <summary>The contract for the outgoing <c>PickupObject</c> message, which picks up a floor or wall item from the room.</summary>
-        public static readonly MessageContract<PickupRoomItemRequest> ItemPickup =
-            Flash<PickupRoomItemRequest>(MessageKeys.Room.Item.Pickup);
-
-        /// <summary>The contract for the outgoing <c>ClickFurni</c> message, which reports a click on a floor or wall item.</summary>
-        public static readonly MessageContract<ClickRoomItemRequest> ItemClick =
-            Flash<ClickRoomItemRequest>(MessageKeys.Room.Item.Click);
-
-        /// <summary>The contract for the incoming <c>ObjectRemoveConfirm</c> message, which asks the local user to confirm picking up an item.</summary>
-        public static readonly MessageContract<PickupConfirmation> ItemPickupConfirmation =
-            Flash<PickupConfirmation>(MessageKeys.Room.Item.PickupConfirmation);
+            /// <summary>The contract for the incoming <c>ObjectRemoveConfirm</c> message, which asks the local user to confirm picking up an item.</summary>
+            public static readonly MessageContract<PickupConfirmation> PickupConfirmation =
+                Flash<PickupConfirmation>(MessageKeys.Room.Item.PickupConfirmation);
+        }
 
         /// <summary>Contains the floor item message contracts.</summary>
         public static class FloorItem
@@ -2425,9 +2480,29 @@ public static class MessageContracts
             public static readonly MessageContract<FloorItemRemove> Removed =
                 Flash<FloorItemRemove>(MessageKeys.Room.FloorItem.Removed);
 
+            /// <summary>The contract for the incoming <c>ObjectRemoveMultiple</c> message, which announces several floor items removed from the room at once.</summary>
+            public static readonly MessageContract<FloorItemsRemove> RemovedMultiple =
+                Flash<FloorItemsRemove>(MessageKeys.Room.FloorItem.RemovedMultiple);
+
             /// <summary>The contract for the incoming <c>ObjectUpdate</c> message, which carries an updated floor item.</summary>
             public static readonly MessageContract<FloorItemUpdate> Updated =
                 Flash<FloorItemUpdate>(MessageKeys.Room.FloorItem.Updated);
+
+            /// <summary>The contract for the incoming <c>ObjectDataUpdate</c> message, which carries the new data of a floor item.</summary>
+            public static readonly MessageContract<FloorItemDataUpdate> DataUpdated =
+                Flash<FloorItemDataUpdate>(MessageKeys.Room.FloorItem.DataUpdated);
+
+            /// <summary>The contract for the incoming <c>ObjectsDataUpdate</c> message, which carries the new data of several floor items at once.</summary>
+            public static readonly MessageContract<FloorItemsDataUpdate> DataBatchUpdated =
+                Flash<FloorItemsDataUpdate>(MessageKeys.Room.FloorItem.DataBatchUpdated);
+
+            /// <summary>The contract for the outgoing <c>UseFurniture</c> message, which uses a floor item.</summary>
+            public static readonly MessageContract<UseFloorItemRequest> Use =
+                Flash<UseFloorItemRequest>(MessageKeys.Room.FloorItem.Use);
+
+            /// <summary>The contract for the outgoing <c>MoveObject</c> message, which moves a floor item to a tile and direction.</summary>
+            public static readonly MessageContract<MoveFloorItemRequest> Move =
+                Flash<MoveFloorItemRequest>(MessageKeys.Room.FloorItem.Move);
 
             /// <summary>The contract for the outgoing <c>ThrowDice</c> message, which throws a dice.</summary>
             public static readonly MessageContract<ThrowDiceRequest> ThrowDice =
@@ -2461,9 +2536,35 @@ public static class MessageContracts
             public static readonly MessageContract<WallItemRemove> Removed =
                 Flash<WallItemRemove>(MessageKeys.Room.WallItem.Removed);
 
+            /// <summary>The contract for the incoming <c>ItemRemoveMultiple</c> message, which announces several wall items removed from the room at once.</summary>
+            public static readonly MessageContract<WallItemsRemove> RemovedMultiple =
+                Flash<WallItemsRemove>(MessageKeys.Room.WallItem.RemovedMultiple);
+
             /// <summary>The contract for the incoming <c>ItemUpdate</c> message, which carries an updated wall item.</summary>
             public static readonly MessageContract<WallItemUpdate> Updated =
                 Flash<WallItemUpdate>(MessageKeys.Room.WallItem.Updated);
+
+            /// <summary>The contract for the incoming <c>ItemStateUpdate</c> message, which carries the new data of a wall item.</summary>
+            public static readonly MessageContract<ItemStateUpdate> DataUpdated =
+                Flash<ItemStateUpdate>(MessageKeys.Room.WallItem.DataUpdated);
+
+            /// <summary>The contract for the incoming <c>ItemsStateUpdate</c> message, which carries the new data of several wall items at once.</summary>
+            public static readonly MessageContract<WallItemsStateUpdate> DataBatchUpdated =
+                Flash<WallItemsStateUpdate>(MessageKeys.Room.WallItem.DataBatchUpdated);
+
+            /// <summary>The contract for the outgoing <c>UseWallItem</c> message, which uses a wall item.</summary>
+            public static readonly MessageContract<UseWallItemRequest> Use =
+                Flash<UseWallItemRequest>(MessageKeys.Room.WallItem.Use);
+
+            /// <summary>The contract for the outgoing <c>MoveWallItem</c> message, which moves a wall item to a wall location.</summary>
+            public static readonly MessageContract<MoveWallItemRequest> Move =
+                new(
+                    MessageKeys.Room.WallItem.Move,
+                    MessageCodec<MoveWallItemRequest>.FromModel());
+
+            /// <summary>The contract for the outgoing <c>RemoveItem</c> message, which deletes a wall item, such as a post-it note, from the room.</summary>
+            public static readonly MessageContract<RemoveWallItemRequest> Remove =
+                Flash<RemoveWallItemRequest>(MessageKeys.Room.WallItem.Remove);
 
             /// <summary>The contract for the outgoing <c>SetItemData</c> message, which sets the color and text of a post-it note.</summary>
             public static readonly MessageContract<SetStickyDataRequest> StickyDataSet =
@@ -2484,6 +2585,18 @@ public static class MessageContracts
             /// <summary>The contract for the outgoing <c>AddSpamWallPostIt</c> message, which places a post-it note on a wall with its color and text.</summary>
             public static readonly MessageContract<AddSpamWallPostItRequest> SpamPostItAdd =
                 Flash<AddSpamWallPostItRequest>(MessageKeys.Room.WallItem.SpamPostItAdd);
+        }
+
+        /// <summary>Contains the heightmap message contracts.</summary>
+        public static class Heightmap
+        {
+            /// <summary>The contract for the incoming <c>HeightMap</c> message, which carries the stacking height of every tile in the room.</summary>
+            public static readonly MessageContract<global::Qx.Model.Heightmap> Snapshot =
+                Flash<global::Qx.Model.Heightmap>(MessageKeys.Room.Heightmap.Snapshot);
+
+            /// <summary>The contract for the incoming <c>HeightMapUpdate</c> message, which carries the tiles of the room heightmap that changed.</summary>
+            public static readonly MessageContract<HeightmapUpdate> Diff =
+                Flash<HeightmapUpdate>(MessageKeys.Room.Heightmap.Diff);
         }
 
         /// <summary>Contains the room movement message contracts.</summary>
@@ -2534,19 +2647,19 @@ public static class MessageContracts
                 Flash<UserUnbannedFromRoom>(MessageKeys.Room.Moderation.UserUnbanned);
 
             /// <summary>The contract for the outgoing <c>MuteUser</c> message, which mutes a user in a room for a number of minutes.</summary>
-            public static readonly MessageContract<MuteRoomUserRequest> UserMute =
+            public static readonly MessageContract<MuteRoomUserRequest> Mute =
                 Flash<MuteRoomUserRequest>(MessageKeys.Room.Moderation.Mute);
 
             /// <summary>The contract for the outgoing <c>KickUser</c> message, which kicks a user from the current room.</summary>
-            public static readonly MessageContract<KickRoomUserRequest> UserKick =
+            public static readonly MessageContract<KickRoomUserRequest> Kick =
                 Flash<KickRoomUserRequest>(MessageKeys.Room.Moderation.Kick);
 
             /// <summary>The contract for the outgoing <c>BanUserWithDuration</c> message, which bans a user from a room for a duration.</summary>
-            public static readonly MessageContract<BanRoomUserRequest> UserBan =
+            public static readonly MessageContract<BanRoomUserRequest> Ban =
                 Flash<BanRoomUserRequest>(MessageKeys.Room.Moderation.Ban);
 
             /// <summary>The contract for the outgoing <c>UnbanUserFromRoom</c> message, which unbans a user from a room.</summary>
-            public static readonly MessageContract<UnbanRoomUserRequest> UserUnban =
+            public static readonly MessageContract<UnbanRoomUserRequest> Unban =
                 Flash<UnbanRoomUserRequest>(MessageKeys.Room.Moderation.Unban);
         }
     }
@@ -2762,8 +2875,8 @@ public static class MessageContracts
                 Flash<IgnoreListRequest>(MessageKeys.Users.Ignore.ListRequest);
 
             /// <summary>The contract for the incoming <c>IgnoredUsers</c> message, which carries the local user's ignore list.</summary>
-            public static readonly MessageContract<RequestIgnoreList> ListSnapshot =
-                Flash<RequestIgnoreList>(MessageKeys.Users.Ignore.ListSnapshot);
+            public static readonly MessageContract<IgnoredUsers> ListSnapshot =
+                Flash<IgnoredUsers>(MessageKeys.Users.Ignore.ListSnapshot);
 
             /// <summary>The contract for the incoming <c>IgnoreResult</c> message, which carries the result of ignoring or unignoring a user.</summary>
             public static readonly MessageContract<IgnoreUserResult> Updated =
@@ -2969,10 +3082,10 @@ public static class MessageContracts
             MessageCodec<T>.FromModel(ModernFlashMarketplaceCapability));
 
     private static MessageCapability FlashMarketplaceLayoutCapability(
-        MessageManager messages,
+        IMessageResolver messages,
         Header header)
     {
-        MessageWireProfile profile = messages.GetWireProfile(ClientType.Flash);
+        MessageWireProfile profile = messages.GetWireProfile();
         if (!profile.IsAnalyzed)
         {
             return MessageCapability.Missing(
@@ -2987,14 +3100,14 @@ public static class MessageContracts
     }
 
     private static MessageCapability ModernFlashMarketplaceCapability(
-        MessageManager messages,
+        IMessageResolver messages,
         Header header)
     {
         MessageCapability layout =
             FlashMarketplaceLayoutCapability(messages, header);
         if (!layout.Available)
             return layout;
-        return messages.GetWireProfile(ClientType.Flash).FlashMarketplaceLayout is
+        return messages.GetWireProfile().FlashMarketplaceLayout is
             FlashMarketplaceWireLayout.Modern
                 ? MessageCapability.Ready("flashMarketplaceModernLayout")
                 : MessageCapability.Missing(

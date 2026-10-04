@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Qx.Interception;
 using Qx.Messages;
 using Qx.Model;
@@ -218,7 +219,6 @@ internal sealed class RoomAvatarApplication : IApplicationFeature, IRoomAvatarOp
         });
         send(session, room.Generation, cancellation_token);
         return new RoomAvatarDispatchResult(
-            session.Client,
             room.RoomId,
             room.Generation,
             true,
@@ -297,7 +297,7 @@ internal sealed class RoomAvatarApplication : IApplicationFeature, IRoomAvatarOp
         [new("active", typeof(bool), true, null, "Whether the indicator is visible.")],
         [MessageKeys.Room.Typing.Start, MessageKeys.Room.Typing.Cancel]);
 
-    private static ApplicationDescriptor Descriptor<TRequest>(
+    private static ApplicationDescriptor Descriptor<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TRequest>(
         string id,
         string title,
         string description,
@@ -315,10 +315,10 @@ internal sealed class RoomAvatarApplication : IApplicationFeature, IRoomAvatarOp
             messages: messages
                 .Select(message => new ApplicationMessageRequirement(
                     message,
-                    Direction.Out,
+                    MessageDirection.Out,
                     ApplicationMessageRole.Send))
                 .ToArray(),
-            tool_hints: new(false, true, false, true));
+            toolHints: new(false, true, false, true));
 
     private static ApplicationParameterDescriptor Parameter(string name) =>
         new(name, typeof(int), true, null, "Integer value sent to Flash.");

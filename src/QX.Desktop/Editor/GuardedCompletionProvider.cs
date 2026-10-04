@@ -17,10 +17,10 @@ public sealed class GuardedCompletionProvider : ICodeEditorCompletionProvider
         _editor = editor ?? throw new ArgumentNullException(nameof(editor));
     }
 
-    public async Task<CompletionResult> GetCompletionData(int position, char? trigger_char, bool use_signature_help)
+    public async Task<CompletionResult> GetCompletionData(int position, char? triggerChar, bool useSignatureHelp)
     {
         ITextSourceVersion? requested = _editor.Document?.Version;
-        CompletionResult result = await _inner.GetCompletionData(position, trigger_char, use_signature_help);
+        CompletionResult result = await _inner.GetCompletionData(position, triggerChar, useSignatureHelp);
         if (requested is null || result.CompletionData is not { Count: > 0 } items)
             return result;
         if (!CompletionSnapshot.IsIntact(requested, _editor.Document?.Version, position))

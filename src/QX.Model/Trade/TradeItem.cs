@@ -5,10 +5,30 @@ namespace Qx.Model;
 /// <summary>Represents a furni offered in a trade.</summary>
 public sealed class TradeItem : IParserComposer<TradeItem>
 {
+    private string? wire_type;
+
     /// <summary>Gets or sets the inventory item identifier, which addresses the item within the trade.</summary>
     public Id ItemId { get; set; }
     /// <summary>Gets or sets whether the item is a floor or a wall item.</summary>
     public ItemType Type { get; set; }
+    /// <summary>Gets or sets the original floor or wall type string carried by the packet.</summary>
+    /// <remarks>Changing the type invalidates incompatible spelling; newly created items use uppercase S or I.</remarks>
+    /// <exception cref="ArgumentException">The value does not identify a floor or wall item.</exception>
+    public string WireType
+    {
+        get => wire_type is not null && ItemTypes.FromShort(wire_type) == Type
+            ? wire_type
+            : Type is ItemType.Floor ? "S" : "I";
+        set
+        {
+            ArgumentNullException.ThrowIfNull(value);
+            ItemType type = ItemTypes.FromShort(value);
+            if (type is not (ItemType.Floor or ItemType.Wall))
+                throw new ArgumentException("The wire type must identify a floor or wall item.", nameof(value));
+            wire_type = value;
+            Type = type;
+        }
+    }
     /// <summary>Gets or sets the room item identifier of the furni.</summary>
     public Id Id { get; set; }
     /// <summary>Gets or sets the furni kind identifier.</summary>
@@ -38,8 +58,7 @@ public sealed class TradeItem : IParserComposer<TradeItem>
 
     /// <summary>Reads a trade item from a packet.</summary>
     /// <param name="p">The packet to read from.</param>
-    /// <exception cref="UnsupportedClientException">Thrown when the packet is not from the Flash client.</exception>
-    /// <exception cref="InvalidDataException">Thrown when the item type is unknown or <see cref="Id"/> is not positive.</exception>
+    /// <exception cref="InvalidDataException">Thrown when the item type is unknown.</exception>
     public static TradeItem Parse(in PacketReader p) =>
         FlashWire.Parse(in p, ParseFlash);
 
@@ -62,7 +81,7 @@ public sealed class TradeItem : IParserComposer<TradeItem>
         var value = new TradeItem
         {
             ItemId = item_id,
-            Type = type,
+            WireType = wire_type,
             Id = id,
             Kind = kind,
             Category = category,
@@ -73,13 +92,11 @@ public sealed class TradeItem : IParserComposer<TradeItem>
             CreationYear = creation_year,
             Extra = extra
         };
-        TradeWire.RequirePositiveId(value.Id, nameof(Id));
         return value;
     }
 
     /// <summary>Writes the trade item to a packet.</summary>
     /// <param name="p">The packet to write to.</param>
-    /// <exception cref="UnsupportedClientException">Thrown when the packet is not for the Flash client.</exception>
     /// <exception cref="InvalidDataException">
     /// Thrown when the item type is neither floor nor wall, an identifier is out of range, or
     /// <see cref="Extra"/> does not match the item type.
@@ -91,7 +108,7 @@ public sealed class TradeItem : IParserComposer<TradeItem>
     {
         value.ValidateFlash(in p);
         p.WriteInt(TradeWire.FlashId(value.ItemId, nameof(ItemId)));
-        p.WriteString(value.Type is ItemType.Floor ? "S" : "I");
+        p.WriteString(value.WireType);
         p.WriteInt(TradeWire.FlashId(value.Id, nameof(Id)));
         p.WriteInt(value.Kind);
         p.WriteInt(value.Category);
@@ -108,7 +125,7 @@ public sealed class TradeItem : IParserComposer<TradeItem>
     {
         TradeWire.RequireItemType(Type);
         _ = TradeWire.FlashId(ItemId, nameof(ItemId));
-        TradeWire.RequirePositiveFlashId(Id, nameof(Id));
+        _ = TradeWire.FlashId(Id, nameof(Id));
         TradeWire.ValidateItemData(Data, in p);
         if (Type is ItemType.Floor)
             _ = checked((int)Extra);

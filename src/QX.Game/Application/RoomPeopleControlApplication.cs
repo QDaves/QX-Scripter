@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Qx.Interception;
 using Qx.Messages;
 using Qx.Model;
@@ -114,7 +115,6 @@ internal sealed class RoomPeopleControlApplication : IApplicationFeature
         });
         send(session, room.Generation, cancellation_token);
         return new RoomPeopleDispatchResult(
-            session.Client,
             room.RoomId,
             room.Generation,
             true,
@@ -177,7 +177,7 @@ internal sealed class RoomPeopleControlApplication : IApplicationFeature
         [new("bot_id", typeof(Id), true, null, "Target bot identifier.")],
         MessageKeys.Room.Occupants.Bot.RemoveRequest);
 
-    private static ApplicationDescriptor Descriptor<TRequest>(
+    private static ApplicationDescriptor Descriptor<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TRequest>(
         string id,
         string title,
         string description,
@@ -196,8 +196,8 @@ internal sealed class RoomPeopleControlApplication : IApplicationFeature
             [
                 new ApplicationMessageRequirement(
                     message,
-                    Direction.Out,
+                    MessageDirection.Out,
                     ApplicationMessageRole.Send)
             ],
-            tool_hints: new(false, true, false, true));
+            toolHints: new(false, true, false, true));
 }

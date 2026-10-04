@@ -1,5 +1,6 @@
+using System.Diagnostics.CodeAnalysis;
 using Qx.Messages;
-using Qx.Model.Marketplace;
+using Qx.Model;
 using Qx.Model.Messages.Incoming;
 using Qx.Protocol;
 
@@ -19,14 +20,14 @@ internal static class MarketplaceApplicationDescriptors
         typeof(MarketplaceStateRequest),
         typeof(MarketplaceStateView),
         PagingParameters(),
-        state_effects:
+        stateEffects:
         [
             new(ApplicationStateKey.MarketplaceConfigurationLoaded, ApplicationStateEffectKind.Reads),
             new(ApplicationStateKey.MarketplaceEligibilityLoaded, ApplicationStateEffectKind.Reads)
         ],
         messages: StateMessages(),
-        tool_hints: new(true, false, true, false),
-        invocation_scope: ApplicationInvocationScope.Persistent);
+        toolHints: new(true, false, true, false),
+        invocationScope: ApplicationInvocationScope.Persistent);
 
     public static ApplicationDescriptor ConfigurationRefresh { get; } = RequestResponse<
         MarketplaceRefreshRequest,
@@ -107,7 +108,7 @@ internal static class MarketplaceApplicationDescriptors
         MarketplaceMakeOfferResult>(
         ApplicationMemberIds.MarketplaceOfferMake,
         "Create marketplace offer",
-        "Lists one or more inventory items for sale using the active client's verified layout.",
+        "Lists one or more inventory items for sale using the verified Flash marketplace layout.",
         MessageKeys.Marketplace.Offers.Make,
         MessageKeys.Marketplace.Offers.MakeResult,
         [
@@ -211,63 +212,63 @@ internal static class MarketplaceApplicationDescriptors
         ApplicationMemberIds.MarketplaceConfigurationChanged,
         "Marketplace configuration changed",
         "Publishes marketplace configuration received for the active session.",
-        [new(MessageKeys.Marketplace.Configuration.Snapshot, Direction.In, ApplicationMessageRole.Observe)]);
+        [new(MessageKeys.Marketplace.Configuration.Snapshot, MessageDirection.In, ApplicationMessageRole.Observe)]);
 
     public static ApplicationDescriptor EligibilityChanged { get; } = Event<MarketplaceEligibilityChanged>(
         ApplicationMemberIds.MarketplaceEligibilityChanged,
         "Marketplace eligibility changed",
         "Publishes the active account's latest marketplace eligibility result.",
-        [new(MessageKeys.Marketplace.Eligibility.Result, Direction.In, ApplicationMessageRole.Observe)]);
+        [new(MessageKeys.Marketplace.Eligibility.Result, MessageDirection.In, ApplicationMessageRole.Observe)]);
 
     public static ApplicationDescriptor SearchReceived { get; } = Event<MarketplaceSearchReceived>(
         ApplicationMemberIds.MarketplaceSearchReceived,
         "Marketplace search received",
         "Publishes a bounded first page of each public marketplace search result.",
-        [new(MessageKeys.Marketplace.Offers.SearchResult, Direction.In, ApplicationMessageRole.Observe)]);
+        [new(MessageKeys.Marketplace.Offers.SearchResult, MessageDirection.In, ApplicationMessageRole.Observe)]);
 
     public static ApplicationDescriptor OwnOffersReceived { get; } = Event<MarketplaceOwnOffersReceived>(
         ApplicationMemberIds.MarketplaceOwnOffersReceived,
         "Own marketplace offers received",
         "Publishes a bounded first page of each own-offer snapshot.",
-        [new(MessageKeys.Marketplace.Offers.OwnSnapshot, Direction.In, ApplicationMessageRole.Observe)]);
+        [new(MessageKeys.Marketplace.Offers.OwnSnapshot, MessageDirection.In, ApplicationMessageRole.Observe)]);
 
     public static ApplicationDescriptor ItemStatsReceived { get; } = Event<MarketplaceItemStatsReceived>(
         ApplicationMemberIds.MarketplaceItemStatsReceived,
         "Marketplace item statistics received",
         "Publishes immutable sale statistics received for one furniture type.",
-        [new(MessageKeys.Marketplace.ItemStats.Snapshot, Direction.In, ApplicationMessageRole.Observe)]);
+        [new(MessageKeys.Marketplace.ItemStats.Snapshot, MessageDirection.In, ApplicationMessageRole.Observe)]);
 
     public static ApplicationDescriptor MakeResultReceived { get; } = Event<MarketplaceMakeOfferResultReceived>(
         ApplicationMemberIds.MarketplaceOfferMakeResult,
         "Marketplace offer result",
         "Publishes each hotel result for a marketplace listing request.",
-        [new(MessageKeys.Marketplace.Offers.MakeResult, Direction.In, ApplicationMessageRole.Observe)]);
+        [new(MessageKeys.Marketplace.Offers.MakeResult, MessageDirection.In, ApplicationMessageRole.Observe)]);
 
     public static ApplicationDescriptor BuyResultReceived { get; } = Event<MarketplaceBuyResultReceived>(
         ApplicationMemberIds.MarketplaceOfferBuyResult,
         "Marketplace purchase result",
         "Publishes each hotel result for a marketplace purchase.",
-        [new(MessageKeys.Marketplace.Offers.BuyResult, Direction.In, ApplicationMessageRole.Observe)]);
+        [new(MessageKeys.Marketplace.Offers.BuyResult, MessageDirection.In, ApplicationMessageRole.Observe)]);
 
     public static ApplicationDescriptor CancelResultReceived { get; } = Event<MarketplaceCancelResultReceived>(
         ApplicationMemberIds.MarketplaceOfferCancelResult,
         "Marketplace cancellation result",
         "Publishes verified Flash cancellation results.",
-        [new(MessageKeys.Marketplace.Offers.CancelResult, Direction.In, ApplicationMessageRole.Observe)]);
+        [new(MessageKeys.Marketplace.Offers.CancelResult, MessageDirection.In, ApplicationMessageRole.Observe)]);
 
     public static ApplicationDescriptor CancelAllResultReceived { get; } = Event<MarketplaceCancelAllResultReceived>(
         ApplicationMemberIds.MarketplaceOffersCancelAllResult,
         "Marketplace cancel-all result",
         "Publishes immutable cancel-all results and confirmed offer identifiers.",
-        [new(MessageKeys.Marketplace.Offers.CancelAllResult, Direction.In, ApplicationMessageRole.Observe)]);
+        [new(MessageKeys.Marketplace.Offers.CancelAllResult, MessageDirection.In, ApplicationMessageRole.Observe)]);
 
     public static ApplicationDescriptor HistoryClearResultReceived { get; } = Event<MarketplaceHistoryClearResultReceived>(
         ApplicationMemberIds.MarketplaceHistoryClearResult,
         "Marketplace history-clear result",
         "Publishes verified Flash history-clear results.",
-        [new(MessageKeys.Marketplace.Offers.ClearOwnHistoryResult, Direction.In, ApplicationMessageRole.Observe)]);
+        [new(MessageKeys.Marketplace.Offers.ClearOwnHistoryResult, MessageDirection.In, ApplicationMessageRole.Observe)]);
 
-    private static ApplicationDescriptor RequestResponse<TRequest, TResult>(
+    private static ApplicationDescriptor RequestResponse<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TRequest, TResult>(
         string id,
         string title,
         string description,
@@ -287,12 +288,12 @@ internal static class MarketplaceApplicationDescriptors
         [ApplicationStateKey.HotelConnected],
         state_effects,
         [
-            new(request_key, Direction.Out, ApplicationMessageRole.Send),
-            new(response_key, Direction.In, ApplicationMessageRole.Observe)
+            new(request_key, MessageDirection.Out, ApplicationMessageRole.Send),
+            new(response_key, MessageDirection.In, ApplicationMessageRole.Observe)
         ],
         hints);
 
-    private static ApplicationDescriptor Send<TRequest>(
+    private static ApplicationDescriptor Send<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TRequest>(
         string id,
         string title,
         string description,
@@ -308,8 +309,8 @@ internal static class MarketplaceApplicationDescriptors
         typeof(MarketplaceDispatchResult),
         parameters,
         [ApplicationStateKey.HotelConnected],
-        messages: [new(request_key, Direction.Out, ApplicationMessageRole.Send)],
-        tool_hints: hints);
+        messages: [new(request_key, MessageDirection.Out, ApplicationMessageRole.Send)],
+        toolHints: hints);
 
     private static ApplicationDescriptor Event<TEvent>(
         string id,
@@ -324,7 +325,7 @@ internal static class MarketplaceApplicationDescriptors
         event_exposure,
         null,
         typeof(TEvent),
-        state_effects: state_effects,
+        stateEffects: state_effects,
         messages: messages);
 
     private static ApplicationParameterDescriptor[] PagingParameters() =>
@@ -361,15 +362,15 @@ internal static class MarketplaceApplicationDescriptors
 
     private static ApplicationMessageRequirement[] StateMessages() =>
     [
-        new(MessageKeys.Marketplace.Configuration.Snapshot, Direction.In, ApplicationMessageRole.Observe, false),
-        new(MessageKeys.Marketplace.Eligibility.Result, Direction.In, ApplicationMessageRole.Observe, false),
-        new(MessageKeys.Marketplace.Offers.SearchResult, Direction.In, ApplicationMessageRole.Observe, false),
-        new(MessageKeys.Marketplace.Offers.OwnSnapshot, Direction.In, ApplicationMessageRole.Observe, false),
-        new(MessageKeys.Marketplace.ItemStats.Snapshot, Direction.In, ApplicationMessageRole.Observe, false),
-        new(MessageKeys.Marketplace.Offers.MakeResult, Direction.In, ApplicationMessageRole.Observe, false),
-        new(MessageKeys.Marketplace.Offers.BuyResult, Direction.In, ApplicationMessageRole.Observe, false),
-        new(MessageKeys.Marketplace.Offers.CancelResult, Direction.In, ApplicationMessageRole.Observe, false),
-        new(MessageKeys.Marketplace.Offers.CancelAllResult, Direction.In, ApplicationMessageRole.Observe, false),
-        new(MessageKeys.Marketplace.Offers.ClearOwnHistoryResult, Direction.In, ApplicationMessageRole.Observe, false)
+        new(MessageKeys.Marketplace.Configuration.Snapshot, MessageDirection.In, ApplicationMessageRole.Observe, false),
+        new(MessageKeys.Marketplace.Eligibility.Result, MessageDirection.In, ApplicationMessageRole.Observe, false),
+        new(MessageKeys.Marketplace.Offers.SearchResult, MessageDirection.In, ApplicationMessageRole.Observe, false),
+        new(MessageKeys.Marketplace.Offers.OwnSnapshot, MessageDirection.In, ApplicationMessageRole.Observe, false),
+        new(MessageKeys.Marketplace.ItemStats.Snapshot, MessageDirection.In, ApplicationMessageRole.Observe, false),
+        new(MessageKeys.Marketplace.Offers.MakeResult, MessageDirection.In, ApplicationMessageRole.Observe, false),
+        new(MessageKeys.Marketplace.Offers.BuyResult, MessageDirection.In, ApplicationMessageRole.Observe, false),
+        new(MessageKeys.Marketplace.Offers.CancelResult, MessageDirection.In, ApplicationMessageRole.Observe, false),
+        new(MessageKeys.Marketplace.Offers.CancelAllResult, MessageDirection.In, ApplicationMessageRole.Observe, false),
+        new(MessageKeys.Marketplace.Offers.ClearOwnHistoryResult, MessageDirection.In, ApplicationMessageRole.Observe, false)
     ];
 }

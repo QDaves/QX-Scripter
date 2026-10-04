@@ -14,5 +14,5 @@ public interface IApplicationLog
 
     void Clear();
 
-    Task FlushAsync(CancellationToken cancellation_token);
+    Task FlushAsync(CancellationToken cancellationToken);
 }

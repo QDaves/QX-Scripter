@@ -24,7 +24,7 @@ awaited, take a timeout in milliseconds and stop when the script is stopped.
 | `SearchRooms(code, filter)`, `SearchRoomQuery(code, filter)` | Navigator results. |
 | `SearchUser(name)` | One user from the user search, or `null`. |
 | `SearchMarketplace(name, minPrice, maxPrice)` | Marketplace offers. |
-| `GetMarketplaceStats(itemType, kind)` | The price history of one item. |
+| `GetMarketplaceStats(furniCategory, kind)` | The price history of one item. |
 
 ## Look up a user
 

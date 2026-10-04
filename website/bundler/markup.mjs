@@ -3,7 +3,9 @@ const entities = { lt: '<', gt: '>', amp: '&', quot: '"', apos: "'", nbsp: ' ' }
 const xref_re = /<xref\s+href="([^"]*)"[^>]*>([\s\S]*?)<\/xref>/g;
 
 const token_re =
-  /<xref\s+href="([^"]*)"[^>]*>([\s\S]*?)<\/xref>|<code(?:\s[^>]*)?>([\s\S]*?)<\/code>|<a\s+href="([^"]*)"[^>]*>([\s\S]*?)<\/a>|<(\/?)(p|b|strong|i|em)>|<br\s*\/?>/g;
+  /<xref\s+href="([^"]*)"[^>]*>([\s\S]*?)<\/xref>|<code(?:\s[^>]*)?>([\s\S]*?)<\/code>|<a\s+href="([^"]*)"[^>]*>([\s\S]*?)<\/a>|<(\/?)(p|b|strong|i|em|ul|ol|li)>|<br\s*\/?>/g;
+
+const block_tags = { ul: 'list', ol: 'list', li: 'listItem' };
 
 function decode(text) {
   return text.replace(/&(#x[0-9a-f]+|#\d+|[a-z]+);/gi, (whole, name) => {
@@ -26,11 +28,13 @@ function is_langword(href) {
 export function markup_to_mdast(markup, resolve) {
   if (typeof markup !== 'string' || markup.trim() === '') return null;
 
-  const blocks = [];
+  const root = { type: 'root', children: [] };
+  const containers = [root];
   let paragraph = [];
   const stack = [{ children: paragraph }];
 
   const top = () => stack[stack.length - 1].children;
+  const container = () => containers[containers.length - 1];
 
   function push_text(raw) {
     const value = decode(raw).replace(/\s+/g, ' ');
@@ -44,9 +48,29 @@ export function markup_to_mdast(markup, resolve) {
   function flush() {
     while (stack.length > 1) stack.pop();
     trim_edges(paragraph);
-    if (paragraph.length) blocks.push({ type: 'paragraph', children: paragraph });
+    if (paragraph.length) {
+      if (container().type === 'list') throw new Error(`text outside a list item in "${markup.slice(0, 120)}"`);
+      container().children.push({ type: 'paragraph', children: paragraph });
+    }
     paragraph = [];
     stack[0] = { children: paragraph };
+  }
+
+  function open_block(tag) {
+    flush();
+    const type = block_tags[tag];
+    if ((type === 'listItem') !== (container().type === 'list')) throw new Error(`misplaced <${tag}> in "${markup.slice(0, 120)}"`);
+    const node = type === 'list' ? { type, ordered: tag === 'ol', children: [] } : { type, children: [] };
+    container().children.push(node);
+    containers.push(node);
+  }
+
+  function close_block(tag) {
+    flush();
+    if (container().type !== block_tags[tag] || (tag !== 'li' && container().ordered !== (tag === 'ol'))) {
+      throw new Error(`unbalanced </${tag}> in "${markup.slice(0, 120)}"`);
+    }
+    containers.pop();
   }
 
   function push_raw(raw) {
@@ -60,7 +84,7 @@ export function markup_to_mdast(markup, resolve) {
     push_raw(markup.slice(last, match.index));
     last = match.index + match[0].length;
 
-    const [, xref_href, xref_text, code_text, a_href, a_text, closing, inline_tag] = match;
+    const [, xref_href, xref_text, code_text, a_href, a_text, closing, tag] = match;
     if (xref_href !== undefined) {
       top().push(xref_node(xref_href, strip_tags(xref_text), resolve));
     } else if (code_text !== undefined) {
@@ -74,10 +98,13 @@ export function markup_to_mdast(markup, resolve) {
           ? { type: 'inlineCode', value: text }
           : { type: 'link', url: href, children: [{ type: 'text', value: text }] },
       );
-    } else if (inline_tag === 'p') {
+    } else if (tag === 'p') {
       flush();
-    } else if (inline_tag) {
-      const kind = inline_tag === 'b' || inline_tag === 'strong' ? 'strong' : 'emphasis';
+    } else if (block_tags[tag]) {
+      if (closing) close_block(tag);
+      else open_block(tag);
+    } else if (tag) {
+      const kind = tag === 'b' || tag === 'strong' ? 'strong' : 'emphasis';
       if (closing) {
         if (stack.length > 1 && stack[stack.length - 1].type === kind) stack.pop();
       } else {
@@ -91,8 +118,9 @@ export function markup_to_mdast(markup, resolve) {
   }
   push_raw(markup.slice(last));
   flush();
+  if (containers.length > 1) throw new Error(`unclosed list in "${markup.slice(0, 120)}"`);
 
-  return blocks.length ? { type: 'root', children: blocks } : null;
+  return root.children.length ? root : null;
 }
 
 function trim_edges(children) {

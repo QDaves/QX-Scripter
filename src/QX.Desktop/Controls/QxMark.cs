@@ -31,14 +31,14 @@ public sealed class QxMark : Control
         InvalidateMeasure();
     }
 
-    protected override Size MeasureOverride(Size available_size)
+    protected override Size MeasureOverride(Size availableSize)
     {
         double aspect = Aspect();
         if (!double.IsNaN(Height))
             return new Size(Height * aspect, Height);
         if (!double.IsNaN(Width))
             return new Size(Width, Width / aspect);
-        double height = double.IsInfinity(available_size.Height) ? 16 : available_size.Height;
+        double height = double.IsInfinity(availableSize.Height) ? 16 : availableSize.Height;
         return new Size(height * aspect, height);
     }
 

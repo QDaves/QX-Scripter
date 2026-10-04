@@ -30,6 +30,10 @@ The server is configured in `mcp.json` in the QX Scripter configuration folder, 
 | `requireAuth` | When `false`, the token check is skipped. |
 | `toolFilter` | The tools `tools/list` offers, instead of the default set. |
 
+The switches protect the QX process, the script files and the editor; game reads and actions,
+including the `application_*` tools, `send_to_server`, `send_to_client` and `remove_rights`, are never
+gated, and `toolFilter` only changes what `tools/list` offers.
+
 ## Tools
 
 `tools/list` offers the everyday tools. Several hundred more game operations are named
@@ -38,13 +42,17 @@ The server is configured in `mcp.json` in the QX Scripter configuration folder, 
 
 | Area | Tools |
 | --- | --- |
-| Learn the API | `get_scripting_guide`, `list_api`, `search_types`, `get_type`, `search_members` |
+| Learn the API | `get_scripting_guide`, `list_api`, `search_types`, `get_type`, `search_members`, `list_application_members`, `describe_application_member` |
 | Scripts | `list_scripts`, `read_script`, `outline_script`, `find_in_script`, `get_script_part` |
 | Change scripts | `patch_script`, `replace_script_lines`, `save_script`, `rename_script`, `delete_script` |
 | Run code | `compile_check`, `run_code`, `run_script`, `get_run`, `stop_run` |
 | Editor | `list_tabs`, `open_tab`, `create_tab`, `select_tab`, `close_tab`, `run_tab`, `stop_tab`, `get_tab_output`, `get_tab_status`, `get_tab_errors` |
 | Game state | `get_connection`, `get_room`, `get_avatars`, `get_furni`, `get_inventory`, `get_friends` and more |
 | Packets | `get_protocol_messages`, `send_to_server`, `send_to_client` |
+
+`list_api`, `search_types`, `search_members` and `list_application_members` return one page at a time,
+with the total and the offset of the next page. `describe_application_member` also shows the C# call
+that reaches the member from a script.
 
 `get_scripting_guide` returns an overview and the list of topics. With a topic it returns that page of
 this documentation, so the whole guide is available to the client.
@@ -61,7 +69,7 @@ and `replace_script_lines` replaces lines by number, so small changes do not res
 once; `get_run` reads the state and the new output lines and `stop_run` ends the run.
 
 ```json
-{"name": "run_code", "arguments": {"code": "#load \"Maze Engine.csx\"\nawait WalkTo(4, 7);", "background": true}}
+{"name": "run_code", "arguments": {"code": "#load \"Maze Engine.csx\"\nawait WalkAndWait(4, 7);", "background": true}}
 {"name": "get_run", "arguments": {"id": 1, "since": 0}}
 {"name": "stop_run", "arguments": {"id": 1}}
 ```

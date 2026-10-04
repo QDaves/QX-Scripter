@@ -25,6 +25,8 @@ public sealed class FloorItem : Furni, IParserComposer<FloorItem>
     public int Y => Location.Y;
     /// <summary>Gets the stack height of <see cref="Location"/> in tile units.</summary>
     public float Z => Location.Z;
+    /// <summary>Gets the x and y coordinates of <see cref="Location"/>.</summary>
+    public Point XY => Location.XY;
 
     /// <summary>Gets or sets the item's width along x in tiles before rotation.</summary>
     /// <remarks>Filled from the furni definitions when they are loaded; defaults to 1.</remarks>
@@ -48,7 +50,6 @@ public sealed class FloorItem : Furni, IParserComposer<FloorItem>
 
     /// <summary>Reads a floor item from a packet.</summary>
     /// <param name="p">The packet to read from.</param>
-    /// <exception cref="UnsupportedClientException">Thrown when the packet is not from the Flash client.</exception>
     public static FloorItem Parse(in PacketReader p) =>
         FlashWire.Parse(in p, ParseFlash);
 
@@ -100,7 +101,6 @@ public sealed class FloorItem : Furni, IParserComposer<FloorItem>
 
     /// <summary>Writes the floor item to a packet.</summary>
     /// <param name="p">The packet to write to.</param>
-    /// <exception cref="UnsupportedClientException">Thrown when the packet is not for the Flash client.</exception>
     public void Compose(in PacketWriter p) =>
         FlashWire.Compose(this, in p, ComposeFlash);
 

@@ -3,31 +3,6 @@ using Qx.Messages;
 
 namespace Qx.Model.Messages.Incoming;
 
-/// <summary>Represents the <c>GetCreditsInfo</c> message, sent to request the user's credit balance.</summary>
-/// <remarks>The message has no payload.</remarks>
-public sealed record WalletBalanceRequest : IParserComposer<WalletBalanceRequest>
-{
-    /// <summary>Parses the message from a packet.</summary>
-    /// <param name="p">The packet reader.</param>
-    public static WalletBalanceRequest Parse(in PacketReader p) =>
-        FlashWire.Parse(in p, ParseFlash);
-
-    private static WalletBalanceRequest ParseFlash(in PacketReader p)
-    {
-        EconomyWire.RequireEmpty(in p, nameof(WalletBalanceRequest));
-        return new WalletBalanceRequest();
-    }
-
-    /// <summary>Composes the message into a packet.</summary>
-    /// <param name="p">The packet writer.</param>
-    public void Compose(in PacketWriter p) =>
-        FlashWire.Compose(this, in p, ComposeFlash);
-
-    private static void ComposeFlash(WalletBalanceRequest value, in PacketWriter p)
-    {
-    }
-}
-
 /// <summary>Represents the <c>CreditBalance</c> message, received with the user's credit balance.</summary>
 /// <param name="Balance">The credit balance as the decimal string sent by the server.</param>
 public sealed record CreditBalance(string Balance) : IParserComposer<CreditBalance>
@@ -121,10 +96,10 @@ public sealed record ActivityPoints : IParserComposer<ActivityPoints>
     private IReadOnlyList<ActivityPoint> points = Array.Empty<ActivityPoint>();
 
     /// <summary>Initializes a new instance of the <see cref="ActivityPoints"/> record.</summary>
-    /// <param name="Points">The balances, copied into a read only list.</param>
-    public ActivityPoints(IReadOnlyList<ActivityPoint> Points)
+    /// <param name="points">The balances, copied into a read only list.</param>
+    public ActivityPoints(IReadOnlyList<ActivityPoint> points)
     {
-        this.Points = Points;
+        Points = points;
     }
 
     /// <summary>Gets the balance of each activity point currency, as a read only copy.</summary>
@@ -135,8 +110,8 @@ public sealed record ActivityPoints : IParserComposer<ActivityPoints>
     }
 
     /// <summary>Deconstructs the message into its balances.</summary>
-    /// <param name="Points">The balance of each activity point currency.</param>
-    public void Deconstruct(out IReadOnlyList<ActivityPoint> Points) => Points = this.Points;
+    /// <param name="points">The balance of each activity point currency.</param>
+    public void Deconstruct(out IReadOnlyList<ActivityPoint> points) => points = Points;
 
     /// <summary>Gets the balance of an activity point currency.</summary>
     /// <param name="type">The activity point type of the currency.</param>
@@ -177,48 +152,5 @@ public sealed record ActivityPoints : IParserComposer<ActivityPoints>
             p.WriteInt(point.Type);
             p.WriteInt(point.Amount);
         }
-    }
-}
-
-internal static class EconomyWire
-{
-    internal const int ActivityPointBytes = sizeof(int) * 2;
-
-    internal static int RequireCount(int count, int available, int minimum_bytes, string name)
-    {
-        if (count < 0)
-            throw new InvalidDataException($"{name} contains a negative count {count}.");
-        if (available < 0 || minimum_bytes <= 0 || count > available / minimum_bytes)
-            throw new InvalidDataException($"{name} count {count} exceeds the remaining payload capacity.");
-        return count;
-    }
-
-    internal static void RequireEmpty(in PacketReader p, string name)
-    {
-        if (p.Available != 0)
-            throw new InvalidDataException($"{name} contains {p.Available} unexpected bytes.");
-    }
-
-    internal static IReadOnlyList<ActivityPoint> FreezePoints(
-        IReadOnlyList<ActivityPoint> values,
-        string name)
-    {
-        ArgumentNullException.ThrowIfNull(values, name);
-        return Array.AsReadOnly(values.ToArray());
-    }
-
-    internal static ActivityPoint[] PreparePoints(
-        IReadOnlyList<ActivityPoint> values)
-    {
-        ArgumentNullException.ThrowIfNull(values);
-        ActivityPoint[] snapshot = values.ToArray();
-        return snapshot;
-    }
-
-    internal static void RequireString(string value, string name, in PacketWriter p)
-    {
-        ArgumentNullException.ThrowIfNull(value, name);
-        if (p.Encoding.GetByteCount(value) > ushort.MaxValue)
-            throw new InvalidDataException($"{name} exceeds the wire string limit.");
     }
 }

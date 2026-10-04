@@ -57,11 +57,18 @@ public sealed class McpServer
         SCRIPTS
         Scripts are C# (Roslyn scripting, top-level statements). Every public member of ScriptGlobals is
         in scope as a top-level symbol: Room, Users, FloorItems, Send, OnIn/OnOut, Delay, Log and more.
-        get_scripting_guide lists the guide's topics and returns any page, or every page with "all";
-        list_api lists that surface, and search_types, get_type and search_members expose the exact
-        model types and signatures behind it, with their documentation. A script
-        compile_check compiles without running. run_code and run_script take timeout_ms and are
-        abandoned when it expires, so never loop without checking Ct.
+        get_scripting_guide lists the guide's topics and returns any page, or every guide page with "all".
+        list_api without a filter names the member groups and starts a paged list of that surface;
+        with a filter it returns the exact C# signatures of the matching members, name matches first.
+        search_types and search_members find the model types and members behind it and page with
+        nextOffset; every result says whether its namespace is imported or which using it needs.
+        get_type returns one type with its documentation; a type with more than 150 members lists
+        only their names, and member picks the members to read. compile_check compiles a script
+        without running it and also reports unknown message names (QX1001), message types a message
+        is not parsed into (QX1002), unknown //@ui directives (QX1004) and Ui calls on undeclared
+        panel controls (QX1005). run_code and run_script take timeout_ms and are abandoned when it
+        expires, so never loop without checking Ct. get_protocol_messages maps a Flash message name
+        to the model type OnIn<T>/OnOut<T> parse it into, and a model name back to its messages.
 
         READ RESULTS
         Read tools answer with one envelope: { query, metadata, data, error }. metadata carries ready,
@@ -76,9 +83,10 @@ public sealed class McpServer
         SUBSYSTEMS
         Beyond the room and the profile, get_forums, get_forum_threads, get_quests, get_crafting,
         get_subscriptions and get_gifts expose state the hotel only sends after the matching request.
-        list_application_members gives every application_* operation's parameters, client support and
-        message evidence. Everything else is reachable from a script through list_api and
-        search_members.
+        list_application_members pages through every application query, operation and event in
+        compact rows with their application_* tool and live availability; detail=true adds the full
+        schemas. describe_application_member takes a member id or tool name and returns its
+        parameters, message evidence and the C# script call that reaches it.
         """;
     private const string EditorInstructions =
         """
@@ -166,13 +174,13 @@ public sealed class McpServer
         IMcpHost host,
         int basePort,
         McpConfig? config,
-        IEnumerable<McpTool>? additional_tools)
+        IEnumerable<McpTool>? additionalTools)
     {
         _host = host;
         _basePort = basePort;
         Port = basePort;
         _config = config ?? McpConfig.Load();
-        _tools = BuildTools(additional_tools);
+        _tools = BuildTools(additionalTools);
         HashSet<string>? filter = _config.ToolFilter?.ToHashSet(StringComparer.Ordinal);
         _listed_tools = _tools
             .Where(tool => (filter?.Contains(tool.Name) ?? tool.Listed) || tool.Name is
@@ -615,6 +623,7 @@ public sealed class McpServer
         try
         {
             RequireAllowed(tool);
+            RequireKnownArguments(tool, args);
             int timeout_ms = tool.Timeout?.Invoke(args) ?? 0;
             Task<string> execution = tool.Handler(args, scope.Token);
             if (timeout_ms <= 0)
@@ -744,7 +753,7 @@ public sealed class McpServer
         new McpTool
         {
             Name = "get_connection",
-            Description = "Get compact connection readiness: interceptor, hotel session, message catalog and wire profile. Set detail=true for client, host, port, hotel version and the missing wire capabilities.",
+            Description = "Get compact connection readiness: interceptor, hotel session, message catalog and wire profile. Set detail=true for host, port, hotel version and the missing wire capabilities.",
             InputSchema = OptionalSchema(
                 ("detail", "boolean", "include endpoint, hotel version and missing wire capabilities", false, null, null)),
             Annotations = OpenReadOnly,
@@ -753,11 +762,10 @@ public sealed class McpServer
         new McpTool
         {
             Name = "get_protocol_messages",
-            Description = "Inspect the authoritative Flash message registry, active catalog provenance and exact alias-to-header evidence. Stable semantic MessageKeys are the only supported dependency for features. With explicit_only=false, generated legacy keys are returned as stable=false and key_kind=legacy; they remain migration evidence rather than contracts even when their active aliases resolve. Header IDs come from the immutable active-session catalog and are never embedded in feature code.",
+            Description = "Look up Flash messages in the message registry. Each entry gives the stable key, the Flash names, the model type the message parses into (model), the MessageKeys member (key_member), the MessageContracts member (contract) and the headers the active session catalog resolves it to. query matches keys, Flash names and model type names, so AvatarChat finds Chat, Shout and Whisper. Scripts hook and send by Flash name with the model as the type, as in OnIn<FloorItemUpdate>(\"ObjectUpdate\", ...), and the typed SendToServer/SendToClient take the key_member. QX feature and extension code depends on keys and contracts, never on header IDs. explicit_only=false adds generated legacy keys (stable=false, key_kind=legacy) and unmapped catalog headers; scripts can still hook them by name, but they carry no model.",
             InputSchema = OptionalSchema(
-                ("query", "string", "optional semantic key or client header-name substring", "", null, null),
+                ("query", "string", "optional substring of a key, Flash name or model type name", "", null, null),
                 ("direction", "string", "in, out, or both", "both", null, null),
-                ("client", "string", "flash or all", "all", null, null),
                 ("explicit_only", "boolean", "return only stable semantic keys; false also includes clearly marked legacy evidence", true, null, null),
                 ("resolved_only", "boolean", "return only messages resolved for the active hotel session", false, null, null),
                 ("limit", "integer", "maximum returned messages", 100, 1, 500),
@@ -766,7 +774,6 @@ public sealed class McpServer
             Handler = (args, ct) => _host.GetProtocolMessagesAsync(
                 Str(args, "query"),
                 Str(args, "direction", "both"),
-                Str(args, "client", "all"),
                 Bool(args, "explicit_only", true),
                 Bool(args, "resolved_only"),
                 BoundedInt(args, "limit", 100, 1, 500),
@@ -845,7 +852,7 @@ public sealed class McpServer
         new McpTool
         {
             Name = "get_inventory",
-            Description = "Get a compact inventory grouped by client type and kind, fetching a full baseline when missing or stale by default. Set detail=true for complete per-item data. Continuation pages require the snapshot_revision returned by the first page.",
+            Description = "Get a compact inventory grouped by item type (floor or wall) and kind, fetching a full baseline when missing or stale by default. Set detail=true for complete per-item data. Continuation pages require the snapshot_revision returned by the first page.",
             InputSchema = OptionalSchema(
                 ("fetch", "boolean", "fetch a complete baseline when missing or stale before the first page; ignored when snapshot_revision is supplied", true, null, null),
                 ("detail", "boolean", "include complete per-item data", false, null, null),
@@ -1084,7 +1091,8 @@ public sealed class McpServer
                         }
                     }
                 },
-                ["required"] = EditorAvailable ? new[] { "edits" } : ["name", "edits"]
+                ["required"] = EditorAvailable ? new[] { "edits" } : ["name", "edits"],
+                ["additionalProperties"] = false
             },
             Annotations = ClosedWrite,
             Capability = McpCapability.FileWrite,
@@ -1169,7 +1177,7 @@ public sealed class McpServer
         new McpTool
         {
             Name = "get_avatar",
-            Description = "Get a room user's full live state by name: position, facing, gender, group, stance, rights, dance, effect, hand item, idle and typing.",
+            Description = "Get a room user's full live state by name: position, facing, gender, group, stance, rights, dance, effect and hand item with their names, idle and typing. data is null when no user of that name is in the room, and metadata.ready and metadata.loaded say whether the room has loaded.",
             InputSchema = Schema(("name", "string", "user name")),
             Annotations = OpenReadOnly,
             Handler = (args, ct) => Task.FromResult(_host.GetAvatar(Str(args, "name")))
@@ -1224,7 +1232,7 @@ public sealed class McpServer
         new McpTool
         {
             Name = "get_forums",
-            Description = "Get the cached group-forum list with unread counts and per-forum thread and message totals. Fetching requests the matching page of the chosen list first; forums are a Flash-only subsystem. Set detail=true for the cached permissions and moderation flags of the returned forums. Continuation pages require the snapshot_revision returned by the first page.",
+            Description = "Get the cached group-forum list with unread counts and per-forum thread and message totals. Fetching requests the matching page of the chosen list first. Set detail=true for the cached permissions and moderation flags of the returned forums. Continuation pages require the snapshot_revision returned by the first page.",
             InputSchema = OptionalSchema(
                 ("fetch", "boolean", "request the matching forum page before returning", true, null, null),
                 ("detail", "boolean", "include cached forum details and permissions", false, null, null),
@@ -1380,15 +1388,20 @@ public sealed class McpServer
         new McpTool
         {
             Name = "list_api",
-            Description = "List the QX scripting API (all ScriptGlobals properties + methods a script can call), optionally filtered by substring.",
-            InputSchema = new Dictionary<string, object?>
-            {
-                ["type"] = "object",
-                ["properties"] = new Dictionary<string, object?> { ["filter"] = new Dictionary<string, object?> { ["type"] = "string", ["description"] = "optional name filter" } },
-                ["required"] = Array.Empty<string>()
-            },
+            Description =
+                "List the members a script calls by bare name (every public ScriptGlobals property and method, static " +
+                "ones included) with their exact C# signatures and a one-line summary. Without a filter it starts with " +
+                "the member groups. A filter ranks name matches first, then group, signature and summary matches. The " +
+                "last line gives the total and, when more members follow, the nextOffset of the next page.",
+            InputSchema = OptionalSchema(
+                ("filter", "string", "optional text to look for, matched against member names first", null, null, null),
+                ("limit", "integer", "maximum returned members", 100, 1, 500),
+                OffsetProperty("member")),
             Annotations = ClosedReadOnly,
-            Handler = (args, ct) => Task.FromResult(_host.ListApi(Str(args, "filter")))
+            Handler = (args, ct) => Task.FromResult(_host.ListApi(
+                Str(args, "filter"),
+                BoundedInt(args, "limit", 100, 1, 500),
+                BoundedInt(args, "offset", 0, 0, MaxOffset)))
         },
         new McpTool
         {
@@ -1401,69 +1414,57 @@ public sealed class McpServer
         new McpTool
         {
             Name = "search_types",
-            Description = "Search script-visible classes, interfaces, structs, enums and delegates by simple or fully qualified name.",
-            InputSchema = new Dictionary<string, object?>
-            {
-                ["type"] = "object",
-                ["properties"] = new Dictionary<string, object?>
-                {
-                    ["query"] = new Dictionary<string, object?> { ["type"] = "string", ["description"] = "optional type-name substring" },
-                    ["assembly"] = new Dictionary<string, object?> { ["type"] = "string", ["description"] = "optional assembly-name filter" },
-                    ["limit"] = new Dictionary<string, object?> { ["type"] = "integer", ["description"] = "maximum results, defaults to 50" },
-                    ["offset"] = new Dictionary<string, object?>
-                    {
-                        ["type"] = "integer",
-                        ["description"] = "zero-based index of the first returned type",
-                        ["default"] = 0,
-                        ["minimum"] = 0,
-                        ["maximum"] = MaxOffset
-                    }
-                },
-                ["required"] = Array.Empty<string>()
-            },
+            Description =
+                "Search script-visible classes, interfaces, structs, enums and delegates by simple or fully qualified name. " +
+                "Returns {items, total, nextOffset}. Exact names rank first; among equal matches ScriptGlobals comes " +
+                "first, then imported namespaces, then the rest, and host types come last. Each type says whether it " +
+                "is imported or which using it needs. Obsolete types are left out.",
+            InputSchema = OptionalSchema(
+                ("query", "string", "optional type-name substring", null, null, null),
+                ("assembly", "string", "optional assembly-name filter", null, null, null),
+                ("limit", "integer", "maximum returned types", 50, 1, 500),
+                OffsetProperty("type")),
             Annotations = ClosedReadOnly,
             Handler = (args, ct) => Task.FromResult(_host.SearchTypes(
                 Str(args, "query"),
                 Str(args, "assembly"),
-                Int(args, "limit"),
+                BoundedInt(args, "limit", 50, 1, 500),
                 BoundedInt(args, "offset", 0, 0, MaxOffset)))
         },
         new McpTool
         {
             Name = "get_type",
-            Description = "Get the complete script-visible definition of a type, including inheritance, interfaces and all public member signatures.",
-            InputSchema = Schema(("name", "string", "simple or fully qualified type name")),
+            Description =
+                "Get the script-visible definition of a type: inheritance, interfaces, whether it is imported, and every " +
+                "public member signature with its documentation and obsolete message. A short name shared with nested " +
+                "types resolves to the top-level type and lists the others in alsoMatches. A type with more than 150 " +
+                "members lists only their names in memberIndex; pass member to read the members whose name contains it.",
+            InputSchema = MixedSchema(
+                [("name", "string", "simple or fully qualified type name")],
+                ("member", "string", "optional text a member name must contain to be returned", null, null, null)),
             Annotations = ClosedReadOnly,
-            Handler = (args, ct) => Task.FromResult(_host.GetTypeInfo(Str(args, "name")))
+            Handler = (args, ct) => Task.FromResult(_host.GetTypeInfo(Str(args, "name"), Str(args, "member")))
         },
         new McpTool
         {
             Name = "search_members",
-            Description = "Search public script-visible properties, methods, events and fields across all referenced QX types.",
-            InputSchema = new Dictionary<string, object?>
-            {
-                ["type"] = "object",
-                ["properties"] = new Dictionary<string, object?>
-                {
-                    ["query"] = new Dictionary<string, object?> { ["type"] = "string", ["description"] = "member name, signature or declaring type" },
-                    ["kind"] = new Dictionary<string, object?> { ["type"] = "string", ["description"] = "optional property, method, event or field filter" },
-                    ["limit"] = new Dictionary<string, object?> { ["type"] = "integer", ["description"] = "maximum results, defaults to 60" },
-                    ["offset"] = new Dictionary<string, object?>
-                    {
-                        ["type"] = "integer",
-                        ["description"] = "zero-based index of the first returned member",
-                        ["default"] = 0,
-                        ["minimum"] = 0,
-                        ["maximum"] = MaxOffset
-                    }
-                },
-                ["required"] = new[] { "query" }
-            },
+            Description =
+                "Search public script-visible properties, methods, events and fields across all referenced QX types. " +
+                "Returns {items, total, nextOffset}, ranked like search_types. Each member says whether its type is " +
+                "imported or which using it needs. Obsolete members and the methods the compiler generates for " +
+                "records are left out; include_generated adds the latter.",
+            InputSchema = MixedSchema(
+                [("query", "string", "member name, signature or declaring type")],
+                ("kind", "string", "optional property, method, event or field filter", null, null, null),
+                ("include_generated", "boolean", "include the Equals, GetHashCode, ToString and Deconstruct methods of records", false, null, null),
+                ("limit", "integer", "maximum returned members", 60, 1, 500),
+                OffsetProperty("member")),
             Annotations = ClosedReadOnly,
             Handler = (args, ct) => Task.FromResult(_host.SearchMembers(
                 Str(args, "query"),
                 Str(args, "kind"),
-                Int(args, "limit"),
+                Bool(args, "include_generated"),
+                BoundedInt(args, "limit", 60, 1, 500),
                 BoundedInt(args, "offset", 0, 0, MaxOffset)))
         },
         new McpTool
@@ -1471,7 +1472,8 @@ public sealed class McpServer
             Name = "get_scripting_guide",
             Description =
                 "Read the QX scripting guide, the same pages as the documentation site. Without a topic it lists " +
-                "every topic with its summary; with a topic it returns that page, and \"all\" returns every page.",
+                "every topic with its summary; with a topic it returns that page, and \"all\" returns every guide page " +
+                "without the release notes.",
             InputSchema = OptionalSchema(("topic", "string", "page to read, or \"all\"", null, null, null)),
             Annotations = ClosedReadOnly,
             Handler = (args, ct) => Task.FromResult(_host.GetScriptingGuide(Str(args, "topic")))
@@ -1479,7 +1481,10 @@ public sealed class McpServer
         new McpTool
         {
             Name = "compile_check",
-            Description = "Compile-check C# script code against the QX API without running it; returns errors/warnings or OK.",
+            Description =
+                "Compile-check C# script code against the QX API without running it, including message names, message types " +
+                "and panel directives. Returns OK, or one line per error or warning in source order as \"severity ID " +
+                "line:column: message\" (file:line:column inside a #load file); a type it cannot find gets the using or namespace it needs.",
             InputSchema = Schema(("code", "string", "C# script code")),
             Annotations = ClosedReadOnly,
             Handler = (args, ct) => Task.FromResult(_host.CompileCheck(Str(args, "code")))
@@ -1565,12 +1570,7 @@ public sealed class McpServer
         {
             Name = "stop_tab",
             Description = "Request cancellation of a running editor tab by name, or the active tab when omitted.",
-            InputSchema = new Dictionary<string, object?>
-            {
-                ["type"] = "object",
-                ["properties"] = new Dictionary<string, object?> { ["name"] = new Dictionary<string, object?> { ["type"] = "string", ["description"] = "tab name (optional)" } },
-                ["required"] = Array.Empty<string>()
-            },
+            InputSchema = OptionalSchema(("name", "string", "tab name (optional)", null, null, null)),
             Annotations = ClosedIdempotentDestructiveWrite,
             Capability = McpCapability.Editor,
             RuntimeCapability = McpRuntimeCapability.Editor,
@@ -1580,12 +1580,7 @@ public sealed class McpServer
         {
             Name = "get_tab_output",
             Description = "Get the output text of an editor tab by name (or the active tab).",
-            InputSchema = new Dictionary<string, object?>
-            {
-                ["type"] = "object",
-                ["properties"] = new Dictionary<string, object?> { ["name"] = new Dictionary<string, object?> { ["type"] = "string", ["description"] = "tab name (optional)" } },
-                ["required"] = Array.Empty<string>()
-            },
+            InputSchema = OptionalSchema(("name", "string", "tab name (optional)", null, null, null)),
             Annotations = ClosedReadOnly,
             Capability = McpCapability.Editor,
             RuntimeCapability = McpRuntimeCapability.Editor,
@@ -1595,12 +1590,7 @@ public sealed class McpServer
         {
             Name = "get_tab_status",
             Description = "Get a structured execution snapshot for an editor tab: state, runtime, output size and error count.",
-            InputSchema = new Dictionary<string, object?>
-            {
-                ["type"] = "object",
-                ["properties"] = new Dictionary<string, object?> { ["name"] = new Dictionary<string, object?> { ["type"] = "string", ["description"] = "tab name (optional)" } },
-                ["required"] = Array.Empty<string>()
-            },
+            InputSchema = OptionalSchema(("name", "string", "tab name (optional)", null, null, null)),
             Annotations = ClosedReadOnly,
             Capability = McpCapability.Editor,
             RuntimeCapability = McpRuntimeCapability.Editor,
@@ -1610,12 +1600,7 @@ public sealed class McpServer
         {
             Name = "get_tab_errors",
             Description = "Get structured compile, runtime and background-task errors for an editor tab, including type and source location.",
-            InputSchema = new Dictionary<string, object?>
-            {
-                ["type"] = "object",
-                ["properties"] = new Dictionary<string, object?> { ["name"] = new Dictionary<string, object?> { ["type"] = "string", ["description"] = "tab name (optional)" } },
-                ["required"] = Array.Empty<string>()
-            },
+            InputSchema = OptionalSchema(("name", "string", "tab name (optional)", null, null, null)),
             Annotations = ClosedReadOnly,
             Capability = McpCapability.Editor,
             RuntimeCapability = McpRuntimeCapability.Editor,
@@ -1632,9 +1617,9 @@ public sealed class McpServer
         new McpTool
         {
             Name = "list_mcp_tools",
-            Description = "Search all MCP tools, including filtered tools, with permissions and parameter names. Use describe_mcp_tool for the full schema and read_mcp_tool or call_mcp_tool to call a filtered tool. Follow nextOffset for more results.",
+            Description = "Search all MCP tools, including filtered tools, with their title, permissions and parameter names. Use describe_mcp_tool for the full schema and read_mcp_tool or call_mcp_tool to call a filtered tool. Follow nextOffset for more results.",
             InputSchema = OptionalSchema(
-                ("filter", "string", "optional name or description substring", null, null, null),
+                ("filter", "string", "optional name, title or description substring", null, null, null),
                 ("limit", "integer", "maximum returned tools", 50, 1, 100),
                 OffsetProperty("tool")),
             Annotations = ClosedReadOnly,
@@ -1754,6 +1739,7 @@ public sealed class McpServer
             : JsonSerializer.SerializeToElement(new Dictionary<string, object?>());
         if (arguments.ValueKind != JsonValueKind.Object)
             throw new McpToolException("arguments must be an object.");
+        RequireKnownArguments(tool, arguments);
         return (tool, arguments);
     }
 
@@ -1767,6 +1753,27 @@ public sealed class McpServer
         if (missing.Count > 0)
             throw new McpToolException(
                 $"'{tool.Name}' is disabled: enable {string.Join(" and ", missing)} in MCP settings.");
+    }
+
+    private static void RequireKnownArguments(McpTool tool, JsonElement args)
+    {
+        if (args.ValueKind != JsonValueKind.Object ||
+            tool.InputSchema is not Dictionary<string, object?> schema ||
+            !schema.TryGetValue("additionalProperties", out object? additional) ||
+            additional is not false)
+        {
+            return;
+        }
+
+        IReadOnlyCollection<string> valid = PropertyNames(schema);
+        foreach (JsonProperty argument in args.EnumerateObject())
+        {
+            if (valid.Contains(argument.Name))
+                continue;
+            throw new McpToolException(valid.Count == 0
+                ? $"unknown parameter '{argument.Name}'; '{tool.Name}' takes no parameters"
+                : $"unknown parameter '{argument.Name}'; valid: {string.Join(", ", valid)}");
+        }
     }
 
     private Dictionary<string, object?> ToolDetails(McpTool tool)
@@ -1848,7 +1855,8 @@ public sealed class McpServer
         {
             ["type"] = "object",
             ["properties"] = properties,
-            ["required"] = required.Select(x => x.Name).ToArray()
+            ["required"] = required.Select(x => x.Name).ToArray(),
+            ["additionalProperties"] = false
         };
     }
 
@@ -1917,7 +1925,8 @@ public sealed class McpServer
                     ["items"] = new Dictionary<string, object?>()
                 }
             },
-            ["required"] = new[] { first.Name }
+            ["required"] = new[] { first.Name },
+            ["additionalProperties"] = false
         };
     }
 
@@ -2247,23 +2256,11 @@ public sealed class McpServer
             .Where(tool =>
                 string.IsNullOrWhiteSpace(filter) ||
                 tool.Name.Contains(filter, StringComparison.OrdinalIgnoreCase) ||
+                tool.Title?.Contains(filter, StringComparison.OrdinalIgnoreCase) == true ||
                 tool.Description.Contains(filter, StringComparison.OrdinalIgnoreCase))
             .OrderBy(tool => tool.Name, StringComparer.Ordinal)
             .ToArray();
-        var page = matches.Skip(offset).Take(limit)
-            .Select(tool => new Dictionary<string, object?>
-            {
-                ["name"] = tool.Name,
-                ["description"] = tool.Description,
-                ["parameters"] = ParameterNames(tool.InputSchema),
-                ["requires"] = CapabilityNames(tool.Capability),
-                ["runtimeRequires"] = RuntimeCapabilityNames(tool.RuntimeCapability),
-                ["allowed"] = Config.Allows(tool.Capability),
-                ["listed"] = _listed_tools.Contains(tool),
-                ["readOnly"] = tool.Annotations.ReadOnlyHint,
-                ["destructive"] = tool.Annotations.DestructiveHint
-            })
-            .ToArray();
+        Dictionary<string, object?>[] page = [.. matches.Skip(offset).Take(limit).Select(CatalogRow)];
         return JsonSerializer.Serialize(new
         {
             tools = page,
@@ -2271,6 +2268,22 @@ public sealed class McpServer
             nextOffset = offset + page.Length < matches.Length ? (int?)(offset + page.Length) : null
         },
             IndentedJson);
+    }
+
+    private Dictionary<string, object?> CatalogRow(McpTool tool)
+    {
+        var row = new Dictionary<string, object?> { ["name"] = tool.Name };
+        if (!string.IsNullOrWhiteSpace(tool.Title))
+            row["title"] = tool.Title;
+        row["description"] = tool.Description;
+        row["parameters"] = ParameterNames(tool.InputSchema);
+        row["requires"] = CapabilityNames(tool.Capability);
+        row["runtimeRequires"] = RuntimeCapabilityNames(tool.RuntimeCapability);
+        row["allowed"] = Config.Allows(tool.Capability);
+        row["listed"] = _listed_tools.Contains(tool);
+        row["readOnly"] = tool.Annotations.ReadOnlyHint;
+        row["destructive"] = tool.Annotations.DestructiveHint;
+        return row;
     }
 
     private static string[] CapabilityNames(McpCapability capability) =>
@@ -2294,20 +2307,22 @@ public sealed class McpServer
 
     private static string[] ParameterNames(object schema)
     {
-        if (schema is not Dictionary<string, object?> map ||
-            !map.TryGetValue("properties", out object? raw) ||
-            raw is not Dictionary<string, object?> properties)
-        {
-            return [];
-        }
-
-        string[] required = map.TryGetValue("required", out object? names) && names is string[] list
-            ? list
-            : [];
-        return properties.Keys
+        string[] required = schema is Dictionary<string, object?> map &&
+            map.TryGetValue("required", out object? names) &&
+            names is string[] list
+                ? list
+                : [];
+        return PropertyNames(schema)
             .Select(name => required.Contains(name, StringComparer.Ordinal) ? name : name + "?")
             .ToArray();
     }
+
+    private static IReadOnlyCollection<string> PropertyNames(object schema) =>
+        schema is Dictionary<string, object?> map &&
+        map.TryGetValue("properties", out object? raw) &&
+        raw is Dictionary<string, object?> properties
+            ? properties.Keys
+            : [];
 
     private static string ResolveVersion()
     {

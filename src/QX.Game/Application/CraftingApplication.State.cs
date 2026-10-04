@@ -1,4 +1,4 @@
-using Qx.Model.Crafting;
+using Qx.Model;
 using Qx.Model.Messages.Incoming;
 
 namespace Qx.Game.Application;
@@ -60,7 +60,6 @@ internal sealed partial class CraftingApplication
         bool connected = Connected(state);
         return new CraftingStateView(
             connected,
-            connected ? state.Session!.Client : null,
             state.SessionGeneration,
             state.Revision,
             state.ProductsRevision,
@@ -114,7 +113,6 @@ internal sealed partial class CraftingApplication
         bool connected = Connected(state);
         return new CraftingProductsPage(
             connected,
-            connected ? state.Session!.Client : null,
             state.SessionGeneration,
             state.Revision,
             state.ProductsRevision,
@@ -144,7 +142,6 @@ internal sealed partial class CraftingApplication
         bool connected = Connected(state);
         return new CraftingRecipePage(
             connected,
-            connected ? state.Session!.Client : null,
             state.SessionGeneration,
             state.Revision,
             state.RecipeRevision,

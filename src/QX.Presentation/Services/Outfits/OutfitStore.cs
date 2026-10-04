@@ -90,7 +90,7 @@ public sealed class OutfitStore : IOutfitStore, IDisposable
         return true;
     }
 
-    public Task FlushAsync(CancellationToken cancellation_token) => _file.FlushAsync(cancellation_token);
+    public Task FlushAsync(CancellationToken cancellationToken) => _file.FlushAsync(cancellationToken);
 
     public bool FlushNow(TimeSpan budget) => _file.FlushNow(budget);
 

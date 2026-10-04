@@ -5,7 +5,7 @@ using Avalonia.Interactivity;
 using Avalonia.Layout;
 using Qx.Presentation.Services.Panels;
 using Qx.Presentation.ViewModels.ScriptPanels;
-using Qx.Scripting;
+using Qx.Scripting.Hosting;
 
 namespace Qx.Desktop.Views.ScriptPanels;
 

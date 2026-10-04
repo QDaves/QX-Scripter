@@ -1,5 +1,4 @@
 using Qx.Messages;
-using Qx.Model.Quests;
 
 namespace Qx.Model.Messages.Incoming;
 
@@ -9,10 +8,10 @@ public sealed record Quest : IParserComposer<Quest>
     private QuestData data = null!;
 
     /// <summary>Initializes a new instance of the <see cref="Quest"/> class.</summary>
-    /// <param name="Data">The quest.</param>
-    public Quest(QuestData Data)
+    /// <param name="data">The quest.</param>
+    public Quest(QuestData data)
     {
-        this.Data = Data;
+        Data = data;
     }
 
     /// <summary>Gets the quest.</summary>
@@ -27,10 +26,10 @@ public sealed record Quest : IParserComposer<Quest>
     }
 
     /// <summary>Deconstructs the message into its values.</summary>
-    /// <param name="Data">The quest.</param>
-    public void Deconstruct(out QuestData Data)
+    /// <param name="data">The quest.</param>
+    public void Deconstruct(out QuestData data)
     {
-        Data = this.Data;
+        data = Data;
     }
 
     /// <summary>Parses the message from a packet.</summary>
@@ -72,12 +71,12 @@ public sealed record Quests : IParserComposer<Quests>
         Array.AsReadOnly(Array.Empty<QuestData>());
 
     /// <summary>Initializes a new instance of the <see cref="Quests"/> class.</summary>
-    /// <param name="Items">The quests.</param>
-    /// <param name="OpenWindow">Whether the hotel asks the client to open the quest window.</param>
-    public Quests(IReadOnlyList<QuestData> Items, bool OpenWindow)
+    /// <param name="items">The quests.</param>
+    /// <param name="openWindow">Whether the hotel asks the client to open the quest window.</param>
+    public Quests(IReadOnlyList<QuestData> items, bool openWindow)
     {
-        this.Items = Items;
-        this.OpenWindow = OpenWindow;
+        Items = items;
+        OpenWindow = openWindow;
     }
 
     /// <summary>Gets the quests.</summary>
@@ -91,12 +90,12 @@ public sealed record Quests : IParserComposer<Quests>
     public bool OpenWindow { get; init; }
 
     /// <summary>Deconstructs the message into its values.</summary>
-    /// <param name="Items">The quests.</param>
-    /// <param name="OpenWindow">Whether the hotel asks the client to open the quest window.</param>
-    public void Deconstruct(out IReadOnlyList<QuestData> Items, out bool OpenWindow)
+    /// <param name="items">The quests.</param>
+    /// <param name="openWindow">Whether the hotel asks the client to open the quest window.</param>
+    public void Deconstruct(out IReadOnlyList<QuestData> items, out bool openWindow)
     {
-        Items = this.Items;
-        OpenWindow = this.OpenWindow;
+        items = Items;
+        openWindow = OpenWindow;
     }
 
     /// <summary>Parses the message from a packet.</summary>
@@ -138,10 +137,10 @@ public sealed record QuestsSeasonal : IParserComposer<QuestsSeasonal>
         Array.AsReadOnly(Array.Empty<QuestData>());
 
     /// <summary>Initializes a new instance of the <see cref="QuestsSeasonal"/> class.</summary>
-    /// <param name="Items">The seasonal quests.</param>
-    public QuestsSeasonal(IReadOnlyList<QuestData> Items)
+    /// <param name="items">The seasonal quests.</param>
+    public QuestsSeasonal(IReadOnlyList<QuestData> items)
     {
-        this.Items = Items;
+        Items = items;
     }
 
     /// <summary>Gets the seasonal quests.</summary>
@@ -152,10 +151,10 @@ public sealed record QuestsSeasonal : IParserComposer<QuestsSeasonal>
     }
 
     /// <summary>Deconstructs the message into its values.</summary>
-    /// <param name="Items">The seasonal quests.</param>
-    public void Deconstruct(out IReadOnlyList<QuestData> Items)
+    /// <param name="items">The seasonal quests.</param>
+    public void Deconstruct(out IReadOnlyList<QuestData> items)
     {
-        Items = this.Items;
+        items = Items;
     }
 
     /// <summary>Parses the message from a packet.</summary>
@@ -194,12 +193,12 @@ public sealed record QuestCompleted : IParserComposer<QuestCompleted>
     private QuestData data = null!;
 
     /// <summary>Initializes a new instance of the <see cref="QuestCompleted"/> class.</summary>
-    /// <param name="Data">The completed quest.</param>
-    /// <param name="ShowDialog">Whether the hotel asks the client to show the completion dialog.</param>
-    public QuestCompleted(QuestData Data, bool ShowDialog)
+    /// <param name="data">The completed quest.</param>
+    /// <param name="showDialog">Whether the hotel asks the client to show the completion dialog.</param>
+    public QuestCompleted(QuestData data, bool showDialog)
     {
-        this.Data = Data;
-        this.ShowDialog = ShowDialog;
+        Data = data;
+        ShowDialog = showDialog;
     }
 
     /// <summary>Gets the completed quest.</summary>
@@ -217,12 +216,12 @@ public sealed record QuestCompleted : IParserComposer<QuestCompleted>
     public bool ShowDialog { get; init; }
 
     /// <summary>Deconstructs the message into its values.</summary>
-    /// <param name="Data">The completed quest.</param>
-    /// <param name="ShowDialog">Whether the hotel asks the client to show the completion dialog.</param>
-    public void Deconstruct(out QuestData Data, out bool ShowDialog)
+    /// <param name="data">The completed quest.</param>
+    /// <param name="showDialog">Whether the hotel asks the client to show the completion dialog.</param>
+    public void Deconstruct(out QuestData data, out bool showDialog)
     {
-        Data = this.Data;
-        ShowDialog = this.ShowDialog;
+        data = Data;
+        showDialog = ShowDialog;
     }
 
     /// <summary>Parses the message from a packet.</summary>
@@ -265,12 +264,12 @@ public sealed record QuestCancelled : IParserComposer<QuestCancelled>
     private QuestData data = null!;
 
     /// <summary>Initializes a new instance of the <see cref="QuestCancelled"/> class.</summary>
-    /// <param name="IsExpired">Whether the quest ended because it expired rather than by request.</param>
-    /// <param name="Data">The canceled quest.</param>
-    public QuestCancelled(bool IsExpired, QuestData Data)
+    /// <param name="isExpired">Whether the quest ended because it expired rather than by request.</param>
+    /// <param name="data">The canceled quest.</param>
+    public QuestCancelled(bool isExpired, QuestData data)
     {
-        this.IsExpired = IsExpired;
-        this.Data = Data;
+        IsExpired = isExpired;
+        Data = data;
     }
 
     /// <summary>Gets whether the quest ended because it expired rather than by request.</summary>
@@ -288,12 +287,12 @@ public sealed record QuestCancelled : IParserComposer<QuestCancelled>
     }
 
     /// <summary>Deconstructs the message into its values.</summary>
-    /// <param name="IsExpired">Whether the quest ended because it expired rather than by request.</param>
-    /// <param name="Data">The canceled quest.</param>
-    public void Deconstruct(out bool IsExpired, out QuestData Data)
+    /// <param name="isExpired">Whether the quest ended because it expired rather than by request.</param>
+    /// <param name="data">The canceled quest.</param>
+    public void Deconstruct(out bool isExpired, out QuestData data)
     {
-        IsExpired = this.IsExpired;
-        Data = this.Data;
+        isExpired = IsExpired;
+        data = Data;
     }
 
     /// <summary>Parses the message from a packet.</summary>
@@ -343,14 +342,14 @@ public sealed record QuestCancelled : IParserComposer<QuestCancelled>
 public sealed record QuestDaily : IParserComposer<QuestDaily>
 {
     /// <summary>Initializes a new instance of the <see cref="QuestDaily"/> class.</summary>
-    /// <param name="Data">The daily quest, or <see langword="null"/> when there is none.</param>
-    /// <param name="EasyQuestCount">The number of quests in the easy daily pool.</param>
-    /// <param name="HardQuestCount">The number of quests in the hard daily pool.</param>
-    public QuestDaily(QuestData? Data, int EasyQuestCount, int HardQuestCount)
+    /// <param name="data">The daily quest, or <see langword="null"/> when there is none.</param>
+    /// <param name="easyQuestCount">The number of quests in the easy daily pool.</param>
+    /// <param name="hardQuestCount">The number of quests in the hard daily pool.</param>
+    public QuestDaily(QuestData? data, int easyQuestCount, int hardQuestCount)
     {
-        this.Data = Data;
-        this.EasyQuestCount = EasyQuestCount;
-        this.HardQuestCount = HardQuestCount;
+        Data = data;
+        EasyQuestCount = easyQuestCount;
+        HardQuestCount = hardQuestCount;
     }
 
     /// <summary>Gets the daily quest, or <see langword="null"/> when there is none.</summary>
@@ -363,17 +362,17 @@ public sealed record QuestDaily : IParserComposer<QuestDaily>
     public bool HasQuest => Data is not null;
 
     /// <summary>Deconstructs the message into its values.</summary>
-    /// <param name="Data">The daily quest, or <see langword="null"/> when there is none.</param>
-    /// <param name="EasyQuestCount">The number of quests in the easy daily pool.</param>
-    /// <param name="HardQuestCount">The number of quests in the hard daily pool.</param>
+    /// <param name="data">The daily quest, or <see langword="null"/> when there is none.</param>
+    /// <param name="easyQuestCount">The number of quests in the easy daily pool.</param>
+    /// <param name="hardQuestCount">The number of quests in the hard daily pool.</param>
     public void Deconstruct(
-        out QuestData? Data,
-        out int EasyQuestCount,
-        out int HardQuestCount)
+        out QuestData? data,
+        out int easyQuestCount,
+        out int hardQuestCount)
     {
-        Data = this.Data;
-        EasyQuestCount = this.EasyQuestCount;
-        HardQuestCount = this.HardQuestCount;
+        data = Data;
+        easyQuestCount = EasyQuestCount;
+        hardQuestCount = HardQuestCount;
     }
 
     /// <summary>Parses the message from a packet.</summary>
@@ -431,307 +430,6 @@ public sealed record QuestDaily : IParserComposer<QuestDaily>
         QuestData.WriteWire(data, in p);
         p.WriteInt(value.EasyQuestCount);
         p.WriteInt(value.HardQuestCount);
-    }
-}
-
-/// <summary>Represents the outgoing <c>AcceptQuest</c> message, sent to accept a quest.</summary>
-/// <param name="QuestId">The ID of the quest, written as a 32 bit integer.</param>
-public sealed record AcceptQuest(Id QuestId) : IParserComposer<AcceptQuest>
-{
-    /// <summary>Parses the message from a packet.</summary>
-    /// <param name="p">The packet reader.</param>
-    public static AcceptQuest Parse(in PacketReader p) =>
-        FlashWire.Parse(in p, ParseFlash);
-
-    private static AcceptQuest ParseFlash(in PacketReader p) => ParseRoot(in p);
-
-    private static AcceptQuest ParseRoot(in PacketReader p)
-    {
-        Id quest_id = QuestWire.ReadId(in p, 0, nameof(QuestId));
-        QuestWire.RequireEmpty(in p, nameof(AcceptQuest));
-        return new AcceptQuest(quest_id);
-    }
-
-    /// <summary>Composes the message into a packet.</summary>
-    /// <param name="p">The packet writer.</param>
-    public void Compose(in PacketWriter p) =>
-        FlashWire.Compose(this, in p, ComposeFlash);
-
-    private static void ComposeFlash(AcceptQuest value, in PacketWriter p) =>
-        ComposeRoot(value, in p);
-
-    private static void ComposeRoot(AcceptQuest value, in PacketWriter p)
-    {
-        ArgumentNullException.ThrowIfNull(value);
-        QuestWire.RequireId(value.QuestId, p.Client);
-        QuestWire.WriteId(value.QuestId, in p);
-    }
-}
-
-/// <summary>Represents the outgoing <c>ActivateQuest</c> message, sent to activate a quest.</summary>
-/// <param name="QuestId">The ID of the quest, written as a 32 bit integer.</param>
-public sealed record ActivateQuest(Id QuestId) : IParserComposer<ActivateQuest>
-{
-    /// <summary>Parses the message from a packet.</summary>
-    /// <param name="p">The packet reader.</param>
-    public static ActivateQuest Parse(in PacketReader p) =>
-        FlashWire.Parse(in p, ParseFlash);
-
-    private static ActivateQuest ParseFlash(in PacketReader p) => ParseRoot(in p);
-
-    private static ActivateQuest ParseRoot(in PacketReader p)
-    {
-        Id quest_id = QuestWire.ReadId(in p, 0, nameof(QuestId));
-        QuestWire.RequireEmpty(in p, nameof(ActivateQuest));
-        return new ActivateQuest(quest_id);
-    }
-
-    /// <summary>Composes the message into a packet.</summary>
-    /// <param name="p">The packet writer.</param>
-    public void Compose(in PacketWriter p) =>
-        FlashWire.Compose(this, in p, ComposeFlash);
-
-    private static void ComposeFlash(ActivateQuest value, in PacketWriter p) =>
-        ComposeRoot(value, in p);
-
-    private static void ComposeRoot(ActivateQuest value, in PacketWriter p)
-    {
-        ArgumentNullException.ThrowIfNull(value);
-        QuestWire.RequireId(value.QuestId, p.Client);
-        QuestWire.WriteId(value.QuestId, in p);
-    }
-}
-
-/// <summary>Represents the outgoing <c>RejectQuest</c> message, sent to reject a quest.</summary>
-/// <param name="QuestId">The ID of the quest, written as a 32 bit integer.</param>
-public sealed record RejectQuest(Id QuestId) : IParserComposer<RejectQuest>
-{
-    /// <summary>Parses the message from a packet.</summary>
-    /// <param name="p">The packet reader.</param>
-    public static RejectQuest Parse(in PacketReader p) =>
-        FlashWire.Parse(in p, ParseFlash);
-
-    private static RejectQuest ParseFlash(in PacketReader p) => ParseRoot(in p);
-
-    private static RejectQuest ParseRoot(in PacketReader p)
-    {
-        Id quest_id = QuestWire.ReadId(in p, 0, nameof(QuestId));
-        QuestWire.RequireEmpty(in p, nameof(RejectQuest));
-        return new RejectQuest(quest_id);
-    }
-
-    /// <summary>Composes the message into a packet.</summary>
-    /// <param name="p">The packet writer.</param>
-    public void Compose(in PacketWriter p) =>
-        FlashWire.Compose(this, in p, ComposeFlash);
-
-    private static void ComposeFlash(RejectQuest value, in PacketWriter p) =>
-        ComposeRoot(value, in p);
-
-    private static void ComposeRoot(RejectQuest value, in PacketWriter p)
-    {
-        ArgumentNullException.ThrowIfNull(value);
-        QuestWire.RequireId(value.QuestId, p.Client);
-        QuestWire.WriteId(value.QuestId, in p);
-    }
-}
-
-/// <summary>Represents the outgoing <c>CancelQuest</c> message, sent to cancel the user's active quest.</summary>
-/// <remarks>The message carries no data.</remarks>
-public sealed record CancelQuest : IParserComposer<CancelQuest>
-{
-    /// <summary>Parses the message from a packet.</summary>
-    /// <param name="p">The packet reader.</param>
-    public static CancelQuest Parse(in PacketReader p) =>
-        FlashWire.Parse(in p, ParseFlash);
-
-    private static CancelQuest ParseFlash(in PacketReader p) => ParseRoot(in p);
-
-    private static CancelQuest ParseRoot(in PacketReader p)
-    {
-        QuestWire.RequireEmpty(in p, nameof(CancelQuest));
-        return new CancelQuest();
-    }
-
-    /// <summary>Composes the message into a packet.</summary>
-    /// <param name="p">The packet writer.</param>
-    public void Compose(in PacketWriter p) =>
-        FlashWire.Compose(this, in p, ComposeFlash);
-
-    private static void ComposeFlash(CancelQuest value, in PacketWriter p) =>
-        ComposeRoot(value);
-
-    private static void ComposeRoot(CancelQuest value)
-    {
-        ArgumentNullException.ThrowIfNull(value);
-    }
-}
-
-/// <summary>Represents the outgoing <c>GetQuests</c> message, sent to request the quests available to the user.</summary>
-/// <remarks>The message carries no data. The hotel answers with <see cref="Quests"/>.</remarks>
-public sealed record GetQuests : IParserComposer<GetQuests>
-{
-    /// <summary>Parses the message from a packet.</summary>
-    /// <param name="p">The packet reader.</param>
-    public static GetQuests Parse(in PacketReader p) =>
-        FlashWire.Parse(in p, ParseFlash);
-
-    private static GetQuests ParseFlash(in PacketReader p) => ParseRoot(in p);
-
-    private static GetQuests ParseRoot(in PacketReader p)
-    {
-        QuestWire.RequireEmpty(in p, nameof(GetQuests));
-        return new GetQuests();
-    }
-
-    /// <summary>Composes the message into a packet.</summary>
-    /// <param name="p">The packet writer.</param>
-    public void Compose(in PacketWriter p) =>
-        FlashWire.Compose(this, in p, ComposeFlash);
-
-    private static void ComposeFlash(GetQuests value, in PacketWriter p) =>
-        ComposeRoot(value);
-
-    private static void ComposeRoot(GetQuests value)
-    {
-        ArgumentNullException.ThrowIfNull(value);
-    }
-}
-
-/// <summary>Represents the outgoing <c>GetDailyQuest</c> message, sent to request a daily quest.</summary>
-/// <remarks>The hotel answers with <see cref="QuestDaily"/>.</remarks>
-/// <param name="IsEasy">Whether to request a quest from the easy pool instead of the hard pool.</param>
-/// <param name="Index">The index of the quest within the selected pool.</param>
-public sealed record GetDailyQuest(
-    bool IsEasy,
-    int Index) : IParserComposer<GetDailyQuest>
-{
-    /// <summary>Parses the message from a packet.</summary>
-    /// <param name="p">The packet reader.</param>
-    public static GetDailyQuest Parse(in PacketReader p) =>
-        FlashWire.Parse(in p, ParseFlash);
-
-    private static GetDailyQuest ParseFlash(in PacketReader p) => ParseRoot(in p);
-
-    private static GetDailyQuest ParseRoot(in PacketReader p)
-    {
-        QuestWire.RequireRemaining(
-            in p,
-            sizeof(byte) + sizeof(int),
-            0,
-            nameof(GetDailyQuest));
-        var value = new GetDailyQuest(p.ReadBool(), p.ReadInt());
-        QuestWire.RequireEmpty(in p, nameof(GetDailyQuest));
-        return value;
-    }
-
-    /// <summary>Composes the message into a packet.</summary>
-    /// <param name="p">The packet writer.</param>
-    public void Compose(in PacketWriter p) =>
-        FlashWire.Compose(this, in p, ComposeFlash);
-
-    private static void ComposeFlash(GetDailyQuest value, in PacketWriter p) =>
-        ComposeRoot(value, in p);
-
-    private static void ComposeRoot(GetDailyQuest value, in PacketWriter p)
-    {
-        ArgumentNullException.ThrowIfNull(value);
-        p.WriteBool(value.IsEasy);
-        p.WriteInt(value.Index);
-    }
-}
-
-/// <summary>Represents the outgoing <c>GetSeasonalQuestsOnly</c> message, sent to request the seasonal quests.</summary>
-/// <remarks>The message carries no data. The hotel answers with <see cref="QuestsSeasonal"/>.</remarks>
-public sealed record GetSeasonalQuests : IParserComposer<GetSeasonalQuests>
-{
-    /// <summary>Parses the message from a packet.</summary>
-    /// <param name="p">The packet reader.</param>
-    public static GetSeasonalQuests Parse(in PacketReader p) =>
-        FlashWire.Parse(in p, ParseFlash);
-
-    private static GetSeasonalQuests ParseFlash(in PacketReader p) => ParseRoot(in p);
-
-    private static GetSeasonalQuests ParseRoot(in PacketReader p)
-    {
-        QuestWire.RequireEmpty(in p, nameof(GetSeasonalQuests));
-        return new GetSeasonalQuests();
-    }
-
-    /// <summary>Composes the message into a packet.</summary>
-    /// <param name="p">The packet writer.</param>
-    public void Compose(in PacketWriter p) =>
-        FlashWire.Compose(this, in p, ComposeFlash);
-
-    private static void ComposeFlash(GetSeasonalQuests value, in PacketWriter p) =>
-        ComposeRoot(value);
-
-    private static void ComposeRoot(GetSeasonalQuests value)
-    {
-        ArgumentNullException.ThrowIfNull(value);
-    }
-}
-
-/// <summary>Represents the outgoing <c>OpenQuestTracker</c> message, sent to tell the hotel the quest tracker was opened.</summary>
-/// <remarks>The message carries no data.</remarks>
-public sealed record OpenQuestTracker : IParserComposer<OpenQuestTracker>
-{
-    /// <summary>Parses the message from a packet.</summary>
-    /// <param name="p">The packet reader.</param>
-    public static OpenQuestTracker Parse(in PacketReader p) =>
-        FlashWire.Parse(in p, ParseFlash);
-
-    private static OpenQuestTracker ParseFlash(in PacketReader p) => ParseRoot(in p);
-
-    private static OpenQuestTracker ParseRoot(in PacketReader p)
-    {
-        QuestWire.RequireEmpty(in p, nameof(OpenQuestTracker));
-        return new OpenQuestTracker();
-    }
-
-    /// <summary>Composes the message into a packet.</summary>
-    /// <param name="p">The packet writer.</param>
-    public void Compose(in PacketWriter p) =>
-        FlashWire.Compose(this, in p, ComposeFlash);
-
-    private static void ComposeFlash(OpenQuestTracker value, in PacketWriter p) =>
-        ComposeRoot(value);
-
-    private static void ComposeRoot(OpenQuestTracker value)
-    {
-        ArgumentNullException.ThrowIfNull(value);
-    }
-}
-
-/// <summary>Represents the outgoing <c>FriendRequestQuestComplete</c> message, sent to report progress on a friend request quest step.</summary>
-/// <remarks>The message carries no data.</remarks>
-public sealed record FriendRequestQuestComplete : IParserComposer<FriendRequestQuestComplete>
-{
-    /// <summary>Parses the message from a packet.</summary>
-    /// <param name="p">The packet reader.</param>
-    public static FriendRequestQuestComplete Parse(in PacketReader p) =>
-        FlashWire.Parse(in p, ParseFlash);
-
-    private static FriendRequestQuestComplete ParseFlash(in PacketReader p) =>
-        ParseRoot(in p);
-
-    private static FriendRequestQuestComplete ParseRoot(in PacketReader p)
-    {
-        QuestWire.RequireEmpty(in p, nameof(FriendRequestQuestComplete));
-        return new FriendRequestQuestComplete();
-    }
-
-    /// <summary>Composes the message into a packet.</summary>
-    /// <param name="p">The packet writer.</param>
-    public void Compose(in PacketWriter p) =>
-        FlashWire.Compose(this, in p, ComposeFlash);
-
-    private static void ComposeFlash(FriendRequestQuestComplete value, in PacketWriter p) =>
-        ComposeRoot(value);
-
-    private static void ComposeRoot(FriendRequestQuestComplete value)
-    {
-        ArgumentNullException.ThrowIfNull(value);
     }
 }
 

@@ -7,6 +7,7 @@ on:
   push:
     branches:
       - main
+      - QX-Dev
   workflow_dispatch:
 
 permissions:

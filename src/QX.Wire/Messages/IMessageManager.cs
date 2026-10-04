@@ -3,9 +3,6 @@ namespace Qx.Messages;
 /// <summary>Defines a mapping between message identifiers and the headers of the connected client build.</summary>
 public interface IMessageManager
 {
-    /// <summary>Gets the client type of the active session.</summary>
-    /// <remarks>The default implementation returns <see cref="ClientType.None"/>.</remarks>
-    ClientType ActiveClient => ClientType.None;
     /// <summary>Tries to get the header of a message.</summary>
     /// <param name="identifier">The message identifier.</param>
     /// <param name="header">The header, or the default header when it cannot be resolved.</param>

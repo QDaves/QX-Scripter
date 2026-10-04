@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Qx.Interception;
 using Qx.Messages;
 using Qx.Protocol;
@@ -100,7 +101,6 @@ internal sealed class RoomChatApplication : IApplicationFeature, IRoomChatOperat
             room_generation,
             cancellation_token);
         return new RoomChatSendResult(
-            session.Client,
             room_id,
             room_generation,
             true,
@@ -125,7 +125,6 @@ internal sealed class RoomChatApplication : IApplicationFeature, IRoomChatOperat
             room_generation,
             cancellation_token);
         return new RoomChatSendResult(
-            session.Client,
             room_id,
             room_generation,
             true,
@@ -154,7 +153,6 @@ internal sealed class RoomChatApplication : IApplicationFeature, IRoomChatOperat
             room_generation,
             cancellation_token);
         return new RoomChatWhisperResult(
-            session.Client,
             room_id,
             room_generation,
             true,
@@ -204,8 +202,8 @@ internal sealed class RoomChatApplication : IApplicationFeature, IRoomChatOperat
                 new(Minimum: 1, Maximum: 500))
         ],
         messages: ChatMessages(),
-        tool_hints: new(true, false, true, false),
-        invocation_scope: ApplicationInvocationScope.Persistent);
+        toolHints: new(true, false, true, false),
+        invocationScope: ApplicationInvocationScope.Persistent);
 
     private static ApplicationDescriptor TalkDescriptor() => SendDescriptor<RoomChatTalkRequest>(
         ApplicationMemberIds.RoomChatTalk,
@@ -249,10 +247,10 @@ internal sealed class RoomChatApplication : IApplicationFeature, IRoomChatOperat
         [
             new(
                 MessageKeys.Room.Chat.WhisperSend,
-                Direction.Out,
+                MessageDirection.Out,
                 ApplicationMessageRole.Send)
         ],
-        tool_hints: new(false, true, false, true));
+        toolHints: new(false, true, false, true));
 
     private static ApplicationDescriptor ReceivedDescriptor() => new(
         ApplicationMemberIds.RoomChatReceived,
@@ -264,7 +262,7 @@ internal sealed class RoomChatApplication : IApplicationFeature, IRoomChatOperat
         typeof(RoomChatEntry),
         messages: ChatMessages());
 
-    private static ApplicationDescriptor SendDescriptor<TRequest>(
+    private static ApplicationDescriptor SendDescriptor<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TRequest>(
         string id,
         string title,
         string description,
@@ -289,9 +287,9 @@ internal sealed class RoomChatApplication : IApplicationFeature, IRoomChatOperat
             [ApplicationStateKey.HotelConnected, ApplicationStateKey.RoomReady],
             messages:
             [
-                new(message_key, Direction.Out, ApplicationMessageRole.Send)
+                new(message_key, MessageDirection.Out, ApplicationMessageRole.Send)
             ],
-            tool_hints: new(false, true, false, true));
+            toolHints: new(false, true, false, true));
 
     private (Session Session, Id? RoomId, long RoomGeneration) CaptureRoom()
     {
@@ -309,8 +307,8 @@ internal sealed class RoomChatApplication : IApplicationFeature, IRoomChatOperat
 
     private static ApplicationMessageRequirement[] ChatMessages() =>
     [
-        new(MessageKeys.Room.Chat.Talk, Direction.In, ApplicationMessageRole.Observe),
-        new(MessageKeys.Room.Chat.Shout, Direction.In, ApplicationMessageRole.Observe),
-        new(MessageKeys.Room.Chat.Whisper, Direction.In, ApplicationMessageRole.Observe)
+        new(MessageKeys.Room.Chat.Talk, MessageDirection.In, ApplicationMessageRole.Observe),
+        new(MessageKeys.Room.Chat.Shout, MessageDirection.In, ApplicationMessageRole.Observe),
+        new(MessageKeys.Room.Chat.Whisper, MessageDirection.In, ApplicationMessageRole.Observe)
     ];
 }

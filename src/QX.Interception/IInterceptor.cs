@@ -13,8 +13,8 @@ public readonly record struct InterceptorSessionCatalog(
 /// <summary>Defines an interceptor that observes, modifies and blocks the packets of a hotel connection.</summary>
 public interface IInterceptor : IConnection
 {
-    /// <summary>Gets the message manager that maps message names to headers for the session.</summary>
-    MessageManager Messages { get; }
+    /// <summary>Gets the read-only message resolver that maps message names and keys to headers for the session.</summary>
+    IMessageResolver Messages { get; }
 
     /// <summary>Occurs when a packet is intercepted, before the registered callbacks run.</summary>
     event Action<Intercept>? Intercepted;
@@ -32,27 +32,27 @@ public interface IInterceptor : IConnection
 
     /// <summary>Sends a packet only when the session and its catalog binding are still the expected ones.</summary>
     /// <param name="packet">The packet to send.</param>
-    /// <param name="expected_session">The session the packet belongs to.</param>
-    /// <param name="expected_catalog">The catalog binding the packet was built against.</param>
+    /// <param name="expectedSession">The session the packet belongs to.</param>
+    /// <param name="expectedCatalog">The catalog binding the packet was built against.</param>
     /// <exception cref="InvalidOperationException">Thrown when the session or the catalog binding changed.</exception>
     void Send(
         IPacket packet,
-        Session? expected_session,
-        SessionCatalogBinding? expected_catalog) =>
-        Send(packet, expected_session, expected_catalog, null);
+        Session? expectedSession,
+        SessionCatalogBinding? expectedCatalog) =>
+        Send(packet, expectedSession, expectedCatalog, null);
 
     /// <summary>Sends a packet only when the session and its catalog binding are still the expected ones, after running a guard.</summary>
     /// <remarks>The guard runs after both checks and right before the packet is written; it can throw to cancel the send.</remarks>
     /// <param name="packet">The packet to send.</param>
-    /// <param name="expected_session">The session the packet belongs to.</param>
-    /// <param name="expected_catalog">The catalog binding the packet was built against.</param>
-    /// <param name="dispatch_guard">The action to run before the packet is written, or <see langword="null"/> for none.</param>
+    /// <param name="expectedSession">The session the packet belongs to.</param>
+    /// <param name="expectedCatalog">The catalog binding the packet was built against.</param>
+    /// <param name="dispatchGuard">The action to run before the packet is written, or <see langword="null"/> for none.</param>
     /// <exception cref="InvalidOperationException">Thrown when the session or the catalog binding changed.</exception>
     void Send(
         IPacket packet,
-        Session? expected_session,
-        SessionCatalogBinding? expected_catalog,
-        Action? dispatch_guard);
+        Session? expectedSession,
+        SessionCatalogBinding? expectedCatalog,
+        Action? dispatchGuard);
 
     /// <summary>Registers a callback for packets with a header.</summary>
     /// <param name="header">The header to intercept.</param>

@@ -82,10 +82,6 @@ public sealed record WalletPointPage(
 /// Returned by <see cref="ApplicationMemberIds.WalletState"/> and <see cref="ApplicationMemberIds.WalletRefresh"/>.
 /// </remarks>
 /// <param name="Connected">Whether the state belongs to the active hotel session.</param>
-/// <param name="Client">
-/// The client type of the hotel session, or <see langword="null"/> when <paramref name="Connected"/> is
-/// <see langword="false"/>.
-/// </param>
 /// <param name="SessionGeneration">The state generation of the hotel session the state belongs to.</param>
 /// <param name="Revision">The wallet state revision, increased by every committed wallet change and reset.</param>
 /// <param name="CreditsSnapshotRevision">
@@ -97,7 +93,6 @@ public sealed record WalletPointPage(
 /// <param name="ActivityPoints">The requested page of activity point balances.</param>
 public sealed record WalletStateView(
     bool Connected,
-    ClientType? Client,
     long SessionGeneration,
     long Revision,
     long CreditsSnapshotRevision,
@@ -129,7 +124,7 @@ public enum WalletChangeKind
 /// </remarks>
 /// <param name="Kind">The kind of change.</param>
 /// <param name="ChangedAtUtc">The time the change was published.</param>
-/// <param name="Client">The client type of the hotel session, or <see langword="null"/> when no session is active.</param>
+/// <param name="Connected">Whether a hotel session is active.</param>
 /// <param name="SessionGeneration">The state generation of the hotel session.</param>
 /// <param name="Revision">The wallet state revision after the change.</param>
 /// <param name="CreditsSnapshotRevision">The credits revision after the change.</param>
@@ -153,7 +148,7 @@ public enum WalletChangeKind
 public sealed record WalletChanged(
     WalletChangeKind Kind,
     DateTimeOffset ChangedAtUtc,
-    ClientType? Client,
+    bool Connected,
     long SessionGeneration,
     long Revision,
     long CreditsSnapshotRevision,
@@ -188,8 +183,8 @@ public static class WalletApplicationPages
     /// Reads the wallet state with every activity point balance.
     /// </summary>
     /// <param name="application">The application runtime to call.</param>
-    /// <param name="point_type">The activity point type to return, or <see langword="null"/> to return every type.</param>
-    /// <param name="cancellation_token">The token that cancels the read.</param>
+    /// <param name="pointType">The activity point type to return, or <see langword="null"/> to return every type.</param>
+    /// <param name="cancellationToken">The token that cancels the read.</param>
     /// <returns>The wallet state whose activity point page holds every matching balance.</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="application"/> is <see langword="null"/>.</exception>
     /// <exception cref="InvalidOperationException">
@@ -200,9 +195,9 @@ public static class WalletApplicationPages
     /// </remarks>
     public static WalletStateView Read(
         IApplicationRuntime application,
-        int? point_type = null,
-        CancellationToken cancellation_token = default) =>
-        ReadAsync(application, point_type, cancellation_token)
+        int? pointType = null,
+        CancellationToken cancellationToken = default) =>
+        ReadAsync(application, pointType, cancellationToken)
             .AsTask()
             .GetAwaiter()
             .GetResult();
@@ -211,8 +206,8 @@ public static class WalletApplicationPages
     /// Reads the wallet state with every activity point balance.
     /// </summary>
     /// <param name="application">The application runtime to call.</param>
-    /// <param name="point_type">The activity point type to return, or <see langword="null"/> to return every type.</param>
-    /// <param name="cancellation_token">The token that cancels the read.</param>
+    /// <param name="pointType">The activity point type to return, or <see langword="null"/> to return every type.</param>
+    /// <param name="cancellationToken">The token that cancels the read.</param>
     /// <returns>The wallet state whose activity point page holds every matching balance.</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="application"/> is <see langword="null"/>.</exception>
     /// <exception cref="InvalidOperationException">
@@ -220,21 +215,21 @@ public static class WalletApplicationPages
     /// </exception>
     public static async ValueTask<WalletStateView> ReadAsync(
         IApplicationRuntime application,
-        int? point_type = null,
-        CancellationToken cancellation_token = default)
+        int? pointType = null,
+        CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(application);
         WalletStateView first = await application
             .InvokeAsync<WalletStateRequest, WalletStateView>(
                 ApplicationMemberIds.WalletState,
-                new WalletStateRequest(PointLimit: page_limit, PointType: point_type),
-                cancellation_token)
+                new WalletStateRequest(PointLimit: page_limit, PointType: pointType),
+                cancellationToken)
             .ConfigureAwait(false);
         return await CompleteAsync(
             application,
             first,
-            point_type,
-            cancellation_token).ConfigureAwait(false);
+            pointType,
+            cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -242,8 +237,8 @@ public static class WalletApplicationPages
     /// </summary>
     /// <param name="application">The application runtime to call.</param>
     /// <param name="first">The wallet state read with a point offset of 0.</param>
-    /// <param name="point_type">The activity point type <paramref name="first"/> was read with, or <see langword="null"/> for every type.</param>
-    /// <param name="cancellation_token">The token that cancels the read.</param>
+    /// <param name="pointType">The activity point type <paramref name="first"/> was read with, or <see langword="null"/> for every type.</param>
+    /// <param name="cancellationToken">The token that cancels the read.</param>
     /// <returns>The wallet state whose activity point page holds every matching balance.</returns>
     /// <exception cref="ArgumentNullException">
     /// Thrown when <paramref name="application"/> or <paramref name="first"/> is <see langword="null"/>.
@@ -257,9 +252,9 @@ public static class WalletApplicationPages
     public static WalletStateView Complete(
         IApplicationRuntime application,
         WalletStateView first,
-        int? point_type = null,
-        CancellationToken cancellation_token = default) =>
-        CompleteAsync(application, first, point_type, cancellation_token)
+        int? pointType = null,
+        CancellationToken cancellationToken = default) =>
+        CompleteAsync(application, first, pointType, cancellationToken)
             .AsTask()
             .GetAwaiter()
             .GetResult();
@@ -269,8 +264,8 @@ public static class WalletApplicationPages
     /// </summary>
     /// <param name="application">The application runtime to call.</param>
     /// <param name="first">The wallet state read with a point offset of 0.</param>
-    /// <param name="point_type">The activity point type <paramref name="first"/> was read with, or <see langword="null"/> for every type.</param>
-    /// <param name="cancellation_token">The token that cancels the read.</param>
+    /// <param name="pointType">The activity point type <paramref name="first"/> was read with, or <see langword="null"/> for every type.</param>
+    /// <param name="cancellationToken">The token that cancels the read.</param>
     /// <returns>The wallet state whose activity point page holds every matching balance.</returns>
     /// <exception cref="ArgumentNullException">
     /// Thrown when <paramref name="application"/> or <paramref name="first"/> is <see langword="null"/>.
@@ -281,13 +276,13 @@ public static class WalletApplicationPages
     public static async ValueTask<WalletStateView> CompleteAsync(
         IApplicationRuntime application,
         WalletStateView first,
-        int? point_type = null,
-        CancellationToken cancellation_token = default)
+        int? pointType = null,
+        CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(application);
         ArgumentNullException.ThrowIfNull(first);
-        cancellation_token.ThrowIfCancellationRequested();
-        ValidateFirst(first, point_type);
+        cancellationToken.ThrowIfCancellationRequested();
+        ValidateFirst(first, pointType);
         var points = new List<WalletPointBalance>(first.ActivityPoints.TotalPoints);
         points.AddRange(first.ActivityPoints.Points);
         int? next_offset = first.ActivityPoints.NextOffset;
@@ -300,16 +295,16 @@ public static class WalletApplicationPages
                         offset,
                         page_limit,
                         first.ActivityPoints.SnapshotRevision,
-                        point_type),
-                    cancellation_token)
+                        pointType),
+                    cancellationToken)
                 .ConfigureAwait(false);
-            ValidatePage(first, page, offset, point_type);
+            ValidatePage(first, page, offset, pointType);
             points.AddRange(page.ActivityPoints.Points);
             next_offset = page.ActivityPoints.NextOffset;
         }
         if (points.Count != first.ActivityPoints.TotalPoints)
             throw new InvalidOperationException("The wallet returned an incomplete activity-point snapshot.");
-        ValidateBalances(points, point_type);
+        ValidateBalances(points, pointType);
         return first with
         {
             ActivityPoints = first.ActivityPoints with
@@ -357,7 +352,6 @@ public static class WalletApplicationPages
         int consumed = checked(offset + current.Points.Count);
         int? expected_next = consumed < current.TotalPoints ? consumed : null;
         if (page.Connected != first.Connected ||
-            page.Client != first.Client ||
             page.SessionGeneration != first.SessionGeneration ||
             page.Revision != first.Revision ||
             page.CreditsSnapshotRevision != first.CreditsSnapshotRevision ||
@@ -381,8 +375,7 @@ public static class WalletApplicationPages
     {
         ArgumentNullException.ThrowIfNull(view.ActivityPoints);
         ArgumentNullException.ThrowIfNull(view.ActivityPoints.Points);
-        if (view.Connected != (view.Client is not null) ||
-            view.CreditsLoaded != (view.Credits is not null))
+        if (view.CreditsLoaded != (view.Credits is not null))
         {
             throw new InvalidOperationException("The wallet returned an inconsistent state envelope.");
         }

@@ -112,7 +112,7 @@ public sealed class ShellCloseCoordinator
             Step("dismiss dialogs", _dialogs.DismissAll);
             await StepAsync("drafts", () => reason is CloseReason.User or CloseReason.QuitRequested
                 ? _workspace.ClearDraftsAsync(CancellationToken.None)
-                : _workspace.SaveDraftsAsync(include_modified_files: true, CancellationToken.None));
+                : _workspace.SaveDraftsAsync(includeModifiedFiles: true, CancellationToken.None));
             Step("seal drafts", _workspace.SealDrafts);
             Step("stop mcp", _runtime.Mcp.Stop);
             Step("release panic key", _panic.Dispose);
@@ -140,7 +140,7 @@ public sealed class ShellCloseCoordinator
         CanCloseWindowNow = true;
         Step("persist", Persist);
         Step("stop autosave", _workspace.StopAutosave);
-        Step("save drafts", () => _workspace.SaveDraftsNow(include_modified_files: true, DraftSaveBudget));
+        Step("save drafts", () => _workspace.SaveDraftsNow(includeModifiedFiles: true, DraftSaveBudget));
         Step("seal drafts", _workspace.SealDrafts);
         Step("flush settings", () => _settings.FlushNow(SettingsFlushNowBudget));
         Step("flush library", () => _library.FlushNow(StoreFlushNowBudget));

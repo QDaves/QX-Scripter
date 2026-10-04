@@ -19,7 +19,7 @@ public sealed class DesktopRuntime : IAsyncDisposable
     readonly RuntimeHost _host;
     int _disposed;
 
-    public DesktopRuntime(LaunchOptions launch, IAppPaths paths, RuntimeProfile profile, int? mcp_port, DeferredEditorBridge editor)
+    public DesktopRuntime(LaunchOptions launch, IAppPaths paths, RuntimeProfile profile, int? mcpPort, DeferredEditorBridge editor)
     {
         ArgumentNullException.ThrowIfNull(launch);
         ArgumentNullException.ThrowIfNull(paths);
@@ -38,9 +38,9 @@ public sealed class DesktopRuntime : IAsyncDisposable
             EnableFallbackCatalogs = live,
             EnableClientMonitoring = live,
             McpConfiguration = live ? McpConfig.Load(paths.McpConfigFile) : McpConfig.CreateDefault(),
-            Keyboard = live ? null : Keyboard.Unsupported("The keyboard is only read in a live session.")
+            Keyboard = live ? null : KeyboardReader.Unsupported("The keyboard is only read in a live session.")
         };
-        if (mcp_port is { } port)
+        if (mcpPort is { } port)
             options = options with { McpPort = port };
         _host = new RuntimeHost(options, editor);
         _host.Rules.AntiIdleSeconds = SessionRules.DefaultAntiIdleSeconds;
@@ -56,7 +56,7 @@ public sealed class DesktopRuntime : IAsyncDisposable
 
     public SessionRules Rules => _host.Rules;
 
-    public Keyboard Keyboard => _host.Keyboard;
+    public KeyboardReader Keyboard => _host.Keyboard;
 
     public ScriptExecutionService Scripts => _host.ScriptExecution;
 
@@ -70,8 +70,8 @@ public sealed class DesktopRuntime : IAsyncDisposable
 
     public Task TransportTask => _host.TransportTask;
 
-    public Task StartAsync(CancellationToken cancellation_token) =>
-        Task.Run(() => _host.StartAsync(cancellation_token), cancellation_token);
+    public Task StartAsync(CancellationToken cancellationToken) =>
+        Task.Run(() => _host.StartAsync(cancellationToken), cancellationToken);
 
     public async ValueTask DisposeAsync()
     {

@@ -146,7 +146,7 @@ public sealed partial class WardrobeViewModel : PageViewModel
         ImportReason = import.Reason;
     }
 
-    protected override Task OnActivatedAsync(CancellationToken cancellation_token)
+    protected override Task OnActivatedAsync(CancellationToken cancellationToken)
     {
         RefreshGates();
         Rebuild();
@@ -276,7 +276,7 @@ public sealed partial class WardrobeViewModel : PageViewModel
             WardrobeText.DeleteMessage(picked.Length, picked[0].Title),
             "Delete",
             DialogTone.Destructive,
-            cancellation_token: cancellation_token);
+            cancellationToken: cancellation_token);
         if (!confirmed || IsDisposed)
             return;
         int removed = _outfits.RemoveRange(picked.Select(tile => tile.Outfit));

@@ -411,11 +411,11 @@ public sealed class Avm2CallTargetResolver
     int constructor_private_write_suppression;
 
     public Avm2CallTargetResolver(
-        IEnumerable<ABCFile> abc_files,
-        bool harman_method_aliases = false)
+        IEnumerable<ABCFile> abcFiles,
+        bool harmanMethodAliases = false)
         : this(
-            CreateDeclaringScopes(abc_files),
-            harman_method_aliases)
+            CreateDeclaringScopes(abcFiles),
+            harmanMethodAliases)
     {
     }
 
@@ -1064,16 +1064,16 @@ public sealed class Avm2CallTargetResolver
     }
 
     public Avm2ResolvedCall Resolve(
-        Avm2MethodBinding caller_binding,
+        Avm2MethodBinding callerBinding,
         IReadOnlyList<ASInstruction> code,
         Avm2DataFlowAnalysis flow,
         Avm2DataFlowOperation operation)
     {
-        ArgumentNullException.ThrowIfNull(caller_binding);
-        ASMethod caller = caller_binding.Method ??
+        ArgumentNullException.ThrowIfNull(callerBinding);
+        ASMethod caller = callerBinding.Method ??
             throw new ArgumentException(
                 "Caller binding does not resolve to a method.",
-                nameof(caller_binding));
+                nameof(callerBinding));
         ASMethodBody body = caller.Body ??
             throw new InvalidOperationException(
                 "Call target resolution requires a method body.");
@@ -1085,7 +1085,7 @@ public sealed class Avm2CallTargetResolver
                 : Avm2MethodAnalyzer.Analyze(body);
         return Resolve(
             caller,
-            caller_binding,
+            callerBinding,
             code,
             analysis,
             flow,
@@ -1103,20 +1103,20 @@ public sealed class Avm2CallTargetResolver
     }
 
     public Avm2ResolvedCall Resolve(
-        Avm2MethodBinding caller_binding,
+        Avm2MethodBinding callerBinding,
         IReadOnlyList<ASInstruction> code,
         Avm2MethodAnalysis analysis,
         Avm2DataFlowAnalysis flow,
         Avm2DataFlowOperation operation)
     {
-        ArgumentNullException.ThrowIfNull(caller_binding);
-        ASMethod caller = caller_binding.Method ??
+        ArgumentNullException.ThrowIfNull(callerBinding);
+        ASMethod caller = callerBinding.Method ??
             throw new ArgumentException(
                 "Caller binding does not resolve to a method.",
-                nameof(caller_binding));
+                nameof(callerBinding));
         return Resolve(
             caller,
-            caller_binding,
+            callerBinding,
             code,
             analysis,
             flow,

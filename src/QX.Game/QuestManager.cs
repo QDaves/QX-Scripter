@@ -2,8 +2,8 @@
 using Qx.Game.Application;
 using Qx.Game.Protocol;
 using Qx.Interception;
+using Qx.Model;
 using Qx.Model.Messages.Incoming;
-using Qx.Model.Quests;
 
 namespace Qx.Game;
 
@@ -184,26 +184,26 @@ public sealed class QuestManager : GameStateManager
     public void RequestSeasonal() => Operations().RequestSeasonal();
 
     /// <summary>Requests a daily quest from the server.</summary>
-    /// <param name="is_easy">Whether to request an easy daily quest rather than a hard one.</param>
+    /// <param name="isEasy">Whether to request an easy daily quest rather than a hard one.</param>
     /// <param name="index">The index of the daily quest.</param>
     /// <exception cref="InvalidOperationException">Thrown when the quest operations are not bound yet.</exception>
-    public void RequestDaily(bool is_easy, int index) =>
-        Operations().RequestDaily(is_easy, index);
+    public void RequestDaily(bool isEasy, int index) =>
+        Operations().RequestDaily(isEasy, index);
 
     /// <summary>Sends a request to accept a quest.</summary>
-    /// <param name="quest_id">The id of the quest.</param>
+    /// <param name="questId">The id of the quest.</param>
     /// <exception cref="InvalidOperationException">Thrown when the quest operations are not bound yet.</exception>
-    public void Accept(Id quest_id) => Operations().Accept(quest_id);
+    public void Accept(Id questId) => Operations().Accept(questId);
 
     /// <summary>Sends a request to activate a quest.</summary>
-    /// <param name="quest_id">The id of the quest.</param>
+    /// <param name="questId">The id of the quest.</param>
     /// <exception cref="InvalidOperationException">Thrown when the quest operations are not bound yet.</exception>
-    public void Activate(Id quest_id) => Operations().Activate(quest_id);
+    public void Activate(Id questId) => Operations().Activate(questId);
 
     /// <summary>Sends a request to reject a quest.</summary>
-    /// <param name="quest_id">The id of the quest.</param>
+    /// <param name="questId">The id of the quest.</param>
     /// <exception cref="InvalidOperationException">Thrown when the quest operations are not bound yet.</exception>
-    public void Reject(Id quest_id) => Operations().Reject(quest_id);
+    public void Reject(Id questId) => Operations().Reject(questId);
 
     /// <summary>Sends a request to cancel the current quest.</summary>
     /// <exception cref="InvalidOperationException">Thrown when the quest operations are not bound yet.</exception>

@@ -18,10 +18,10 @@ internal static class DailyTaskApplicationDescriptors
         typeof(DailyTaskStateRequest),
         typeof(DailyTaskStateView),
         [SnapshotRevisionParameter(false)],
-        state_effects: [ReadEffect()],
+        stateEffects: [ReadEffect()],
         messages: ObservedMessages(),
-        tool_hints: QueryHints(),
-        invocation_scope: ApplicationInvocationScope.Persistent);
+        toolHints: QueryHints(),
+        invocationScope: ApplicationInvocationScope.Persistent);
 
     public static ApplicationDescriptor Entries { get; } = new(
         ApplicationMemberIds.DailyTasksEntriesList,
@@ -32,15 +32,15 @@ internal static class DailyTaskApplicationDescriptors
         typeof(DailyTaskPageRequest),
         typeof(DailyTaskPage),
         PageParameters(),
-        state_effects: [ReadEffect()],
+        stateEffects: [ReadEffect()],
         messages: ObservedMessages(),
-        tool_hints: QueryHints(),
-        invocation_scope: ApplicationInvocationScope.Persistent);
+        toolHints: QueryHints(),
+        invocationScope: ApplicationInvocationScope.Persistent);
 
     public static ApplicationDescriptor Refresh { get; } = new(
         ApplicationMemberIds.DailyTasksRefresh,
         "Refresh daily tasks",
-        "Dispatches one trusted list request after earlier passive requests drain and returns the first full snapshot committed after dispatch. The response carries no request identifier.",
+        "Reloads the daily task list from the server. Dispatches one trusted list request after earlier passive requests drain and returns the first full snapshot committed after dispatch. The response carries no request identifier.",
         ApplicationMemberKind.Operation,
         ApplicationExposure.All,
         typeof(DailyTaskRefreshRequest),
@@ -52,7 +52,7 @@ internal static class DailyTaskApplicationDescriptors
             Send(MessageKeys.DailyTasks.Request),
             Observe(MessageKeys.DailyTasks.Snapshot)
         ],
-        new ApplicationToolHints(false, false, true, true));
+        new ApplicationToolHints(true, false, true, true));
 
     public static ApplicationDescriptor Claim { get; } = new(
         ApplicationMemberIds.DailyTasksClaim,
@@ -76,9 +76,9 @@ internal static class DailyTaskApplicationDescriptors
         event_exposure,
         null,
         typeof(DailyTaskChanged),
-        state_effects: [ChangeEffect()],
+        stateEffects: [ChangeEffect()],
         messages: ObservedMessages(),
-        invocation_scope: ApplicationInvocationScope.Persistent);
+        invocationScope: ApplicationInvocationScope.Persistent);
 
     private static IReadOnlyList<ApplicationParameterDescriptor> PageParameters() =>
     [
@@ -154,10 +154,10 @@ internal static class DailyTaskApplicationDescriptors
     ];
 
     private static ApplicationMessageRequirement Send(MessageKey key) =>
-        new(key, Direction.Out, ApplicationMessageRole.Send);
+        new(key, MessageDirection.Out, ApplicationMessageRole.Send);
 
     private static ApplicationMessageRequirement Observe(MessageKey key) =>
-        new(key, Direction.In, ApplicationMessageRole.Observe);
+        new(key, MessageDirection.In, ApplicationMessageRole.Observe);
 
     private static ApplicationStateEffect ReadEffect() =>
         new(ApplicationStateKey.DailyTasks, ApplicationStateEffectKind.Reads);

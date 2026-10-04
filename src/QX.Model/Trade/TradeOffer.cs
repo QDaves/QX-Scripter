@@ -29,7 +29,6 @@ public sealed class TradeOffer : IParserComposer<TradeOffer>
 
     /// <summary>Reads a trade offer from a packet.</summary>
     /// <param name="p">The packet to read from.</param>
-    /// <exception cref="UnsupportedClientException">Thrown when the packet is not from the Flash client.</exception>
     /// <exception cref="InvalidDataException">
     /// Thrown when the user identifier is not positive, a count is invalid or two items share an
     /// inventory item identifier.
@@ -65,7 +64,6 @@ public sealed class TradeOffer : IParserComposer<TradeOffer>
 
     /// <summary>Writes the trade offer to a packet.</summary>
     /// <param name="p">The packet to write to.</param>
-    /// <exception cref="UnsupportedClientException">Thrown when the packet is not for the Flash client.</exception>
     /// <exception cref="InvalidDataException">
     /// Thrown when the user identifier is not positive, a count is negative, two items share an
     /// inventory item identifier or an item is invalid.

@@ -1,7 +1,5 @@
 namespace Qx.Hosting;
 
-using Qx;
-
 public enum RuntimeServicePhase
 {
     Disabled,
@@ -26,6 +24,5 @@ public sealed record RuntimeHostStatus(
     RuntimeServiceStatus Mcp);
 
 public sealed record RuntimeHeaderCatalogFailure(
-    ClientType Client,
     string Path,
     Exception Error);

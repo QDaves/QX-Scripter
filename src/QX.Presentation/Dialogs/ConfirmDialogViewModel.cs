@@ -3,7 +3,7 @@ using Qx.Presentation.Visuals;
 
 namespace Qx.Presentation.Dialogs;
 
-public sealed partial class ConfirmDialogViewModel(string title, string message, string accept_text, DialogTone tone = DialogTone.Neutral, string? caption = null)
+public sealed partial class ConfirmDialogViewModel(string title, string message, string acceptText, DialogTone tone = DialogTone.Neutral, string? caption = null)
     : DialogViewModel<bool>
 {
     public override string Title => title;
@@ -18,7 +18,7 @@ public sealed partial class ConfirmDialogViewModel(string title, string message,
 
     public string Message => message;
 
-    public string AcceptText => accept_text;
+    public string AcceptText => acceptText;
 
     protected override bool DismissResult => false;
 

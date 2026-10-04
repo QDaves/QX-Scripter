@@ -4,7 +4,7 @@ using System.Text.Json;
 using System.Threading.Channels;
 using Qx.Game.Application;
 using Qx.Hosting;
-using Qx.Scripting;
+using Qx.Scripting.Hosting;
 
 namespace Qx.App;
 
@@ -348,7 +348,8 @@ internal sealed class ApplicationSession
                 diagnostics = diagnostics.Select(value => new
                 {
                     severity = value.Severity.ToString(),
-                    diagnostic = ScriptExecutionError.FromDiagnostic(value, script.FileName)
+                    diagnostic = ScriptExecutionError.FromDiagnostic(value, script.FileName),
+                    hint = ScriptEngine.UsingHint(value)
                 }).ToArray()
             };
         }
@@ -366,7 +367,7 @@ internal sealed class ApplicationSession
         ApplicationDescriptor descriptor = ApplicationCommands.InvokableDescriptor(
             runtime.Application,
             request.Member!);
-        object arguments = ApplicationJson.Deserialize(request.Arguments!.Value, descriptor.RequestType!);
+        object arguments = ApplicationJson.Deserialize(request.Arguments!.Value, descriptor);
         if (ApplicationCommands.RequiresConnection(descriptor))
         {
             await ApplicationCommands

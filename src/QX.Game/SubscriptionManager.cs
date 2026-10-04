@@ -52,8 +52,7 @@ internal sealed record SubscriptionStateUpdate(
 /// <remarks>
 /// <para>
 /// Tracks the subscription info per product, the club kickback info and the Builders Club furni
-/// count, membership status and last placement warning. The Builders Club membership status and
-/// placement warning are only received on the Flash client.
+/// count, membership status and last placement warning.
 /// </para>
 /// <para>
 /// The state is cleared when the hotel connection closes and when a new hotel session connects.
@@ -101,11 +100,9 @@ public sealed class SubscriptionManager : GameStateManager
     public BuildersClubFurniCount? BuildersClubFurniCount =>
         State.BuildersClubFurniCount;
     /// <summary>Gets the last Builders Club membership status the server sent, or <see langword="null"/> if none was received.</summary>
-    /// <remarks>Only received on the Flash client.</remarks>
     public BuildersClubMembershipStatus? BuildersClubStatus =>
         State.BuildersClubStatus;
     /// <summary>Gets the last Builders Club placement warning the server sent, or <see langword="null"/> if none was received.</summary>
-    /// <remarks>Only received on the Flash client.</remarks>
     public BuildersClubPlacementWarning? LastPlacementWarning =>
         State.LastPlacementWarning;
 
@@ -128,13 +125,13 @@ public sealed class SubscriptionManager : GameStateManager
     internal event Action<SubscriptionStateUpdate>? StateChanged;
 
     /// <summary>Gets the last subscription info received for a product.</summary>
-    /// <param name="product_name">The product name, compared without regard to case.</param>
+    /// <param name="productName">The product name, compared without regard to case.</param>
     /// <returns>The subscription info, or <see langword="null"/> if none was received for the product.</returns>
-    /// <exception cref="ArgumentNullException">Thrown when <paramref name="product_name"/> is <see langword="null"/>.</exception>
-    public ScrSendUserInfo? FindUserInfo(string product_name)
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="productName"/> is <see langword="null"/>.</exception>
+    public ScrSendUserInfo? FindUserInfo(string productName)
     {
-        ArgumentNullException.ThrowIfNull(product_name);
-        return State.UserInfo.TryGetValue(product_name, out SubscriptionUserInfoState? entry)
+        ArgumentNullException.ThrowIfNull(productName);
+        return State.UserInfo.TryGetValue(productName, out SubscriptionUserInfoState? entry)
             ? entry.Value
             : null;
     }
@@ -151,23 +148,21 @@ public sealed class SubscriptionManager : GameStateManager
             MessageContracts.Subscriptions.BuildersClubFurniCount,
             ApplyBuildersClubFurniCount);
         OnIncoming(
-            ClientType.Flash,
             MessageContracts.Subscriptions.BuildersClubMembershipStatus,
             ApplyBuildersClubMembershipStatus);
         OnIncoming(
-            ClientType.Flash,
             MessageContracts.Subscriptions.BuildersClubPlacementWarning,
             ApplyBuildersClubPlacementWarning);
     }
 
     /// <summary>Requests the subscription info for a product from the server.</summary>
-    /// <param name="product_name">The product name.</param>
-    /// <exception cref="ArgumentNullException">Thrown when <paramref name="product_name"/> is <see langword="null"/>.</exception>
+    /// <param name="productName">The product name.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="productName"/> is <see langword="null"/>.</exception>
     /// <exception cref="InvalidOperationException">Thrown when the subscription operations are not bound yet.</exception>
-    public void RequestUserInfo(string product_name)
+    public void RequestUserInfo(string productName)
     {
-        ArgumentNullException.ThrowIfNull(product_name);
-        Operations().RequestUserInfo(product_name);
+        ArgumentNullException.ThrowIfNull(productName);
+        Operations().RequestUserInfo(productName);
     }
 
     /// <summary>Requests the club kickback info from the server.</summary>

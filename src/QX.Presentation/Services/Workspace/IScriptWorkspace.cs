@@ -30,7 +30,7 @@ public interface IScriptWorkspace : IWorkspaceSession
 
     ScriptDocument Add(string name, string code, string? path, bool modified);
 
-    Task<OpenResult> OpenAsync(string path, CancellationToken cancellation_token);
+    Task<OpenResult> OpenAsync(string path, CancellationToken cancellationToken);
 
     ScriptDocument? FindByPath(string path);
 
@@ -50,7 +50,7 @@ public interface IScriptWorkspace : IWorkspaceSession
 
     void RememberPanel(ScriptDocument document);
 
-    IReadOnlyList<Draft> CaptureDrafts(bool include_modified_files);
+    IReadOnlyList<Draft> CaptureDrafts(bool includeModifiedFiles);
 
-    Task RestoreAsync(CancellationToken cancellation_token);
+    Task RestoreAsync(CancellationToken cancellationToken);
 }

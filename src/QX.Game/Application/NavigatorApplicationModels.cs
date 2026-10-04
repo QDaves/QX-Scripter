@@ -213,13 +213,11 @@ public sealed record NavigatorHomeRoomSetInput(Id RoomId);
 /// <see cref="ApplicationMemberIds.NavigatorHomeRoomSet"/>. It confirms the request was sent, not that
 /// the hotel applied it.
 /// </remarks>
-/// <param name="Client">The client type of the hotel session the request was sent on.</param>
 /// <param name="DispatchedAtUtc">The time the request was sent.</param>
 /// <param name="RoomId">
 /// The id of the room the request named, or <see langword="null"/> for a room creation.
 /// </param>
 public sealed record NavigatorRoomOperationResult(
-    ClientType Client,
     DateTimeOffset DispatchedAtUtc,
     Id? RoomId = null);
 
@@ -233,7 +231,6 @@ public sealed record NavigatorRoomOperationResult(
 /// <see cref="ApplicationMemberIds.NavigatorCategoryExpand"/>. It confirms the request was sent, not
 /// that the hotel applied it.
 /// </remarks>
-/// <param name="Client">The client type of the hotel session the request was sent on.</param>
 /// <param name="DispatchedAtUtc">The time the request was sent.</param>
 /// <param name="SearchCode">
 /// The search or category code that was sent, or <see langword="null"/> when deleting a saved search.
@@ -243,7 +240,6 @@ public sealed record NavigatorRoomOperationResult(
 /// The id of the deleted saved search, or <see langword="null"/> for the other requests.
 /// </param>
 public sealed record NavigatorOperationResult(
-    ClientType Client,
     DateTimeOffset DispatchedAtUtc,
     string? SearchCode = null,
     string? Filter = null,

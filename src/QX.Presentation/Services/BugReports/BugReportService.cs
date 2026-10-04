@@ -1,11 +1,10 @@
-using Qx.Diagnostics;
 using Qx.Presentation.Platform;
 
 namespace Qx.Presentation.Services.BugReports;
 
 public interface IBugReportService
 {
-    Task<BugReportLogs> CollectAsync(CancellationToken cancellation_token);
+    Task<BugReportLogs> CollectAsync(CancellationToken cancellationToken);
 
     BugReportContext Context();
 
@@ -30,8 +29,8 @@ public sealed class BugReportService : IBugReportService
         _time = time ?? throw new ArgumentNullException(nameof(time));
     }
 
-    public Task<BugReportLogs> CollectAsync(CancellationToken cancellation_token) =>
-        Task.Run(() => BugReport.Collect(_paths.LogFile, _paths.CrashLogFile, _time.GetLocalNow().DateTime), cancellation_token);
+    public Task<BugReportLogs> CollectAsync(CancellationToken cancellationToken) =>
+        Task.Run(() => BugReport.Collect(_paths.LogFile, _paths.CrashLogFile, _time.GetLocalNow().DateTime), cancellationToken);
 
     public BugReportContext Context() => _context();
 

@@ -99,7 +99,6 @@ public static class QueryResults
             ResponseMatchException => "correlation_error",
             FragmentedLoadCorrelationException => "correlation_error",
             TimeoutException => "timeout",
-            UnsupportedClientException => "unsupported_client",
             NotSupportedException => "unsupported",
             KeyNotFoundException => "not_found",
             ArgumentException => "invalid_request",

@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Qx.Messages;
 using Qx.Model;
 using Qx.Protocol;
@@ -65,12 +66,12 @@ internal static class RoomReadsApplicationDescriptors
         [ApplicationStateKey.HotelConnected],
         messages:
         [
-            new(MessageKeys.Catalog.RoomAdInfoRequest, Direction.Out, ApplicationMessageRole.Send),
-            new(MessageKeys.Catalog.RoomAdInfo, Direction.In, ApplicationMessageRole.Observe)
+            new(MessageKeys.Catalog.RoomAdInfoRequest, MessageDirection.Out, ApplicationMessageRole.Send),
+            new(MessageKeys.Catalog.RoomAdInfo, MessageDirection.In, ApplicationMessageRole.Observe)
         ],
-        tool_hints: new(true, false, true, true));
+        toolHints: new(true, false, true, true));
 
-    private static ApplicationDescriptor Read<TRequest, TResult>(
+    private static ApplicationDescriptor Read<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TRequest, TResult>(
         string id,
         string title,
         string description,
@@ -111,8 +112,8 @@ internal static class RoomReadsApplicationDescriptors
             [ApplicationStateKey.HotelConnected],
             messages:
             [
-                new(request_key, Direction.Out, ApplicationMessageRole.Send),
-                new(snapshot_key, Direction.In, ApplicationMessageRole.Observe)
+                new(request_key, MessageDirection.Out, ApplicationMessageRole.Send),
+                new(snapshot_key, MessageDirection.In, ApplicationMessageRole.Observe)
             ],
-            tool_hints: new(true, false, true, true));
+            toolHints: new(true, false, true, true));
 }

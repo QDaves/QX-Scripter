@@ -136,11 +136,11 @@ public sealed class ShellWindow : IShellWindow, IDisposable
         RaiseVisibility();
     }
 
-    public void Shutdown(int exit_code)
+    public void Shutdown(int exitCode)
     {
         if (_lifetime is { } lifetime)
         {
-            lifetime.Shutdown(exit_code);
+            lifetime.Shutdown(exitCode);
             return;
         }
         _window?.Close();

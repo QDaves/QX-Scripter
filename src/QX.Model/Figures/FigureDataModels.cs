@@ -330,14 +330,14 @@ public sealed class FigureSetType
 
     /// <summary>Gets the sets the avatar editor offers for a gender and club level.</summary>
     /// <param name="gender">The gender the sets must be valid for.</param>
-    /// <param name="club_level">The club level. Sets that need a higher level are excluded.</param>
+    /// <param name="clubLevel">The club level. Sets that need a higher level are excluded.</param>
     /// <returns>The selectable sets, in figure data order.</returns>
     /// <remarks>
     /// Sellable sets are included; the client additionally requires them to be owned in the inventory.
     /// </remarks>
-    public IReadOnlyList<FigurePartSet> GetSelectableSets(FigureGender gender, int club_level) =>
+    public IReadOnlyList<FigurePartSet> GetSelectableSets(FigureGender gender, int clubLevel) =>
         Array.AsReadOnly(_sets
-            .Where(set => set.IsSelectable && set.IsValidForGender(gender) && set.ClubLevel <= club_level)
+            .Where(set => set.IsSelectable && set.IsValidForGender(gender) && set.ClubLevel <= clubLevel)
             .ToArray());
 }
 

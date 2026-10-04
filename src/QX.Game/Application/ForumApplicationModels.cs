@@ -1,4 +1,4 @@
-using Qx.Model.Forums;
+using Qx.Model;
 using Qx.Model.Messages.Incoming;
 using Qx.Model.Messages.Outgoing;
 
@@ -19,13 +19,11 @@ public sealed record ForumStateRequest(long? SnapshotRevision = null);
 /// session is active, in which case <paramref name="Connected"/> is <see langword="false"/>.
 /// </remarks>
 /// <param name="Connected">Whether the snapshot belongs to an active hotel session.</param>
-/// <param name="Client">The client type of the hotel session, or <see langword="null"/> when <paramref name="Connected"/> is <see langword="false"/>.</param>
 /// <param name="SessionGeneration">The generation of the hotel session the snapshot belongs to.</param>
 /// <param name="SnapshotRevision">The revision of the retained snapshot the view was read from.</param>
 /// <param name="Snapshot">The forum data received in the session.</param>
 public sealed record ForumStateView(
     bool Connected,
-    ClientType? Client,
     long SessionGeneration,
     long SnapshotRevision,
     ForumSnapshot Snapshot);
@@ -128,12 +126,10 @@ public sealed record ForumListRefreshRequest(
 
 /// <summary>Represents the result of a forum directory page refresh.</summary>
 /// <remarks>Returned by the <c>forums.list.refresh</c> operation.</remarks>
-/// <param name="Client">The client type of the hotel session.</param>
 /// <param name="SessionGeneration">The generation of the hotel session the refresh ran in.</param>
 /// <param name="ObservedAtUtc">The UTC time the response was received.</param>
 /// <param name="Page">The forum directory page the server returned.</param>
 public sealed record ForumListRefreshResult(
-    ClientType Client,
     long SessionGeneration,
     DateTimeOffset ObservedAtUtc,
     ForumsList Page);
@@ -157,12 +153,10 @@ public sealed record ForumThreadsRefreshRequest(
 
 /// <summary>Represents the result of a forum thread page refresh.</summary>
 /// <remarks>Returned by the <c>forums.threads.refresh</c> operation.</remarks>
-/// <param name="Client">The client type of the hotel session.</param>
 /// <param name="SessionGeneration">The generation of the hotel session the refresh ran in.</param>
 /// <param name="ObservedAtUtc">The UTC time the response was received.</param>
 /// <param name="Page">The thread page the server returned.</param>
 public sealed record ForumThreadsRefreshResult(
-    ClientType Client,
     long SessionGeneration,
     DateTimeOffset ObservedAtUtc,
     ForumThreads Page);
@@ -188,12 +182,10 @@ public sealed record ForumMessagesRefreshRequest(
 
 /// <summary>Represents the result of a forum message page refresh.</summary>
 /// <remarks>Returned by the <c>forums.messages.refresh</c> operation.</remarks>
-/// <param name="Client">The client type of the hotel session.</param>
 /// <param name="SessionGeneration">The generation of the hotel session the refresh ran in.</param>
 /// <param name="ObservedAtUtc">The UTC time the response was received.</param>
 /// <param name="Page">The message page the server returned.</param>
 public sealed record ForumMessagesRefreshResult(
-    ClientType Client,
     long SessionGeneration,
     DateTimeOffset ObservedAtUtc,
     ThreadMessages Page);
@@ -213,12 +205,10 @@ public sealed record ForumDetailsRefreshRequest(
 
 /// <summary>Represents the result of a forum details refresh.</summary>
 /// <remarks>Returned by the <c>forums.details.refresh</c> operation.</remarks>
-/// <param name="Client">The client type of the hotel session.</param>
 /// <param name="SessionGeneration">The generation of the hotel session the refresh ran in.</param>
 /// <param name="ObservedAtUtc">The UTC time the response was received.</param>
 /// <param name="Details">The forum details the server returned.</param>
 public sealed record ForumDetailsRefreshResult(
-    ClientType Client,
     long SessionGeneration,
     DateTimeOffset ObservedAtUtc,
     ForumDetails Details);
@@ -240,15 +230,13 @@ public sealed record ForumThreadRefreshRequest(
 
 /// <summary>Represents the result of a forum thread refresh.</summary>
 /// <remarks>Returned by the <c>forums.thread.refresh</c> operation.</remarks>
-/// <param name="Client">The client type of the hotel session.</param>
 /// <param name="SessionGeneration">The generation of the hotel session the refresh ran in.</param>
 /// <param name="ObservedAtUtc">The UTC time the response was received.</param>
 /// <param name="Thread">The forum thread the server returned.</param>
 public sealed record ForumThreadRefreshResult(
-    ClientType Client,
     long SessionGeneration,
     DateTimeOffset ObservedAtUtc,
-    Qx.Model.Forums.ForumThread Thread);
+    ForumThread Thread);
 
 /// <summary>Represents a request for the number of forums with unread messages.</summary>
 /// <remarks>
@@ -263,12 +251,10 @@ public sealed record ForumUnreadRefreshRequest(
 
 /// <summary>Represents the result of an unread forum count refresh.</summary>
 /// <remarks>Returned by the <c>forums.unread.refresh</c> operation.</remarks>
-/// <param name="Client">The client type of the hotel session.</param>
 /// <param name="SessionGeneration">The generation of the hotel session the refresh ran in.</param>
 /// <param name="ObservedAtUtc">The UTC time the response was received.</param>
 /// <param name="Count">The number of forums with unread messages.</param>
 public sealed record ForumUnreadRefreshResult(
-    ClientType Client,
     long SessionGeneration,
     DateTimeOffset ObservedAtUtc,
     int Count);
@@ -420,12 +406,10 @@ public sealed record ForumMessageReportRequest(
 /// Returned by the forum operations that send a message without waiting for an answer, such as
 /// <c>forums.post</c> and <c>forums.threads.request</c>.
 /// </remarks>
-/// <param name="Client">The client type of the hotel session.</param>
 /// <param name="SessionGeneration">The generation of the hotel session the message was sent in.</param>
 /// <param name="DispatchedAtUtc">The UTC time the message was sent.</param>
 /// <param name="MessagesDispatched">The number of messages sent.</param>
 public sealed record ForumDispatchResult(
-    ClientType Client,
     long SessionGeneration,
     DateTimeOffset DispatchedAtUtc,
     int MessagesDispatched);
@@ -436,11 +420,11 @@ public sealed record ForumDispatchResult(
 /// applied and when the forum data is cleared.
 /// </remarks>
 /// <param name="ChangedAtUtc">The UTC time the change was published.</param>
-/// <param name="Client">The client type of the active hotel session, or <see langword="null"/> when there is none.</param>
+/// <param name="Connected">Whether a hotel session is active.</param>
 /// <param name="SessionGeneration">The generation of the hotel session the forum data belongs to.</param>
 /// <param name="Snapshot">The forum data after the change.</param>
 public sealed record ForumChanged(
     DateTimeOffset ChangedAtUtc,
-    ClientType? Client,
+    bool Connected,
     long SessionGeneration,
     ForumSnapshot Snapshot);

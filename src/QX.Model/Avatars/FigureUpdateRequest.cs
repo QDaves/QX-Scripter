@@ -3,6 +3,7 @@ using Qx.Messages;
 namespace Qx.Model.Messages.Outgoing;
 
 /// <summary>Represents the request that changes the local user's figure.</summary>
+/// <remarks>Sent as the Flash <c>UpdateFigureData</c> message.</remarks>
 /// <param name="Gender">The figure gender code, for example <c>M</c> or <c>F</c>.</param>
 /// <param name="Figure">The new figure string.</param>
 public sealed record FigureUpdateRequest(string Gender, string Figure)
@@ -10,7 +11,6 @@ public sealed record FigureUpdateRequest(string Gender, string Figure)
 {
     /// <summary>Reads the request from a packet.</summary>
     /// <param name="p">The packet to read from.</param>
-    /// <exception cref="UnsupportedClientException">Thrown when the packet is not from the Flash client.</exception>
     public static FigureUpdateRequest Parse(in PacketReader p) =>
         FlashWire.Parse(in p, ParseFlash);
 
@@ -19,7 +19,6 @@ public sealed record FigureUpdateRequest(string Gender, string Figure)
 
     /// <summary>Writes the request to a packet.</summary>
     /// <param name="p">The packet to write to.</param>
-    /// <exception cref="UnsupportedClientException">Thrown when the packet is not for the Flash client.</exception>
     /// <exception cref="ArgumentNullException">Thrown when <see cref="Gender"/> or <see cref="Figure"/> is <see langword="null"/>.</exception>
     /// <exception cref="ArgumentException">Thrown when a string exceeds the protocol length limit.</exception>
     public void Compose(in PacketWriter p) =>

@@ -40,7 +40,7 @@ public partial class ScriptGlobals
     /// view code goes through <see cref="SearchRooms"/> or <see cref="SearchRoomQuery"/>, which
     /// match the answer back to the request they sent. This covers the rest of the navigator.
     /// </remarks>
-    public NavigatorState Navigator => Application.Invoke<NavigatorStateRequest, NavigatorState>(
+    public NavigatorState Navigator => _application.Invoke<NavigatorStateRequest, NavigatorState>(
         ApplicationMemberIds.NavigatorState,
         new NavigatorStateRequest(),
         Ct);
@@ -66,7 +66,7 @@ public partial class ScriptGlobals
         NavigatorState state = Navigator;
         if (!state.MetadataLoaded)
         {
-            state = await Application.InvokeAsync<NavigatorRefreshRequest, NavigatorState>(
+            state = await _application.InvokeAsync<NavigatorRefreshRequest, NavigatorState>(
                 ApplicationMemberIds.NavigatorMetadataRefresh,
                 new NavigatorRefreshRequest(timeoutMs),
                 Ct);
@@ -89,7 +89,7 @@ public partial class ScriptGlobals
         NavigatorState state = Navigator;
         if (!state.FlatCategoriesLoaded)
         {
-            state = await Application.InvokeAsync<NavigatorRefreshRequest, NavigatorState>(
+            state = await _application.InvokeAsync<NavigatorRefreshRequest, NavigatorState>(
                 ApplicationMemberIds.NavigatorFlatCategoriesRefresh,
                 new NavigatorRefreshRequest(timeoutMs),
                 Ct);
@@ -209,7 +209,7 @@ public partial class ScriptGlobals
             _ => throw new ArgumentOutOfRangeException(nameof(search))
         };
         NavigatorSearchSnapshot result =
-            await Application.InvokeAsync<NavigatorSearchRequest, NavigatorSearchSnapshot>(
+            await _application.InvokeAsync<NavigatorSearchRequest, NavigatorSearchSnapshot>(
                 member_id,
                 new NavigatorSearchRequest(timeoutMs),
                 Ct);
@@ -262,7 +262,7 @@ public partial class ScriptGlobals
     public async Task<RoomDataQuery> GetPopularRooms(string tag = "", int timeoutMs = 10000)
     {
         NavigatorSearchSnapshot result =
-            await Application.InvokeAsync<NavigatorPopularSearchInput, NavigatorSearchSnapshot>(
+            await _application.InvokeAsync<NavigatorPopularSearchInput, NavigatorSearchSnapshot>(
                 ApplicationMemberIds.NavigatorSearchPopular,
                 new NavigatorPopularSearchInput(tag, -1, timeoutMs),
                 Ct);
@@ -279,7 +279,7 @@ public partial class ScriptGlobals
     public async Task<RoomDataQuery> GetHighestScoringRooms(int timeoutMs = 10000)
     {
         NavigatorSearchSnapshot result =
-            await Application.InvokeAsync<NavigatorAdSearchInput, NavigatorSearchSnapshot>(
+            await _application.InvokeAsync<NavigatorAdSearchInput, NavigatorSearchSnapshot>(
                 ApplicationMemberIds.NavigatorSearchHighestScore,
                 new NavigatorAdSearchInput(-1, timeoutMs),
                 Ct);
@@ -296,7 +296,7 @@ public partial class ScriptGlobals
     public async Task<RoomDataQuery> GetGuildBaseRooms(int timeoutMs = 10000)
     {
         NavigatorSearchSnapshot result =
-            await Application.InvokeAsync<NavigatorAdSearchInput, NavigatorSearchSnapshot>(
+            await _application.InvokeAsync<NavigatorAdSearchInput, NavigatorSearchSnapshot>(
                 ApplicationMemberIds.NavigatorSearchGuildBases,
                 new NavigatorAdSearchInput(-1, timeoutMs),
                 Ct);
@@ -325,7 +325,7 @@ public partial class ScriptGlobals
     /// <exception cref="ArgumentException">Thrown when <paramref name="searchCode"/> is empty or white space.</exception>
     /// <exception cref="InvalidOperationException">Thrown when there is no active hotel session.</exception>
     public void SaveSearch(string searchCode, string filter) =>
-        Application.Invoke<NavigatorSavedSearchAddInput, NavigatorOperationResult>(
+        _application.Invoke<NavigatorSavedSearchAddInput, NavigatorOperationResult>(
             ApplicationMemberIds.NavigatorSavedSearchAdd,
             new NavigatorSavedSearchAddInput(searchCode, filter),
             Ct);
@@ -335,7 +335,7 @@ public partial class ScriptGlobals
     /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="savedSearchId"/> is negative.</exception>
     /// <exception cref="InvalidOperationException">Thrown when there is no active hotel session.</exception>
     public void DeleteSavedSearch(int savedSearchId) =>
-        Application.Invoke<NavigatorSavedSearchDeleteInput, NavigatorOperationResult>(
+        _application.Invoke<NavigatorSavedSearchDeleteInput, NavigatorOperationResult>(
             ApplicationMemberIds.NavigatorSavedSearchDelete,
             new NavigatorSavedSearchDeleteInput(savedSearchId),
             Ct);
@@ -345,15 +345,15 @@ public partial class ScriptGlobals
 
     /// <summary>Registers a handler that runs for every navigator search result the hotel sends.</summary>
     /// <remarks>
-    /// Results of searches made by the game client and by the script are both reported. No handle
-    /// is returned; the handler stays registered until the script stops.
+    /// Results of searches made by the game client and by the script are both reported.
     /// </remarks>
     /// <param name="handler">The handler to call with the result.</param>
+    /// <returns>A handle that removes the handler when disposed.</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="handler"/> is <see langword="null"/>.</exception>
-    public void OnNavigatorResult(Action<NavigatorSearchResult> handler)
+    public IDisposable OnNavigatorResult(Action<NavigatorSearchResult> handler)
     {
         ArgumentNullException.ThrowIfNull(handler);
-        Track(Application.Subscribe<NavigatorSearchReceived>(
+        return Track(_application.Subscribe<NavigatorSearchReceived>(
             ApplicationMemberIds.NavigatorSearchReceived,
             Guarded<NavigatorSearchReceived>(
                 result => handler(ResultFromSnapshot(result.Result)))));
@@ -369,7 +369,7 @@ public partial class ScriptGlobals
         // answer is matched back by its filter, because the hotel says nothing else about which
         // request a result belongs to.
         NavigatorSearchSnapshot result =
-            await Application.InvokeAsync<NavigatorTextSearchInput, NavigatorSearchSnapshot>(
+            await _application.InvokeAsync<NavigatorTextSearchInput, NavigatorSearchSnapshot>(
                 ApplicationMemberIds.NavigatorSearchText,
                 new NavigatorTextSearchInput(field, text, timeoutMs),
                 Ct);

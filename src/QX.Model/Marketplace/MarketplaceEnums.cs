@@ -1,4 +1,4 @@
-namespace Qx.Model.Marketplace;
+namespace Qx.Model;
 
 /// <summary>
 /// Specifies which pool a marketplace request addresses, sent as the <c>furniCategoryId</c> of item

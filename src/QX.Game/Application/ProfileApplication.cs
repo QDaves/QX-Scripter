@@ -410,7 +410,6 @@ internal sealed class ProfileApplication : IApplicationFeature, IProfileOperatio
             request.Offset,
             request.Limit);
         return new ProfileWardrobePage(
-            snapshot.Client,
             snapshot.Generation,
             snapshot.ProfileRevision,
             snapshot.Revision,
@@ -638,7 +637,6 @@ internal sealed class ProfileApplication : IApplicationFeature, IProfileOperatio
             () => RequireScope(scope));
         RequireScope(scope);
         return ValueTask.FromResult(new ProfileDispatchResult(
-            scope.Session.Client,
             time_provider.GetUtcNow(),
             scope.Generation,
             scope.Revision,
@@ -751,7 +749,7 @@ internal sealed class ProfileApplication : IApplicationFeature, IProfileOperatio
             return LocalProfileSnapshot.From(left_profile) == LocalProfileSnapshot.From(right_profile);
         if (value is BlockList left_blocks && response is BlockList right_blocks)
             return left_blocks.UserIds.SequenceEqual(right_blocks.UserIds);
-        if (value is RequestIgnoreList left_ignores && response is RequestIgnoreList right_ignores)
+        if (value is IgnoredUsers left_ignores && response is IgnoredUsers right_ignores)
             return left_ignores.UserIds.SequenceEqual(right_ignores.UserIds);
         if (value is FigureSetIds left_sets && response is FigureSetIds right_sets)
         {
@@ -785,7 +783,6 @@ internal sealed class ProfileApplication : IApplicationFeature, IProfileOperatio
             state.Generation,
             state.Revision,
             connected,
-            connected ? state.Session!.Client : null,
             state.Identity is null ? null : Identity(state.Identity),
             state.BlockListLoaded,
             state.BlockedUserIds.Count,
@@ -828,7 +825,6 @@ internal sealed class ProfileApplication : IApplicationFeature, IProfileOperatio
             throw new InvalidOperationException("The wardrobe snapshot revision space is exhausted.");
         var snapshot = new WardrobeSnapshotLease(
             scope.Session,
-            scope.Session.Client,
             scope.Generation,
             scope.Revision,
             revision,
@@ -999,7 +995,6 @@ internal sealed class ProfileApplication : IApplicationFeature, IProfileOperatio
 
     private sealed record WardrobeSnapshotLease(
         Session Session,
-        ClientType Client,
         long Generation,
         long ProfileRevision,
         long Revision,
@@ -1131,7 +1126,6 @@ internal sealed class GroupMembershipApplication : IApplicationFeature
             () => RequireSession(session));
         RequireSession(session);
         return ValueTask.FromResult(new GroupMembershipDispatchResult(
-            session.Client,
             time_provider.GetUtcNow(),
             group_id,
             user_id,
@@ -1241,7 +1235,7 @@ internal sealed class RemotePeopleApplication : IApplicationFeature, IRemotePeop
         ValidateTimeout(request.TimeoutMilliseconds);
         ValidateGeneration(request.ExpectedSessionGeneration, nameof(request.ExpectedSessionGeneration));
         RemotePeopleScope scope = CaptureScope(request.ExpectedSessionGeneration, cancellation_token);
-        ValidateWireId(scope.Session.Client, request.UserId, nameof(request.UserId));
+        ValidateWireId(request.UserId, nameof(request.UserId));
         UserProfile response = await requests.RequestAsync(
             MessageContracts.Users.ExtendedProfileRequest,
             new ExtendedProfileRequest(request.UserId, false),
@@ -1260,7 +1254,6 @@ internal sealed class RemotePeopleApplication : IApplicationFeature, IRemotePeop
         RemoteProfileView result = ProfileView(response);
         RequireScope(scope);
         return new RemoteProfileResult(
-            scope.Session.Client,
             scope.Generation,
             received_at_utc,
             result);
@@ -1276,7 +1269,7 @@ internal sealed class RemotePeopleApplication : IApplicationFeature, IRemotePeop
         ValidateTimeout(request.TimeoutMilliseconds);
         ValidateGeneration(request.ExpectedSessionGeneration, nameof(request.ExpectedSessionGeneration));
         RemotePeopleScope scope = CaptureScope(request.ExpectedSessionGeneration, cancellation_token);
-        ValidateWireId(scope.Session.Client, request.UserId, nameof(request.UserId));
+        ValidateWireId(request.UserId, nameof(request.UserId));
         RelationshipStatus response = await requests.RequestAsync(
             MessageContracts.Users.Relationship.Request,
             new RelationshipStatusRequest(request.UserId),
@@ -1292,7 +1285,6 @@ internal sealed class RemotePeopleApplication : IApplicationFeature, IRemotePeop
         IReadOnlyList<RelationshipEntry> entries = Relationships(response.Entries);
         RequireScope(scope);
         return new RemoteRelationshipResult(
-            scope.Session.Client,
             scope.Generation,
             received_at_utc,
             response.UserId,
@@ -1309,7 +1301,7 @@ internal sealed class RemotePeopleApplication : IApplicationFeature, IRemotePeop
         ValidateTimeout(request.TimeoutMilliseconds);
         ValidateGeneration(request.ExpectedSessionGeneration, nameof(request.ExpectedSessionGeneration));
         RemotePeopleScope scope = CaptureScope(request.ExpectedSessionGeneration, cancellation_token);
-        ValidateWireId(scope.Session.Client, request.UserId, nameof(request.UserId));
+        ValidateWireId(request.UserId, nameof(request.UserId));
         UserBadges response = await requests.RequestAsync(
             MessageContracts.Badges.SelectedRequest,
             new SelectedBadgesRequest(request.UserId),
@@ -1325,7 +1317,6 @@ internal sealed class RemotePeopleApplication : IApplicationFeature, IRemotePeop
         IReadOnlyList<SelectedBadge> badges = Badges(response.Badges);
         RequireScope(scope);
         return new RemoteBadgesResult(
-            scope.Session.Client,
             scope.Generation,
             received_at_utc,
             response.UserId,
@@ -1341,7 +1332,7 @@ internal sealed class RemotePeopleApplication : IApplicationFeature, IRemotePeop
         ValidateId(request.UserId, nameof(request.UserId));
         ValidateGeneration(request.ExpectedSessionGeneration, nameof(request.ExpectedSessionGeneration));
         RemotePeopleScope scope = CaptureScope(request.ExpectedSessionGeneration, cancellation_token);
-        ValidateWireId(scope.Session.Client, request.UserId, nameof(request.UserId));
+        ValidateWireId(request.UserId, nameof(request.UserId));
         message_dispatcher.Dispatch(
             MessageContracts.Users.ExtendedProfileRequest,
             new ExtendedProfileRequest(request.UserId, true),
@@ -1350,7 +1341,6 @@ internal sealed class RemotePeopleApplication : IApplicationFeature, IRemotePeop
             () => RequireScope(scope));
         RequireScope(scope);
         return ValueTask.FromResult(new RemoteProfileOpenReceipt(
-            scope.Session.Client,
             scope.Generation,
             time_provider.GetUtcNow(),
             request.UserId));
@@ -1565,10 +1555,10 @@ internal sealed class RemotePeopleApplication : IApplicationFeature, IRemotePeop
             throw new ArgumentOutOfRangeException(name);
     }
 
-    private static void ValidateWireId(ClientType client, Id value, string name)
+    private static void ValidateWireId(Id value, string name)
     {
         ValidateId(value, name);
-        if (client is ClientType.Flash && (long)value > int.MaxValue)
+        if ((long)value > int.MaxValue)
             throw new ArgumentOutOfRangeException(name);
     }
 
@@ -1681,7 +1671,7 @@ internal sealed class GroupReadsApplication : IApplicationFeature
         ValidateTimeout(request.TimeoutMilliseconds);
         ValidateGeneration(request.ExpectedSessionGeneration, nameof(request.ExpectedSessionGeneration));
         GroupReadScope scope = CaptureScope(request.ExpectedSessionGeneration, cancellation_token);
-        ValidateWireId(scope.Session.Client, request.GroupId, nameof(request.GroupId));
+        ValidateWireId(request.GroupId, nameof(request.GroupId));
         GroupData response = await requests.RequestAsync(
             MessageContracts.Groups.Details.Request,
             new GroupDetailsRequest(request.GroupId, false),
@@ -1700,7 +1690,6 @@ internal sealed class GroupReadsApplication : IApplicationFeature
         GroupData details = GroupDetails(response);
         RequireScope(scope);
         return new GroupDetailsResult(
-            scope.Session.Client,
             scope.Generation,
             received_at_utc,
             details);
@@ -1720,7 +1709,7 @@ internal sealed class GroupReadsApplication : IApplicationFeature
         ValidateTimeout(request.TimeoutMilliseconds);
         ValidateGeneration(request.ExpectedSessionGeneration, nameof(request.ExpectedSessionGeneration));
         GroupReadScope scope = CaptureScope(request.ExpectedSessionGeneration, cancellation_token);
-        ValidateWireId(scope.Session.Client, request.GroupId, nameof(request.GroupId));
+        ValidateWireId(request.GroupId, nameof(request.GroupId));
         GuildMembers response = await requests.RequestAsync(
             MessageContracts.Groups.Members.Request,
             new GetGuildMembersRequest(
@@ -1741,7 +1730,6 @@ internal sealed class GroupReadsApplication : IApplicationFeature
         IReadOnlyList<GuildMember> entries = Members(response.Entries);
         RequireScope(scope);
         return new GroupMembersPage(
-            scope.Session.Client,
             scope.Generation,
             received_at_utc,
             response.GroupId,
@@ -1804,7 +1792,6 @@ internal sealed class GroupReadsApplication : IApplicationFeature
             request.Offset,
             request.Limit);
         return new GroupMembershipsPage(
-            snapshot.Client,
             snapshot.Generation,
             snapshot.ReceivedAtUtc,
             snapshot.Revision,
@@ -1937,14 +1924,11 @@ internal sealed class GroupReadsApplication : IApplicationFeature
         GroupReadScope scope,
         GuildMembers response)
     {
-        GuildMemberSearchType? expected_search_type = scope.Session.Client is ClientType.Flash
-            ? request.SearchType
-            : null;
         return ScopeActive(scope) &&
             response.GroupId == request.GroupId &&
             response.PageIndex == request.PageIndex &&
             string.Equals(response.UserNameFilter, request.UserNameFilter, StringComparison.Ordinal) &&
-            response.SearchType == expected_search_type;
+            response.SearchType == request.SearchType;
     }
 
     private GroupMembershipSnapshotLease StoreMembershipSnapshot(
@@ -1961,7 +1945,6 @@ internal sealed class GroupReadsApplication : IApplicationFeature
             throw new InvalidOperationException("The group-membership snapshot revision space is exhausted.");
         var snapshot = new GroupMembershipSnapshotLease(
             scope.Session,
-            scope.Session.Client,
             scope.Generation,
             received_at_utc,
             revision,
@@ -2146,10 +2129,10 @@ internal sealed class GroupReadsApplication : IApplicationFeature
             throw new ArgumentOutOfRangeException(name);
     }
 
-    private static void ValidateWireId(ClientType client, Id value, string name)
+    private static void ValidateWireId(Id value, string name)
     {
         ValidateId(value, name);
-        if (client is ClientType.Flash && (long)value > int.MaxValue)
+        if ((long)value > int.MaxValue)
             throw new ArgumentOutOfRangeException(name);
     }
 
@@ -2174,7 +2157,6 @@ internal sealed class GroupReadsApplication : IApplicationFeature
 
     private sealed record GroupMembershipSnapshotLease(
         Session Session,
-        ClientType Client,
         long Generation,
         DateTimeOffset ReceivedAtUtc,
         long Revision,

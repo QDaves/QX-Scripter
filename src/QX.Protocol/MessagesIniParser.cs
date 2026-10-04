@@ -1,5 +1,4 @@
 using System.Reflection;
-using Qx;
 
 namespace Qx.Protocol;
 
@@ -10,16 +9,9 @@ namespace Qx.Protocol;
 /// tabs. <c>f:-</c> is skipped and text after <c>;</c> is a comment. A row without a key gets a generated
 /// <c>legacy.in.</c> or <c>legacy.out.</c> key derived from a SHA-256 hash of its names.
 /// </remarks>
-public static class MessagesIniParser
+internal static class MessagesIniParser
 {
     private const string ResourceName = "Qx.Protocol.messages.ini";
-
-    /// <summary>Parses the embedded <c>messages.ini</c> resource into a message map.</summary>
-    /// <returns>The message map.</returns>
-    /// <exception cref="InvalidOperationException">Thrown when the embedded resource is missing.</exception>
-    /// <exception cref="InvalidDataException">Thrown when the resource is malformed.</exception>
-    public static MessageMap ParseEmbedded()
-        => new(ParseEmbeddedRegistry());
 
     /// <summary>Parses the embedded <c>messages.ini</c> resource into a message registry.</summary>
     /// <returns>The message registry.</returns>
@@ -33,13 +25,6 @@ public static class MessagesIniParser
         using var reader = new StreamReader(stream);
         return ParseRegistry(reader.ReadToEnd());
     }
-
-    /// <summary>Parses <c>messages.ini</c> text into a message map.</summary>
-    /// <param name="text">The text to parse.</param>
-    /// <returns>The message map.</returns>
-    /// <exception cref="ArgumentNullException">Thrown when <paramref name="text"/> is <see langword="null"/>.</exception>
-    /// <exception cref="InvalidDataException">Thrown when <paramref name="text"/> is malformed.</exception>
-    public static MessageMap Parse(string text) => new(ParseRegistry(text));
 
     /// <summary>Parses <c>messages.ini</c> text into a message registry.</summary>
     /// <param name="text">The text to parse.</param>
@@ -56,7 +41,7 @@ public static class MessagesIniParser
 
         var descriptors = new List<MessageDescriptor>();
         var legacy_occurrences = new Dictionary<string, int>(StringComparer.Ordinal);
-        Direction direction = Direction.None;
+        MessageDirection direction = MessageDirection.None;
 
         foreach (string rawLine in text.Split('\n'))
         {
@@ -68,14 +53,14 @@ public static class MessagesIniParser
             {
                 direction = line switch
                 {
-                    "[Incoming]" => Direction.In,
-                    "[Outgoing]" => Direction.Out,
+                    "[Incoming]" => MessageDirection.In,
+                    "[Outgoing]" => MessageDirection.Out,
                     _ => throw new InvalidDataException($"Unknown message section '{line}'.")
                 };
                 continue;
             }
 
-            if (direction == Direction.None)
+            if (direction == MessageDirection.None)
                 throw new InvalidDataException($"Message row '{line}' appears before a direction section.");
 
             ParseLine(descriptors, legacy_occurrences, direction, line);
@@ -87,7 +72,7 @@ public static class MessagesIniParser
     private static void ParseLine(
         List<MessageDescriptor> descriptors,
         Dictionary<string, int> legacy_occurrences,
-        Direction direction,
+        MessageDirection direction,
         string line)
     {
         int comment = line.IndexOf(';');
@@ -96,7 +81,7 @@ public static class MessagesIniParser
         if (line.Length == 0)
             return;
 
-        var merged = new List<MessageAlias>();
+        var names = new List<string>();
         string? explicit_key = null;
 
         foreach (string field in line.Split([' ', '\t'], StringSplitOptions.RemoveEmptyEntries))
@@ -128,39 +113,33 @@ public static class MessagesIniParser
             if (name == "-")
                 continue;
 
-            merged.AddRange(AliasesFor(runes, name));
+            names.Add(name);
         }
 
-        if (merged.Count > 0)
-            descriptors.Add(CreateDescriptor(direction, merged, explicit_key, legacy_occurrences));
+        if (names.Count > 0)
+            descriptors.Add(CreateDescriptor(direction, names, explicit_key, legacy_occurrences));
         else if (explicit_key is not null)
             throw new InvalidDataException($"Message key '{explicit_key}' has no aliases.");
     }
 
-    private static IReadOnlyList<MessageAlias> AliasesFor(string runes, string name) => runes switch
-    {
-        "f" => [new(ProtocolClients.Flash, name)],
-        _ => throw new InvalidDataException($"Unsupported client runes '{runes}'.")
-    };
-
     private static MessageDescriptor CreateDescriptor(
-        Direction direction,
-        IReadOnlyList<MessageAlias> aliases,
+        MessageDirection direction,
+        IReadOnlyList<string> names,
         string? explicit_key,
         Dictionary<string, int> legacy_occurrences)
     {
         if (explicit_key is not null)
-            return new MessageDescriptor(new MessageKey(explicit_key), direction, aliases, true);
+            return new MessageDescriptor(new MessageKey(explicit_key), direction, names, true);
 
         string identity = string.Join(
             "|",
-            aliases
-                .Select(alias => $"{(int)alias.Client}:{alias.Name.ToUpperInvariant()}")
+            names
+                .Select(name => name.ToUpperInvariant())
                 .Order(StringComparer.Ordinal));
         string scoped_identity = $"{(int)direction}|{identity}";
         int occurrence = legacy_occurrences.GetValueOrDefault(scoped_identity) + 1;
         legacy_occurrences[scoped_identity] = occurrence;
         MessageKey key = MessageKey.Legacy(direction, scoped_identity, occurrence);
-        return new MessageDescriptor(key, direction, aliases, false);
+        return new MessageDescriptor(key, direction, names, false);
     }
 }

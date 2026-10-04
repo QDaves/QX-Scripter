@@ -20,10 +20,10 @@ internal static class CraftingApplicationDescriptors
         typeof(CraftingStateRequest),
         typeof(CraftingStateView),
         [SnapshotRevisionParameter(false)],
-        state_effects: [CraftingRead()],
+        stateEffects: [CraftingRead()],
         messages: ObservedMessages(),
-        tool_hints: QueryHints(),
-        invocation_scope: ApplicationInvocationScope.Persistent);
+        toolHints: QueryHints(),
+        invocationScope: ApplicationInvocationScope.Persistent);
 
     public static ApplicationDescriptor ProductsList { get; } = new(
         ApplicationMemberIds.CraftingProductsList,
@@ -34,13 +34,13 @@ internal static class CraftingApplicationDescriptors
         typeof(CraftingProductsPageRequest),
         typeof(CraftingProductsPage),
         ProductsPageParameters(),
-        state_effects: [CraftingRead()],
+        stateEffects: [CraftingRead()],
         messages:
         [
             Observe(MessageKeys.Crafting.ProductsSnapshot)
         ],
-        tool_hints: QueryHints(),
-        invocation_scope: ApplicationInvocationScope.Persistent);
+        toolHints: QueryHints(),
+        invocationScope: ApplicationInvocationScope.Persistent);
 
     public static ApplicationDescriptor RecipeList { get; } = new(
         ApplicationMemberIds.CraftingRecipeList,
@@ -51,13 +51,13 @@ internal static class CraftingApplicationDescriptors
         typeof(CraftingRecipePageRequest),
         typeof(CraftingRecipePage),
         PageParameters(),
-        state_effects: [CraftingRead()],
+        stateEffects: [CraftingRead()],
         messages:
         [
             Observe(MessageKeys.Crafting.RecipeSnapshot)
         ],
-        tool_hints: QueryHints(),
-        invocation_scope: ApplicationInvocationScope.Persistent);
+        toolHints: QueryHints(),
+        invocationScope: ApplicationInvocationScope.Persistent);
 
     public static ApplicationDescriptor ProductsRefresh { get; } = new(
         ApplicationMemberIds.CraftingProductsRefresh,
@@ -180,9 +180,9 @@ internal static class CraftingApplicationDescriptors
         event_exposure,
         null,
         typeof(CraftingChanged),
-        state_effects: [CraftingChange()],
+        stateEffects: [CraftingChange()],
         messages: ObservedMessages(),
-        invocation_scope: ApplicationInvocationScope.Persistent);
+        invocationScope: ApplicationInvocationScope.Persistent);
 
     private static IReadOnlyList<ApplicationParameterDescriptor>
         ProductsPageParameters() =>
@@ -298,12 +298,12 @@ internal static class CraftingApplicationDescriptors
         new(Minimum: 1));
 
     private static ApplicationMessageRequirement Send(MessageKey key) =>
-        new(key, Direction.Out, ApplicationMessageRole.Send);
+        new(key, MessageDirection.Out, ApplicationMessageRole.Send);
 
     private static ApplicationMessageRequirement Observe(
         MessageKey key,
         bool required = true) =>
-        new(key, Direction.In, ApplicationMessageRole.Observe, required);
+        new(key, MessageDirection.In, ApplicationMessageRole.Observe, required);
 
     private static ApplicationStateEffect CraftingRead() =>
         new(ApplicationStateKey.Crafting, ApplicationStateEffectKind.Reads);
@@ -315,6 +315,6 @@ internal static class CraftingApplicationDescriptors
         new(ApplicationStateKey.RoomActive, ApplicationStateEffectKind.Reads);
 
     private static ApplicationToolHints QueryHints() => new(true, false, true, false);
-    private static ApplicationToolHints RefreshHints() => new(false, false, true, true);
+    private static ApplicationToolHints RefreshHints() => new(true, false, true, true);
     private static ApplicationToolHints DispatchHints() => new(false, true, false, true);
 }

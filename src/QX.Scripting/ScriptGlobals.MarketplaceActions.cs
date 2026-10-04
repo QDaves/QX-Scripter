@@ -1,7 +1,6 @@
 using Qx.Game;
 using Qx.Game.Application;
 using Qx.Model;
-using Qx.Model.Marketplace;
 using Qx.Model.Messages.Incoming;
 
 namespace Qx.Scripting;
@@ -13,7 +12,7 @@ namespace Qx.Scripting;
 /// <b>Request shape.</b> These await the hotel's answer and report it in the returned result rather
 /// than throwing on a refusal: a rejected listing, a sold-out offer or an ineligible account all
 /// come back as a result code. They throw only when the request itself could not be made, such as
-/// on a timeout, a dropped connection, or a client that cannot express the message.
+/// on a timeout, a dropped connection, or a client build that cannot express the message.
 /// </para>
 /// </content>
 public partial class ScriptGlobals
@@ -50,7 +49,7 @@ public partial class ScriptGlobals
         MarketplaceFurniCategory category,
         IReadOnlyList<Id> itemIds,
         int timeoutMs = 10000) =>
-        Application.InvokeAsync<MarketplaceMakeOfferRequest, MarketplaceMakeOfferResult>(
+        _application.InvokeAsync<MarketplaceMakeOfferRequest, MarketplaceMakeOfferResult>(
             ApplicationMemberIds.MarketplaceOfferMake,
             new MarketplaceMakeOfferRequest(
                 price,
@@ -113,26 +112,25 @@ public partial class ScriptGlobals
     /// <exception cref="InvalidOperationException">Thrown when there is no hotel session, or it changed during the request.</exception>
     /// <exception cref="Qx.Game.RequestTimeoutException">Thrown when the hotel did not answer in time.</exception>
     public Task<MarketplaceBuyResult> BuyMarketplaceOfferAsync(Id offerId, int timeoutMs = 10000) =>
-        Application.InvokeAsync<MarketplaceBuyRequest, MarketplaceBuyResult>(
+        _application.InvokeAsync<MarketplaceBuyRequest, MarketplaceBuyResult>(
             ApplicationMemberIds.MarketplaceOfferBuy,
             new MarketplaceBuyRequest(offerId, TimeoutMilliseconds: timeoutMs),
             Ct).AsTask();
 
     /// <summary>Withdraws one of the local user's own offers and waits for the outcome.</summary>
     /// <remarks>
-    /// Flash only. The request is sent once without a retry.
+    /// The request is sent once without a retry.
     /// </remarks>
     /// <param name="offerId">The offer to withdraw.</param>
     /// <param name="timeoutMs">The timeout in milliseconds, from 1 to 120000.</param>
     /// <returns>The cancellation result for the offer.</returns>
     /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="offerId"/> is not positive, or <paramref name="timeoutMs"/> is out of range.</exception>
-    /// <exception cref="NotSupportedException">Thrown when the active session is not a Flash session.</exception>
     /// <exception cref="InvalidOperationException">Thrown when there is no hotel session, or it changed during the request.</exception>
     /// <exception cref="Qx.Game.RequestTimeoutException">Thrown when the hotel did not answer in time.</exception>
     public Task<MarketplaceCancelOfferResult> CancelMarketplaceOfferAsync(
         Id offerId,
         int timeoutMs = 10000) =>
-        Application.InvokeAsync<MarketplaceCancelRequest, MarketplaceCancelOfferResult>(
+        _application.InvokeAsync<MarketplaceCancelRequest, MarketplaceCancelOfferResult>(
             ApplicationMemberIds.MarketplaceOfferCancel,
             new MarketplaceCancelRequest(offerId, timeoutMs),
             Ct).AsTask();
@@ -147,7 +145,7 @@ public partial class ScriptGlobals
     /// <exception cref="InvalidOperationException">Thrown when there is no hotel session, or it changed during the request.</exception>
     /// <exception cref="Qx.Game.RequestTimeoutException">Thrown when the hotel did not answer in time.</exception>
     public Task<MarketplaceCancelAllOffersSnapshot> CancelAllMarketplaceOffers(int timeoutMs = 10000) =>
-        Application.InvokeAsync<MarketplaceCancelAllRequest, MarketplaceCancelAllOffersSnapshot>(
+        _application.InvokeAsync<MarketplaceCancelAllRequest, MarketplaceCancelAllOffersSnapshot>(
             ApplicationMemberIds.MarketplaceOffersCancelAll,
             new MarketplaceCancelAllRequest(timeoutMs),
             Ct).AsTask();
@@ -165,13 +163,13 @@ public partial class ScriptGlobals
     /// <param name="timeoutMs">The timeout in milliseconds, from 1 to 120000.</param>
     /// <returns>The hotel's answer to the clear request.</returns>
     /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="category"/> is not sold or expired, or <paramref name="timeoutMs"/> is out of range.</exception>
-    /// <exception cref="NotSupportedException">Thrown when the session is not Flash or does not use the modern marketplace layout.</exception>
+    /// <exception cref="NotSupportedException">Thrown when the session does not use the modern Flash marketplace layout.</exception>
     /// <exception cref="InvalidOperationException">Thrown when there is no hotel session, or it changed during the request.</exception>
     /// <exception cref="Qx.Game.RequestTimeoutException">Thrown when the hotel did not answer in time.</exception>
     public Task<MarketplaceClearOwnHistoryResult> ClearMarketplaceHistory(
         MarketplaceOwnOffersCategory category,
         int timeoutMs = 10000) =>
-        Application.InvokeAsync<MarketplaceHistoryClearRequest, MarketplaceClearOwnHistoryResult>(
+        _application.InvokeAsync<MarketplaceHistoryClearRequest, MarketplaceClearOwnHistoryResult>(
             ApplicationMemberIds.MarketplaceHistoryClear,
             new MarketplaceHistoryClearRequest(
                 (MarketplaceHistoryCategory)category,
@@ -182,9 +180,8 @@ public partial class ScriptGlobals
     /// Asks the hotel whether the account may list another offer right now.
     /// </summary>
     /// <remarks>
-    /// The answer carries a result code and, on Flash, the number of tokens left, which is what
-    /// makes it worth checking before a bulk listing run. The request is sent at most twice
-    /// within the timeout.
+    /// The answer carries a result code and the number of tokens left, which is what makes it worth
+    /// checking before a bulk listing run. The request is sent at most twice within the timeout.
     /// </remarks>
     /// <param name="timeoutMs">The timeout in milliseconds, from 1 to 120000.</param>
     /// <returns>The hotel's eligibility answer.</returns>
@@ -192,7 +189,7 @@ public partial class ScriptGlobals
     /// <exception cref="InvalidOperationException">Thrown when there is no hotel session, or it changed during the request.</exception>
     /// <exception cref="Qx.Game.RequestTimeoutException">Thrown when the hotel did not answer in time.</exception>
     public Task<MarketplaceCanMakeOfferResult> CanSellOnMarketplace(int timeoutMs = 10000) =>
-        Application.InvokeAsync<MarketplaceRefreshRequest, MarketplaceCanMakeOfferResult>(
+        _application.InvokeAsync<MarketplaceRefreshRequest, MarketplaceCanMakeOfferResult>(
             ApplicationMemberIds.MarketplaceEligibilityRefresh,
             new MarketplaceRefreshRequest(timeoutMs),
             Ct).AsTask();
@@ -209,23 +206,10 @@ public partial class ScriptGlobals
     /// <exception cref="InvalidOperationException">Thrown when there is no hotel session, or it changed during the request.</exception>
     /// <exception cref="Qx.Game.RequestTimeoutException">Thrown when the hotel did not answer in time.</exception>
     public Task<MarketplaceConfiguration> GetMarketplaceConfiguration(int timeoutMs = 10000) =>
-        Application.InvokeAsync<MarketplaceRefreshRequest, MarketplaceConfiguration>(
+        _application.InvokeAsync<MarketplaceRefreshRequest, MarketplaceConfiguration>(
             ApplicationMemberIds.MarketplaceConfigurationRefresh,
             new MarketplaceRefreshRequest(timeoutMs),
             Ct).AsTask();
-
-    /// <summary>
-    /// Collects the credits earned from sold offers.
-    /// </summary>
-    /// <remarks>
-    /// It sends the request and returns; the new balance arrives as a currency update.
-    /// </remarks>
-    /// <exception cref="InvalidOperationException">Thrown when there is no hotel session.</exception>
-    public void CollectMarketplaceEarnings() =>
-        Application.Invoke<MarketplaceCommandRequest, MarketplaceDispatchResult>(
-            ApplicationMemberIds.MarketplaceCreditsRedeem,
-            new MarketplaceCommandRequest(),
-            Ct);
 
     /// <summary>Sends the hotel's marketplace token purchase request.</summary>
     /// <remarks>
@@ -233,7 +217,7 @@ public partial class ScriptGlobals
     /// </remarks>
     /// <exception cref="InvalidOperationException">Thrown when there is no hotel session.</exception>
     public void BuyMarketplaceTokens() =>
-        Application.Invoke<MarketplaceCommandRequest, MarketplaceDispatchResult>(
+        _application.Invoke<MarketplaceCommandRequest, MarketplaceDispatchResult>(
             ApplicationMemberIds.MarketplaceTokensBuy,
             new MarketplaceCommandRequest(),
             Ct);

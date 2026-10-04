@@ -1,9 +1,8 @@
 using Qx.Game;
 using Qx.Game.Application;
-using Qx.Model.Forums;
+using Qx.Model;
 using Qx.Model.Messages.Incoming;
 using Qx.Model.Messages.Outgoing;
-using ForumThreadData = Qx.Model.Forums.ForumThread;
 
 namespace Qx.Scripting;
 
@@ -47,7 +46,7 @@ public partial class ScriptGlobals
     /// Threads arrive both from thread list pages and from single thread create and update
     /// replies.
     /// </remarks>
-    public IReadOnlyDictionary<ForumThreadKey, ForumThreadData> ForumThreads =>
+    public IReadOnlyDictionary<ForumThreadKey, ForumThread> ForumThreads =>
         ForumState.KnownThreads;
 
     /// <summary>
@@ -66,52 +65,52 @@ public partial class ScriptGlobals
     public int? UnreadForumsCount => ForumState.UnreadForumsCount;
 
     /// <summary>Finds a cached forum summary.</summary>
-    /// <param name="group_id">The group that owns the forum.</param>
+    /// <param name="groupId">The group that owns the forum.</param>
     /// <returns>The summary, or <see langword="null"/> when this forum has not been seen.</returns>
-    public ForumSummary? FindForum(Id group_id) =>
-        Forums.FindForum(group_id);
+    public ForumSummary? FindForum(Id groupId) =>
+        Forums.FindForum(groupId);
 
     /// <summary>Finds the cached details of one forum, including the viewer's permissions.</summary>
-    /// <param name="group_id">The group that owns the forum.</param>
+    /// <param name="groupId">The group that owns the forum.</param>
     /// <returns>
     /// The details, or <see langword="null"/> when no detail reply for this forum has arrived.
     /// </returns>
-    public ForumDetails? FindForumDetails(Id group_id) =>
-        Forums.FindDetails(group_id);
+    public ForumDetails? FindForumDetails(Id groupId) =>
+        Forums.FindDetails(groupId);
 
     /// <summary>Finds one cached thread.</summary>
-    /// <param name="group_id">The group that owns the forum.</param>
-    /// <param name="thread_id">The thread id.</param>
+    /// <param name="groupId">The group that owns the forum.</param>
+    /// <param name="threadId">The thread id.</param>
     /// <returns>The thread, or <see langword="null"/> when it has not been seen.</returns>
-    public ForumThreadData? FindForumThread(
-        Id group_id,
-        Id thread_id) =>
-        Forums.FindThread(group_id, thread_id);
+    public ForumThread? FindForumThread(
+        Id groupId,
+        Id threadId) =>
+        Forums.FindThread(groupId, threadId);
 
     /// <summary>Finds one cached forum post.</summary>
-    /// <param name="group_id">The group that owns the forum.</param>
-    /// <param name="thread_id">The thread the post belongs to.</param>
-    /// <param name="message_id">The post id.</param>
+    /// <param name="groupId">The group that owns the forum.</param>
+    /// <param name="threadId">The thread the post belongs to.</param>
+    /// <param name="messageId">The post id.</param>
     /// <returns>The post, or <see langword="null"/> when it has not been seen.</returns>
     public ForumPost? FindForumMessage(
-        Id group_id,
-        Id thread_id,
-        Id message_id) =>
-        Forums.FindMessage(group_id, thread_id, message_id);
+        Id groupId,
+        Id threadId,
+        Id messageId) =>
+        Forums.FindMessage(groupId, threadId, messageId);
 
     /// <summary>
     /// Asks for one forum's details and permissions.
     /// </summary>
     /// <remarks>
     /// It returns immediately; the answer lands in <see cref="ForumDetails"/> and runs the
-    /// <see cref="OnForumDetailsChanged(Action{Qx.Model.Forums.ForumDetails})"/> handlers.
+    /// <see cref="OnForumDetailsChanged(Action{Qx.Model.ForumDetails})"/> handlers.
     /// </remarks>
-    /// <param name="group_id">The group that owns the forum.</param>
+    /// <param name="groupId">The group that owns the forum.</param>
     /// <exception cref="InvalidOperationException">Thrown when there is no active hotel session.</exception>
-    public void RequestForumStats(Id group_id) =>
-        Application.Invoke<ForumDetailsRequest, ForumDispatchResult>(
+    public void RequestForumStats(Id groupId) =>
+        _application.Invoke<ForumDetailsRequest, ForumDispatchResult>(
             ApplicationMemberIds.ForumDetailsRequest,
-            new ForumDetailsRequest(group_id));
+            new ForumDetailsRequest(groupId));
 
     /// <summary>
     /// Asks for a page of the forum directory.
@@ -120,23 +119,23 @@ public partial class ScriptGlobals
     /// It returns immediately; the page lands in the forum cache and runs the
     /// <see cref="OnForumsListed(Action{ForumsList})"/> handlers.
     /// </remarks>
-    /// <param name="list_code">
+    /// <param name="listCode">
     /// The directory to list: <c>Active</c> (0), <c>Popular</c> (1) or <c>MyForums</c> (2).
     /// </param>
-    /// <param name="start_index">The zero-based index of the first entry on the page.</param>
-    /// <param name="max_count">The number of entries to return; the game client's own page size is 20.</param>
+    /// <param name="startIndex">The zero-based index of the first entry on the page.</param>
+    /// <param name="maxCount">The number of entries to return; the game client's own page size is 20.</param>
     /// <exception cref="ArgumentOutOfRangeException">
-    /// Thrown when <paramref name="start_index"/> is negative, or <paramref name="max_count"/> is zero or
+    /// Thrown when <paramref name="startIndex"/> is negative, or <paramref name="maxCount"/> is zero or
     /// negative.
     /// </exception>
     /// <exception cref="InvalidOperationException">Thrown when there is no active hotel session.</exception>
     public void RequestForums(
-        ForumListCode list_code,
-        int start_index = 0,
-        int max_count = 20) =>
-        Application.Invoke<ForumListRequest, ForumDispatchResult>(
+        ForumListCode listCode,
+        int startIndex = 0,
+        int maxCount = 20) =>
+        _application.Invoke<ForumListRequest, ForumDispatchResult>(
             ApplicationMemberIds.ForumsListRequest,
-            new ForumListRequest(list_code, start_index, max_count));
+            new ForumListRequest(listCode, startIndex, maxCount));
 
     /// <summary>
     /// Asks for a page of threads in one forum.
@@ -145,21 +144,21 @@ public partial class ScriptGlobals
     /// It returns immediately; the page lands in the thread cache and runs the
     /// <see cref="OnForumThreadsListed(Action{Qx.Model.Messages.Incoming.ForumThreads})"/> handlers.
     /// </remarks>
-    /// <param name="group_id">The group that owns the forum.</param>
-    /// <param name="start_index">The zero-based index of the first thread on the page.</param>
-    /// <param name="max_count">The number of threads to return; the game client's own page size is 20.</param>
+    /// <param name="groupId">The group that owns the forum.</param>
+    /// <param name="startIndex">The zero-based index of the first thread on the page.</param>
+    /// <param name="maxCount">The number of threads to return; the game client's own page size is 20.</param>
     /// <exception cref="ArgumentOutOfRangeException">
-    /// Thrown when <paramref name="start_index"/> is negative, or <paramref name="max_count"/> is zero or
+    /// Thrown when <paramref name="startIndex"/> is negative, or <paramref name="maxCount"/> is zero or
     /// negative.
     /// </exception>
     /// <exception cref="InvalidOperationException">Thrown when there is no active hotel session.</exception>
     public void RequestForumThreads(
-        Id group_id,
-        int start_index = 0,
-        int max_count = 20) =>
-        Application.Invoke<ForumThreadsRequest, ForumDispatchResult>(
+        Id groupId,
+        int startIndex = 0,
+        int maxCount = 20) =>
+        _application.Invoke<ForumThreadsRequest, ForumDispatchResult>(
             ApplicationMemberIds.ForumThreadsRequest,
-            new ForumThreadsRequest(group_id, start_index, max_count));
+            new ForumThreadsRequest(groupId, startIndex, maxCount));
 
     /// <summary>
     /// Asks for a page of posts in one thread.
@@ -168,44 +167,44 @@ public partial class ScriptGlobals
     /// It returns immediately; the page lands in the message cache and runs the
     /// <see cref="OnForumMessagesListed(Action{ThreadMessages})"/> handlers.
     /// </remarks>
-    /// <param name="group_id">The group that owns the forum.</param>
-    /// <param name="thread_id">The thread to read.</param>
-    /// <param name="start_index">The zero-based index of the first post on the page.</param>
-    /// <param name="max_count">The number of posts to return; the game client's own page size is 20.</param>
+    /// <param name="groupId">The group that owns the forum.</param>
+    /// <param name="threadId">The thread to read.</param>
+    /// <param name="startIndex">The zero-based index of the first post on the page.</param>
+    /// <param name="maxCount">The number of posts to return; the game client's own page size is 20.</param>
     /// <exception cref="ArgumentOutOfRangeException">
-    /// Thrown when <paramref name="start_index"/> is negative, or <paramref name="max_count"/> is zero or
+    /// Thrown when <paramref name="startIndex"/> is negative, or <paramref name="maxCount"/> is zero or
     /// negative.
     /// </exception>
     /// <exception cref="InvalidOperationException">Thrown when there is no active hotel session.</exception>
     public void RequestForumMessages(
-        Id group_id,
-        Id thread_id,
-        int start_index = 0,
-        int max_count = 20) =>
-        Application.Invoke<ForumMessagesRequest, ForumDispatchResult>(
+        Id groupId,
+        Id threadId,
+        int startIndex = 0,
+        int maxCount = 20) =>
+        _application.Invoke<ForumMessagesRequest, ForumDispatchResult>(
             ApplicationMemberIds.ForumMessagesRequest,
             new ForumMessagesRequest(
-                group_id,
-                thread_id,
-                start_index,
-                max_count));
+                groupId,
+                threadId,
+                startIndex,
+                maxCount));
 
     /// <summary>
     /// Asks for one thread's header row on its own, without its posts.
     /// </summary>
     /// <remarks>
     /// It returns immediately; the thread lands in the thread cache and runs the
-    /// <see cref="OnForumThreadChanged(Action{Id, ForumThreadData})"/> handlers.
+    /// <see cref="OnForumThreadChanged(Action{Id, ForumThread})"/> handlers.
     /// </remarks>
-    /// <param name="group_id">The group that owns the forum.</param>
-    /// <param name="thread_id">The thread id.</param>
+    /// <param name="groupId">The group that owns the forum.</param>
+    /// <param name="threadId">The thread id.</param>
     /// <exception cref="InvalidOperationException">Thrown when there is no active hotel session.</exception>
     public void RequestForumThread(
-        Id group_id,
-        Id thread_id) =>
-        Application.Invoke<ForumThreadRequest, ForumDispatchResult>(
+        Id groupId,
+        Id threadId) =>
+        _application.Invoke<ForumThreadRequest, ForumDispatchResult>(
             ApplicationMemberIds.ForumThreadRequest,
-            new ForumThreadRequest(group_id, thread_id));
+            new ForumThreadRequest(groupId, threadId));
 
     /// <summary>
     /// Asks how many forums hold unread messages.
@@ -216,7 +215,7 @@ public partial class ScriptGlobals
     /// </remarks>
     /// <exception cref="InvalidOperationException">Thrown when there is no active hotel session.</exception>
     public void RequestUnreadForumsCount() =>
-        Application.Invoke<ForumUnreadRequest, ForumDispatchResult>(
+        _application.Invoke<ForumUnreadRequest, ForumDispatchResult>(
             ApplicationMemberIds.ForumsUnreadRequest,
             new ForumUnreadRequest());
 
@@ -227,58 +226,58 @@ public partial class ScriptGlobals
     /// It sends a post with a thread id of 0, which is how the client signals "create" rather
     /// than "reply".
     /// </remarks>
-    /// <param name="group_id">The group that owns the forum.</param>
+    /// <param name="groupId">The group that owns the forum.</param>
     /// <param name="subject">The thread title; the game client requires at least 10 characters.</param>
-    /// <param name="message_text">The first post's body; the game client requires at least 10 characters.</param>
+    /// <param name="messageText">The first post's body; the game client requires at least 10 characters.</param>
     /// <exception cref="ArgumentNullException">
-    /// Thrown when <paramref name="subject"/> or <paramref name="message_text"/> is <see langword="null"/>.
+    /// Thrown when <paramref name="subject"/> or <paramref name="messageText"/> is <see langword="null"/>.
     /// </exception>
     /// <exception cref="InvalidOperationException">Thrown when there is no active hotel session.</exception>
     public void CreateForumThread(
-        Id group_id,
+        Id groupId,
         string subject,
-        string message_text) =>
-        Application.Invoke<ForumPostActionRequest, ForumDispatchResult>(
+        string messageText) =>
+        _application.Invoke<ForumPostActionRequest, ForumDispatchResult>(
             ApplicationMemberIds.ForumsPost,
-            new ForumPostActionRequest(group_id, 0, subject, message_text));
+            new ForumPostActionRequest(groupId, 0, subject, messageText));
 
     /// <summary>Posts a reply into an existing thread, with an empty subject.</summary>
-    /// <param name="group_id">The group that owns the forum.</param>
-    /// <param name="thread_id">The thread to reply to.</param>
-    /// <param name="message_text">The reply body.</param>
-    /// <exception cref="ArgumentNullException">Thrown when <paramref name="message_text"/> is <see langword="null"/>.</exception>
+    /// <param name="groupId">The group that owns the forum.</param>
+    /// <param name="threadId">The thread to reply to.</param>
+    /// <param name="messageText">The reply body.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="messageText"/> is <see langword="null"/>.</exception>
     /// <exception cref="InvalidOperationException">Thrown when there is no active hotel session.</exception>
     public void ReplyToForumThread(
-        Id group_id,
-        Id thread_id,
-        string message_text) =>
-        Application.Invoke<ForumPostActionRequest, ForumDispatchResult>(
+        Id groupId,
+        Id threadId,
+        string messageText) =>
+        _application.Invoke<ForumPostActionRequest, ForumDispatchResult>(
             ApplicationMemberIds.ForumsPost,
-            new ForumPostActionRequest(group_id, thread_id, "", message_text));
+            new ForumPostActionRequest(groupId, threadId, "", messageText));
 
     /// <summary>
     /// Sends the raw post message that thread creation and replying both wrap.
     /// </summary>
-    /// <param name="group_id">The group that owns the forum.</param>
-    /// <param name="thread_id">The thread to post into, or 0 to start a new thread.</param>
+    /// <param name="groupId">The group that owns the forum.</param>
+    /// <param name="threadId">The thread to post into, or 0 to start a new thread.</param>
     /// <param name="subject">The subject; only meaningful when starting a thread.</param>
-    /// <param name="message_text">The post body.</param>
+    /// <param name="messageText">The post body.</param>
     /// <exception cref="ArgumentNullException">
-    /// Thrown when <paramref name="subject"/> or <paramref name="message_text"/> is <see langword="null"/>.
+    /// Thrown when <paramref name="subject"/> or <paramref name="messageText"/> is <see langword="null"/>.
     /// </exception>
     /// <exception cref="InvalidOperationException">Thrown when there is no active hotel session.</exception>
     public void PostForumMessage(
-        Id group_id,
-        Id thread_id,
+        Id groupId,
+        Id threadId,
         string subject,
-        string message_text) =>
-        Application.Invoke<ForumPostActionRequest, ForumDispatchResult>(
+        string messageText) =>
+        _application.Invoke<ForumPostActionRequest, ForumDispatchResult>(
             ApplicationMemberIds.ForumsPost,
-            new ForumPostActionRequest(group_id, thread_id, subject, message_text));
+            new ForumPostActionRequest(groupId, threadId, subject, messageText));
 
     /// <summary>Hides or restores a whole thread as a forum admin or as hotel staff.</summary>
-    /// <param name="group_id">The group that owns the forum.</param>
-    /// <param name="thread_id">The thread to moderate.</param>
+    /// <param name="groupId">The group that owns the forum.</param>
+    /// <param name="threadId">The thread to moderate.</param>
     /// <param name="state">
     /// The new moderation state on the client's scale: 0 default, 1 restored by admin, 10 hidden
     /// by admin, 20 permanently hidden by staff. The Flash client sends 10 when the viewer only
@@ -286,30 +285,30 @@ public partial class ScriptGlobals
     /// </param>
     /// <exception cref="InvalidOperationException">Thrown when there is no active hotel session.</exception>
     public void ModerateForumThread(
-        Id group_id,
-        Id thread_id,
+        Id groupId,
+        Id threadId,
         int state) =>
-        Application.Invoke<ForumThreadModerationRequest, ForumDispatchResult>(
+        _application.Invoke<ForumThreadModerationRequest, ForumDispatchResult>(
             ApplicationMemberIds.ForumThreadModerate,
-            new ForumThreadModerationRequest(group_id, thread_id, state));
+            new ForumThreadModerationRequest(groupId, threadId, state));
 
     /// <summary>Hides or restores a single post as a forum admin or as hotel staff.</summary>
-    /// <param name="group_id">The group that owns the forum.</param>
-    /// <param name="thread_id">The thread the post belongs to.</param>
-    /// <param name="message_id">The post to moderate.</param>
+    /// <param name="groupId">The group that owns the forum.</param>
+    /// <param name="threadId">The thread the post belongs to.</param>
+    /// <param name="messageId">The post to moderate.</param>
     /// <param name="state">
     /// The new moderation state, on the same scale as thread moderation: 0 default, 1 restored,
     /// 10 hidden by admin, 20 permanently hidden by staff.
     /// </param>
     /// <exception cref="InvalidOperationException">Thrown when there is no active hotel session.</exception>
     public void ModerateForumMessage(
-        Id group_id,
-        Id thread_id,
-        Id message_id,
+        Id groupId,
+        Id threadId,
+        Id messageId,
         int state) =>
-        Application.Invoke<ForumMessageModerationRequest, ForumDispatchResult>(
+        _application.Invoke<ForumMessageModerationRequest, ForumDispatchResult>(
             ApplicationMemberIds.ForumMessageModerate,
-            new ForumMessageModerationRequest(group_id, thread_id, message_id, state));
+            new ForumMessageModerationRequest(groupId, threadId, messageId, state));
 
     /// <summary>
     /// Rewrites a forum's four permission levels at once.
@@ -319,26 +318,26 @@ public partial class ScriptGlobals
     /// when only one of them should change. The ordering rules below come from the Flash settings
     /// dialog and are not enforced here; the server decides what it accepts.
     /// </remarks>
-    /// <param name="group_id">The group that owns the forum.</param>
-    /// <param name="read_level">The level that may read the forum. The dialog offers levels 0 to 3, least to most restrictive.</param>
-    /// <param name="post_message_level">The level that may reply; the dialog keeps it at or above <paramref name="read_level"/>.</param>
-    /// <param name="post_thread_level">The level that may start threads; the dialog keeps it at or above <paramref name="post_message_level"/>.</param>
-    /// <param name="moderate_level">The level that may moderate; the dialog offers only 2 and 3 here.</param>
+    /// <param name="groupId">The group that owns the forum.</param>
+    /// <param name="readLevel">The level that may read the forum. The dialog offers levels 0 to 3, least to most restrictive.</param>
+    /// <param name="postMessageLevel">The level that may reply; the dialog keeps it at or above <paramref name="readLevel"/>.</param>
+    /// <param name="postThreadLevel">The level that may start threads; the dialog keeps it at or above <paramref name="postMessageLevel"/>.</param>
+    /// <param name="moderateLevel">The level that may moderate; the dialog offers only 2 and 3 here.</param>
     /// <exception cref="InvalidOperationException">Thrown when there is no active hotel session.</exception>
     public void UpdateForumSettings(
-        Id group_id,
-        int read_level,
-        int post_message_level,
-        int post_thread_level,
-        int moderate_level) =>
-        Application.Invoke<ForumSettingsUpdateRequest, ForumDispatchResult>(
+        Id groupId,
+        int readLevel,
+        int postMessageLevel,
+        int postThreadLevel,
+        int moderateLevel) =>
+        _application.Invoke<ForumSettingsUpdateRequest, ForumDispatchResult>(
             ApplicationMemberIds.ForumSettingsUpdate,
             new ForumSettingsUpdateRequest(
-                group_id,
-                read_level,
-                post_message_level,
-                post_thread_level,
-                moderate_level));
+                groupId,
+                readLevel,
+                postMessageLevel,
+                postThreadLevel,
+                moderateLevel));
 
     /// <summary>
     /// Marks forums as read up to a given post.
@@ -355,7 +354,7 @@ public partial class ScriptGlobals
     /// <exception cref="InvalidOperationException">Thrown when there is no active hotel session.</exception>
     public void UpdateForumReadMarkers(
         params ForumReadMarker[] markers) =>
-        Application.Invoke<ForumReadMarkersUpdateRequest, ForumDispatchResult>(
+        _application.Invoke<ForumReadMarkersUpdateRequest, ForumDispatchResult>(
             ApplicationMemberIds.ForumReadMarkersUpdate,
             new ForumReadMarkersUpdateRequest(markers));
 
@@ -365,19 +364,19 @@ public partial class ScriptGlobals
     /// <remarks>
     /// Both travel together, so pass the current value for whichever flag should stay as it is.
     /// </remarks>
-    /// <param name="group_id">The group that owns the forum.</param>
-    /// <param name="thread_id">The thread to change.</param>
-    /// <param name="is_sticky"><see langword="true"/> to pin the thread to the top of the list; otherwise, <see langword="false"/>.</param>
-    /// <param name="is_locked"><see langword="true"/> to reject further replies; otherwise, <see langword="false"/>.</param>
+    /// <param name="groupId">The group that owns the forum.</param>
+    /// <param name="threadId">The thread to change.</param>
+    /// <param name="isSticky"><see langword="true"/> to pin the thread to the top of the list; otherwise, <see langword="false"/>.</param>
+    /// <param name="isLocked"><see langword="true"/> to reject further replies; otherwise, <see langword="false"/>.</param>
     /// <exception cref="InvalidOperationException">Thrown when there is no active hotel session.</exception>
     public void UpdateForumThread(
-        Id group_id,
-        Id thread_id,
-        bool is_sticky,
-        bool is_locked) =>
-        Application.Invoke<ForumThreadUpdateRequest, ForumDispatchResult>(
+        Id groupId,
+        Id threadId,
+        bool isSticky,
+        bool isLocked) =>
+        _application.Invoke<ForumThreadUpdateRequest, ForumDispatchResult>(
             ApplicationMemberIds.ForumThreadUpdate,
-            new ForumThreadUpdateRequest(group_id, thread_id, is_sticky, is_locked));
+            new ForumThreadUpdateRequest(groupId, threadId, isSticky, isLocked));
 
     /// <summary>
     /// Reports a forum thread to the moderators with a call for help.
@@ -385,30 +384,30 @@ public partial class ScriptGlobals
     /// <remarks>
     /// The report is sent without waiting for an answer.
     /// </remarks>
-    /// <param name="group_id">The group that owns the forum.</param>
-    /// <param name="thread_id">The thread to report.</param>
-    /// <param name="category_id">The id of the report category.</param>
+    /// <param name="groupId">The group that owns the forum.</param>
+    /// <param name="threadId">The thread to report.</param>
+    /// <param name="categoryId">The id of the report category.</param>
     /// <param name="report">The report text.</param>
-    /// <param name="first_context">The first context value sent with the report.</param>
-    /// <param name="second_context">The second context value sent with the report.</param>
+    /// <param name="firstContext">The first context value sent with the report.</param>
+    /// <param name="secondContext">The second context value sent with the report.</param>
     /// <exception cref="ArgumentNullException">Thrown when a text parameter is <see langword="null"/>.</exception>
     /// <exception cref="InvalidOperationException">Thrown when there is no active hotel session.</exception>
     public void ReportForumThread(
-    Id group_id,
-    Id thread_id,
-    int category_id,
+    Id groupId,
+    Id threadId,
+    int categoryId,
     string report,
-    string first_context = "",
-    string second_context = "") =>
-    Application.Invoke<ForumThreadReportRequest, ForumDispatchResult>(
+    string firstContext = "",
+    string secondContext = "") =>
+    _application.Invoke<ForumThreadReportRequest, ForumDispatchResult>(
         ApplicationMemberIds.ForumThreadReport,
         new ForumThreadReportRequest(
-            group_id,
-            thread_id,
-            category_id,
+            groupId,
+            threadId,
+            categoryId,
             report,
-            first_context,
-            second_context));
+            firstContext,
+            secondContext));
 
     /// <summary>
     /// Reports a single forum post to the moderators with a call for help.
@@ -416,31 +415,31 @@ public partial class ScriptGlobals
     /// <remarks>
     /// The report is sent without waiting for an answer.
     /// </remarks>
-    /// <param name="group_id">The group that owns the forum.</param>
-    /// <param name="thread_id">The thread the post belongs to.</param>
-    /// <param name="message_id">The post to report.</param>
-    /// <param name="category_id">The id of the report category.</param>
+    /// <param name="groupId">The group that owns the forum.</param>
+    /// <param name="threadId">The thread the post belongs to.</param>
+    /// <param name="messageId">The post to report.</param>
+    /// <param name="categoryId">The id of the report category.</param>
     /// <param name="report">The report text.</param>
-    /// <param name="first_context">The first context value sent with the report.</param>
-    /// <param name="second_context">The second context value sent with the report.</param>
+    /// <param name="firstContext">The first context value sent with the report.</param>
+    /// <param name="secondContext">The second context value sent with the report.</param>
     /// <exception cref="ArgumentNullException">Thrown when a text parameter is <see langword="null"/>.</exception>
     /// <exception cref="InvalidOperationException">Thrown when there is no active hotel session.</exception>
     public void ReportForumMessage(
-    Id group_id,
-    Id thread_id,
-    Id message_id,
-    int category_id,
+    Id groupId,
+    Id threadId,
+    Id messageId,
+    int categoryId,
     string report,
-    string first_context = "",
-    string second_context = "") =>
-    Application.Invoke<ForumMessageReportRequest, ForumDispatchResult>(
+    string firstContext = "",
+    string secondContext = "") =>
+    _application.Invoke<ForumMessageReportRequest, ForumDispatchResult>(
         ApplicationMemberIds.ForumMessageReport,
         new ForumMessageReportRequest(
-            group_id,
-            thread_id,
-            message_id,
-            category_id,
+            groupId,
+            threadId,
+            messageId,
+            categoryId,
             report,
-            first_context,
-            second_context));
+            firstContext,
+            secondContext));
 }

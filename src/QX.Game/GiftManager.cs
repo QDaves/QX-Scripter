@@ -4,6 +4,7 @@ using Qx.Game.Application;
 using Qx.Game.Protocol;
 using Qx.Interception;
 using Qx.Model.Messages.Incoming;
+using Qx.Model.Messages.Outgoing;
 
 namespace Qx.Game;
 
@@ -93,10 +94,8 @@ public sealed class GiftManager : GameStateManager
     /// <summary>Gets the contents of the last present the user opened, or <see langword="null"/> if there is none.</summary>
     public PresentOpened? LastOpenedPresent => State.PresentOpened;
     /// <summary>Gets the last club gift notification, or <see langword="null"/> if there is none.</summary>
-    /// <remarks>Only the Flash client receives this notification.</remarks>
     public ClubGiftNotification? LatestNotification => State.ClubNotification;
     /// <summary>Gets the new user gift offer, or <see langword="null"/> if it has not been received.</summary>
-    /// <remarks>Only the Flash client receives this offer.</remarks>
     public NuxGiftOffer? NewUserOffer => State.NewUserOffer;
     /// <summary>Gets whether the hotel reported that the new user flow is incomplete.</summary>
     public bool NewUserFlowIsIncomplete => State.NewUserFlowIncomplete;
@@ -104,8 +103,7 @@ public sealed class GiftManager : GameStateManager
     /// <summary>Gets whether each catalog offer can be sent as a gift, keyed by offer id.</summary>
     /// <remarks>
     /// Holds the answers to <see cref="RequestOfferGiftability(int)"/> for up to 500 offers. The
-    /// oldest answer is dropped when a new offer would exceed the limit. Only the Flash client
-    /// receives these answers. Each read returns a new copy.
+    /// oldest answer is dropped when a new offer would exceed the limit. Each read returns a new copy.
     /// </remarks>
     public IReadOnlyDictionary<int, bool> OfferGiftability
     {
@@ -129,16 +127,12 @@ public sealed class GiftManager : GameStateManager
     /// <summary>Occurs when the hotel reports the contents of an opened present; the argument is the contents.</summary>
     public event Action<PresentOpened>? PresentOpenedReceived;
     /// <summary>Occurs when the hotel reports that the receiver of a gift does not exist.</summary>
-    /// <remarks>Only the Flash client receives this message.</remarks>
     public event Action? GiftReceiverNotFound;
     /// <summary>Occurs when a club gift notification arrives; the argument is the notification.</summary>
-    /// <remarks>Only the Flash client receives this notification.</remarks>
     public event Action<ClubGiftNotification>? ClubGiftNotificationReceived;
     /// <summary>Occurs when the hotel answers whether an offer can be gifted; the argument is the answer.</summary>
-    /// <remarks>Only the Flash client receives this answer.</remarks>
     public event Action<IsOfferGiftable>? OfferGiftabilityChanged;
     /// <summary>Occurs when the new user gift offer arrives; the argument is the offer.</summary>
-    /// <remarks>Only the Flash client receives this offer.</remarks>
     public event Action<NuxGiftOffer>? NewUserOfferChanged;
     /// <summary>Occurs when the hotel reports that the new user flow is incomplete.</summary>
     public event Action? NewUserFlowIncomplete;
@@ -156,22 +150,10 @@ public sealed class GiftManager : GameStateManager
         OnIncoming(MessageContracts.Gifts.PresentOpened, ApplyPresentOpened);
         OnIncoming(MessageContracts.Gifts.ClubInfo, ApplyClubInfo);
         OnIncoming(MessageContracts.Gifts.ClubSelected, ApplyClubSelected);
-        OnIncoming(
-            ClientType.Flash,
-            MessageContracts.Gifts.ReceiverNotFound,
-            ApplyReceiverNotFound);
-        OnIncoming(
-            ClientType.Flash,
-            MessageContracts.Gifts.ClubNotification,
-            ApplyClubNotification);
-        OnIncoming(
-            ClientType.Flash,
-            MessageContracts.Gifts.OfferGiftability,
-            ApplyOfferGiftability);
-        OnIncoming(
-            ClientType.Flash,
-            MessageContracts.Gifts.NewUserOffer,
-            ApplyNewUserOffer);
+        OnIncoming(MessageContracts.Gifts.ReceiverNotFound, ApplyReceiverNotFound);
+        OnIncoming(MessageContracts.Gifts.ClubNotification, ApplyClubNotification);
+        OnIncoming(MessageContracts.Gifts.OfferGiftability, ApplyOfferGiftability);
+        OnIncoming(MessageContracts.Gifts.NewUserOffer, ApplyNewUserOffer);
         OnIncoming(MessageContracts.Gifts.NewUserIncomplete, ApplyNewUserIncomplete);
     }
 
@@ -183,12 +165,12 @@ public sealed class GiftManager : GameStateManager
         Operations().RequestWrappingConfiguration();
 
     /// <summary>Opens a present placed in the current room.</summary>
-    /// <param name="furni_id">The room id of the present.</param>
+    /// <param name="furniId">The room id of the present.</param>
     /// <remarks>
     /// The user must be in a room that has finished loading. The contents are reported through
     /// <see cref="PresentOpenedReceived"/>.
     /// </remarks>
-    public void OpenPresent(Id furni_id) => Operations().OpenPresent(furni_id);
+    public void OpenPresent(Id furniId) => Operations().OpenPresent(furniId);
 
     /// <summary>Purchases a catalog offer as a gift for another user.</summary>
     /// <param name="request">The purchase, with the receiver, the gift message and the wrapping.</param>
@@ -208,20 +190,20 @@ public sealed class GiftManager : GameStateManager
     public void RequestClubGifts() => Operations().RequestClubGifts();
 
     /// <summary>Selects a club gift.</summary>
-    /// <param name="product_code">The product code of the club gift.</param>
-    public void SelectClubGift(string product_code)
+    /// <param name="productCode">The product code of the club gift.</param>
+    public void SelectClubGift(string productCode)
     {
-        ArgumentNullException.ThrowIfNull(product_code);
-        Operations().SelectClubGift(product_code);
+        ArgumentNullException.ThrowIfNull(productCode);
+        Operations().SelectClubGift(productCode);
     }
 
     /// <summary>Requests whether a catalog offer can be sent as a gift.</summary>
-    /// <param name="offer_id">The id of the catalog offer.</param>
+    /// <param name="offerId">The id of the catalog offer.</param>
     /// <remarks>
     /// The answer updates <see cref="OfferGiftability"/> and raises <see cref="OfferGiftabilityChanged"/>.
     /// </remarks>
-    public void RequestOfferGiftability(int offer_id) =>
-        Operations().RequestOfferGiftability(offer_id);
+    public void RequestOfferGiftability(int offerId) =>
+        Operations().RequestOfferGiftability(offerId);
 
     /// <summary>Selects gifts from the new user gift offer.</summary>
     /// <param name="selections">The chosen gift for each day and step.</param>

@@ -33,7 +33,7 @@ public partial class ScriptGlobals
     public IDisposable OnSubscriptionInfoChanged(Action<ScrSendUserInfo> handler)
     {
         ArgumentNullException.ThrowIfNull(handler);
-        return Track(Application.Subscribe<SubscriptionChanged>(
+        return Track(_application.Subscribe<SubscriptionChanged>(
             ApplicationMemberIds.SubscriptionsChanged,
             Guarded<SubscriptionChanged>(change =>
             {
@@ -60,7 +60,7 @@ public partial class ScriptGlobals
         Action<ScrSendKickbackInfo> handler)
     {
         ArgumentNullException.ThrowIfNull(handler);
-        return Track(Application.Subscribe<SubscriptionChanged>(
+        return Track(_application.Subscribe<SubscriptionChanged>(
             ApplicationMemberIds.SubscriptionsChanged,
             Guarded<SubscriptionChanged>(change =>
             {
@@ -84,7 +84,7 @@ public partial class ScriptGlobals
         Action<BuildersClubFurniCount> handler)
     {
         ArgumentNullException.ThrowIfNull(handler);
-        return Track(Application.Subscribe<SubscriptionChanged>(
+        return Track(_application.Subscribe<SubscriptionChanged>(
             ApplicationMemberIds.SubscriptionsChanged,
             Guarded<SubscriptionChanged>(change =>
             {
@@ -111,7 +111,7 @@ public partial class ScriptGlobals
     Action<BuildersClubMembershipStatus> handler)
     {
         ArgumentNullException.ThrowIfNull(handler);
-        return Track(Application.Subscribe<SubscriptionChanged>(
+        return Track(_application.Subscribe<SubscriptionChanged>(
             ApplicationMemberIds.SubscriptionsChanged,
             Guarded<SubscriptionChanged>(change =>
             {
@@ -138,7 +138,7 @@ public partial class ScriptGlobals
     Action<BuildersClubPlacementWarning> handler)
     {
         ArgumentNullException.ThrowIfNull(handler);
-        return Track(Application.Subscribe<SubscriptionChanged>(
+        return Track(_application.Subscribe<SubscriptionChanged>(
             ApplicationMemberIds.SubscriptionsChanged,
             Guarded<SubscriptionChanged>(change =>
             {
@@ -165,11 +165,11 @@ public partial class ScriptGlobals
     public IDisposable OnSubscriptionsReset(Action handler)
     {
         ArgumentNullException.ThrowIfNull(handler);
-        return Track(Application.Subscribe<SubscriptionChanged>(
+        return Track(_application.Subscribe<SubscriptionChanged>(
             ApplicationMemberIds.SubscriptionsChanged,
             Guarded<SubscriptionChanged>(change =>
             {
-                if (change.Kind is SubscriptionChangeKind.Reset && change.Client is null)
+                if (change.Kind is SubscriptionChangeKind.Reset && !change.Connected)
                     handler();
             })));
     }

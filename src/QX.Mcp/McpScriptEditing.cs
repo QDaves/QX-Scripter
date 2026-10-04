@@ -411,6 +411,6 @@ public static partial class McpScriptEditing
     [GeneratedRegex(@"^\s*(?:public\s+|private\s+|internal\s+|static\s+|async\s+)*(?:[\w<>\[\],\.\?]+\s+)(\w+)\s*\([^)]*\)\s*(?:=>|\{|$)")]
     private static partial Regex MethodDeclaration();
 
-    [GeneratedRegex(@"^\s*(On\w+|Ui\.OnClick)\s*\(")]
+    [GeneratedRegex(@"^\s*(On\w+|Ui\.On(?:Click|Change))\s*\(")]
     private static partial Regex Registration();
 }

@@ -14,5 +14,5 @@ public interface IScriptRunRegistry
 
     int StopAll();
 
-    Task WhenAllStoppedAsync(CancellationToken cancellation_token);
+    Task WhenAllStoppedAsync(CancellationToken cancellationToken);
 }

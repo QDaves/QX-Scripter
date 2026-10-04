@@ -1,7 +1,6 @@
 using Qx.Game.Protocol;
 using Qx.Interception;
 using Qx.Messages;
-using Qx.Model.Forums;
 using Qx.Model.Messages.Incoming;
 using Qx.Model.Messages.Outgoing;
 
@@ -123,7 +122,6 @@ internal sealed partial class ForumApplication : IApplicationFeature
         Session? session = lease.Session;
         var result = new ForumStateView(
             session is not null,
-            session?.Client,
             lease.SessionGeneration,
             lease.Revision,
             lease.Snapshot);
@@ -156,7 +154,6 @@ internal sealed partial class ForumApplication : IApplicationFeature
                 dispatch_guard: () => RequireScope(scope)).ConfigureAwait(false);
             RequireScope(scope);
             return new ForumListRefreshResult(
-                scope.Session.Client,
                 scope.Generation,
                 time_provider.GetUtcNow(),
                 page);
@@ -250,7 +247,7 @@ internal sealed partial class ForumApplication : IApplicationFeature
             ValidatePage(request.StartIndex, request.MaxCount);
             ValidateTimeout(request.TimeoutMilliseconds);
             ForumScope scope = CaptureScope(request.ExpectedSessionGeneration, token);
-            ValidateIds(scope.Session.Client, request.GroupId);
+            ValidateIds(request.GroupId);
             ForumThreads page = await requests.RequestAsync(
                 MessageContracts.Forums.ThreadsRequest,
                 new GetForumThreads(request.GroupId, request.StartIndex, request.MaxCount),
@@ -267,7 +264,6 @@ internal sealed partial class ForumApplication : IApplicationFeature
                 dispatch_guard: () => RequireScope(scope)).ConfigureAwait(false);
             RequireScope(scope);
             return new ForumThreadsRefreshResult(
-                scope.Session.Client,
                 scope.Generation,
                 time_provider.GetUtcNow(),
                 page);
@@ -282,7 +278,7 @@ internal sealed partial class ForumApplication : IApplicationFeature
             ValidatePage(request.StartIndex, request.MaxCount);
             ValidateTimeout(request.TimeoutMilliseconds);
             ForumScope scope = CaptureScope(request.ExpectedSessionGeneration, token);
-            ValidateIds(scope.Session.Client, request.GroupId, request.ThreadId);
+            ValidateIds(request.GroupId, request.ThreadId);
             ThreadMessages page = await requests.RequestAsync(
                 MessageContracts.Forums.MessagesRequest,
                 new GetForumThreadMessages(
@@ -304,7 +300,6 @@ internal sealed partial class ForumApplication : IApplicationFeature
                 dispatch_guard: () => RequireScope(scope)).ConfigureAwait(false);
             RequireScope(scope);
             return new ForumMessagesRefreshResult(
-                scope.Session.Client,
                 scope.Generation,
                 time_provider.GetUtcNow(),
                 page);
@@ -318,7 +313,7 @@ internal sealed partial class ForumApplication : IApplicationFeature
             ArgumentNullException.ThrowIfNull(request);
             ValidateTimeout(request.TimeoutMilliseconds);
             ForumScope scope = CaptureScope(request.ExpectedSessionGeneration, token);
-            ValidateIds(scope.Session.Client, request.GroupId);
+            ValidateIds(request.GroupId);
             ForumData response = await requests.RequestAsync(
                 MessageContracts.Forums.StatsRequest,
                 new GetForumStats(request.GroupId),
@@ -332,7 +327,6 @@ internal sealed partial class ForumApplication : IApplicationFeature
                 dispatch_guard: () => RequireScope(scope)).ConfigureAwait(false);
             RequireScope(scope);
             return new ForumDetailsRefreshResult(
-                scope.Session.Client,
                 scope.Generation,
                 time_provider.GetUtcNow(),
                 response.Data);
@@ -346,7 +340,7 @@ internal sealed partial class ForumApplication : IApplicationFeature
             ArgumentNullException.ThrowIfNull(request);
             ValidateTimeout(request.TimeoutMilliseconds);
             ForumScope scope = CaptureScope(request.ExpectedSessionGeneration, token);
-            ValidateIds(scope.Session.Client, request.GroupId, request.ThreadId);
+            ValidateIds(request.GroupId, request.ThreadId);
             UpdateThread response = await requests.RequestAsync(
                 MessageContracts.Forums.ThreadRequest,
                 new GetForumThread(request.GroupId, request.ThreadId),
@@ -363,7 +357,6 @@ internal sealed partial class ForumApplication : IApplicationFeature
                 dispatch_guard: () => RequireScope(scope)).ConfigureAwait(false);
             RequireScope(scope);
             return new ForumThreadRefreshResult(
-                scope.Session.Client,
                 scope.Generation,
                 time_provider.GetUtcNow(),
                 response.Thread ?? throw new InvalidDataException("Forum thread response is empty."));
@@ -390,7 +383,6 @@ internal sealed partial class ForumApplication : IApplicationFeature
                 dispatch_guard: () => RequireScope(scope)).ConfigureAwait(false);
             RequireScope(scope);
             return new ForumUnreadRefreshResult(
-                scope.Session.Client,
                 scope.Generation,
                 time_provider.GetUtcNow(),
                 response.Count);
@@ -530,7 +522,7 @@ internal sealed partial class ForumApplication : IApplicationFeature
         {
             ArgumentNullException.ThrowIfNull(request);
             ForumScope scope = CaptureScope(expected_generation, token);
-            ValidateIds(scope.Session.Client, ids);
+            ValidateIds(ids);
             message_dispatcher.Dispatch(
                 contract,
                 message,
@@ -539,7 +531,6 @@ internal sealed partial class ForumApplication : IApplicationFeature
                 () => RequireScope(scope));
             RequireScope(scope);
             return ValueTask.FromResult(new ForumDispatchResult(
-                scope.Session.Client,
                 scope.Generation,
                 time_provider.GetUtcNow(),
                 1));
@@ -607,7 +598,7 @@ internal sealed partial class ForumApplication : IApplicationFeature
         Session? session = connection.Session;
         changed.Publish(new ForumChanged(
             time_provider.GetUtcNow(),
-            session?.Client,
+            session is not null,
             forums.SessionGeneration,
             snapshot));
     }
@@ -641,12 +632,12 @@ internal sealed partial class ForumApplication : IApplicationFeature
             throw new ArgumentOutOfRangeException(nameof(snapshot_revision));
     }
 
-    private static void ValidateIds(ClientType client, params Id[] ids)
+    private static void ValidateIds(params Id[] ids)
     {
         for (int index = 0; index < ids.Length; index++)
         {
             long value = ids[index];
-            if (client is ClientType.Flash && value is < int.MinValue or > int.MaxValue)
+            if (value is < int.MinValue or > int.MaxValue)
                 throw new ArgumentOutOfRangeException(nameof(ids));
         }
     }

@@ -1,7 +1,7 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Text.Json.Serialization;
-using Qx.Scripting;
+using Qx.Scripting.Hosting;
 
 namespace Qx.Hosting;
 

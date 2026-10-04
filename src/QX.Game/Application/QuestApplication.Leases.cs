@@ -1,5 +1,5 @@
+using Qx.Model;
 using Qx.Model.Messages.Incoming;
-using Qx.Model.Quests;
 
 namespace Qx.Game.Application;
 

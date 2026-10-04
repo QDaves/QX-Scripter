@@ -270,6 +270,7 @@ public sealed record WiredUserVariablesElement(
     /// <param name="p">The packet writer.</param>
     public void Compose(in PacketWriter p)
     {
+        WiredVariableMessagesWire.validate_storage(Storage, false, in p);
         p.WriteInt(EntityType);
         p.WriteInt(EntityId);
         p.WriteString(EntityName);
@@ -319,6 +320,7 @@ public sealed record WiredUserVariablesPage(
     /// <param name="p">The packet writer.</param>
     public void Compose(in PacketWriter p)
     {
+        WiredVariableMessagesWire.Validate(this, in p);
         p.WriteString(VariableId);
         p.WriteInt(TotalEntries);
         p.WriteInt(CurrentPage);
@@ -418,6 +420,7 @@ public sealed record WiredUserPermanentVariablesList(
     /// <param name="p">The packet writer.</param>
     public void Compose(in PacketWriter p)
     {
+        WiredVariableMessagesWire.Validate(this, in p);
         p.WriteInt(EntityType);
         p.WriteInt(EntityId);
         p.WriteString(EntityName);
@@ -882,7 +885,7 @@ internal static class WiredVariableMessagesWire
         {
             ArgumentNullException.ThrowIfNull(element);
             WiredWire.RequireString(element.EntityName, nameof(element.EntityName), in p);
-            Validate(element.Storage, in p);
+            validate_storage(element.Storage, false, in p);
         }
     }
 
@@ -900,7 +903,7 @@ internal static class WiredVariableMessagesWire
         foreach (WiredVariableStorageParameter storage in value.VariableStorage)
         {
             ArgumentNullException.ThrowIfNull(storage);
-            Validate(storage, in p);
+            validate_storage(storage, true, in p);
         }
     }
 
@@ -912,8 +915,11 @@ internal static class WiredVariableMessagesWire
             WiredWire.RequireString(variable.Key, nameof(value.VariableValues), in p);
     }
 
-    private static void Validate(WiredVariableStorageParameter value, in PacketWriter p)
+    internal static void validate_storage(WiredVariableStorageParameter value, bool includes_variable_id, in PacketWriter p)
     {
+        ArgumentNullException.ThrowIfNull(value);
+        if (value.IncludesVariableId != includes_variable_id)
+            throw new InvalidDataException("The stored variable layout does not match its containing message.");
         if (value.IncludesVariableId)
             WiredWire.RequireString(value.VariableId ?? "", nameof(value.VariableId), in p);
         WiredWire.RequireString(value.CreationTimeStr, nameof(value.CreationTimeStr), in p);

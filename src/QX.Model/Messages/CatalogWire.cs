@@ -6,12 +6,7 @@ internal static class CatalogWire
 {
     public const int MaximumCollectionCount = ushort.MaxValue;
     public const int StringMinimumBytes = sizeof(short);
-
-    public static int CountWidth(ClientType client) => client switch
-    {
-        ClientType.Flash => sizeof(int),
-        _ => throw new UnsupportedClientException(client)
-    };
+    public const int CountWidth = sizeof(int);
 
     public static int ReadCount(
         in PacketReader p,
@@ -22,11 +17,7 @@ internal static class CatalogWire
     {
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(minimum_element_bytes);
         ArgumentOutOfRangeException.ThrowIfNegative(trailing_bytes);
-        int count = p.Client switch
-        {
-            ClientType.Flash => p.ReadInt(),
-            _ => throw new UnsupportedClientException(p.Client)
-        };
+        int count = p.ReadInt();
         RequireCount(count, maximum, name);
         int available = p.Available - trailing_bytes;
         if (available < 0 || count > available / minimum_element_bytes)

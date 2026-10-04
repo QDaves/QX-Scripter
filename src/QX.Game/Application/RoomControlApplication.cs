@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Qx.Interception;
 using Qx.Messages;
 using Qx.Model;
@@ -148,7 +149,7 @@ internal sealed class RoomControlApplication : IApplicationFeature, IRoomControl
             ?? throw new InvalidOperationException("An active hotel session is required.");
         var room = CaptureRoom();
         send(session, room.Generation, cancellation_token);
-        return Result(session.Client, room.RoomId, room.Generation);
+        return Result(room.RoomId, room.Generation);
     }
 
     private RoomControlDispatchResult DispatchSession(
@@ -162,7 +163,7 @@ internal sealed class RoomControlApplication : IApplicationFeature, IRoomControl
             ?? throw new InvalidOperationException("An active hotel session is required.");
         long generation = game.Room.Capture(state => state.Generation);
         send(session, cancellation_token);
-        return Result(session.Client, room_id, generation);
+        return Result(room_id, generation);
     }
 
     private (Id? RoomId, long Generation) CaptureRoom() => game.Room.Capture(state =>
@@ -171,8 +172,8 @@ internal sealed class RoomControlApplication : IApplicationFeature, IRoomControl
         return (room_id, state.Generation);
     });
 
-    private RoomControlDispatchResult Result(ClientType client, Id? room_id, long generation) =>
-        new(client, room_id, generation, true, false, time_provider.GetUtcNow());
+    private RoomControlDispatchResult Result(Id? room_id, long generation) =>
+        new(room_id, generation, true, false, time_provider.GetUtcNow());
 
     private static ApplicationCallBinding<TRequest, RoomControlDispatchResult> Call<TRequest>(
         ApplicationDescriptor descriptor,
@@ -225,7 +226,7 @@ internal sealed class RoomControlApplication : IApplicationFeature, IRoomControl
         ],
         MessageKeys.Room.StaffPickUpdateRequest);
 
-    private static ApplicationDescriptor Descriptor<TRequest>(
+    private static ApplicationDescriptor Descriptor<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TRequest>(
         string id,
         string title,
         string description,
@@ -244,8 +245,8 @@ internal sealed class RoomControlApplication : IApplicationFeature, IRoomControl
             [
                 new ApplicationMessageRequirement(
                     message,
-                    Direction.Out,
+                    MessageDirection.Out,
                     ApplicationMessageRole.Send)
             ],
-            tool_hints: new(false, true, false, true));
+            toolHints: new(false, true, false, true));
 }

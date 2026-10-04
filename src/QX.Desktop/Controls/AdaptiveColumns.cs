@@ -46,13 +46,13 @@ public sealed class AdaptiveColumns : Panel
         set => SetValue(RowSpacingProperty, value);
     }
 
-    protected override Size MeasureOverride(Size available_size)
+    protected override Size MeasureOverride(Size availableSize)
     {
         List<Control> visible = Children.Where(child => child.IsVisible).ToList();
-        int columns = ColumnsFor(available_size.Width, visible.Count);
-        double column_width = double.IsInfinity(available_size.Width)
+        int columns = ColumnsFor(availableSize.Width, visible.Count);
+        double column_width = double.IsInfinity(availableSize.Width)
             ? double.PositiveInfinity
-            : Math.Max(0, (available_size.Width - ColumnSpacing * (columns - 1)) / columns);
+            : Math.Max(0, (availableSize.Width - ColumnSpacing * (columns - 1)) / columns);
         double total_height = 0;
         double widest = 0;
         for (int row_start = 0; row_start < visible.Count; row_start += columns)
@@ -66,15 +66,15 @@ public sealed class AdaptiveColumns : Panel
             }
             total_height += row_height + (row_start > 0 ? RowSpacing : 0);
         }
-        double width = double.IsInfinity(available_size.Width) ? widest * columns + ColumnSpacing * (columns - 1) : available_size.Width;
+        double width = double.IsInfinity(availableSize.Width) ? widest * columns + ColumnSpacing * (columns - 1) : availableSize.Width;
         return new Size(width, total_height);
     }
 
-    protected override Size ArrangeOverride(Size final_size)
+    protected override Size ArrangeOverride(Size finalSize)
     {
         List<Control> visible = Children.Where(child => child.IsVisible).ToList();
-        int columns = ColumnsFor(final_size.Width, visible.Count);
-        double column_width = Math.Max(0, (final_size.Width - ColumnSpacing * (columns - 1)) / columns);
+        int columns = ColumnsFor(finalSize.Width, visible.Count);
+        double column_width = Math.Max(0, (finalSize.Width - ColumnSpacing * (columns - 1)) / columns);
         double top = 0;
         for (int row_start = 0; row_start < visible.Count; row_start += columns)
         {
@@ -88,7 +88,7 @@ public sealed class AdaptiveColumns : Panel
             }
             top += row_height + RowSpacing;
         }
-        return final_size;
+        return finalSize;
     }
 
     int ColumnsFor(double width, int count)

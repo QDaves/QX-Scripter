@@ -52,7 +52,6 @@ internal sealed partial class HabbiconApplication
             HabbiconEntryPage entries = EntryPageFor(lease, 0, request.Limit);
             RequireLeaseActive(lease);
             return new HabbiconShopRefreshResult(
-                scope.Session.Client,
                 time_provider.GetUtcNow(),
                 observed.ObservedAtUtc,
                 scope.SessionGeneration,
@@ -80,7 +79,6 @@ internal sealed partial class HabbiconApplication
         HabbiconSnapshotLease lease = StoreCurrentLease();
         HabbiconStateData state = lease.State;
         return new HabbiconShopRefreshResult(
-            scope.Session.Client,
             time_provider.GetUtcNow(),
             observed_at,
             scope.SessionGeneration,
@@ -128,7 +126,6 @@ internal sealed partial class HabbiconApplication
                 0);
             RequireLeaseActive(lease);
             return new HabbiconInfoRefreshResult(
-                scope.Session.Client,
                 time_provider.GetUtcNow(),
                 observed.ObservedAtUtc,
                 scope.SessionGeneration,
@@ -158,7 +155,6 @@ internal sealed partial class HabbiconApplication
             HabbiconSessionScope scope = CaptureScope(expected_session_generation, token);
             message_dispatcher.Dispatch(contract, wire_request, scope.Session, token);
             return ValueTask.FromResult(new HabbiconDispatchResult(
-                scope.Session.Client,
                 time_provider.GetUtcNow(),
                 scope.SessionGeneration,
                 1));

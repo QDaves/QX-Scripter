@@ -29,7 +29,7 @@ public sealed record WallItemRemove(Id Id, Id PickerId) : IParserComposer<WallIt
 
     private static void ComposeFlash(WallItemRemove value, in PacketWriter p)
     {
-        RoomPlacementWire.RequireId(value.PickerId, nameof(value.PickerId), in p);
+        RoomPlacementWire.RequireId(value.PickerId, nameof(value.PickerId));
         RoomPlacementWire.WriteFlashStringId(value.Id, nameof(value.Id), in p);
         p.WriteId(value.PickerId);
     }

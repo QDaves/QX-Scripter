@@ -7,7 +7,7 @@ sealed class NoGlobalHotkeys : IGlobalHotkeys
 {
     public bool IsSupported => false;
 
-    public Task<IDisposable?> TryRegisterAsync(KeyChord chord, Action pressed, CancellationToken cancellation_token = default)
+    public Task<IDisposable?> TryRegisterAsync(KeyChord chord, Action pressed, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(pressed);
         return Task.FromResult<IDisposable?>(null);
@@ -16,10 +16,10 @@ sealed class NoGlobalHotkeys : IGlobalHotkeys
 
 sealed class FolderRevealer(ILauncherService launcher) : IFileRevealer
 {
-    public Task<bool> RevealAsync(string path, CancellationToken cancellation_token = default)
+    public Task<bool> RevealAsync(string path, CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(path);
         string? folder = Path.GetDirectoryName(path);
-        return folder is { Length: > 0 } ? launcher.OpenFolderAsync(folder, cancellation_token) : Task.FromResult(false);
+        return folder is { Length: > 0 } ? launcher.OpenFolderAsync(folder, cancellationToken) : Task.FromResult(false);
     }
 }

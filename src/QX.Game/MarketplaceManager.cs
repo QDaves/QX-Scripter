@@ -2,7 +2,6 @@
 using Qx.Game.Snapshots;
 using Qx.Messages;
 using Qx.Model;
-using Qx.Model.Marketplace;
 using Qx.Model.Messages.Incoming;
 using System.Collections.ObjectModel;
 
@@ -197,38 +196,38 @@ public sealed record MarketplaceSnapshot(
     /// <summary>
     /// Finds an offer in the last search result.
     /// </summary>
-    /// <param name="offer_id">The id of the offer.</param>
+    /// <param name="offerId">The id of the offer.</param>
     /// <returns>The offer, or <see langword="null"/> when it is not in the last search result.</returns>
-    public MarketplaceOfferSnapshot? FindSearchOffer(Id offer_id) =>
-        SearchResult?.Offers.FirstOrDefault(offer => offer.OfferId == offer_id);
+    public MarketplaceOfferSnapshot? FindSearchOffer(Id offerId) =>
+        SearchResult?.Offers.FirstOrDefault(offer => offer.OfferId == offerId);
 
     /// <summary>
     /// Finds an offer among the local user's own offers.
     /// </summary>
-    /// <param name="offer_id">The id of the offer.</param>
+    /// <param name="offerId">The id of the offer.</param>
     /// <returns>The offer, or <see langword="null"/> when it is not among the own offers.</returns>
-    public MarketplaceOfferSnapshot? FindOwnOffer(Id offer_id) =>
-        OwnOffers?.Offers.FirstOrDefault(offer => offer.OfferId == offer_id);
+    public MarketplaceOfferSnapshot? FindOwnOffer(Id offerId) =>
+        OwnOffers?.Offers.FirstOrDefault(offer => offer.OfferId == offerId);
 
     /// <summary>
     /// Finds an offer in the last search result, then among the local user's own offers.
     /// </summary>
-    /// <param name="offer_id">The id of the offer.</param>
+    /// <param name="offerId">The id of the offer.</param>
     /// <returns>The offer, or <see langword="null"/> when it is in neither list.</returns>
-    public MarketplaceOfferSnapshot? FindOffer(Id offer_id) =>
-        FindSearchOffer(offer_id) ?? FindOwnOffer(offer_id);
+    public MarketplaceOfferSnapshot? FindOffer(Id offerId) =>
+        FindSearchOffer(offerId) ?? FindOwnOffer(offerId);
 
     /// <summary>
     /// Finds the statistics received for a furni kind.
     /// </summary>
-    /// <param name="furni_category">The marketplace category of the furni.</param>
-    /// <param name="furni_type_id">The furni type id.</param>
+    /// <param name="furniCategory">The marketplace category of the furni.</param>
+    /// <param name="furniTypeId">The furni type id.</param>
     /// <returns>The statistics, or <see langword="null"/> when none were received.</returns>
     public MarketplaceItemStatsSnapshot? FindItemStats(
-        MarketplaceFurniCategory furni_category,
-        int furni_type_id) =>
+        MarketplaceFurniCategory furniCategory,
+        int furniTypeId) =>
         ItemStats.GetValueOrDefault(
-            new MarketplaceItemKey(furni_category, furni_type_id));
+            new MarketplaceItemKey(furniCategory, furniTypeId));
 
     private static IReadOnlyDictionary<TKey, TValue>
         EmptyMap<TKey, TValue>() where TKey : notnull =>

@@ -1,6 +1,4 @@
 using Qx.Messages;
-using Qx.Model.Forums;
-using ForumThreadData = Qx.Model.Forums.ForumThread;
 
 namespace Qx.Model.Messages.Incoming;
 
@@ -28,33 +26,33 @@ public sealed record PostMessage : IParserComposer<PostMessage>
     public bool IsRequest => Message is null;
 
     /// <summary>Initializes a new outgoing post request.</summary>
-    /// <param name="group_id">The id of the group that owns the forum.</param>
-    /// <param name="thread_id">The thread to reply to, or 0 to start a new thread.</param>
+    /// <param name="groupId">The id of the group that owns the forum.</param>
+    /// <param name="threadId">The thread to reply to, or 0 to start a new thread.</param>
     /// <param name="subject">The subject of a new thread.</param>
-    /// <param name="message_text">The text to post.</param>
+    /// <param name="messageText">The text to post.</param>
     public PostMessage(
-        Id group_id,
-        Id thread_id,
+        Id groupId,
+        Id threadId,
         string subject,
-        string message_text)
+        string messageText)
     {
-        GroupId = group_id;
-        ThreadId = thread_id;
+        GroupId = groupId;
+        ThreadId = threadId;
         Subject = subject;
-        MessageText = message_text;
+        MessageText = messageText;
     }
 
     /// <summary>Initializes a new incoming notice of a posted message.</summary>
-    /// <param name="group_id">The id of the group that owns the forum.</param>
-    /// <param name="thread_id">The thread the message was posted in.</param>
+    /// <param name="groupId">The id of the group that owns the forum.</param>
+    /// <param name="threadId">The thread the message was posted in.</param>
     /// <param name="message">The posted message.</param>
     public PostMessage(
-        Id group_id,
-        Id thread_id,
+        Id groupId,
+        Id threadId,
         ForumPost message)
     {
-        GroupId = group_id;
-        ThreadId = thread_id;
+        GroupId = groupId;
+        ThreadId = threadId;
         Subject = "";
         MessageText = "";
         Message = message;
@@ -76,8 +74,8 @@ public sealed record PostMessage : IParserComposer<PostMessage>
     {
         return p.Header.Direction switch
         {
-            Direction.In => ParseIncoming(in p),
-            Direction.Out => new PostMessage(
+            MessageDirection.In => ParseIncoming(in p),
+            MessageDirection.Out => new PostMessage(
                 ForumRequestProtocol.ReadFlashGroupId(in p),
                 ForumRequestProtocol.ReadIntId(in p),
                 ReadRequestString(in p, nameof(Subject), 2),
@@ -122,7 +120,7 @@ public sealed record PostMessage : IParserComposer<PostMessage>
     {
         switch (p.Header.Direction)
         {
-            case Direction.In:
+            case MessageDirection.In:
                 ForumPost message = value.Message ??
                     throw new InvalidDataException("Incoming PostMessage requires a forum post.");
                 ForumProtocol.RequireFlashId(value.GroupId, "forum group");
@@ -133,7 +131,7 @@ public sealed record PostMessage : IParserComposer<PostMessage>
                 ForumProtocol.WriteFlashId(in p, value.ThreadId);
                 ForumPost.ComposeFlashWire(message, in p);
                 return;
-            case Direction.Out:
+            case MessageDirection.Out:
                 if (value.Message is not null)
                     throw new InvalidDataException("Outgoing PostMessage cannot contain a parsed forum post.");
                 ForumProtocol.RequireFlashId(value.GroupId, "forum group");
@@ -170,33 +168,33 @@ public sealed record UpdateThread : IParserComposer<UpdateThread>
     /// <summary>Gets whether the thread rejects further replies.</summary>
     public bool IsLocked { get; init; }
     /// <summary>Gets the updated thread, or <see langword="null"/> for an outgoing request.</summary>
-    public ForumThreadData? Thread { get; init; }
+    public ForumThread? Thread { get; init; }
     /// <summary>Gets whether the value is an outgoing request, which is when <see cref="Thread"/> is <see langword="null"/>.</summary>
     public bool IsRequest => Thread is null;
 
     /// <summary>Initializes a new outgoing request to change a thread's flags.</summary>
-    /// <param name="group_id">The id of the group that owns the forum.</param>
-    /// <param name="thread_id">The thread to change.</param>
-    /// <param name="is_sticky">Whether the thread is pinned to the top of the thread list.</param>
-    /// <param name="is_locked">Whether the thread rejects further replies.</param>
+    /// <param name="groupId">The id of the group that owns the forum.</param>
+    /// <param name="threadId">The thread to change.</param>
+    /// <param name="isSticky">Whether the thread is pinned to the top of the thread list.</param>
+    /// <param name="isLocked">Whether the thread rejects further replies.</param>
     public UpdateThread(
-        Id group_id,
-        Id thread_id,
-        bool is_sticky,
-        bool is_locked)
+        Id groupId,
+        Id threadId,
+        bool isSticky,
+        bool isLocked)
     {
-        GroupId = group_id;
-        ThreadId = thread_id;
-        IsSticky = is_sticky;
-        IsLocked = is_locked;
+        GroupId = groupId;
+        ThreadId = threadId;
+        IsSticky = isSticky;
+        IsLocked = isLocked;
     }
 
     /// <summary>Initializes a new incoming notice of an updated thread.</summary>
-    /// <param name="group_id">The id of the group that owns the forum.</param>
+    /// <param name="groupId">The id of the group that owns the forum.</param>
     /// <param name="thread">The updated thread, which also supplies the thread id and flags.</param>
-    public UpdateThread(Id group_id, ForumThreadData thread)
+    public UpdateThread(Id groupId, ForumThread thread)
     {
-        GroupId = group_id;
+        GroupId = groupId;
         ThreadId = thread.ThreadId;
         IsSticky = thread.IsSticky;
         IsLocked = thread.IsLocked;
@@ -219,8 +217,8 @@ public sealed record UpdateThread : IParserComposer<UpdateThread>
     {
         return p.Header.Direction switch
         {
-            Direction.In => ParseIncoming(in p),
-            Direction.Out => new UpdateThread(
+            MessageDirection.In => ParseIncoming(in p),
+            MessageDirection.Out => new UpdateThread(
                 ForumRequestProtocol.ReadFlashGroupId(in p),
                 ForumRequestProtocol.ReadIntId(in p),
                 p.ReadBool(),
@@ -244,23 +242,23 @@ public sealed record UpdateThread : IParserComposer<UpdateThread>
             "forum group");
         return new UpdateThread(
             group_id,
-            ForumThreadData.ParseFlashWire(in p, 0, ref budget));
+            ForumThread.ParseFlashWire(in p, 0, ref budget));
     }
 
     private static void ComposeFlash(UpdateThread value, in PacketWriter p)
     {
         switch (p.Header.Direction)
         {
-            case Direction.In:
-                ForumThreadData thread = value.Thread ??
+            case MessageDirection.In:
+                ForumThread thread = value.Thread ??
                     throw new InvalidDataException("Incoming UpdateThread requires a forum thread.");
                 ForumProtocol.RequireFlashId(value.GroupId, "forum group");
                 ForumStringBudget budget = ForumProtocol.NewStringBudget();
-                ForumThreadData.PrepareFlash(thread, in p, ref budget);
+                ForumThread.PrepareFlash(thread, in p, ref budget);
                 ForumProtocol.WriteFlashId(in p, value.GroupId);
-                ForumThreadData.ComposeFlashWire(thread, in p);
+                ForumThread.ComposeFlashWire(thread, in p);
                 return;
-            case Direction.Out:
+            case MessageDirection.Out:
                 if (value.Thread is not null)
                     throw new InvalidDataException("Outgoing UpdateThread cannot contain a parsed forum thread.");
                 ForumProtocol.RequireFlashId(value.GroupId, "forum group");

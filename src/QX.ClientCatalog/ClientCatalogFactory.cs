@@ -1,4 +1,3 @@
-using Qx;
 using Qx.Messages;
 using Qx.Protocol;
 using Qx.Headers.Flash;
@@ -29,7 +28,6 @@ public static class ClientCatalogFactory
 
     static void Validate(PreparedHeaderCatalog prepared)
     {
-        ClientType client = ClientCatalogClients.FromFamily(prepared.Candidate.Family);
         var provenance = new HeaderCatalogProvenance(
             prepared.Candidate.Version,
             prepared.Candidate.Source,
@@ -40,8 +38,7 @@ public static class ClientCatalogFactory
         bool source_matches = prepared.Candidate.Files
             .Select(Path.GetFullPath)
             .Contains(prepared.SourcePath, paths);
-        if (prepared.Key.Client != client ||
-            prepared.Key.Provenance != provenance ||
+        if (prepared.Key.Provenance != provenance ||
             prepared.Catalog.Provenance != prepared.Key.Provenance ||
             !paths.Equals(prepared.NormalizedPath, Path.GetFullPath(prepared.Candidate.Path)) ||
             !source_matches)
@@ -55,9 +52,9 @@ public static class ClientCatalogFactory
         ArgumentNullException.ThrowIfNull(messages);
         var catalog = new MessageCatalog();
         foreach (FlashHeaderDefinition message in messages.Incoming)
-            Add(catalog, Direction.In, message.Id, message.Name, message.Class, message.Qualified);
+            Add(catalog, MessageDirection.In, message.Id, message.Name, message.Class, message.Qualified);
         foreach (FlashHeaderDefinition message in messages.Outgoing)
-            Add(catalog, Direction.Out, message.Id, message.Name, message.Class, message.Qualified);
+            Add(catalog, MessageDirection.Out, message.Id, message.Name, message.Class, message.Qualified);
         if (messages.SourceSha256.Length != 0)
             catalog.SetBuildFingerprint(messages.SourceSha256);
         catalog.SetWireProfile(new MessageWireProfile(
@@ -67,7 +64,7 @@ public static class ClientCatalogFactory
         return catalog;
     }
 
-    static void Add(MessageCatalog catalog, Direction direction, int id, params string?[] names)
+    static void Add(MessageCatalog catalog, MessageDirection direction, int id, params string?[] names)
     {
         string[] aliases = names
             .Where(name => !string.IsNullOrWhiteSpace(name))
@@ -85,8 +82,6 @@ public static class ClientCatalogFactory
         MessageCatalog catalog,
         PreparedHeaderCatalog prepared)
     {
-        if (prepared.Key.Client != ClientCatalogClients.Flash)
-            return;
         catalog.SetWireProfile(new MessageWireProfile(
             MessageWiredContextLayout.Unknown,
             null,

@@ -1,4 +1,3 @@
-using System.Collections.ObjectModel;
 using System.Runtime.ExceptionServices;
 using System.Threading.Channels;
 
@@ -13,8 +12,8 @@ public sealed class InstalledClientMonitor : IAsyncDisposable
     readonly SemaphoreSlim _reconcile_gate = new(1, 1);
     readonly object _state_gate = new();
     readonly Dictionary<string, StableObservation> _observations = new(StoragePaths.FileComparer);
-    readonly Dictionary<InstalledClientFamily, PublishedCandidate> _published = [];
-    readonly Dictionary<InstalledClientFamily, MissingObservation> _missing = [];
+    PublishedCandidate? _published;
+    MissingObservation? _missing;
     CancellationTokenSource? _stop;
     Task? _startup;
     Task? _loop;
@@ -38,26 +37,23 @@ public sealed class InstalledClientMonitor : IAsyncDisposable
 
     public event EventHandler<InstalledClientCandidateChangedEventArgs>? CandidateChanged;
 
-    public IReadOnlyDictionary<InstalledClientFamily, InstalledClientCandidate> Candidates
+    public InstalledClientCandidate? Candidate
     {
         get
         {
             lock (_state_gate)
-            {
-                return new ReadOnlyDictionary<InstalledClientFamily, InstalledClientCandidate>(
-                    _published.ToDictionary(entry => entry.Key, entry => entry.Value.Candidate));
-            }
+                return _published?.Candidate;
         }
     }
 
-    public Task StartAsync(CancellationToken cancellation_token = default)
+    public Task StartAsync(CancellationToken cancellationToken = default)
     {
         Task startup;
         lock (_state_gate)
         {
             ObjectDisposedException.ThrowIf(_disposed, this);
-            if (cancellation_token.IsCancellationRequested)
-                return Task.FromCanceled(cancellation_token);
+            if (cancellationToken.IsCancellationRequested)
+                return Task.FromCanceled(cancellationToken);
             if (_startup is null)
             {
                 var stop = new CancellationTokenSource();
@@ -181,12 +177,8 @@ public sealed class InstalledClientMonitor : IAsyncDisposable
                 _observations.Remove(missing);
 
             ReconcilePublished(
-                InstalledClientFamily.Flash,
-                Published(SelectLatestVerified(
-                    stable,
-                    InstalledClientFamily.Flash,
-                    Verify)),
-                discovered.Where(candidate => candidate.Family == InstalledClientFamily.Flash).ToArray(),
+                Published(SelectLatestVerified(stable, Verify)),
+                discovered,
                 now);
         }
         finally
@@ -213,17 +205,16 @@ public sealed class InstalledClientMonitor : IAsyncDisposable
     }
 
     void ReconcilePublished(
-        InstalledClientFamily family,
         PublishedCandidate? candidate,
         IReadOnlyList<InstalledClientCandidate> discovered,
         DateTimeOffset now)
     {
-        _published.TryGetValue(family, out PublishedCandidate? current);
+        PublishedCandidate? current = _published;
         if (current is null)
         {
-            _missing.Remove(family);
+            _missing = null;
             if (candidate is not null)
-                Publish(family, candidate);
+                Publish(candidate);
             return;
         }
 
@@ -235,8 +226,8 @@ public sealed class InstalledClientMonitor : IAsyncDisposable
                     StoragePaths.FileComparison) ||
                 IsNewer(candidate.Candidate, current.Candidate)))
         {
-            _missing.Remove(family);
-            Publish(family, candidate);
+            _missing = null;
+            Publish(candidate);
             return;
         }
 
@@ -244,31 +235,31 @@ public sealed class InstalledClientMonitor : IAsyncDisposable
             string.Equals(CandidateKey(found), CandidateKey(current.Candidate), StoragePaths.FileComparison));
         if (current_discovered)
         {
-            _missing.Remove(family);
+            _missing = null;
             return;
         }
 
-        if (!_missing.TryGetValue(family, out MissingObservation? missing))
+        if (_missing is not { } missing)
         {
-            _missing[family] = new MissingObservation(now, 1);
+            _missing = new MissingObservation(now, 1);
             return;
         }
 
         missing = missing with { Count = missing.Count + 1 };
-        _missing[family] = missing;
+        _missing = missing;
         if (missing.Count >= 2 && now - missing.ChangedAt >= _options.QuietPeriod)
         {
-            _missing.Remove(family);
-            Publish(family, candidate);
+            _missing = null;
+            Publish(candidate);
         }
     }
 
-    void Publish(InstalledClientFamily family, PublishedCandidate? candidate)
+    void Publish(PublishedCandidate? candidate)
     {
         InstalledClientCandidate? previous;
         lock (_state_gate)
         {
-            _published.TryGetValue(family, out PublishedCandidate? current);
+            PublishedCandidate? current = _published;
             if (current is null && candidate is null)
                 return;
             if (current is not null && candidate is not null &&
@@ -276,16 +267,10 @@ public sealed class InstalledClientMonitor : IAsyncDisposable
                 return;
 
             previous = current?.Candidate;
-            if (candidate is null)
-                _published.Remove(family);
-            else
-                _published[family] = candidate;
+            _published = candidate;
         }
 
-        RaiseCandidateChanged(new InstalledClientCandidateChangedEventArgs(
-            family,
-            previous,
-            candidate?.Candidate));
+        RaiseCandidateChanged(new InstalledClientCandidateChangedEventArgs(previous, candidate?.Candidate));
     }
 
     void RaiseCandidateChanged(InstalledClientCandidateChangedEventArgs args)
@@ -318,12 +303,10 @@ public sealed class InstalledClientMonitor : IAsyncDisposable
             if (next is null || due < next)
                 next = due;
         }
-        foreach (MissingObservation missing in _missing.Values)
+        if (_missing is { } missing)
         {
             DateTimeOffset due = missing.ChangedAt + Max(_options.QuietPeriod, _options.StabilityProbePeriod);
-            if (missing.Count >= 2 && due <= now)
-                continue;
-            if (next is null || due < next)
+            if ((missing.Count < 2 || due > now) && (next is null || due < next))
                 next = due;
         }
         return next;
@@ -432,14 +415,12 @@ public sealed class InstalledClientMonitor : IAsyncDisposable
 
     internal static InstalledClientCandidate? SelectLatestVerified(
         IEnumerable<InstalledClientCandidate> candidates,
-        InstalledClientFamily family,
         Func<InstalledClientCandidate, string?> verify)
     {
         ArgumentNullException.ThrowIfNull(candidates);
         ArgumentNullException.ThrowIfNull(verify);
 
         foreach (InstalledClientCandidate candidate in candidates
-            .Where(candidate => candidate.Family == family)
             .OrderByDescending(candidate => candidate.LastModified)
             .ThenByDescending(candidate => ParseVersion(candidate.Version))
             .ThenByDescending(candidate => candidate.Path, StoragePaths.FileComparer))
@@ -454,9 +435,8 @@ public sealed class InstalledClientMonitor : IAsyncDisposable
 
     static bool TryFingerprint(InstalledClientCandidate candidate, out string fingerprint)
     {
-        var values = new List<string>(candidate.Files.Count + 3)
+        var values = new List<string>(candidate.Files.Count + 2)
         {
-            candidate.Family.ToString(),
             candidate.Version,
             Path.GetFullPath(candidate.Path)
         };
@@ -483,7 +463,7 @@ public sealed class InstalledClientMonitor : IAsyncDisposable
     }
 
     static string CandidateKey(InstalledClientCandidate candidate) =>
-        $"{candidate.Family}:{candidate.Version}:{Path.GetFullPath(candidate.Path)}";
+        $"{candidate.Version}:{Path.GetFullPath(candidate.Path)}";
 
     static long ParseVersion(string version) => long.TryParse(version, out long parsed) ? parsed : -1;
 

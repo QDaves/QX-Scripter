@@ -86,11 +86,11 @@ public sealed class RoomPeopleActions : GameStateManager
             cancellation_token);
 
     /// <summary>Sends a respect to a pet.</summary>
-    /// <param name="pet_id">The id of the pet.</param>
-    public void RespectPet(Id pet_id) =>
+    /// <param name="petId">The id of the pet.</param>
+    public void RespectPet(Id petId) =>
         SendMessage(
             MessageContracts.Room.Occupants.Pet.RespectRequest,
-            new RespectPetRequest(pet_id));
+            new RespectPetRequest(petId));
 
     internal void RespectPet(
         Id pet_id,
@@ -105,12 +105,12 @@ public sealed class RoomPeopleActions : GameStateManager
             cancellation_token);
 
     /// <summary>Mounts or dismounts a rideable pet.</summary>
-    /// <param name="pet_id">The id of the pet.</param>
+    /// <param name="petId">The id of the pet.</param>
     /// <param name="mount"><see langword="true"/> to mount the pet, <see langword="false"/> to dismount it.</param>
-    public void MountPet(Id pet_id, bool mount) =>
+    public void MountPet(Id petId, bool mount) =>
         SendMessage(
             MessageContracts.Room.Occupants.Pet.MountRequest,
-            new MountPetRequest(pet_id, mount));
+            new MountPetRequest(petId, mount));
 
     internal void MountPet(
         Id pet_id,
@@ -126,11 +126,11 @@ public sealed class RoomPeopleActions : GameStateManager
             cancellation_token);
 
     /// <summary>Removes a pet from the room.</summary>
-    /// <param name="pet_id">The id of the pet.</param>
-    public void RemovePet(Id pet_id) =>
+    /// <param name="petId">The id of the pet.</param>
+    public void RemovePet(Id petId) =>
         SendMessage(
             MessageContracts.Room.Occupants.Pet.RemoveRequest,
-            new RemovePetFromRoomRequest(pet_id));
+            new RemovePetFromRoomRequest(petId));
 
     internal void RemovePet(
         Id pet_id,
@@ -145,11 +145,11 @@ public sealed class RoomPeopleActions : GameStateManager
             cancellation_token);
 
     /// <summary>Removes a bot from the room.</summary>
-    /// <param name="bot_id">The id of the bot.</param>
-    public void RemoveBot(Id bot_id) =>
+    /// <param name="botId">The id of the bot.</param>
+    public void RemoveBot(Id botId) =>
         SendMessage(
             MessageContracts.Room.Occupants.Bot.RemoveRequest,
-            new RemoveBotFromFlat(bot_id));
+            new RemoveBotFromFlat(botId));
 
     internal void RemoveBot(
         Id bot_id,
@@ -164,11 +164,11 @@ public sealed class RoomPeopleActions : GameStateManager
             cancellation_token);
 
     /// <summary>Gives a user rights in the current room.</summary>
-    /// <param name="user_id">The id of the user.</param>
-    public void GiveRights(Id user_id) =>
+    /// <param name="userId">The id of the user.</param>
+    public void GiveRights(Id userId) =>
         SendMessage(
             MessageContracts.Room.Authority.ControllerGrantRequest,
-            new GiveRoomRightsRequest(user_id));
+            new GiveRoomRightsRequest(userId));
 
     internal void GiveRights(
         Id user_id,

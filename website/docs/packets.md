@@ -28,7 +28,8 @@ OnIn(Msg.In.Chat, e => Log("chat"));
 
 ## Intercept a packet
 
-`OnOut` and `OnIn` run a handler for every matching packet. The handler receives an
+`OnOut` and `OnIn` run a handler for every matching packet that passes through the interceptor.
+Packets that scripts or QX send themselves do not reach them. The handler receives an
 <xref:Qx.Interception.Intercept>:
 
 ```csharp

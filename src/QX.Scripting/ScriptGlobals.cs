@@ -1054,7 +1054,8 @@ public partial class ScriptGlobals : IDisposable
     /// While the name cannot be resolved against the active message catalog, the handler is
     /// bound to nothing and does not fire. It is resolved again whenever the catalog changes.
     /// A name that is neither in the message registry nor in the active catalog writes one warning
-    /// line to the script output.
+    /// line to the script output. Only packets that pass through the interceptor reach it; packets
+    /// that scripts or QX send themselves do not.
     /// </remarks>
     /// <param name="name">The incoming message name.</param>
     /// <param name="handler">
@@ -1073,7 +1074,8 @@ public partial class ScriptGlobals : IDisposable
     /// While the name cannot be resolved against the active message catalog, the handler is
     /// bound to nothing and does not fire. It is resolved again whenever the catalog changes.
     /// A name that is neither in the message registry nor in the active catalog writes one warning
-    /// line to the script output.
+    /// line to the script output. Only packets that pass through the interceptor reach it; packets
+    /// that scripts or QX send themselves do not.
     /// </remarks>
     /// <param name="name">The outgoing message name.</param>
     /// <param name="handler">

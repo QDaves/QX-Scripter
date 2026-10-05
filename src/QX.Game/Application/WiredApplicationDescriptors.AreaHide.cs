@@ -16,8 +16,8 @@ internal static partial class WiredApplicationDescriptors
         [Send(MessageKeys.Room.Environment.AreaHideSet)], WriteHints(false, true));
 
     public static ApplicationDescriptor AreaHideToggle { get; } = Call<WiredAreaHideToggleRequest, WiredDispatchResult>(
-        ApplicationMemberIds.WiredAreaHideToggle, "Toggle area hiding", "Uses the area-hide furniture with parameter zero, as the client's on/off button does.",
+        ApplicationMemberIds.WiredAreaHideToggle, "Toggle area hiding", "Uses the area-hide furniture with parameter zero, as the client's on/off button does. A controller hidden from the room's furniture is accepted while the floor plan lists its area.",
         [new("furni_id", typeof(Id), true, null, "Area-hide furniture identifier.", IdConstraint()),
-         new("expected_room_generation", typeof(long), true, null, "Room generation from the editor read.")],
+         new("expected_room_generation", typeof(long), true, null, "Room generation from the editor read or the current room.")],
         [Send(MessageKeys.Room.FloorItem.Use)], WriteHints(false, false));
 }

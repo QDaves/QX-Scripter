@@ -157,7 +157,9 @@ var update = view.Settings.ToUpdate() with { Width = 4, Length = 3 };
 await SetAreaHide(update, view.RoomGeneration);
 ```
 
-`ToggleAreaHide(id, roomGeneration)` uses the client's on/off command. These writes return dispatch
+`ToggleAreaHide(id, roomGeneration)` uses the client's on/off command. It also switches a controller
+that is hidden from `FloorItems` while `FloorPlan.HiddenAreas` lists it; take the generation from
+`CaptureRoom()` then. These writes return dispatch
 receipts; hotel permissions still apply. `FloorPlan.HiddenAreas` follows live region updates.
 Application/MCP operations are `wired.area_hide.get`, `.set`, `.toggle` (prefix `application_`,
 dots become underscores). Rectangle bounds are server-defined; no guessed numeric limits apply.

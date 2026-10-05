@@ -19,8 +19,9 @@ public partial class ScriptGlobals
         wired_call<WiredAreaHideSetRequest, WiredDispatchResult>(ApplicationMemberIds.WiredAreaHideSet, new(update, expectedRoomGeneration));
 
     /// <summary>Toggles area hiding with the client's furniture-use parameter zero.</summary>
+    /// <remarks>A controller hidden from the room's furniture can be toggled while the floor plan lists its area.</remarks>
     /// <param name="furniId">The area-hide furniture identity.</param>
-    /// <param name="expectedRoomGeneration">The room generation from GetAreaHide.</param>
+    /// <param name="expectedRoomGeneration">The room generation from GetAreaHide, or from CaptureRoom for a hidden controller.</param>
     /// <returns>A dispatch receipt, not a server acknowledgement.</returns>
     public Task<WiredDispatchResult> ToggleAreaHide(Id furniId, long expectedRoomGeneration) =>
         wired_call<WiredAreaHideToggleRequest, WiredDispatchResult>(ApplicationMemberIds.WiredAreaHideToggle, new(furniId, expectedRoomGeneration));

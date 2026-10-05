@@ -91,7 +91,7 @@ internal sealed class RoomChatApplication : IApplicationFeature, IRoomChatOperat
         ThrowIfDisposed();
         ArgumentNullException.ThrowIfNull(request);
         cancellation_token.ThrowIfCancellationRequested();
-        if (string.IsNullOrWhiteSpace(request.Message))
+        if (string.IsNullOrEmpty(request.Message))
             throw new ArgumentException("The message cannot be empty.", nameof(request.Message));
         (Session session, Id? room_id, long room_generation) = CaptureRoom();
         _game.RoomActions.Talk(
@@ -115,7 +115,7 @@ internal sealed class RoomChatApplication : IApplicationFeature, IRoomChatOperat
         ThrowIfDisposed();
         ArgumentNullException.ThrowIfNull(request);
         cancellation_token.ThrowIfCancellationRequested();
-        if (string.IsNullOrWhiteSpace(request.Message))
+        if (string.IsNullOrEmpty(request.Message))
             throw new ArgumentException("The message cannot be empty.", nameof(request.Message));
         (Session session, Id? room_id, long room_generation) = CaptureRoom();
         _game.RoomActions.Shout(
@@ -141,7 +141,7 @@ internal sealed class RoomChatApplication : IApplicationFeature, IRoomChatOperat
         cancellation_token.ThrowIfCancellationRequested();
         if (string.IsNullOrWhiteSpace(request.Recipient))
             throw new ArgumentException("The recipient cannot be empty.", nameof(request.Recipient));
-        if (string.IsNullOrWhiteSpace(request.Message))
+        if (string.IsNullOrEmpty(request.Message))
             throw new ArgumentException("The message cannot be empty.", nameof(request.Message));
 
         (Session session, Id? room_id, long room_generation) = CaptureRoom();
@@ -239,7 +239,7 @@ internal sealed class RoomChatApplication : IApplicationFeature, IRoomChatOperat
                 true,
                 null,
                 "Message text.",
-                new(MinLength: 1, MaxUtf8Bytes: ushort.MaxValue, Pattern: @".*\S.*")),
+                new(MinLength: 1, MaxUtf8Bytes: ushort.MaxValue)),
             new("bubble", typeof(int), false, 0, "Chat bubble style identifier.")
         ],
         [ApplicationStateKey.HotelConnected, ApplicationStateKey.RoomReady],
@@ -281,7 +281,7 @@ internal sealed class RoomChatApplication : IApplicationFeature, IRoomChatOperat
                     true,
                     null,
                     "Message text.",
-                    new(MinLength: 1, MaxUtf8Bytes: ushort.MaxValue, Pattern: @".*\S.*")),
+                    new(MinLength: 1, MaxUtf8Bytes: ushort.MaxValue)),
                 new("bubble", typeof(int), false, 0, "Chat bubble style identifier.")
             ],
             [ApplicationStateKey.HotelConnected, ApplicationStateKey.RoomReady],

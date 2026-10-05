@@ -1328,7 +1328,7 @@ public partial class ScriptGlobals : IDisposable
     /// The chat bubble style id; 0 is the account's default bubble. Styles beyond the default
     /// set require the corresponding club or item.
     /// </param>
-    /// <exception cref="ArgumentException">Thrown when <paramref name="message"/> is empty or white space.</exception>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="message"/> is empty.</exception>
     /// <exception cref="InvalidOperationException">Thrown when there is no active hotel session or no ready room.</exception>
     public void Talk(string message, int bubble = 0) =>
         _application.Invoke<RoomChatTalkRequest, RoomChatSendResult>(
@@ -1344,7 +1344,7 @@ public partial class ScriptGlobals : IDisposable
     /// </remarks>
     /// <param name="message">The text to shout.</param>
     /// <param name="bubble">The chat bubble style id; 0 is the account's default bubble.</param>
-    /// <exception cref="ArgumentException">Thrown when <paramref name="message"/> is empty or white space.</exception>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="message"/> is empty.</exception>
     /// <exception cref="InvalidOperationException">Thrown when there is no active hotel session or no ready room.</exception>
     public void Shout(string message, int bubble = 0) =>
         _application.Invoke<RoomChatShoutRequest, RoomChatSendResult>(
@@ -1363,7 +1363,7 @@ public partial class ScriptGlobals : IDisposable
     /// <param name="message">The text to whisper.</param>
     /// <param name="bubble">The chat bubble style id; 0 is the account's default bubble.</param>
     /// <exception cref="ArgumentException">
-    /// Thrown when <paramref name="recipient"/> or <paramref name="message"/> is empty or white space.
+    /// Thrown when <paramref name="recipient"/> is empty or white space, or <paramref name="message"/> is empty.
     /// </exception>
     /// <exception cref="InvalidOperationException">Thrown when there is no active hotel session or no ready room.</exception>
     public void Whisper(string recipient, string message, int bubble = 0) =>

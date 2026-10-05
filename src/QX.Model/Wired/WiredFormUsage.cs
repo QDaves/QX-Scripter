@@ -72,7 +72,7 @@ internal static partial class WiredFormKnowledge
                 break;
             case WiredFormCategory.Condition:
                 reference(WiredUsageTopic.Setup, "A condition gates execution; it does not trigger the stack. Ordinary stacks require all conditions to pass unless a condition-evaluation add-on changes that rule.", "948;963-987");
-                client(WiredUsageTopic.Inputs, "Choose both the entities to test and the condition quantifier. A negative furniture variant and the quantifier are distinct controls; inspect the received definition rather than treating every match as all users or all furniture.", "WiredConditionConfig.QuantifierCode; QuantifierType; DefinitionIsInvert");
+                client(WiredUsageTopic.Inputs, "Choose both the entities to test and the condition quantifier. A negative furniture variant and the quantifier are distinct controls; inspect the received definition rather than treating every match as all users or all furniture.", "WiredConditionConfig.QuantifierCode; QuantifierType; IsInvert");
                 companions("wf_xtra_or_eval");
                 break;
             case WiredFormCategory.Selector:

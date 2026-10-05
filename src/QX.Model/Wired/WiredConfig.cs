@@ -291,9 +291,6 @@ public sealed class WiredConditionConfig : WiredConfig, IParserComposer<WiredCon
     public int QuantifierCode { get; set; }
     /// <summary>Gets or sets the quantifier type, which is written as a signed byte.</summary>
     public int QuantifierType { get; set; } // 1 byte on the wire
-    /// <summary>Gets or sets whether the condition definition is inverted.</summary>
-    /// <remarks>The value is not read from or written to the packet, so it is <see langword="false"/> after parsing.</remarks>
-    public bool DefinitionIsInvert { get; set; }
     /// <summary>Gets or sets whether the condition is inverted.</summary>
     public bool IsInvert { get; set; }
     /// <summary>Reads <see cref="QuantifierCode"/>.</summary>

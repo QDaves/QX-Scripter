@@ -246,10 +246,6 @@ public sealed record WiredContextEntrySnapshot(
 /// <param name="DelayInPulses">The delay in pulses for an action; otherwise, <see langword="null"/>.</param>
 /// <param name="QuantifierCode">The quantifier code for a condition; otherwise, <see langword="null"/>.</param>
 /// <param name="QuantifierType">The quantifier type for a condition; otherwise, <see langword="null"/>.</param>
-/// <param name="DefinitionIsInvert">
-/// Whether the condition definition is inverted, for a condition; otherwise, <see langword="null"/>.
-/// The value is not read from the message, so it is <see langword="false"/> for every condition.
-/// </param>
 /// <param name="IsFilter">Whether the selector is a filter, for a selector; otherwise, <see langword="null"/>.</param>
 /// <param name="IsInvert">
 /// Whether the condition or selector is inverted, for a condition or a selector; otherwise, <see langword="null"/>.
@@ -275,7 +271,6 @@ public sealed record WiredConfigurationSnapshot(
     int? DelayInPulses,
     int? QuantifierCode,
     int? QuantifierType,
-    bool? DefinitionIsInvert,
     bool? IsFilter,
     bool? IsInvert);
 
@@ -1151,7 +1146,6 @@ public sealed class WiredManager : GameStateManager
             (value as WiredActionConfig)?.DelayInPulses,
             (value as WiredConditionConfig)?.QuantifierCode,
             (value as WiredConditionConfig)?.QuantifierType,
-            (value as WiredConditionConfig)?.DefinitionIsInvert,
             (value as WiredSelectorConfig)?.IsFilter,
             value switch
             {

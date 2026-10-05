@@ -1,18 +1,5 @@
 namespace Qx.Messages;
 
-/// <summary>Specifies how a client build lays out the context data at the end of wired configuration messages.</summary>
-public enum MessageWiredContextLayout
-{
-    /// <summary>The layout is not known.</summary>
-    Unknown,
-    /// <summary>Wired configurations carry no context data.</summary>
-    None,
-    /// <summary>Wired configurations carry context tags and default integer parameters.</summary>
-    Tags,
-    /// <summary>Wired configurations carry full context entries and default integer parameters.</summary>
-    Full
-}
-
 /// <summary>Specifies how a Flash build lays out the chat settings and trailing fields of a guest room result.</summary>
 public enum GuestRoomResultWireLayout
 {
@@ -50,43 +37,27 @@ public sealed class WireProfilePendingException(string area)
 /// The <see langword="default"/> value is not analyzed, so its <c>Require</c> methods throw
 /// <see cref="WireProfilePendingException"/>.
 /// </remarks>
-/// <param name="WiredContextLayout">The layout of the context data at the end of wired configuration messages.</param>
-/// <param name="WiredConditionHasSeparateInvert">Whether wired condition configurations carry a separate invert flag, or <see langword="null"/> when not known.</param>
 /// <param name="IsAnalyzed">Whether the profile comes from an analysis of the client build.</param>
 /// <param name="FlashGuestRoomResultLayout">The Flash guest room result layout, or <see langword="null"/> when not known.</param>
 /// <param name="FlashMarketplaceLayout">The Flash marketplace layout.</param>
 public readonly record struct MessageWireProfile(
-    MessageWiredContextLayout WiredContextLayout,
-    bool? WiredConditionHasSeparateInvert,
     bool IsAnalyzed = true,
     GuestRoomResultWireLayout? FlashGuestRoomResultLayout = null,
     FlashMarketplaceWireLayout FlashMarketplaceLayout =
         FlashMarketplaceWireLayout.Unknown)
 {
-    /// <summary>Gets whether the profile is analyzed and both the wired context layout and the wired condition invert flag are known.</summary>
-    public bool IsExact =>
-        IsAnalyzed &&
-        WiredContextLayout is not MessageWiredContextLayout.Unknown &&
-        WiredConditionHasSeparateInvert is not null;
-    /// <summary>Gets whether the profile is analyzed but not exact.</summary>
-    public bool IsUnsupported => IsAnalyzed && !IsExact;
-
     /// <summary>Gets whether every layout that incoming messages need is known.</summary>
     /// <returns><see langword="true"/> if <see cref="MissingIncomingCapabilities"/> returns an empty list; otherwise, <see langword="false"/>.</returns>
     public bool HasExactIncomingLayout() =>
         MissingIncomingCapabilities().Count == 0;
 
     /// <summary>Gets the names of the layouts that are still unknown for incoming messages.</summary>
-    /// <returns>Any of <c>analysis</c>, <c>wiredContext</c>, <c>wiredConditionInvert</c> and <c>guestRoomResult</c>.</returns>
+    /// <returns>Any of <c>analysis</c> and <c>guestRoomResult</c>.</returns>
     public IReadOnlyList<string> MissingIncomingCapabilities()
     {
         var missing = new List<string>();
         if (!IsAnalyzed)
             missing.Add("analysis");
-        if (WiredContextLayout is MessageWiredContextLayout.Unknown)
-            missing.Add("wiredContext");
-        if (WiredConditionHasSeparateInvert is null)
-            missing.Add("wiredConditionInvert");
         if (FlashGuestRoomResultLayout is null)
             missing.Add("guestRoomResult");
         return missing;

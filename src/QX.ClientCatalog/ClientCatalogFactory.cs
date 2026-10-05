@@ -58,8 +58,6 @@ public static class ClientCatalogFactory
         if (messages.SourceSha256.Length != 0)
             catalog.SetBuildFingerprint(messages.SourceSha256);
         catalog.SetWireProfile(new MessageWireProfile(
-            MessageWiredContextLayout.Unknown,
-            null,
             FlashMarketplaceLayout: FlashMarketplaceLayoutDetector.Detect(messages)));
         return catalog;
     }
@@ -83,8 +81,6 @@ public static class ClientCatalogFactory
         PreparedHeaderCatalog prepared)
     {
         catalog.SetWireProfile(new MessageWireProfile(
-            MessageWiredContextLayout.Unknown,
-            null,
             FlashMarketplaceLayout: prepared.Catalog.FlashMarketplaceLayout));
     }
 }

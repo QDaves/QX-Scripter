@@ -346,7 +346,7 @@ public sealed partial class PanelDocument : ObservableObject, IPanelRunTarget, I
                 _first_output ??= box;
                 return Register(_outputs, box.Name, box);
             case UiTableNode table:
-                var rows = new PanelTableNode(table, CopyOf(() => _tables.GetValueOrDefault(table.Name)?.Tabulate()));
+                var rows = new PanelTableNode(table, CopyOf(() => _tables.GetValueOrDefault(table.Name)?.Tabulate()), OnRowSelected);
                 return Register(_tables, rows.Name, rows);
             case UiProgressNode progress:
                 return Register(_progress, progress.Name, new PanelProgressNode(progress));
@@ -390,4 +390,6 @@ public sealed partial class PanelDocument : ObservableObject, IPanelRunTarget, I
         _values[name] = value;
         FieldEdited?.Invoke(name, value);
     }
+
+    void OnRowSelected(string name, string value) => FieldEdited?.Invoke(name, value);
 }

@@ -441,9 +441,13 @@ public sealed class PanelTableRow : ObservableObject
 
 public sealed partial class PanelTableNode : PanelNode
 {
-    public PanelTableNode(UiTableNode source, CopyAction copy)
+    readonly Action<string, string> _selected;
+    string _reported = "";
+
+    public PanelTableNode(UiTableNode source, CopyAction copy, Action<string, string> selected)
         : base(source)
     {
+        _selected = selected ?? throw new ArgumentNullException(nameof(selected));
         Name = source.Name;
         Label = source.Label;
         Columns = source.Columns.Count == 0 ? ["Value"] : source.Columns;
@@ -479,6 +483,7 @@ public sealed partial class PanelTableNode : PanelNode
     [RelayCommand]
     public void Clear()
     {
+        Selected = null;
         Rows.Clear();
         OnPropertyChanged(nameof(RowCountText));
     }
@@ -499,6 +504,9 @@ public sealed partial class PanelTableNode : PanelNode
             Rows.RemoveAt(Rows.Count - 1);
         for (int index = kept; index < rows.Count; index++)
             Rows.Add(new PanelTableRow(rows[index]));
+        if (Selected is { } selected && !Rows.Contains(selected))
+            Selected = null;
+        Report();
         OnPropertyChanged(nameof(RowCountText));
     }
 
@@ -519,14 +527,27 @@ public sealed partial class PanelTableNode : PanelNode
         foreach (PanelTableRow row in table.Rows)
             Rows.Add(row);
         OnPropertyChanged(nameof(RowCountText));
-        if (IsSelectable)
-            Selected = table.Selected;
+        if (!IsSelectable)
+            return;
+        _reported = table.SelectedValue;
+        Selected = table.Selected;
     }
 
     partial void OnSelectedChanged(PanelTableRow? value)
     {
         if (!IsSelectable && value is not null)
             Selected = null;
+        else
+            Report();
+    }
+
+    void Report()
+    {
+        string value = SelectedValue;
+        if (string.Equals(value, _reported, StringComparison.Ordinal))
+            return;
+        _reported = value;
+        _selected(Name, value);
     }
 }
 

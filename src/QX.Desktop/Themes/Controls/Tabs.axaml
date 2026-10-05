@@ -160,7 +160,7 @@
 
   <ControlTheme x:Key="QxDocumentTabScroll" TargetType="ScrollViewer" BasedOn="{StaticResource {x:Type ScrollViewer}}">
     <Style Selector="^ /template/ ScrollBar#PART_HorizontalScrollBar">
-      <Setter Property="Height" Value="8" />
+      <Setter Property="Height" Value="12" />
       <Setter Property="Opacity" Value="0" />
       <Setter Property="AutomationProperties.Name" Value="Scroll script tabs" />
     </Style>

@@ -140,7 +140,7 @@
   <ControlTheme x:Key="{x:Type ScrollBar}" TargetType="ScrollBar">
     <Setter Property="Cursor" Value="Arrow" />
     <Style Selector="^:vertical">
-      <Setter Property="Width" Value="10" />
+      <Setter Property="Width" Value="14" />
       <Setter Property="Template">
         <ControlTemplate>
           <Border Name="PART_Root" Background="Transparent">
@@ -157,18 +157,18 @@
               <Track.IncreaseButton>
                 <RepeatButton Name="PART_PageDownButton" Theme="{StaticResource QxScrollPageButton}" />
               </Track.IncreaseButton>
-              <Thumb Name="PART_Thumb" Theme="{StaticResource QxScrollThumb}" Width="4" MinHeight="24" CornerRadius="2" HorizontalAlignment="Center" />
+              <Thumb Name="PART_Thumb" Theme="{StaticResource QxScrollThumb}" Width="6" MinHeight="24" CornerRadius="3" HorizontalAlignment="Center" />
             </Track>
           </Border>
         </ControlTemplate>
       </Setter>
       <Style Selector="^[IsExpanded=true] /template/ Thumb#PART_Thumb">
-        <Setter Property="Width" Value="8" />
-        <Setter Property="CornerRadius" Value="4" />
+        <Setter Property="Width" Value="12" />
+        <Setter Property="CornerRadius" Value="6" />
       </Style>
     </Style>
     <Style Selector="^:horizontal">
-      <Setter Property="Height" Value="10" />
+      <Setter Property="Height" Value="14" />
       <Setter Property="Template">
         <ControlTemplate>
           <Border Name="PART_Root" Background="Transparent">
@@ -184,14 +184,14 @@
               <Track.IncreaseButton>
                 <RepeatButton Name="PART_PageDownButton" Theme="{StaticResource QxScrollPageButton}" />
               </Track.IncreaseButton>
-              <Thumb Name="PART_Thumb" Theme="{StaticResource QxScrollThumb}" Height="4" MinWidth="24" CornerRadius="2" VerticalAlignment="Center" />
+              <Thumb Name="PART_Thumb" Theme="{StaticResource QxScrollThumb}" Height="6" MinWidth="24" CornerRadius="3" VerticalAlignment="Center" />
             </Track>
           </Border>
         </ControlTemplate>
       </Setter>
       <Style Selector="^[IsExpanded=true] /template/ Thumb#PART_Thumb">
-        <Setter Property="Height" Value="8" />
-        <Setter Property="CornerRadius" Value="4" />
+        <Setter Property="Height" Value="12" />
+        <Setter Property="CornerRadius" Value="6" />
       </Style>
     </Style>
   </ControlTheme>

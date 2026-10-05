@@ -2,5 +2,5 @@ namespace Qx.Presentation.Services.Updates;
 
 public interface IUpdateNoticePresenter
 {
-    Task ShowAsync(string installedVersion, GitHubRelease release, CancellationToken cancellationToken);
+    Task ShowAsync(string installedVersion, Release release, CancellationToken cancellationToken);
 }

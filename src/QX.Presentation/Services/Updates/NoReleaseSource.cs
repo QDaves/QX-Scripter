@@ -2,5 +2,5 @@ namespace Qx.Presentation.Services.Updates;
 
 public sealed class NoReleaseSource : IReleaseSource
 {
-    public Task<GitHubRelease?> LatestAsync(CancellationToken cancellationToken) => Task.FromResult<GitHubRelease?>(null);
+    public Task<Release?> LatestAsync(CancellationToken cancellationToken) => Task.FromResult<Release?>(null);
 }

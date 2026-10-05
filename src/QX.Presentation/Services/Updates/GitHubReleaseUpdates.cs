@@ -4,14 +4,14 @@ using System.Text.Json;
 
 namespace Qx.Presentation.Services.Updates;
 
-/// <summary>Represents a published GitHub release of the application.</summary>
-/// <param name="Tag">The release tag as published, for example <c>v1.2.3</c>.</param>
+/// <summary>Represents a published release of the application.</summary>
+/// <param name="Tag">The release tag, for example <c>v1.2.3</c>.</param>
 /// <param name="Version">The normalized <c>major.minor.patch</c> version parsed from the tag.</param>
 /// <param name="Name">The release title with control characters and extra whitespace removed, or the tag when the title is empty or longer than 120 characters.</param>
-/// <param name="Uri">The URL of the release page.</param>
-public sealed record GitHubRelease(string Tag, string Version, string Name, Uri Uri);
+/// <param name="Uri">The URL of the release page, or <see langword="null"/> for a release installed through the G-ExtensionStore.</param>
+public sealed record Release(string Tag, string Version, string Name, Uri? Uri);
 
-/// <summary>Provides update checks against the project's GitHub releases.</summary>
+/// <summary>Provides update checks against the project's GitHub releases and its G-ExtensionStore entry.</summary>
 public static class GitHubReleaseUpdates
 {
     private const int MaxResponseBytes = 1024 * 1024;
@@ -28,7 +28,7 @@ public static class GitHubReleaseUpdates
     /// no release matched.
     /// </returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="http"/> is <see langword="null"/>.</exception>
-    public static async Task<GitHubRelease?> GetLatestAsync(
+    public static async Task<Release?> GetLatestAsync(
         HttpClient http,
         CancellationToken cancellationToken = default)
     {
@@ -36,61 +36,79 @@ public static class GitHubReleaseUpdates
 
         using var request = new HttpRequestMessage(HttpMethod.Get, ProjectLinks.ReleaseApi);
         request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/vnd.github+json"));
-        request.Headers.UserAgent.Add(new ProductInfoHeaderValue("QXScripter", ProductVersion.Current));
         request.Headers.Add("X-GitHub-Api-Version", "2026-03-10");
+        using JsonDocument? document = await ReadJsonAsync(http, request, cancellationToken).ConfigureAwait(false);
+        if (document?.RootElement is not { ValueKind: JsonValueKind.Array } root)
+            return null;
 
-        try
+        Release? latest = null;
+        ReleaseNumber latest_version = default;
+        foreach (JsonElement entry in root.EnumerateArray())
         {
-            using HttpResponseMessage response = await http.SendAsync(
-                request,
-                HttpCompletionOption.ResponseHeadersRead,
-                cancellationToken).ConfigureAwait(false);
-            if (!response.IsSuccessStatusCode || response.Content.Headers.ContentLength > MaxResponseBytes)
-                return null;
-
-            byte[]? json = await ReadBoundedAsync(response.Content, cancellationToken).ConfigureAwait(false);
-            if (json is null)
-                return null;
-
-            using JsonDocument document = JsonDocument.Parse(json);
-            JsonElement root = document.RootElement;
-            if (root.ValueKind != JsonValueKind.Array)
-                return null;
-            GitHubRelease? latest = null;
-            ReleaseNumber latest_version = default;
-            foreach (JsonElement entry in root.EnumerateArray())
+            if (entry.ValueKind != JsonValueKind.Object ||
+                IsTrue(entry, "draft") ||
+                !entry.TryGetProperty("tag_name", out JsonElement tag_element) ||
+                tag_element.ValueKind != JsonValueKind.String ||
+                !TryReleaseVersion(tag_element.GetString(), out ReleaseNumber version) ||
+                latest is not null && version.CompareTo(latest_version) <= 0)
             {
-                if (entry.ValueKind != JsonValueKind.Object ||
-                    IsTrue(entry, "draft") ||
-                    !entry.TryGetProperty("tag_name", out JsonElement tag_element) ||
-                    tag_element.ValueKind != JsonValueKind.String ||
-                    !TryReleaseVersion(tag_element.GetString(), out ReleaseNumber version) ||
-                    latest is not null && version.CompareTo(latest_version) <= 0)
-                {
-                    continue;
-                }
-                string tag = tag_element.GetString()!.Trim();
-                string name = entry.TryGetProperty("name", out JsonElement name_element) &&
-                    name_element.ValueKind == JsonValueKind.String
-                    ? CleanName(name_element.GetString(), tag)
-                    : tag;
-                latest = new GitHubRelease(tag, version.Text, name, ProjectLinks.Release(tag));
-                latest_version = version;
+                continue;
             }
-            return latest;
+            string tag = tag_element.GetString()!.Trim();
+            string name = entry.TryGetProperty("name", out JsonElement name_element) &&
+                name_element.ValueKind == JsonValueKind.String
+                ? CleanName(name_element.GetString(), tag)
+                : tag;
+            latest = new Release(tag, version.Text, name, ProjectLinks.Release(tag));
+            latest_version = version;
         }
-        catch (HttpRequestException)
-        {
+        return latest;
+    }
+
+    /// <summary>Requests the extension list of the G-ExtensionStore and gets the version it offers of the application.</summary>
+    /// <remarks>
+    /// This is the list G-Earth shows, read from the store's current branch. An entry marked as outdated, or one
+    /// whose version is not a plain <c>major.minor.patch</c>, gives no release. Responses larger than 1 MiB are
+    /// rejected.
+    /// </remarks>
+    /// <param name="http">The HTTP client used to send the request.</param>
+    /// <param name="cancellationToken">A token that cancels the request.</param>
+    /// <returns>
+    /// The release the store offers, or <see langword="null"/> when the request fails, the response is invalid or
+    /// the store has no usable entry.
+    /// </returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="http"/> is <see langword="null"/>.</exception>
+    public static async Task<Release?> GetStoreReleaseAsync(
+        HttpClient http,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(http);
+
+        using var request = new HttpRequestMessage(HttpMethod.Get, ProjectLinks.StoreExtensions);
+        using JsonDocument? document = await ReadJsonAsync(http, request, cancellationToken).ConfigureAwait(false);
+        if (document?.RootElement is not { ValueKind: JsonValueKind.Array } root)
             return null;
-        }
-        catch (IOException)
+
+        foreach (JsonElement entry in root.EnumerateArray())
         {
-            return null;
+            if (entry.ValueKind != JsonValueKind.Object ||
+                !entry.TryGetProperty("title", out JsonElement title) ||
+                title.ValueKind != JsonValueKind.String ||
+                title.GetString() != ProjectLinks.StoreTitle)
+            {
+                continue;
+            }
+            if (IsTrue(entry, "isOutdated") ||
+                !entry.TryGetProperty("version", out JsonElement version_element) ||
+                version_element.ValueKind != JsonValueKind.String ||
+                !TryReleaseVersion(version_element.GetString(), out ReleaseNumber version))
+            {
+                return null;
+            }
+            string tag = "v" + version.Text;
+            return new Release(tag, version.Text, tag, null);
         }
-        catch (JsonException)
-        {
-            return null;
-        }
+        return null;
     }
 
     /// <summary>Gets whether the user should be told about a release.</summary>
@@ -107,13 +125,36 @@ public static class GitHubReleaseUpdates
     public static bool ShouldNotify(
         string installedVersion,
         string? lastNotifiedRelease,
-        GitHubRelease release)
+        Release release)
     {
         ArgumentNullException.ThrowIfNull(release);
         return !string.Equals(lastNotifiedRelease, release.Tag, StringComparison.OrdinalIgnoreCase)
             && TryInstalledVersion(installedVersion, out ReleaseNumber installed)
             && TryReleaseVersion(release.Tag, out ReleaseNumber available)
             && available.CompareTo(installed) > 0;
+    }
+
+    private static async Task<JsonDocument?> ReadJsonAsync(
+        HttpClient http,
+        HttpRequestMessage request,
+        CancellationToken cancellation_token)
+    {
+        request.Headers.UserAgent.Add(new ProductInfoHeaderValue("QXScripter", ProductVersion.Current));
+        try
+        {
+            using HttpResponseMessage response = await http.SendAsync(
+                request,
+                HttpCompletionOption.ResponseHeadersRead,
+                cancellation_token).ConfigureAwait(false);
+            if (!response.IsSuccessStatusCode || response.Content.Headers.ContentLength > MaxResponseBytes)
+                return null;
+            byte[]? json = await ReadBoundedAsync(response.Content, cancellation_token).ConfigureAwait(false);
+            return json is null ? null : JsonDocument.Parse(json);
+        }
+        catch (Exception error) when (error is HttpRequestException or IOException or JsonException)
+        {
+            return null;
+        }
     }
 
     private static async Task<byte[]?> ReadBoundedAsync(

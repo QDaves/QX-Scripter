@@ -67,7 +67,7 @@ public sealed class DesktopComposition : IDisposable
         services.AddSingleton<IApplicationLog>(diagnostics);
         var lifetime = new AppLifetime();
         services.AddSingleton(_ => lifetime);
-        AddDesktopPlatform(services, options);
+        AddDesktopPlatform(services, launch, options);
         var editor = new DeferredEditorBridge();
         services.AddSingleton(editor);
         var runtime = new DesktopRuntime(launch, paths, options.Runtime, options.McpPort, editor);
@@ -158,7 +158,7 @@ public sealed class DesktopComposition : IDisposable
         _services.Dispose();
     }
 
-    static void AddDesktopPlatform(IServiceCollection services, DesktopCompositionOptions options)
+    static void AddDesktopPlatform(IServiceCollection services, LaunchOptions launch, DesktopCompositionOptions options)
     {
         services.AddSingleton<IUiDispatcher, AvaloniaUiDispatcher>();
         services.AddSingleton<TopLevelAccessor>();
@@ -175,10 +175,12 @@ public sealed class DesktopComposition : IDisposable
         services.AddSingleton<IEditorWarmup>(static provider => provider.GetRequiredService<RoslynHostProvider>());
         services.AddSingleton<GestureFormatter>();
         services.AddSingleton<IGestureFormatter>(static provider => provider.GetRequiredService<GestureFormatter>());
-        if (options.UpdateCheck)
-            services.AddSingleton<IReleaseSource, GitHubReleaseSource>();
-        else
+        if (!options.UpdateCheck)
             services.AddSingleton<IReleaseSource, NoReleaseSource>();
+        else if (launch.FromStore)
+            services.AddSingleton<IReleaseSource, StoreReleaseSource>();
+        else
+            services.AddSingleton<IReleaseSource, GitHubReleaseSource>();
         AddPlatformNatives(services, options);
     }
 

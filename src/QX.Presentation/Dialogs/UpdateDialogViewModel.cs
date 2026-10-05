@@ -8,10 +8,10 @@ namespace Qx.Presentation.Dialogs;
 
 public sealed partial class UpdateDialogViewModel : DialogViewModel<bool>
 {
-    readonly GitHubRelease _release;
+    readonly Release _release;
     readonly ILauncherService _launcher;
 
-    public UpdateDialogViewModel(string installedVersion, GitHubRelease release, ILauncherService launcher)
+    public UpdateDialogViewModel(string installedVersion, Release release, ILauncherService launcher)
     {
         InstalledVersion = installedVersion ?? throw new ArgumentNullException(nameof(installedVersion));
         _release = release ?? throw new ArgumentNullException(nameof(release));
@@ -30,9 +30,13 @@ public sealed partial class UpdateDialogViewModel : DialogViewModel<bool>
 
     public string AvailableVersion => _release.Version;
 
-    public string Note => "GitHub has the release notes and download.";
+    public bool CanOpen => _release.Uri is not null;
 
-    public string LaterText => "Later";
+    public string Note => CanOpen
+        ? "GitHub has the release notes and download."
+        : "Open the G-ExtensionStore in G-Earth and update QX Scripter there.";
+
+    public string LaterText => CanOpen ? "Later" : "OK";
 
     public string OpenText => "View on GitHub";
 
@@ -50,10 +54,12 @@ public sealed partial class UpdateDialogViewModel : DialogViewModel<bool>
     [RelayCommand]
     async Task OpenAsync(CancellationToken cancellation_token)
     {
+        if (_release.Uri is not { } uri)
+            return;
         bool opened;
         try
         {
-            opened = await _launcher.OpenUriAsync(_release.Uri, cancellation_token);
+            opened = await _launcher.OpenUriAsync(uri, cancellation_token);
         }
         catch (Exception error) when (error is not OperationCanceledException)
         {
@@ -65,6 +71,6 @@ public sealed partial class UpdateDialogViewModel : DialogViewModel<bool>
             Close(true);
             return;
         }
-        Failure = $"Could not open GitHub: the browser did not open {_release.Uri}.";
+        Failure = $"Could not open GitHub: the browser did not open {uri}.";
     }
 }

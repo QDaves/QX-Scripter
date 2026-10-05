@@ -2,8 +2,10 @@ using Qx.Interception.GEarth;
 
 namespace Qx.Presentation.Runtime;
 
-public sealed record LaunchOptions(GEarthOptions GEarth, bool HostedByGEarth)
+public sealed record LaunchOptions(GEarthOptions GEarth, bool HostedByGEarth, bool FromStore)
 {
+    public const string StoreFlag = "--store";
+
     public static LaunchOptions Parse(string[] args)
     {
         ArgumentNullException.ThrowIfNull(args);
@@ -17,6 +19,6 @@ public sealed record LaunchOptions(GEarthOptions GEarth, bool HostedByGEarth)
         });
         bool hosted = options.IsLaunchedByGEarth;
         options.SearchPorts = !hosted;
-        return new LaunchOptions(options, hosted);
+        return new LaunchOptions(options, hosted, args.Contains(StoreFlag));
     }
 }

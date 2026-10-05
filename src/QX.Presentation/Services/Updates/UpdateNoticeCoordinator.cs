@@ -10,7 +10,7 @@ public sealed class UpdateNoticeCoordinator : IDisposable
     public const string RepositoryPrefix = "QDaves/QX-Scripter/";
     public static readonly TimeSpan CheckTimeout = TimeSpan.FromSeconds(5);
 
-    readonly Func<CancellationToken, Task<GitHubRelease?>> _fetch;
+    readonly Func<CancellationToken, Task<Release?>> _fetch;
     readonly ISettingsStore _settings;
     readonly IShellWindow _window;
     readonly IUpdateNoticePresenter _presenter;
@@ -18,13 +18,13 @@ public sealed class UpdateNoticeCoordinator : IDisposable
     readonly TimeProvider _time;
     readonly CancellationToken _lifetime;
     readonly string _installed_version;
-    GitHubRelease? _pending;
+    Release? _pending;
     bool _started;
     bool _shown;
     bool _showing;
 
     public UpdateNoticeCoordinator(
-        Func<CancellationToken, Task<GitHubRelease?>> fetch,
+        Func<CancellationToken, Task<Release?>> fetch,
         ISettingsStore settings,
         IShellWindow window,
         IUpdateNoticePresenter presenter,
@@ -44,7 +44,7 @@ public sealed class UpdateNoticeCoordinator : IDisposable
         _window.Activated += OnActivated;
     }
 
-    public GitHubRelease? Pending => _pending;
+    public Release? Pending => _pending;
 
     public void Dispose() => _window.Activated -= OnActivated;
 
@@ -60,13 +60,13 @@ public sealed class UpdateNoticeCoordinator : IDisposable
     {
         using var timeout = new CancellationTokenSource(CheckTimeout, _time);
         using var linked = CancellationTokenSource.CreateLinkedTokenSource(_lifetime, timeout.Token);
-        GitHubRelease? release = await Task.Run(() => _fetch(linked.Token), linked.Token).ConfigureAwait(false);
+        Release? release = await Task.Run(() => _fetch(linked.Token), linked.Token).ConfigureAwait(false);
         if (release is null)
             return;
         await _dispatcher.InvokeAsync(() => Offer(release), _lifetime).ConfigureAwait(false);
     }
 
-    void Offer(GitHubRelease release)
+    void Offer(Release release)
     {
         string? stored = _settings.Current.LastNotifiedRelease;
         string? last_tag = stored is not null && stored.StartsWith(RepositoryPrefix, StringComparison.Ordinal)

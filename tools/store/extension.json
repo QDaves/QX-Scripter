@@ -11,10 +11,10 @@
   "framework": {"name": "QX", "version": "@VERSION@"},
   "language": "C#",
   "commands": {
-    "default": ["cmd", "/C", "QX.exe", "-c", "{cookie}", "-p", "{port}", "-f", "{filename}"],
-    "windows": ["cmd", "/C", "QX.exe", "-c", "{cookie}", "-p", "{port}", "-f", "{filename}"],
-    "linux": ["/bin/sh", "-c", "chmod +x QX-linux-x64 && exec ./QX-linux-x64 -c \"$1\" -p \"$2\" -f \"$3\" >/dev/null 2>&1", "--", "{cookie}", "{port}", "{filename}"],
-    "mac": ["/bin/sh", "-c", "if [ \"$(sysctl -n hw.optional.arm64 2>/dev/null)\" = 1 ]; then bin=QX-osx-arm64; else bin=QX-osx-x64; fi; chmod +x \"$bin\" && exec \"./$bin\" -c \"$1\" -p \"$2\" -f \"$3\" >/dev/null 2>&1", "--", "{cookie}", "{port}", "{filename}"]
+    "default": ["cmd", "/C", "QX.exe", "-c", "{cookie}", "-p", "{port}", "-f", "{filename}", "--store"],
+    "windows": ["cmd", "/C", "QX.exe", "-c", "{cookie}", "-p", "{port}", "-f", "{filename}", "--store"],
+    "linux": ["/bin/sh", "-c", "chmod +x QX-linux-x64 && exec ./QX-linux-x64 -c \"$1\" -p \"$2\" -f \"$3\" --store >/dev/null 2>&1", "--", "{cookie}", "{port}", "{filename}"],
+    "mac": ["/bin/sh", "-c", "if [ \"$(sysctl -n hw.optional.arm64 2>/dev/null)\" = 1 ]; then bin=QX-osx-arm64; else bin=QX-osx-x64; fi; chmod +x \"$bin\" && exec \"./$bin\" -c \"$1\" -p \"$2\" -f \"$3\" --store >/dev/null 2>&1", "--", "{cookie}", "{port}", "{filename}"]
   },
   "compatibility": {
     "systems": ["Windows", "Linux", "Mac"],

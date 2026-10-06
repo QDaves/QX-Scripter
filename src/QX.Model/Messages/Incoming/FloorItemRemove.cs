@@ -7,7 +7,8 @@ namespace Qx.Model.Messages.Incoming;
 /// <param name="IsExpired">Whether the item was removed because it expired.</param>
 /// <param name="PickerId">The identifier of the user who picked the item up.</param>
 /// <param name="Delay">The delay before the client removes the item.</param>
-public sealed record FloorItemRemove(Id Id, bool IsExpired, Id PickerId, int Delay) : IParserComposer<FloorItemRemove>
+/// <param name="Unknown">Unknown yet.</param>
+public sealed record FloorItemRemove(Id Id, bool IsExpired, Id PickerId, int Delay, byte? Unknown = null) : IParserComposer<FloorItemRemove>
 {
     /// <summary>Parses the message from a packet.</summary>
     /// <param name="p">The packet reader.</param>
@@ -24,8 +25,8 @@ public sealed record FloorItemRemove(Id Id, bool IsExpired, Id PickerId, int Del
 
     private static FloorItemRemove ParseItem(in PacketReader p, Id id)
     {
-        var result = new FloorItemRemove(id, p.ReadBool(), p.ReadId(), p.ReadInt());
-        RoomPlacementWire.RequireEmpty(in p, nameof(FloorItemRemove));
+        var result = new FloorItemRemove(id, p.ReadBool(), p.ReadId(), p.ReadInt(), p.Available > 0 ? p.ReadByte() : null);
+        p.ReadSpan(p.Available);
         return result;
     }
 
@@ -46,6 +47,8 @@ public sealed record FloorItemRemove(Id Id, bool IsExpired, Id PickerId, int Del
         p.WriteBool(IsExpired);
         p.WriteId(PickerId);
         p.WriteInt(Delay);
+        if (Unknown is { } unknown)
+            p.WriteByte(unknown);
     }
 }
 

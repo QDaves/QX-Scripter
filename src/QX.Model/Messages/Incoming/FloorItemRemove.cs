@@ -107,7 +107,8 @@ public sealed record PickupConfirmation(int Category, Id ItemId, string Title, s
 /// <param name="PickerId">
 /// The identifier of the user who picked the items up. The room state ignores it and only removes the items.
 /// </param>
-public sealed record FloorItemsRemove(IReadOnlyList<Id> Ids, Id PickerId)
+/// <param name="Unknown">Unknown yet.</param>
+public sealed record FloorItemsRemove(IReadOnlyList<Id> Ids, Id PickerId, byte? Unknown = null)
     : IParserComposer<FloorItemsRemove>
 {
     /// <summary>Parses the message from a packet.</summary>
@@ -123,7 +124,9 @@ public sealed record FloorItemsRemove(IReadOnlyList<Id> Ids, Id PickerId)
         var ids = new Id[count];
         for (int i = 0; i < count; i++)
             ids[i] = p.ReadId();
-        return new FloorItemsRemove(ids, p.ReadId());
+        var result = new FloorItemsRemove(ids, p.ReadId(), p.Available > 0 ? p.ReadByte() : null);
+        p.ReadSpan(p.Available);
+        return result;
     }
 
     /// <summary>Composes the message into a packet.</summary>
@@ -140,5 +143,7 @@ public sealed record FloorItemsRemove(IReadOnlyList<Id> Ids, Id PickerId)
         foreach (Id id in Ids)
             p.WriteId(id);
         p.WriteId(PickerId);
+        if (Unknown is { } unknown)
+            p.WriteByte(unknown);
     }
 }

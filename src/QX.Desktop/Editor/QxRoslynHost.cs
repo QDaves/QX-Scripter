@@ -3,6 +3,7 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Classification;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Diagnostics;
+using Microsoft.CodeAnalysis.Scripting;
 using Microsoft.CodeAnalysis.Text;
 using Qx.Protocol;
 using Qx.Scripting;
@@ -79,6 +80,7 @@ public sealed class QxRoslynHost : RoslynHost
             compilationOptions = csharp.WithNullableContextOptions(NullableContextOptions.Disable);
         compilationOptions = compilationOptions
             .WithScriptClassName(name)
+            .WithMetadataReferenceResolver(ScriptMetadataResolver.Default.WithBaseDirectory(args.WorkingDirectory))
             .WithSpecificDiagnosticOptions(compilationOptions.SpecificDiagnosticOptions.SetItems(
                 ScriptEngine.SuppressedDiagnostics
                     .Append("IDE1006")

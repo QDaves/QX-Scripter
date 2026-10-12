@@ -37,6 +37,8 @@ public readonly record struct ChatLink(string Key, string Url, bool Flag);
 /// <param name="WhisperId">
 /// The whisper identifier, or <see langword="null"/> when the message does not carry one.
 /// </param>
+/// <param name="HideUsername">Whether the bubble hides the username, or <see langword="null"/> when not sent.</param>
+/// <param name="Location">The bubble location, or <see langword="null"/> when not sent.</param>
 public sealed record AvatarChat(
     int Index,
     string Message,
@@ -46,7 +48,9 @@ public sealed record AvatarChat(
     int TrackingId,
     ChatType Type = ChatType.Talk,
     int? ChatId = null,
-    int? WhisperId = null) : IParserComposer<AvatarChat>
+    int? WhisperId = null,
+    bool? HideUsername = null,
+    Point? Location = null) : IParserComposer<AvatarChat>
 {
     /// <summary>Parses the message from a packet.</summary>
     /// <param name="p">The packet reader.</param>
@@ -68,13 +72,16 @@ public sealed record AvatarChat(
         int tracking_id = p.ReadInt();
         int? chat_id = p.Available >= 4 ? p.ReadInt() : null;
         int? whisper_id = p.Available >= 4 ? p.ReadInt() : null;
+        bool? hide_username = p.Available >= 1 ? p.ReadBool() : null;
+        Point? location = p.Available >= 8 ? Point.Parse(in p) : null;
         ChatType type = whisper_id.HasValue ? ChatType.Whisper : ChatType.Talk;
-        return new AvatarChat(index, message, gesture, bubble_style, links, tracking_id, type, chat_id, whisper_id);
+        return new AvatarChat(index, message, gesture, bubble_style, links, tracking_id, type, chat_id, whisper_id,
+            hide_username, location);
     }
 
     /// <summary>Composes the message into a packet.</summary>
     /// <param name="p">The packet writer.</param>
-    /// <remarks><see cref="WhisperId"/> is only written when <see cref="ChatId"/> has a value.</remarks>
+    /// <remarks>Each optional trailing field is only written when the one before it has a value.</remarks>
     public void Compose(in PacketWriter p) =>
         FlashWire.Compose(this, in p, ComposeFlash);
 
@@ -98,7 +105,15 @@ public sealed record AvatarChat(
         {
             p.WriteInt(value.ChatId.Value);
             if (value.WhisperId.HasValue)
+            {
                 p.WriteInt(value.WhisperId.Value);
+                if (value.HideUsername.HasValue)
+                {
+                    p.WriteBool(value.HideUsername.Value);
+                    if (value.Location is { } location)
+                        location.Compose(in p);
+                }
+            }
         }
     }
 }

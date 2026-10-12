@@ -60,6 +60,13 @@ public sealed record WiredInputSourcesSnapshot(
 /// <param name="TextConnector">
 /// The text connector entries, or <see langword="null"/> when the variable has no text connector.
 /// </param>
+/// <param name="RequiresExecutionContext">
+/// Whether the variable can only be used where an execution context exists, or <see langword="null"/> when the
+/// client build does not send the flag.
+/// </param>
+/// <param name="TextConnectorFallback">
+/// The text the text connector shows when no key matches, or <see langword="null"/> when it has none.
+/// </param>
 public sealed record WiredVariableSnapshot(
     string VariableId,
     int VariableType,
@@ -74,7 +81,9 @@ public sealed record WiredVariableSnapshot(
     bool IsInvisible,
     bool CanReadCreationTime,
     bool CanReadLastUpdateTime,
-    IReadOnlyList<WiredTextConnectorSnapshot>? TextConnector);
+    IReadOnlyList<WiredTextConnectorSnapshot>? TextConnector,
+    bool? RequiresExecutionContext = null,
+    string? TextConnectorFallback = null);
 
 /// <summary>Represents the definition of a wired variable inside a configuration context.</summary>
 /// <param name="VariableId">The id of the variable.</param>
@@ -99,6 +108,13 @@ public sealed record WiredVariableSnapshot(
 /// The texts of the text connector entries, in the same order as <paramref name="TextConnectorIds"/>,
 /// or <see langword="null"/> when the variable has no text connector.
 /// </param>
+/// <param name="RequiresExecutionContext">
+/// Whether the variable can only be used where an execution context exists, or <see langword="null"/> when the
+/// client build does not send the flag.
+/// </param>
+/// <param name="TextConnectorFallback">
+/// The text the text connector shows when no key matches, or <see langword="null"/> when it has none.
+/// </param>
 public sealed record WiredContextVariableSnapshot(
     string VariableId,
     int VariableType,
@@ -114,7 +130,9 @@ public sealed record WiredContextVariableSnapshot(
     bool CanReadCreationTime,
     bool CanReadLastUpdateTime,
     IReadOnlyList<Id>? TextConnectorIds,
-    IReadOnlyList<string>? TextConnectorValues);
+    IReadOnlyList<string>? TextConnectorValues,
+    bool? RequiresExecutionContext = null,
+    string? TextConnectorFallback = null);
 
 /// <summary>Represents the value of a wired variable held by a furni item or a user.</summary>
 /// <param name="ObjectId">The id of the furni item or user that holds the value.</param>
@@ -146,6 +164,13 @@ public sealed record WiredObjectValueSnapshot(Id ObjectId, long Value);
 /// The texts of the text connector entries, in the same order as <paramref name="TextConnectorIds"/>,
 /// or <see langword="null"/> when the variable has no text connector.
 /// </param>
+/// <param name="RequiresExecutionContext">
+/// Whether the variable can only be used where an execution context exists, or <see langword="null"/> when the
+/// client build does not send the flag.
+/// </param>
+/// <param name="TextConnectorFallback">
+/// The text the text connector shows when no key matches, or <see langword="null"/> when it has none.
+/// </param>
 public sealed record WiredSharedVariableSnapshot(
     Id RoomId,
     string RoomName,
@@ -163,7 +188,9 @@ public sealed record WiredSharedVariableSnapshot(
     bool CanReadCreationTime,
     bool CanReadLastUpdateTime,
     IReadOnlyList<Id>? TextConnectorIds,
-    IReadOnlyList<string>? TextConnectorValues);
+    IReadOnlyList<string>? TextConnectorValues,
+    bool? RequiresExecutionContext = null,
+    string? TextConnectorFallback = null);
 
 /// <summary>Represents a wired placeholder shared from another room.</summary>
 /// <param name="RoomId">The id of the room that shares the placeholder.</param>
@@ -190,7 +217,11 @@ public enum WiredContextValueKind
     /// <summary>A list of variable definitions, sent with tag 5.</summary>
     RulesetVariables,
     /// <summary>The placeholders other rooms share, sent with tag 6.</summary>
-    ReferencePlaceholders
+    ReferencePlaceholders,
+    /// <summary>The text placeholder and capturer names a message editor can insert, sent with tag 7.</summary>
+    TextPlaceholders,
+    /// <summary>The state of a variable leaderboard add-on, sent with tag 8.</summary>
+    VariableLeaderboard
 }
 
 /// <summary>Represents one entry of a wired configuration context.</summary>
@@ -214,6 +245,15 @@ public enum WiredContextValueKind
 /// <param name="SharedPlaceholders">
 /// The placeholders other rooms share, for <see cref="WiredContextValueKind.ReferencePlaceholders"/>.
 /// </param>
+/// <param name="TextPlaceholderNames">
+/// The names of the text placeholders, for <see cref="WiredContextValueKind.TextPlaceholders"/>.
+/// </param>
+/// <param name="TextCapturerNames">
+/// The names of the text capturers, for <see cref="WiredContextValueKind.TextPlaceholders"/>.
+/// </param>
+/// <param name="VariableLeaderboard">
+/// The leaderboard state, for <see cref="WiredContextValueKind.VariableLeaderboard"/>.
+/// </param>
 public sealed record WiredContextEntrySnapshot(
     int Tag,
     WiredContextValueKind Kind,
@@ -223,7 +263,10 @@ public sealed record WiredContextEntrySnapshot(
     long? Value,
     IReadOnlyList<WiredSharedVariableSnapshot>? SharedVariables,
     IReadOnlyList<WiredContextVariableSnapshot>? Variables,
-    IReadOnlyList<WiredSharedPlaceholderSnapshot>? SharedPlaceholders);
+    IReadOnlyList<WiredSharedPlaceholderSnapshot>? SharedPlaceholders,
+    IReadOnlyList<string>? TextPlaceholderNames = null,
+    IReadOnlyList<string>? TextCapturerNames = null,
+    VariableLeaderboardContext? VariableLeaderboard = null);
 
 /// <summary>Represents the configuration of a wired furni item as the hotel sent it.</summary>
 /// <param name="Kind">The kind of wired furni.</param>
@@ -1296,7 +1339,9 @@ public sealed class WiredManager : GameStateManager
         value.TextConnector is null
             ? null
             : ReadOnly(value.TextConnector.Select(pair =>
-                new WiredTextConnectorSnapshot(pair.Key, pair.Value))));
+                new WiredTextConnectorSnapshot(pair.Key, pair.Value))),
+        value.RequiresExecutionContext,
+        value.TextConnectorFallback);
 
     private static WiredEnvironment SnapshotOf(WiredEnvironment value) => new(
         value.HasClickUserWired,
@@ -1439,6 +1484,29 @@ public sealed class WiredManager : GameStateManager
                         item.RoomId,
                         item.RoomName,
                         item.PlaceholderName)))),
+            (WiredContext.TagTextPlaceholders, TextPlaceholders text) => new(
+                tag,
+                WiredContextValueKind.TextPlaceholders,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                ReadOnly(text.PlaceholderNames),
+                ReadOnly(text.CapturerNames)),
+            (WiredContext.TagVariableLeaderboard, VariableLeaderboardContext leaderboard) => new(
+                tag,
+                WiredContextValueKind.VariableLeaderboard,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                VariableLeaderboard: leaderboard with { Choices = ReadOnly(leaderboard.Choices) }),
             _ => throw new InvalidDataException(
                 $"Unsupported Wired context tag {tag} with value '{value.GetType().FullName}'.")
         };
@@ -1458,7 +1526,9 @@ public sealed class WiredManager : GameStateManager
         IsInvisible = value.IsInvisible,
         CanReadCreationTime = value.CanReadCreationTime,
         CanReadLastUpdateTime = value.CanReadLastUpdateTime,
-        TextConnector = value.TextConnector is null ? null : ReadOnly(value.TextConnector)
+        RequiresExecutionContext = value.RequiresExecutionContext,
+        TextConnector = value.TextConnector is null ? null : ReadOnly(value.TextConnector),
+        TextConnectorFallback = value.TextConnectorFallback
     };
 
     private static WiredSharedVariableSnapshot SnapshotOf(SharedVariable value)
@@ -1485,7 +1555,9 @@ public sealed class WiredManager : GameStateManager
                 : ReadOnly(variable.TextConnector.Select(pair => pair.Key)),
             variable.TextConnector is null
                 ? null
-                : ReadOnly(variable.TextConnector.Select(pair => pair.Value)));
+                : ReadOnly(variable.TextConnector.Select(pair => pair.Value)),
+            variable.RequiresExecutionContext,
+            variable.TextConnectorFallback);
     }
 
     private static WiredContextVariableSnapshot ContextSnapshotOf(WiredVariable value) => new(
@@ -1507,7 +1579,9 @@ public sealed class WiredManager : GameStateManager
             : ReadOnly(value.TextConnector.Select(pair => pair.Key)),
         value.TextConnector is null
             ? null
-            : ReadOnly(value.TextConnector.Select(pair => pair.Value)));
+            : ReadOnly(value.TextConnector.Select(pair => pair.Value)),
+        value.RequiresExecutionContext,
+        value.TextConnectorFallback);
 
     private static VariableInfoAndHolders CloneOf(VariableInfoAndHolders value) => new(
         CloneOf(value.Variable),

@@ -153,9 +153,11 @@ public abstract class WiredConfig
         InputSources = InputSourcesConf.Parse(p);
         AllowWallFurni = p.ReadBool();
         ReadTypeSpecifics(p);
-        Context = WiredContext.Parse(p);
-        DefaultIntParams = WiredIo.IntArray(p);
+        (Context, DefaultIntParams) = WiredVariableWire.ReadWhole(in p, ReadContextTail);
     }
+
+    private static (WiredContext, int[]) ReadContextTail(in PacketReader p, bool execution_context) =>
+        (WiredContext.Read(in p, execution_context), WiredIo.IntArray(p));
 
     /// <summary>Validates the properties and writes every configuration field to a Flash packet.</summary>
     /// <param name="p">The packet writer.</param>

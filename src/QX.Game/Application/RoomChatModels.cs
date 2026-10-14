@@ -181,16 +181,7 @@ public sealed record RoomChatEntry
     private static AvatarChat CopyChat(AvatarChat chat)
     {
         IReadOnlyList<ChatLink> links = Array.AsReadOnly(chat.Links.ToArray());
-        return new AvatarChat(
-            chat.Index,
-            chat.Message,
-            chat.Gesture,
-            chat.BubbleStyle,
-            links,
-            chat.TrackingId,
-            chat.Type,
-            chat.ChatId,
-            chat.WhisperId);
+        return chat with { Links = links };
     }
 }
 

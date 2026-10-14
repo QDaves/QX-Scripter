@@ -440,6 +440,24 @@ public sealed class ApplicationDescriptor
 /// </remarks>
 public static class ApplicationMemberIds
 {
+    public const string WiredSimulationGuide = "wired.simulation.guide";
+    public const string WiredSimulationCreate = "wired.simulation.create";
+    public const string WiredSimulationPlan = "wired.simulation.plan";
+    public const string WiredSimulationRun = "wired.simulation.run";
+    public const string WiredSimulationInspect = "wired.simulation.inspect";
+    public const string WiredSimulationFork = "wired.simulation.fork";
+    public const string WiredSimulationDelete = "wired.simulation.delete";
+    public const string WiredSimulationAssert = "wired.simulation.assert";
+    public const string WiredSimulationCapture = "wired.simulation.capture";
+    public const string WiredSimulationLeaderboardPreview = "wired.simulation.leaderboard.preview";
+    public const string WiredBuildAnalyze = "wired.build.analyze";
+    public const string WiredBuildPreflight = "wired.build.preflight";
+    public const string WiredBuild = "wired.build";
+    public const string WiredBuildProgress = "wired.build.progress";
+    public const string WiredInspect = "wired.inspect";
+    public const string WiredConfigure = "wired.configure";
+    public const string WiredUsageMeasure = "wired.usage.measure";
+    public const string WiredBuildGuide = "wired.build.guide";
     /// <summary>The id of the <c>room.chat.history</c> query, which reads the room chat journal page by page.</summary>
     public const string RoomChatHistory = "room.chat.history";
     /// <summary>The id of the <c>room.chat.talk</c> operation, which says a public message in the current room.</summary>
@@ -1080,6 +1098,11 @@ public static class ApplicationMemberIds
     public const string WiredFxStyles = "wired.fx.styles";
 
     /// <summary>The wired.area_hide.get application member.</summary>
+    public const string WiredOverlays = "wired.overlays.get";
+    public const string WiredLabelText = "wired.labels.text.set";
+    public const string WiredLabelSettings = "wired.labels.settings.set";
+    public const string WiredLeaderboardsRefresh = "wired.leaderboards.refresh";
+    public const string WiredLeaderboardPage = "wired.leaderboards.page";
     public const string WiredAreaHideGet = "wired.area_hide.get";
 
     /// <summary>The wired.area_hide.set application member.</summary>
@@ -1147,6 +1170,7 @@ public static class ApplicationMemberIds
     public const string WiredPreferencesGet = "wired.preferences.get";
     /// <summary>Generates a Wired Web API key and waits for its correlated result.</summary>
     public const string WiredWebApiKeyGenerate = "wired.web_api.key.generate";
+    public const string WiredSharedAddonsSynchronize = "wired.shared_addons.synchronize";
     /// <summary>The id of the <c>wired.chest.open</c> operation, which requests the contents of a Wired chest.</summary>
     public const string WiredChestOpen = "wired.chest.open";
     /// <summary>The id of the <c>wired.chest.close</c> operation, which closes a Wired chest.</summary>

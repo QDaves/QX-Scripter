@@ -29,14 +29,14 @@ public readonly record struct ChatLink(string Key, string Url, bool Flag);
 /// <param name="Links">The links embedded in the message.</param>
 /// <param name="TrackingId">The tracking identifier sent with the message.</param>
 /// <param name="Type">
-/// How the message was spoken. The parser sets <see cref="ChatType.Whisper"/> when a whisper identifier is present
-/// and <see cref="ChatType.Talk"/> otherwise, so a parsed <c>Shout</c> reads as talk until the room state sets the
-/// type from the message name.
+/// How the message was spoken. Raw parsing defaults to talk; room state assigns the type from the message name.
 /// </param>
 /// <param name="ChatId">The chat identifier, or <see langword="null"/> when the message does not carry one.</param>
 /// <param name="WhisperId">
-/// The whisper identifier, or <see langword="null"/> when the message does not carry one.
+/// Legacy name for the bubble width override. Use BubbleWidthOverride for its actual meaning.
 /// </param>
+/// <param name="HideUsername">Whether the bubble hides the username, or <see langword="null"/> when not sent.</param>
+/// <param name="Location">The bubble location, or <see langword="null"/> when not sent.</param>
 public sealed record AvatarChat(
     int Index,
     string Message,
@@ -46,8 +46,16 @@ public sealed record AvatarChat(
     int TrackingId,
     ChatType Type = ChatType.Talk,
     int? ChatId = null,
-    int? WhisperId = null) : IParserComposer<AvatarChat>
+    int? WhisperId = null,
+    bool? HideUsername = null,
+    Point? Location = null) : IParserComposer<AvatarChat>
 {
+    public int? BubbleWidthOverride
+    {
+        get => WhisperId;
+        init => WhisperId = value;
+    }
+
     /// <summary>Parses the message from a packet.</summary>
     /// <param name="p">The packet reader.</param>
     public static AvatarChat Parse(in PacketReader p) =>
@@ -67,14 +75,16 @@ public sealed record AvatarChat(
 
         int tracking_id = p.ReadInt();
         int? chat_id = p.Available >= 4 ? p.ReadInt() : null;
-        int? whisper_id = p.Available >= 4 ? p.ReadInt() : null;
-        ChatType type = whisper_id.HasValue ? ChatType.Whisper : ChatType.Talk;
-        return new AvatarChat(index, message, gesture, bubble_style, links, tracking_id, type, chat_id, whisper_id);
+        int? bubble_width = p.Available >= 4 ? p.ReadInt() : null;
+        bool? hide_username = p.Available >= 1 ? p.ReadBool() : null;
+        Point? location = p.Available >= 8 ? Point.Parse(in p) : null;
+        return new AvatarChat(index, message, gesture, bubble_style, links, tracking_id, ChatType.Talk, chat_id, bubble_width,
+            hide_username, location);
     }
 
     /// <summary>Composes the message into a packet.</summary>
     /// <param name="p">The packet writer.</param>
-    /// <remarks><see cref="WhisperId"/> is only written when <see cref="ChatId"/> has a value.</remarks>
+    /// <remarks>Each optional trailing field is only written when the one before it has a value.</remarks>
     public void Compose(in PacketWriter p) =>
         FlashWire.Compose(this, in p, ComposeFlash);
 
@@ -98,7 +108,15 @@ public sealed record AvatarChat(
         {
             p.WriteInt(value.ChatId.Value);
             if (value.WhisperId.HasValue)
+            {
                 p.WriteInt(value.WhisperId.Value);
+                if (value.HideUsername.HasValue)
+                {
+                    p.WriteBool(value.HideUsername.Value);
+                    if (value.Location is { } location)
+                        location.Compose(in p);
+                }
+            }
         }
     }
 }

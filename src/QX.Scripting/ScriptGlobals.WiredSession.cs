@@ -72,7 +72,7 @@ public partial class ScriptGlobals
             new WiredConfigurationOpenRequest(furniId));
 
     /// <summary>
-    /// Commits a wired furni's current state as its restore snapshot.
+    /// Restores selected furniture from a wired furni's stored snapshot without refreshing its saved values.
     /// </summary>
     /// <remarks>The request is sent without waiting for an answer.</remarks>
     /// <param name="furniId">The wired furni whose snapshot to write.</param>

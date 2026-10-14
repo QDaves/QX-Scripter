@@ -18,7 +18,6 @@ $keys_path = Join-Path $root 'src\QX.Protocol\MessageKeys.cs'
 $contracts_path = Join-Path $root 'src\QX.Game\Protocol\MessageContracts.cs'
 $keys_without_contract = @(
     'friends.room_invite.received'
-    'notifications.dialog'
     'room.advertisement'
     'room.occupants.pet.respect'
 )

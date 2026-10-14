@@ -5854,6 +5854,7 @@
     "site3:out:com.sulake.habbo.inventory.HabboInventory.initComponent#0": "GetCreditsInfo",
     "site3:out:com.sulake.habbo.inventory.HabboInventory.initComponent#4": "GetBadgePointLimits",
     "site3:out:com.sulake.habbo.inventory.badges.BadgesModel.requestInitialization#0": "GetBadges",
+    "site3:out:com.sulake.habbo.inventory.bots.BotsModel.requestInventory#0": "GetBotInventory",
     "site3:out:com.sulake.habbo.inventory.collectibles.CollectiblesModel.requestNftAssets#0": "GetNftTradeInventory",
     "site3:out:com.sulake.habbo.inventory.furni.FurniModel.requestInitialization#0": "RequestFurniInventory",
     "site3:out:com.sulake.habbo.inventory.marketplace.MarketplaceModel.buyMarketplaceTokens#0": "BuyMarketplaceTokens",

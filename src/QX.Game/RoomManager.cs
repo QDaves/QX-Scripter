@@ -1884,6 +1884,30 @@ public sealed class RoomManager : GameStateManager
                 }
         });
 
+        OnRoomState(MessageContracts.Room.FloorItem.Recolored, message =>
+        {
+            foreach (var update in message.Updates)
+                foreach (var id in update.FurnitureIds)
+                    if (_floorItems.TryGetValue(id, out FloorItem? item))
+                    {
+                        ItemData previous = item.Data;
+                        var data = previous is MapData map ? (MapData)RoomObjectSnapshot.Copy(map) : new MapData
+                        {
+                            Value = previous.Value,
+                            Flags = previous.Flags,
+                            UniqueSerialNumber = previous.UniqueSerialNumber,
+                            UniqueSeriesSize = previous.UniqueSeriesSize,
+                            UniqueLimitedData = previous.UniqueLimitedData
+                        };
+                        data.Entries["r"] = update.Red.ToString(CultureInfo.InvariantCulture);
+                        data.Entries["g"] = update.Green.ToString(CultureInfo.InvariantCulture);
+                        data.Entries["b"] = update.Blue.ToString(CultureInfo.InvariantCulture);
+                        item.Data = data;
+                        Publish(FloorItemDataChanged, item, previous, data);
+                        Publish(FloorItemUpdated, item);
+                    }
+        });
+
         OnRoomState(MessageContracts.Room.Authority.ControllersSnapshot, message =>
         {
             if (message.RoomId != RoomId)

@@ -40,6 +40,23 @@ public sealed record WiredFormPatch(
     int? ActionDelay = null, int? ConditionQuantifier = null,
     bool? SelectorFilter = null, bool? SelectorInvert = null)
 {
+    public static WiredFormPatch FromEdits(WiredForm form)
+    {
+        ArgumentNullException.ThrowIfNull(form);
+        IReadOnlySet<string> controls = form.EditedControls;
+        return new(form.EditedFields,
+            controls.Contains("$furniture") ? form.SelectedFurniture : null,
+            controls.Contains("$secondary_furniture") ? form.SecondaryFurniture : null,
+            form.FurnitureSources.Select((source, index) => new WiredFurnitureSourceEdit(index, source))
+                .Where(edit => controls.Contains("$furniture_source:" + edit.Selection)).ToArray(),
+            form.UserSources.Select((source, index) => new WiredUserSourceEdit(index, source))
+                .Where(edit => controls.Contains("$user_source:" + edit.Selection)).ToArray(),
+            controls.Contains("$action_delay") ? form.ActionDelay : null,
+            controls.Contains("$condition_quantifier") ? form.ConditionQuantifier : null,
+            controls.Contains("$selector_filter") ? form.SelectorFilter : null,
+            controls.Contains("$selector_invert") ? form.SelectorInvert : null);
+    }
+
     internal void Apply(WiredForm form)
     {
         form.SetFields(Fields ?? []);
@@ -84,13 +101,27 @@ public sealed record WiredFormView(long Generation, long Revision, WiredConfigur
         {
             WiredFormValue before = original.GetField(field.Name);
             WiredFormValue after = form.GetField(field.Name);
-            bool equal = before.Integer == after.Integer && before.Boolean == after.Boolean && before.Text == after.Text &&
-                (before.Tiles ?? []).SequenceEqual(after.Tiles ?? []) && (before.Rewards ?? []).SequenceEqual(after.Rewards ?? []);
+            if (form.Definition.Category == WiredFormCategory.Addon && form.Definition.Code is >= 1200 and <= 1205 &&
+                field.Name == "show_on_hover" && form.GetField("show_mode").Integer == 2)
+                after = new(Boolean: true);
+            if (original is WiredVariableFxLevellingProgressAddonForm &&
+                field.Name is "minimum_value" or "maximum_value" && before.Integer == -1)
+                continue;
+            bool text_equal = before.Text == after.Text ||
+                (field.Kind == WiredFormFieldKind.Variable && before.Text is "n" or "0" && after.Text is "n" or "0") ||
+                (original is WiredAvatarSaysSomethingTriggerForm && field.Name == "text" &&
+                    string.Equals(before.Text, after.Text, StringComparison.OrdinalIgnoreCase)) ||
+                (original is WiredVariableTextConverterAddonForm && field.Name == "text_mapping" &&
+                    mapping_equal(before.Text, after.Text));
+            bool equal = before.Integer == after.Integer && before.Boolean == after.Boolean && text_equal &&
+                (before.Tiles ?? []).SequenceEqual(after.Tiles ?? []) && (before.Rewards ?? []).SequenceEqual(after.Rewards ?? []) &&
+                (before.SendRows ?? []).SequenceEqual(after.SendRows ?? []) &&
+                (before.ReceiveRows ?? []).SequenceEqual(after.ReceiveRows ?? []);
             if (!equal) fields.Add(new(field.Name, after));
         }
         return new(fields.AsReadOnly(),
-            original.SelectedFurniture.SequenceEqual(form.SelectedFurniture) ? null : form.SelectedFurniture,
-            original.SecondaryFurniture.SequenceEqual(form.SecondaryFurniture) ? null : form.SecondaryFurniture,
+            original.SelectedFurniture.ToHashSet().SetEquals(form.SelectedFurniture) ? null : form.SelectedFurniture,
+            original.SecondaryFurniture.ToHashSet().SetEquals(form.SecondaryFurniture) ? null : form.SecondaryFurniture,
             Array.AsReadOnly(form.FurnitureSources.Select((source, index) => new WiredFurnitureSourceEdit(index, source))
                 .Where(edit => edit.Selection >= original.FurnitureSources.Count || original.FurnitureSources[edit.Selection] != edit.Source).ToArray()),
             Array.AsReadOnly(form.UserSources.Select((source, index) => new WiredUserSourceEdit(index, source))
@@ -99,6 +130,35 @@ public sealed record WiredFormView(long Generation, long Revision, WiredConfigur
             original.ConditionQuantifier == form.ConditionQuantifier ? null : form.ConditionQuantifier,
             original.SelectorFilter == form.SelectorFilter ? null : form.SelectorFilter,
             original.SelectorInvert == form.SelectorInvert ? null : form.SelectorInvert);
+    }
+
+    private static bool mapping_equal(string? first, string? second)
+    {
+        if (first is null || second is null) return false;
+        string[] left = first.Split('\n');
+        string[] right = second.Split('\n');
+        if (left.Length != right.Length) return false;
+        foreach (string[] lines in new[] { left, right })
+        {
+            var keys = new HashSet<long>();
+            bool fallback = false;
+            foreach (string line in lines)
+            {
+                int separator = line.IndexOf('=');
+                if (separator == 1 && line[0] == '_')
+                {
+                    if (fallback) return false;
+                    fallback = true;
+                    continue;
+                }
+                if (separator <= 0 || !long.TryParse(line.AsSpan(0, separator),
+                    System.Globalization.NumberStyles.AllowLeadingSign, System.Globalization.CultureInfo.InvariantCulture,
+                    out long key) || !keys.Add(key)) return false;
+            }
+        }
+        Array.Sort(left, StringComparer.Ordinal);
+        Array.Sort(right, StringComparer.Ordinal);
+        return left.SequenceEqual(right, StringComparer.Ordinal);
     }
 
     internal static WiredForm ReadForm(WiredConfigurationSnapshot value)

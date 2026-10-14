@@ -136,6 +136,11 @@ public sealed class FloorItemWiredMovement : WiredMovement
     public bool HasOvershoot { get; set; }
     /// <summary>Gets or sets the overshoot distance, 0 when <see cref="HasOvershoot"/> is <see langword="false"/>.</summary>
     public int OvershootDistance { get; set; }
+    public int OvershootAnimationTime
+    {
+        get => OvershootDistance;
+        set => OvershootDistance = value;
+    }
     /// <summary>Gets or sets whether the move follows a curve, in which case <see cref="CurveStrength"/> is sent.</summary>
     public bool HasCurve { get; set; }
     /// <summary>Gets or sets the curve strength, 0 when <see cref="HasCurve"/> is <see langword="false"/>.</summary>

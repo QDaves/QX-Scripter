@@ -101,7 +101,7 @@ public sealed record WiredAllVariableHolders(int LeadingValue, VariableInfoAndHo
     private static WiredAllVariableHolders ParseFlash(in PacketReader p)
     {
         int leading = p.ReadInt();
-        VariableInfoAndHolders info = p.Parse<VariableInfoAndHolders>();
+        VariableInfoAndHolders info = WiredVariableWire.ReadWhole(in p, VariableInfoAndHolders.Read);
         return new WiredAllVariableHolders(leading, info);
     }
 
@@ -135,10 +135,12 @@ public sealed record WiredVariableWithHash(int PerVariableHash, WiredVariable Va
 {
     /// <summary>Parses the entry from a packet.</summary>
     /// <param name="p">The packet reader.</param>
-    public static WiredVariableWithHash Parse(in PacketReader p)
+    public static WiredVariableWithHash Parse(in PacketReader p) => WiredVariableWire.ReadWhole(in p, Read);
+
+    internal static WiredVariableWithHash Read(in PacketReader p, bool execution_context)
     {
         int hash = p.ReadInt();
-        WiredVariable variable = WiredVariable.Parse(p);
+        WiredVariable variable = WiredVariable.Read(p, execution_context);
         return new WiredVariableWithHash(hash, variable);
     }
 
@@ -168,7 +170,10 @@ public sealed record WiredAllVariablesDiffs(
     public static WiredAllVariablesDiffs Parse(in PacketReader p) =>
         FlashWire.Parse(in p, ParseFlash);
 
-    private static WiredAllVariablesDiffs ParseFlash(in PacketReader p)
+    private static WiredAllVariablesDiffs ParseFlash(in PacketReader p) =>
+        WiredVariableWire.ReadWhole(in p, Read);
+
+    private static WiredAllVariablesDiffs Read(in PacketReader p, bool execution_context)
     {
         int hash = p.ReadInt();
         bool isLastChunk = p.ReadBool();
@@ -191,7 +196,7 @@ public sealed record WiredAllVariablesDiffs(
             nameof(AddedOrUpdated));
         var added = new WiredVariableWithHash[addedCount];
         for (int i = 0; i < addedCount; i++)
-            added[i] = p.Parse<WiredVariableWithHash>();
+            added[i] = WiredVariableWithHash.Read(p, execution_context);
 
         return new WiredAllVariablesDiffs(hash, isLastChunk, removed, added);
     }

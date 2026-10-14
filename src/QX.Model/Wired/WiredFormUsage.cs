@@ -100,6 +100,20 @@ internal static partial class WiredFormKnowledge
             companions("wf_slc_users_area", "wf_slc_users_bytype");
         }
 
+        if (category == WiredFormCategory.Addon && code == 2003)
+        {
+            client(WiredUsageTopic.Inputs, "Select the WIRED Link endpoints to display. Messages and Dataframes are independent switches; enabling one does not enable the other.", "LinkSpeakerAddon.forceFurniSelection; LinkSpeakerAddon.readIntParamsFromForm");
+            client(WiredUsageTopic.Pitfall, "These display settings do not establish network membership or permission to send or receive a Link payload. The editor contract alone does not establish the displayed text format, audience or hearing range.", "LinkSpeakerAddon.buildInputs; LinkSpeakerAddon.forceFurniSelection");
+            companions("wf_link");
+        }
+
+        if (category == WiredFormCategory.Addon && code == 1003)
+        {
+            client(WiredUsageTopic.Behavior, "Saving the three category switches does not press Synchronize. The separate synchronization command sends the current sharing add-on furniture ID and requires Wired write permission.", "VariableAddonShareAddon.synchronize; VariableAddonShareAddon.onEditInitialized");
+            client(WiredUsageTopic.Pitfall, "SynchronizeWiredSharedAddons requires a fresh form review and reports dispatch only, not confirmed propagation to other rooms. After saving changes, read the form again before synchronizing.", "SynchronizeSharedAddonsMessageComposer; wired.shared_addons.synchronize");
+            companions("wf_xtra_var_import");
+        }
+
         if ((category == WiredFormCategory.Trigger && code == 3) || (category == WiredFormCategory.Condition && code is 3 or 4) || (category == WiredFormCategory.Action && code == 1))
         {
             hotel(WiredUsageTopic.Behavior, "Elapsed-time triggers and conditions use the Wired timer reset by Reset Timers. This is separate from controlling a selected clock-counter furniture item.", "wf_act_reset_timers;wf_trg_at_given_time;wf_cnd_time_less_than;wf_cnd_time_more_than");

@@ -96,7 +96,7 @@ internal sealed class ScriptAnalyzer(MessageNames names) : DiagnosticAnalyzer
         UiSpec.Directives.SelectMany(directive => directive.Aliases.Prepend(directive.Key)).Order(StringComparer.Ordinal));
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics { get; } =
-        [unknown_message, model_mismatch, unknown_directive, undeclared_control];
+        [unknown_message, model_mismatch, unknown_directive, undeclared_control, .. WiredScriptChecks.Diagnostics];
 
     public static ImmutableArray<Diagnostic> Analyze(Compilation compilation, MessageNames names) =>
         compilation.WithAnalyzers([new ScriptAnalyzer(names)])
@@ -113,6 +113,7 @@ internal sealed class ScriptAnalyzer(MessageNames names) : DiagnosticAnalyzer
 
     private void Start(CompilationStartAnalysisContext context)
     {
+        WiredScriptChecks.Register(context);
         Compilation compilation = context.Compilation;
         if (compilation.GetTypeByMetadataName(typeof(ScriptGlobals).FullName!) is not { } globals ||
             compilation.GetTypeByMetadataName(typeof(ScriptUi).FullName!) is not { } ui ||

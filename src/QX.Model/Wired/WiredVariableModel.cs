@@ -11,6 +11,38 @@ public interface IWiredContextEntry
     void Compose(in PacketWriter p);
 }
 
+internal delegate T WiredVariableReader<T>(in PacketReader p, bool execution_context);
+
+internal static class WiredVariableWire
+{
+    public static T ReadWhole<T>(in PacketReader p, WiredVariableReader<T> reader)
+    {
+        int start = p.Pos;
+        try
+        {
+            T value = reader(in p, true);
+            if (p.Available == 0)
+                return value;
+        }
+        catch (Exception e) when (e is IndexOutOfRangeException or OverflowException
+            or InvalidDataException or InvalidOperationException or ArgumentOutOfRangeException)
+        {
+        }
+        p.Pos = start;
+        try
+        {
+            T value = reader(in p, false);
+            WiredWire.RequireEmpty(in p, nameof(WiredVariable));
+            return value;
+        }
+        catch
+        {
+            p.Pos = start;
+            throw;
+        }
+    }
+}
+
 // §7.8 — the leaf variable descriptor, appears throughout the context tree.
 /// <summary>Represents the definition of a wired variable.</summary>
 public sealed class WiredVariable : IParserComposer<WiredVariable>, IWiredContextEntry
@@ -38,6 +70,8 @@ public sealed class WiredVariable : IParserComposer<WiredVariable>, IWiredContex
     public bool CanInterceptChanges { get; init; }
     /// <summary>Gets whether the variable is invisible.</summary>
     public bool IsInvisible { get; init; }
+    /// <summary>Gets whether the variable requires an execution context, or <see langword="null"/> when the packet uses the older layout.</summary>
+    public bool? RequiresExecutionContext { get; init; }
     /// <summary>Gets whether the creation time of the variable can be read.</summary>
     public bool CanReadCreationTime { get; init; }
     /// <summary>Gets whether the last update time of the variable can be read.</summary>
@@ -46,6 +80,8 @@ public sealed class WiredVariable : IParserComposer<WiredVariable>, IWiredContex
     /// <summary>Gets the text connector entries as key and text pairs, or <see langword="null"/> when the variable has no text connector.</summary>
     /// <remarks>An empty list means the variable has a text connector without entries.</remarks>
     public IReadOnlyList<KeyValuePair<Id, string>>? TextConnector { get; init; }
+    /// <summary>Gets the text connector fallback text, or <see langword="null"/> when it has none.</summary>
+    public string? TextConnectorFallback { get; init; }
 
     /// <summary>Gets whether the variable has a text connector.</summary>
     public bool HasTextConnector => TextConnector is not null;
@@ -65,13 +101,16 @@ public sealed class WiredVariable : IParserComposer<WiredVariable>, IWiredContex
     public static WiredVariable Parse(in PacketReader p) =>
         FlashWire.Parse(in p, ParseFlash);
 
-    private static WiredVariable ParseFlash(in PacketReader p) =>
-        Read(in p, p.ReadString(), p.ReadInt());
+    private static WiredVariable ParseFlash(in PacketReader p) => WiredVariableWire.ReadWhole(in p, Read);
+
+    internal static WiredVariable Read(in PacketReader p, bool execution_context) =>
+        Read(in p, p.ReadString(), p.ReadInt(), execution_context);
 
     private static WiredVariable Read(
         in PacketReader p,
         string variable_id,
-        int variable_type)
+        int variable_type,
+        bool execution_context)
     {
         string variableName = p.ReadString();
         int availabilityType = p.ReadInt();
@@ -82,16 +121,21 @@ public sealed class WiredVariable : IParserComposer<WiredVariable>, IWiredContex
         bool canWriteValue = p.ReadBool();
         bool canInterceptChanges = p.ReadBool();
         bool isInvisible = p.ReadBool();
+        bool? requiresExecutionContext = execution_context ? p.ReadBool() : null;
         bool canReadCreationTime = p.ReadBool();
         bool canReadLastUpdateTime = p.ReadBool();
 
         List<KeyValuePair<Id, string>>? connector = null;
+        string? fallback = null;
         if (p.ReadBool())
         {
             int m = p.ReadLength();
+            WiredWire.RequireBoundedCount(m, p.Available, 6, nameof(TextConnector));
             connector = new List<KeyValuePair<Id, string>>(m);
             for (int i = 0; i < m; i++)
                 connector.Add(new KeyValuePair<Id, string>(p.ReadId(), p.ReadString()));
+            if (execution_context && p.ReadBool())
+                fallback = p.ReadString();
         }
 
         return new WiredVariable
@@ -107,9 +151,11 @@ public sealed class WiredVariable : IParserComposer<WiredVariable>, IWiredContex
             CanWriteValue = canWriteValue,
             CanInterceptChanges = canInterceptChanges,
             IsInvisible = isInvisible,
+            RequiresExecutionContext = requiresExecutionContext,
             CanReadCreationTime = canReadCreationTime,
             CanReadLastUpdateTime = canReadLastUpdateTime,
-            TextConnector = connector
+            TextConnector = connector,
+            TextConnectorFallback = fallback
         };
     }
 
@@ -137,6 +183,8 @@ public sealed class WiredVariable : IParserComposer<WiredVariable>, IWiredContex
         p.WriteBool(value.CanWriteValue);
         p.WriteBool(value.CanInterceptChanges);
         p.WriteBool(value.IsInvisible);
+        if (value.RequiresExecutionContext is { } requires_execution_context)
+            p.WriteBool(requires_execution_context);
         p.WriteBool(value.CanReadCreationTime);
         p.WriteBool(value.CanReadLastUpdateTime);
         p.WriteBool(value.TextConnector is not null);
@@ -148,6 +196,12 @@ public sealed class WiredVariable : IParserComposer<WiredVariable>, IWiredContex
                 p.WriteId(kv.Key);
                 p.WriteString(kv.Value);
             }
+            if (value.RequiresExecutionContext is not null)
+            {
+                p.WriteBool(value.TextConnectorFallback is not null);
+                if (value.TextConnectorFallback is not null)
+                    p.WriteString(value.TextConnectorFallback);
+            }
         }
     }
 
@@ -157,6 +211,14 @@ public sealed class WiredVariable : IParserComposer<WiredVariable>, IWiredContex
         WiredWire.RequireString(value.VariableName, nameof(VariableName), in p);
         {
             WiredWire.RequireString(value.VariableId, nameof(VariableId), in p);
+        }
+
+        if (value.TextConnectorFallback is not null)
+        {
+            if (value.TextConnector is null || value.RequiresExecutionContext is null)
+                throw new InvalidDataException(
+                    $"{nameof(TextConnectorFallback)} needs a text connector and {nameof(RequiresExecutionContext)}.");
+            WiredWire.RequireString(value.TextConnectorFallback, nameof(TextConnectorFallback), in p);
         }
 
         if (value.TextConnector is null)
@@ -220,10 +282,13 @@ public sealed record VariableInfoAndHolders(WiredVariable Variable, IReadOnlyLis
 {
     /// <summary>Parses the entry from a packet.</summary>
     /// <param name="p">The packet reader.</param>
-    public static VariableInfoAndHolders Parse(in PacketReader p)
+    public static VariableInfoAndHolders Parse(in PacketReader p) => WiredVariableWire.ReadWhole(in p, Read);
+
+    internal static VariableInfoAndHolders Read(in PacketReader p, bool execution_context)
     {
-        WiredVariable variable = WiredVariable.Parse(p);
+        WiredVariable variable = WiredVariable.Read(p, execution_context);
         int n = p.ReadLength();
+        WiredWire.RequireBoundedCount(n, p.Available, 8, nameof(Holders));
         var holders = new ObjectIdAndValuePair[n];
         for (int i = 0; i < n; i++)
             holders[i] = p.Parse<ObjectIdAndValuePair>();
@@ -255,9 +320,11 @@ public sealed record VariableInfoAndValue(WiredVariable Variable, long Value)
     public static VariableInfoAndValue Parse(in PacketReader p) =>
         FlashWire.Parse(in p, ParseFlash);
 
-    private static VariableInfoAndValue ParseFlash(in PacketReader p)
+    private static VariableInfoAndValue ParseFlash(in PacketReader p) => WiredVariableWire.ReadWhole(in p, Read);
+
+    internal static VariableInfoAndValue Read(in PacketReader p, bool execution_context)
     {
-        WiredVariable variable = WiredVariable.Parse(p);
+        WiredVariable variable = WiredVariable.Read(p, execution_context);
         return new VariableInfoAndValue(variable, p.ReadInt());
     }
 
@@ -284,11 +351,13 @@ public sealed record SharedVariable(Id RoomId, string RoomName, WiredVariable Wi
 {
     /// <summary>Parses the shared variable from a packet.</summary>
     /// <param name="p">The packet reader.</param>
-    public static SharedVariable Parse(in PacketReader p)
+    public static SharedVariable Parse(in PacketReader p) => WiredVariableWire.ReadWhole(in p, Read);
+
+    internal static SharedVariable Read(in PacketReader p, bool execution_context)
     {
         Id roomId = p.ReadId();
         string roomName = p.ReadString();
-        WiredVariable variable = WiredVariable.Parse(p);
+        WiredVariable variable = WiredVariable.Read(p, execution_context);
         return new SharedVariable(roomId, roomName, variable);
     }
 
@@ -310,12 +379,15 @@ public sealed record SharedVariableList(IReadOnlyList<SharedVariable> SharedVari
 {
     /// <summary>Parses the entry from a packet.</summary>
     /// <param name="p">The packet reader.</param>
-    public static SharedVariableList Parse(in PacketReader p)
+    public static SharedVariableList Parse(in PacketReader p) => WiredVariableWire.ReadWhole(in p, Read);
+
+    internal static SharedVariableList Read(in PacketReader p, bool execution_context)
     {
         int n = p.ReadLength();
+        WiredWire.RequireBoundedCount(n, p.Available, 31, nameof(SharedVariables));
         var items = new SharedVariable[n];
         for (int i = 0; i < n; i++)
-            items[i] = p.Parse<SharedVariable>();
+            items[i] = SharedVariable.Read(p, execution_context);
         return new SharedVariableList(items);
     }
 
@@ -337,12 +409,15 @@ public sealed record VariableList(IReadOnlyList<WiredVariable> Variables)
 {
     /// <summary>Parses the entry from a packet.</summary>
     /// <param name="p">The packet reader.</param>
-    public static VariableList Parse(in PacketReader p)
+    public static VariableList Parse(in PacketReader p) => WiredVariableWire.ReadWhole(in p, Read);
+
+    internal static VariableList Read(in PacketReader p, bool execution_context)
     {
         int n = p.ReadLength();
+        WiredWire.RequireBoundedCount(n, p.Available, 25, nameof(Variables));
         var items = new WiredVariable[n];
         for (int i = 0; i < n; i++)
-            items[i] = WiredVariable.Parse(p);
+            items[i] = WiredVariable.Read(p, execution_context);
         return new VariableList(items);
     }
 
@@ -406,11 +481,111 @@ public sealed record SharedGlobalPlaceholderList(IReadOnlyList<SharedGlobalPlace
     }
 }
 
+// §7.10
+/// <summary>Represents a variable a variable leaderboard can rank users by.</summary>
+/// <param name="VariableId">The id of the variable.</param>
+/// <param name="TechnicalName">The technical name of the variable.</param>
+/// <param name="Persistent">Whether the variable is persisted.</param>
+/// <param name="HasValue">Whether the variable carries a value.</param>
+/// <param name="ApplicableLevelUpCount">The number of level-up variables that apply to the variable.</param>
+public sealed record VariableLeaderboardChoice(
+    string VariableId,
+    string TechnicalName,
+    bool Persistent,
+    bool HasValue,
+    int ApplicableLevelUpCount) : IParserComposer<VariableLeaderboardChoice>
+{
+    /// <summary>Parses the choice from a packet.</summary>
+    /// <param name="p">The packet reader.</param>
+    public static VariableLeaderboardChoice Parse(in PacketReader p) =>
+        new(p.ReadString(), p.ReadString(), p.ReadBool(), p.ReadBool(), p.ReadInt());
+
+    /// <summary>Composes the choice into a packet.</summary>
+    /// <param name="p">The packet writer.</param>
+    public void Compose(in PacketWriter p)
+    {
+        p.WriteString(VariableId);
+        p.WriteString(TechnicalName);
+        p.WriteBool(Persistent);
+        p.WriteBool(HasValue);
+        p.WriteInt(ApplicableLevelUpCount);
+    }
+}
+
+// §7.10 — tag 8.
+/// <summary>Represents the state of a variable leaderboard add-on, carried by context tag 8.</summary>
+/// <param name="OverlayInstanceId">The id of the published leaderboard overlay, or 0 when it is not published.</param>
+/// <param name="TileX">The x coordinate of the tile the add-on stands on.</param>
+/// <param name="TileY">The y coordinate of the tile the add-on stands on.</param>
+/// <param name="TotalCandidateCount">The number of variables that could be ranked.</param>
+/// <param name="Choices">The variables the leaderboard can rank by.</param>
+public sealed record VariableLeaderboardContext(
+    int OverlayInstanceId,
+    int TileX,
+    int TileY,
+    int TotalCandidateCount,
+    IReadOnlyList<VariableLeaderboardChoice> Choices)
+    : IParserComposer<VariableLeaderboardContext>, IWiredContextEntry
+{
+    /// <summary>Parses the entry from a packet.</summary>
+    /// <param name="p">The packet reader.</param>
+    public static VariableLeaderboardContext Parse(in PacketReader p)
+    {
+        int overlayInstanceId = p.ReadInt();
+        int tileX = p.ReadInt();
+        int tileY = p.ReadInt();
+        int totalCandidateCount = p.ReadInt();
+        int n = p.ReadLength();
+        WiredWire.RequireBoundedCount(n, p.Available, 10, nameof(Choices));
+        var choices = new VariableLeaderboardChoice[n];
+        for (int i = 0; i < n; i++)
+            choices[i] = p.Parse<VariableLeaderboardChoice>();
+        return new VariableLeaderboardContext(overlayInstanceId, tileX, tileY, totalCandidateCount, choices);
+    }
+
+    /// <summary>Composes the entry into a packet.</summary>
+    /// <param name="p">The packet writer.</param>
+    public void Compose(in PacketWriter p)
+    {
+        p.WriteInt(OverlayInstanceId);
+        p.WriteInt(TileX);
+        p.WriteInt(TileY);
+        p.WriteInt(TotalCandidateCount);
+        p.WriteLength((Length)Choices.Count);
+        foreach (VariableLeaderboardChoice choice in Choices)
+            p.Compose(choice);
+    }
+}
+
 // §6 — the tagged-union variables container inlined into every wired config.
 /// <summary>Represents one tagged entry of a <see cref="WiredContext"/>.</summary>
 /// <param name="Tag">The context tag, one of the tag constants of <see cref="WiredContext"/>.</param>
 /// <param name="Value">The value the tag carries.</param>
 public sealed record WiredContextEntry(int Tag, IWiredContextEntry Value);
+
+public sealed record WiredTextPlaceholders(IReadOnlyList<string> Names, IReadOnlyList<string> CapturerNames)
+    : IParserComposer<WiredTextPlaceholders>, IWiredContextEntry
+{
+    public WiredTextPlaceholders(IReadOnlyList<string> names) : this(names, []) { }
+
+    public static WiredTextPlaceholders Parse(in PacketReader p) =>
+        new(read_names(in p), read_names(in p));
+
+    private static string[] read_names(in PacketReader p)
+    {
+        int count = p.ReadLength();
+        WiredWire.RequireBoundedCount(count, p.Available, 2, nameof(Names));
+        var names = new string[count];
+        for (int index = 0; index < names.Length; index++) names[index] = p.ReadString();
+        return names;
+    }
+
+    public void Compose(in PacketWriter p)
+    {
+        p.WriteStringArray(Names);
+        p.WriteStringArray(CapturerNames);
+    }
+}
 
 /// <summary>Represents the variable context the hotel sends with a wired configuration.</summary>
 /// <remarks>The context is a list of tagged entries. When a tag appears more than once, the typed properties return the last entry.</remarks>
@@ -434,6 +609,10 @@ public sealed record WiredContext(IReadOnlyList<WiredContextEntry> Entries) : IP
     public const int TagRulesetVariables = 5;
     /// <summary>The tag of a <see cref="SharedGlobalPlaceholderList"/> entry.</summary>
     public const int TagReferencePlaceholders = 6;
+    /// <summary>The tag of a <see cref="WiredTextPlaceholders"/> entry.</summary>
+    public const int TagTextPlaceholders = 7;
+    /// <summary>The tag of a <see cref="VariableLeaderboardContext"/> entry.</summary>
+    public const int TagVariableLeaderboard = 8;
 
     /// <summary>Gets the last room variables entry, or <see langword="null"/> when there is none.</summary>
     public AllVariablesInRoom? RoomVariables => Last<AllVariablesInRoom>(TagRoomVariables);
@@ -449,6 +628,10 @@ public sealed record WiredContext(IReadOnlyList<WiredContextEntry> Entries) : IP
     public VariableList? RulesetVariables => Last<VariableList>(TagRulesetVariables);
     /// <summary>Gets the last shared placeholders entry, or <see langword="null"/> when there is none.</summary>
     public SharedGlobalPlaceholderList? ReferencePlaceholders => Last<SharedGlobalPlaceholderList>(TagReferencePlaceholders);
+    /// <summary>Gets the last text placeholders entry, or <see langword="null"/> when there is none.</summary>
+    public WiredTextPlaceholders? TextPlaceholders => Last<WiredTextPlaceholders>(TagTextPlaceholders);
+    /// <summary>Gets the last variable leaderboard entry, or <see langword="null"/> when there is none.</summary>
+    public VariableLeaderboardContext? VariableLeaderboard => Last<VariableLeaderboardContext>(TagVariableLeaderboard);
 
     private T? Last<T>(int tag) where T : class
     {
@@ -464,11 +647,12 @@ public sealed record WiredContext(IReadOnlyList<WiredContextEntry> Entries) : IP
     public static WiredContext Parse(in PacketReader p) =>
         FlashWire.Parse(in p, ParseFlash);
 
-    private static WiredContext ParseFlash(in PacketReader p) => Read(in p);
+    private static WiredContext ParseFlash(in PacketReader p) => WiredVariableWire.ReadWhole(in p, Read);
 
-    private static WiredContext Read(in PacketReader p)
+    internal static WiredContext Read(in PacketReader p, bool execution_context)
     {
         int count = p.ReadLength();
+        WiredWire.RequireBoundedCount(count, p.Available, 4, nameof(Entries));
         var entries = new WiredContextEntry[count];
         for (int i = 0; i < count; i++)
         {
@@ -476,11 +660,13 @@ public sealed record WiredContext(IReadOnlyList<WiredContextEntry> Entries) : IP
             IWiredContextEntry value = tag switch
             {
                 TagRoomVariables => AllVariablesInRoom.Parse(p),
-                TagFurniVariableInfo or TagUserVariableInfo => VariableInfoAndHolders.Parse(p),
-                TagGlobalVariableInfo => VariableInfoAndValue.Parse(p),
-                TagReferenceVariables => SharedVariableList.Parse(p),
-                TagRulesetVariables => VariableList.Parse(p),
+                TagFurniVariableInfo or TagUserVariableInfo => VariableInfoAndHolders.Read(p, execution_context),
+                TagGlobalVariableInfo => VariableInfoAndValue.Read(p, execution_context),
+                TagReferenceVariables => SharedVariableList.Read(p, execution_context),
+                TagRulesetVariables => VariableList.Read(p, execution_context),
                 TagReferencePlaceholders => SharedGlobalPlaceholderList.Parse(p),
+                TagTextPlaceholders => WiredTextPlaceholders.Parse(p),
+                TagVariableLeaderboard => VariableLeaderboardContext.Parse(p),
                 _ => throw new InvalidOperationException($"Unknown WiredContext tag {tag} — stream would desync.")
             };
             entries[i] = new WiredContextEntry(tag, value);
@@ -545,6 +731,23 @@ public sealed record WiredContext(IReadOnlyList<WiredContextEntry> Entries) : IP
                         _ = WiredWire.FlashId(placeholder.RoomId);
                         WiredWire.RequireString(placeholder.RoomName, nameof(placeholder.RoomName), in p);
                         WiredWire.RequireString(placeholder.PlaceholderName, nameof(placeholder.PlaceholderName), in p);
+                    }
+                    break;
+                case (TagTextPlaceholders, WiredTextPlaceholders text):
+                    ArgumentNullException.ThrowIfNull(text.Names);
+                    ArgumentNullException.ThrowIfNull(text.CapturerNames);
+                    foreach (string name in text.Names)
+                        WiredWire.RequireString(name, nameof(text.Names), in p);
+                    foreach (string name in text.CapturerNames)
+                        WiredWire.RequireString(name, nameof(text.CapturerNames), in p);
+                    break;
+                case (TagVariableLeaderboard, VariableLeaderboardContext leaderboard):
+                    ArgumentNullException.ThrowIfNull(leaderboard.Choices);
+                    foreach (VariableLeaderboardChoice choice in leaderboard.Choices)
+                    {
+                        ArgumentNullException.ThrowIfNull(choice);
+                        WiredWire.RequireString(choice.VariableId, nameof(choice.VariableId), in p);
+                        WiredWire.RequireString(choice.TechnicalName, nameof(choice.TechnicalName), in p);
                     }
                     break;
                 default:

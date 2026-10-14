@@ -345,10 +345,16 @@ public static class Msg
         public const string FurniListRemove = "FurniListRemove";
         /// <summary>The incoming Flash message <c>FurniListRemoveMultiple</c>.</summary>
         public const string FurniListRemoveMultiple = "FurniListRemoveMultiple";
+        /// <summary>The incoming Flash message <c>FurniRecolorUpdate</c>.</summary>
+        public const string FurniRecolorUpdate = "FurniRecolorUpdate";
         /// <summary>The incoming Flash message <c>FurniRentOrBuyoutOffer</c>.</summary>
         public const string FurniRentOrBuyoutOffer = "FurniRentOrBuyoutOffer";
         /// <summary>The incoming Flash message <c>FurnitureAliases</c>.</summary>
         public const string FurnitureAliases = "FurnitureAliases";
+        /// <summary>The incoming Flash message <c>FurnitureLabelsAndRegions</c>.</summary>
+        public const string FurnitureLabelsAndRegions = "FurnitureLabelsAndRegions";
+        /// <summary>The incoming Flash message <c>FurnitureLabelsAndRegionsUpdate</c>.</summary>
+        public const string FurnitureLabelsAndRegionsUpdate = "FurnitureLabelsAndRegionsUpdate";
         /// <summary>The incoming Flash message <c>Game2AccountGameStatus</c>.</summary>
         public const string Game2AccountGameStatus = "Game2AccountGameStatus";
         /// <summary>The incoming Flash message <c>Game2ArenaEntered</c>.</summary>
@@ -1099,6 +1105,10 @@ public static class Msg
         public const string VariableFxStatus = "VariableFxStatus";
         /// <summary>The incoming Flash message <c>VariableFxStatusRemoved</c>.</summary>
         public const string VariableFxStatusRemoved = "VariableFxStatusRemoved";
+        /// <summary>The incoming Flash message <c>VariableLeaderboardChunkUpdate</c>.</summary>
+        public const string VariableLeaderboardChunkUpdate = "VariableLeaderboardChunkUpdate";
+        /// <summary>The incoming Flash message <c>VariableLeaderboardSnapshot</c>.</summary>
+        public const string VariableLeaderboardSnapshot = "VariableLeaderboardSnapshot";
         /// <summary>The incoming Flash message <c>VoucherRedeemError</c>.</summary>
         public const string VoucherRedeemError = "VoucherRedeemError";
         /// <summary>The incoming Flash message <c>VoucherRedeemOk</c>.</summary>
@@ -2184,6 +2194,10 @@ public static class Msg
         public const string SetCustomStackingHeight = "SetCustomStackingHeight";
         /// <summary>The outgoing Flash message <c>SetDiscordPreferences</c>.</summary>
         public const string SetDiscordPreferences = "SetDiscordPreferences";
+        /// <summary>The outgoing Flash message <c>SetFurnitureLabelData</c>.</summary>
+        public const string SetFurnitureLabelData = "SetFurnitureLabelData";
+        /// <summary>The outgoing Flash message <c>SetFurnitureLabelSettings</c>.</summary>
+        public const string SetFurnitureLabelSettings = "SetFurnitureLabelSettings";
         /// <summary>The outgoing Flash message <c>SetIgnoreRoomInvites</c>.</summary>
         public const string SetIgnoreRoomInvites = "SetIgnoreRoomInvites";
         /// <summary>The outgoing Flash message <c>SetItemData</c>.</summary>
@@ -2236,6 +2250,8 @@ public static class Msg
         public const string StartTyping = "StartTyping";
         /// <summary>The outgoing Flash message <c>SubmitRoomToCompetition</c>.</summary>
         public const string SubmitRoomToCompetition = "SubmitRoomToCompetition";
+        /// <summary>The outgoing Flash message <c>SynchronizeSharedAddons</c>.</summary>
+        public const string SynchronizeSharedAddons = "SynchronizeSharedAddons";
         /// <summary>The outgoing Flash message <c>ThrowDice</c>.</summary>
         public const string ThrowDice = "ThrowDice";
         /// <summary>The outgoing Flash message <c>TogglePetBreedingPermission</c>.</summary>
@@ -2308,6 +2324,8 @@ public static class Msg
         public const string UseFurniture = "UseFurniture";
         /// <summary>The outgoing Flash message <c>UseWallItem</c>.</summary>
         public const string UseWallItem = "UseWallItem";
+        /// <summary>The outgoing Flash message <c>VariableLeaderboardReplaceSubscription</c>.</summary>
+        public const string VariableLeaderboardReplaceSubscription = "VariableLeaderboardReplaceSubscription";
         /// <summary>The outgoing Flash message <c>VerifyCode</c>.</summary>
         public const string VerifyCode = "VerifyCode";
         /// <summary>The outgoing Flash message <c>VersionCheck</c>.</summary>

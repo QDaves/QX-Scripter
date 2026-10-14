@@ -45,6 +45,15 @@ public sealed class FloorItem : Furni, IParserComposer<FloorItem>
     /// <summary>Gets the item's state, taken from <see cref="ItemData.State"/> of <see cref="Data"/>.</summary>
     public override int State => Data.State;
 
+    public int? RecolorRgb => Data is MapData map &&
+        (map.Entries.ContainsKey("r") || map.Entries.ContainsKey("g") || map.Entries.ContainsKey("b"))
+        ? (recolor_channel(map, "r") << 16) | (recolor_channel(map, "g") << 8) | recolor_channel(map, "b")
+        : Identifier?.EndsWith("_recolorable", StringComparison.Ordinal) == true ? 0xffffff : null;
+
+    private static int recolor_channel(MapData data, string key) =>
+        data.Entries.TryGetValue(key, out string? text) && text.Length is >= 1 and <= 3 &&
+        text.All(c => c is >= '0' and <= '9') && int.TryParse(text, out int value) && value <= 255 ? value : 255;
+
     /// <summary>Initializes a new instance of the <see cref="FloorItem"/> class.</summary>
     public FloorItem() { }
 

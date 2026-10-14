@@ -149,9 +149,9 @@ internal static class WiredLookup
 /// The friendly layer over the raw wired variable protocol: it runs the hash and diff exchange to
 /// completion, resolves variable ids to display names, and lets values be read and written by name.
 /// <para>
-/// Everything here is a live request, not cached state. Each call fetches the room's variable
-/// definitions again, so a loop that reads many values one by one is expensive. Prefer fetching a
-/// holder's values once and indexing into the result.
+/// Object values are requested live. Complete variable definitions can be reused after checking
+/// the current room hash; room or session changes require a new complete snapshot. Prefer fetching
+/// a holder's values once and indexing into the result.
 /// </para>
 /// </content>
 public partial class ScriptGlobals
@@ -160,8 +160,8 @@ public partial class ScriptGlobals
     /// Requests the room's complete wired variable definitions.
     /// </summary>
     /// <remarks>
-    /// The diff exchange runs from an empty cache until the server marks the last chunk, for at
-    /// most 64 chunks. Concurrent fetches are served one at a time.
+    /// A complete snapshot is reused only after the current room hash matches. Otherwise the diff
+    /// exchange reads at most 64 chunks. Concurrent fetches are served one at a time.
     /// </remarks>
     /// <param name="timeoutMs">The total timeout in milliseconds for the whole exchange, from 1 to 120000.</param>
     /// <returns>

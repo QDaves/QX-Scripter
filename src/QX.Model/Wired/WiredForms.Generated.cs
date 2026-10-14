@@ -322,6 +322,12 @@ public sealed class WiredVariableUpdateTriggerForm : WiredForm
         get => (WiredOriginMaskFlags)GetField("origin_mask").Integer.GetValueOrDefault();
         set => SetField("origin_mask", new(Integer: (int)value));
     }
+
+    public bool SelectVariableBoxes
+    {
+        get => GetField("select_variable_boxes").Boolean.GetValueOrDefault();
+        set => SetField("select_variable_boxes", new(Boolean: value));
+    }
 }
 
 /// <summary>Typed settings for AvatarLeavesRoom (trigger code 23).</summary>
@@ -798,6 +804,12 @@ public sealed class WiredBotTalkActionForm : WiredForm
         get => (WiredBubbleWidthOption)GetField("bubble_width").Integer.GetValueOrDefault();
         set => SetField("bubble_width", new(Integer: (int)value));
     }
+
+    public bool HideBotName
+    {
+        get => GetField("hide_bot_name").Boolean.GetValueOrDefault();
+        set => SetField("hide_bot_name", new(Boolean: value));
+    }
 }
 
 /// <summary>Typed settings for BotGiveHandItem (action code 24).</summary>
@@ -901,6 +913,12 @@ public sealed class WiredBotTalkDirectToAvtrActionForm : WiredForm
     {
         get => (WiredBubbleWidthOption)GetField("bubble_width").Integer.GetValueOrDefault();
         set => SetField("bubble_width", new(Integer: (int)value));
+    }
+
+    public bool HideBotName
+    {
+        get => GetField("hide_bot_name").Boolean.GetValueOrDefault();
+        set => SetField("hide_bot_name", new(Boolean: value));
     }
 }
 
@@ -1105,6 +1123,30 @@ public sealed class WiredGiveVariableActionForm : WiredForm
         get => GetField("variable").Text!;
         set => SetField("variable", new(Text: value));
     }
+
+    public WiredValueSource InitialValueKind
+    {
+        get => (WiredValueSource)GetField("initial_value_kind").Integer.GetValueOrDefault();
+        set => SetField("initial_value_kind", new(Integer: (int)value));
+    }
+
+    public WiredSourceDomain InitialValueTarget
+    {
+        get => (WiredSourceDomain)GetField("initial_value_target").Integer.GetValueOrDefault();
+        set => SetField("initial_value_target", new(Integer: (int)value));
+    }
+
+    public string InitialVariable
+    {
+        get => GetField("initial_variable").Text!;
+        set => SetField("initial_variable", new(Text: value));
+    }
+
+    public bool ReferenceSameHolder
+    {
+        get => GetField("reference_same_holder").Boolean.GetValueOrDefault();
+        set => SetField("reference_same_holder", new(Boolean: value));
+    }
 }
 
 /// <summary>Typed settings for RemoveVariable (action code 40).</summary>
@@ -1202,6 +1244,12 @@ public sealed class WiredChangeVariableActionForm : WiredForm
     {
         get => ReadReference("operand_kind", "operand_value", "operand_target", "operand");
         set => WriteReference("operand_kind", "operand_value", "operand_target", "operand", value);
+    }
+
+    public bool ReferenceSameHolder
+    {
+        get => GetField("reference_same_holder").Boolean.GetValueOrDefault();
+        set => SetField("reference_same_holder", new(Boolean: value));
     }
 }
 
@@ -1414,7 +1462,7 @@ public sealed class WiredInitiateTransactionActionForm : WiredForm
         set => SetField("transaction_mode", new(Integer: (int)value));
     }
 
-    /// <summary>Gets or sets multiplier. 1..500</summary>
+    /// <summary>Gets or sets multiplier. 2..500</summary>
     /// <remarks>Client label: wiredfurni.params.contract.multiplier_selection. Section disabled in normal mode; caption changes to auto-multiplier limit for mode 2</remarks>
     public int Multiplier
     {
@@ -2583,6 +2631,12 @@ public sealed class WiredVariableValueConditionForm : WiredForm
         get => ReadReference("operand_kind", "reference_value", "reference_target", "reference_variable");
         set => WriteReference("operand_kind", "reference_value", "reference_target", "reference_variable", value);
     }
+
+    public bool ReferenceSameHolder
+    {
+        get => GetField("reference_same_holder").Boolean.GetValueOrDefault();
+        set => SetField("reference_same_holder", new(Boolean: value));
+    }
 }
 
 /// <summary>Typed settings for VariableAge (condition code 43).</summary>
@@ -2643,6 +2697,24 @@ public sealed class WiredVariableAgeConditionForm : WiredForm
     {
         get => GetField("variable").Text!;
         set => SetField("variable", new(Text: value));
+    }
+
+    public WiredValueSource DurationKind
+    {
+        get => (WiredValueSource)GetField("duration_kind").Integer.GetValueOrDefault();
+        set => SetField("duration_kind", new(Integer: (int)value));
+    }
+
+    public WiredSourceDomain DurationTarget
+    {
+        get => (WiredSourceDomain)GetField("duration_target").Integer.GetValueOrDefault();
+        set => SetField("duration_target", new(Integer: (int)value));
+    }
+
+    public string DurationVariable
+    {
+        get => GetField("duration_variable").Text!;
+        set => SetField("duration_variable", new(Text: value));
     }
 }
 
@@ -4404,6 +4476,12 @@ public sealed class WiredVariableFxHealthPointsAddonForm : WiredForm
         get => GetField("audience_variable").Text!;
         set => SetField("audience_variable", new(Text: value));
     }
+
+    public int StackOrder
+    {
+        get => GetField("stack_order").Integer.GetValueOrDefault();
+        set => SetField("stack_order", new(Integer: value));
+    }
 }
 
 /// <summary>Typed settings for VariableFxProgressBar (addon code 1201).</summary>
@@ -4598,6 +4676,12 @@ public sealed class WiredVariableFxProgressBarAddonForm : WiredForm
     {
         get => GetField("audience_variable").Text!;
         set => SetField("audience_variable", new(Text: value));
+    }
+
+    public int StackOrder
+    {
+        get => GetField("stack_order").Integer.GetValueOrDefault();
+        set => SetField("stack_order", new(Integer: value));
     }
 }
 
@@ -4802,6 +4886,12 @@ public sealed class WiredVariableFxLevellingProgressAddonForm : WiredForm
         get => GetField("sub_renderer_id").Integer.GetValueOrDefault();
         set => SetField("sub_renderer_id", new(Integer: value));
     }
+
+    public int StackOrder
+    {
+        get => GetField("stack_order").Integer.GetValueOrDefault();
+        set => SetField("stack_order", new(Integer: value));
+    }
 }
 
 /// <summary>Typed settings for VariableFxStatusBar (addon code 1203).</summary>
@@ -4997,6 +5087,12 @@ public sealed class WiredVariableFxStatusBarAddonForm : WiredForm
         get => GetField("audience_variable").Text!;
         set => SetField("audience_variable", new(Text: value));
     }
+
+    public int StackOrder
+    {
+        get => GetField("stack_order").Integer.GetValueOrDefault();
+        set => SetField("stack_order", new(Integer: value));
+    }
 }
 
 /// <summary>Typed settings for VariableFxBossBar (addon code 1204).</summary>
@@ -5191,6 +5287,12 @@ public sealed class WiredVariableFxBossBarAddonForm : WiredForm
     {
         get => GetField("audience_variable").Text!;
         set => SetField("audience_variable", new(Text: value));
+    }
+
+    public int StackOrder
+    {
+        get => GetField("stack_order").Integer.GetValueOrDefault();
+        set => SetField("stack_order", new(Integer: value));
     }
 }
 
@@ -5402,6 +5504,12 @@ public sealed class WiredVariableFxNumberDisplayAddonForm : WiredForm
     {
         get => GetField("icon").Text!;
         set => SetField("icon", new(Text: value));
+    }
+
+    public int StackOrder
+    {
+        get => GetField("stack_order").Integer.GetValueOrDefault();
+        set => SetField("stack_order", new(Integer: value));
     }
 }
 
@@ -5685,7 +5793,7 @@ public sealed class WiredEchoVariableForm : WiredForm
         set => SetField("name", new(Text: value));
     }
 
-    /// <summary>Gets or sets reference variable. Requires variableType != 0; n means no variable</summary>
+    /// <summary>Gets or sets reference variable. Accepts user-created and built-in variables; n means no variable</summary>
     /// <remarks>Client label: wiredfurni.params.variables.variable_selection. None</remarks>
     public string ReferenceVariable
     {
@@ -5713,5 +5821,677 @@ public sealed class WiredDailyTaskVariableForm : WiredForm
     {
         get => GetField("code").Text!;
         set => SetField("code", new(Text: value));
+    }
+}
+
+/// <summary>Typed settings for SetFurniTransparency (action code 61).</summary>
+public sealed class WiredSetFurniTransparencyActionForm : WiredForm
+{
+    internal WiredSetFurniTransparencyActionForm(WiredConfig configuration, WiredFormLayout layout) : base(configuration, layout) { }
+
+    /// <summary>Gets or sets audience. 0 selected users, 1 everyone</summary>
+    /// <remarks>Client label: wiredfurni.params.furni_visualization.audience. None</remarks>
+    public WiredSetFurniTransparencyActionAudienceOption Audience
+    {
+        get => (WiredSetFurniTransparencyActionAudienceOption)GetField("audience").Integer.GetValueOrDefault();
+        set => SetField("audience", new(Integer: (int)value));
+    }
+
+    /// <summary>Gets or sets transparency. 0 visible, 100 invisible</summary>
+    /// <remarks>Client label: wiredfurni.params.set_furni_transparency.visibility. None</remarks>
+    public WiredTransparencyOption Transparency
+    {
+        get => (WiredTransparencyOption)GetField("transparency").Integer.GetValueOrDefault();
+        set => SetField("transparency", new(Integer: (int)value));
+    }
+
+    /// <summary>Gets or sets allow click through. 0=false, 1=true</summary>
+    /// <remarks>Client label: wiredfurni.params.set_furni_transparency.allow_click_through. None</remarks>
+    public bool AllowClickThrough
+    {
+        get => GetField("allow_click_through").Boolean.GetValueOrDefault();
+        set => SetField("allow_click_through", new(Boolean: value));
+    }
+
+    /// <summary>Gets or sets easing. 0 instant, 1 linear, 2 ease in, 3 ease out, 4 ease in out</summary>
+    /// <remarks>Client label: wiredfurni.params.set_furni_transparency.easing. None</remarks>
+    public WiredEasingOption Easing
+    {
+        get => (WiredEasingOption)GetField("easing").Integer.GetValueOrDefault();
+        set => SetField("easing", new(Integer: (int)value));
+    }
+
+    /// <summary>Gets or sets target users. 0=false, 1=true</summary>
+    /// <remarks>Client label: wiredfurni.params.sources.merged.title.target. None</remarks>
+    public bool TargetUsers
+    {
+        get => GetField("target_users").Boolean.GetValueOrDefault();
+        set => SetField("target_users", new(Boolean: value));
+    }
+}
+
+/// <summary>Typed settings for SetFurniHighlight (action code 62).</summary>
+public sealed class WiredSetFurniHighlightActionForm : WiredForm
+{
+    internal WiredSetFurniHighlightActionForm(WiredConfig configuration, WiredFormLayout layout) : base(configuration, layout) { }
+
+    /// <summary>Gets or sets audience. 0 selected users, 1 everyone</summary>
+    /// <remarks>Client label: wiredfurni.params.furni_visualization.audience. None</remarks>
+    public WiredSetFurniTransparencyActionAudienceOption Audience
+    {
+        get => (WiredSetFurniTransparencyActionAudienceOption)GetField("audience").Integer.GetValueOrDefault();
+        set => SetField("audience", new(Integer: (int)value));
+    }
+
+    /// <summary>Gets or sets highlight type. 0 outline, 1 soft glow, 2 darken, 3 color tint, 4 brighten, 5 neon aura</summary>
+    /// <remarks>Client label: wiredfurni.params.set_furni_highlight.type. None</remarks>
+    public WiredHighlightTypeOption HighlightType
+    {
+        get => (WiredHighlightTypeOption)GetField("highlight_type").Integer.GetValueOrDefault();
+        set => SetField("highlight_type", new(Integer: (int)value));
+    }
+
+    /// <summary>Gets or sets strength. Wire strength; Brighten displays twice this value in the UI</summary>
+    /// <remarks>Client label: wiredfurni.params.set_furni_highlight.strength. None</remarks>
+    public int Strength
+    {
+        get => GetField("strength").Integer.GetValueOrDefault();
+        set => SetField("strength", new(Integer: value));
+    }
+
+    /// <summary>Gets or sets color rgb. RGB integer; darken saves 0 and brighten saves 16777215</summary>
+    /// <remarks>Client label: wiredfurni.params.set_furni_highlight.color. None</remarks>
+    public int ColorRgb
+    {
+        get => GetField("color_rgb").Integer.GetValueOrDefault();
+        set => SetField("color_rgb", new(Integer: value));
+    }
+
+    /// <summary>Gets or sets animation. 0 steady, 1 pulse</summary>
+    /// <remarks>Client label: wiredfurni.params.set_furni_highlight.animation. None</remarks>
+    public WiredAnimationOption Animation
+    {
+        get => (WiredAnimationOption)GetField("animation").Integer.GetValueOrDefault();
+        set => SetField("animation", new(Integer: (int)value));
+    }
+
+    /// <summary>Gets or sets easing. 0 instant, 1 linear, 2 ease in, 3 ease out, 4 ease in out</summary>
+    /// <remarks>Client label: wiredfurni.params.set_furni_highlight.easing. None</remarks>
+    public WiredEasingOption Easing
+    {
+        get => (WiredEasingOption)GetField("easing").Integer.GetValueOrDefault();
+        set => SetField("easing", new(Integer: (int)value));
+    }
+
+    /// <summary>Gets or sets target users. 0=false, 1=true</summary>
+    /// <remarks>Client label: wiredfurni.params.sources.merged.title.target. None</remarks>
+    public bool TargetUsers
+    {
+        get => GetField("target_users").Boolean.GetValueOrDefault();
+        set => SetField("target_users", new(Boolean: value));
+    }
+}
+
+/// <summary>Typed settings for SendLinkMessage (action code 63).</summary>
+public sealed class WiredSendLinkMessageActionForm : WiredForm
+{
+    internal WiredSendLinkMessageActionForm(WiredConfig configuration, WiredFormLayout layout) : base(configuration, layout) { }
+
+    /// <summary>Gets or sets message source. 0 trigger text, 1 custom message</summary>
+    /// <remarks>Client label: wiredfurni.params.link.message_source. None</remarks>
+    public WiredMessageSourceOption MessageSource
+    {
+        get => (WiredMessageSourceOption)GetField("message_source").Integer.GetValueOrDefault();
+        set => SetField("message_source", new(Integer: (int)value));
+    }
+
+    /// <summary>Gets or sets message. UTF-8 payload must fit 1000 bytes; placeholders are supported</summary>
+    /// <remarks>Client label: wiredfurni.params.link.message. None</remarks>
+    public string Message
+    {
+        get => GetField("message").Text!;
+        set => SetField("message", new(Text: value));
+    }
+}
+
+/// <summary>Typed settings for RoomInitialized (trigger code 28).</summary>
+public sealed class WiredRoomInitializedTriggerForm : WiredForm
+{
+    internal WiredRoomInitializedTriggerForm(WiredConfig configuration, WiredFormLayout layout) : base(configuration, layout) { }
+}
+
+/// <summary>Typed settings for ReceiveLinkMessage (trigger code 29).</summary>
+public sealed class WiredReceiveLinkMessageTriggerForm : WiredForm
+{
+    internal WiredReceiveLinkMessageTriggerForm(WiredConfig configuration, WiredFormLayout layout) : base(configuration, layout) { }
+}
+
+/// <summary>Typed settings for VariableAddonShare (addon code 1003).</summary>
+public sealed class WiredVariableAddonShareAddonForm : WiredForm
+{
+    internal WiredVariableAddonShareAddonForm(WiredConfig configuration, WiredFormLayout layout) : base(configuration, layout) { }
+
+    /// <summary>Gets or sets text connectors. 0=false, 1=true</summary>
+    /// <remarks>Client label: wiredfurni.params.variables.addon_sharing.text_connectors. None</remarks>
+    public bool TextConnectors
+    {
+        get => GetField("text_connectors").Boolean.GetValueOrDefault();
+        set => SetField("text_connectors", new(Boolean: value));
+    }
+
+    /// <summary>Gets or sets subvariable creators. 0=false, 1=true</summary>
+    /// <remarks>Client label: wiredfurni.params.variables.addon_sharing.subvariable_creators. None</remarks>
+    public bool SubvariableCreators
+    {
+        get => GetField("subvariable_creators").Boolean.GetValueOrDefault();
+        set => SetField("subvariable_creators", new(Boolean: value));
+    }
+
+    /// <summary>Gets or sets variable fx. 0=false, 1=true</summary>
+    /// <remarks>Client label: wiredfurni.params.variables.addon_sharing.variable_fx. None</remarks>
+    public bool VariableFx
+    {
+        get => GetField("variable_fx").Boolean.GetValueOrDefault();
+        set => SetField("variable_fx", new(Boolean: value));
+    }
+}
+
+/// <summary>Typed settings for VariableAddonImport (addon code 1004).</summary>
+public sealed class WiredVariableAddonImportAddonForm : WiredForm
+{
+    internal WiredVariableAddonImportAddonForm(WiredConfig configuration, WiredFormLayout layout) : base(configuration, layout) { }
+
+    /// <summary>Gets or sets text connectors. 0=false, 1=true</summary>
+    /// <remarks>Client label: wiredfurni.params.variables.addon_sharing.text_connectors. None</remarks>
+    public bool TextConnectors
+    {
+        get => GetField("text_connectors").Boolean.GetValueOrDefault();
+        set => SetField("text_connectors", new(Boolean: value));
+    }
+
+    /// <summary>Gets or sets subvariable creators. 0=false, 1=true</summary>
+    /// <remarks>Client label: wiredfurni.params.variables.addon_sharing.subvariable_creators. None</remarks>
+    public bool SubvariableCreators
+    {
+        get => GetField("subvariable_creators").Boolean.GetValueOrDefault();
+        set => SetField("subvariable_creators", new(Boolean: value));
+    }
+
+    /// <summary>Gets or sets variable fx. 0=false, 1=true</summary>
+    /// <remarks>Client label: wiredfurni.params.variables.addon_sharing.variable_fx. None</remarks>
+    public bool VariableFx
+    {
+        get => GetField("variable_fx").Boolean.GetValueOrDefault();
+        set => SetField("variable_fx", new(Boolean: value));
+    }
+}
+
+/// <summary>Typed settings for LinkSpeaker (addon code 2003).</summary>
+public sealed class WiredLinkSpeakerAddonForm : WiredForm
+{
+    internal WiredLinkSpeakerAddonForm(WiredConfig configuration, WiredFormLayout layout) : base(configuration, layout) { }
+
+    /// <summary>Gets or sets messages. 0=false, 1=true</summary>
+    /// <remarks>Client label: wiredfurni.params.link_speaker.message. None</remarks>
+    public bool Messages
+    {
+        get => GetField("messages").Boolean.GetValueOrDefault();
+        set => SetField("messages", new(Boolean: value));
+    }
+
+    /// <summary>Gets or sets dataframes. 0=false, 1=true</summary>
+    /// <remarks>Client label: wiredfurni.params.link_speaker.dataframe. None</remarks>
+    public bool Dataframes
+    {
+        get => GetField("dataframes").Boolean.GetValueOrDefault();
+        set => SetField("dataframes", new(Boolean: value));
+    }
+}
+
+/// <summary>Typed settings for Pointer (variable code 9).</summary>
+public sealed class WiredPointerVariableForm : WiredForm
+{
+    internal WiredPointerVariableForm(WiredConfig configuration, WiredFormLayout layout) : base(configuration, layout) { }
+
+    /// <summary>Gets or sets target. 0 furniture, 1 users, -10 global, -20 context</summary>
+    /// <remarks>Client label: wiredfurni.params.sources.merged.title.target. None</remarks>
+    public WiredSourceDomain Target
+    {
+        get => (WiredSourceDomain)GetField("target").Integer.GetValueOrDefault();
+        set => SetField("target", new(Integer: (int)value));
+    }
+
+    /// <summary>Gets or sets accessor variable. Numeric user-created context variable without execution-context dependencies; its value is a variable box furniture ID</summary>
+    /// <remarks>Client label: wiredfurni.params.variables.pointer.accessor. None</remarks>
+    public string AccessorVariable
+    {
+        get => GetField("accessor_variable").Text!;
+        set => SetField("accessor_variable", new(Text: value));
+    }
+
+    /// <summary>Gets or sets name. Maximum 40 characters; spaces become underscores and lowercase</summary>
+    /// <remarks>Client label: wiredfurni.params.variables.variable_name. None</remarks>
+    public string Name
+    {
+        get => GetField("name").Text!;
+        set => SetField("name", new(Text: value));
+    }
+}
+
+/// <summary>Typed settings for SendLinkDataframe (action code 64).</summary>
+public sealed class WiredSendLinkDataframeActionForm : WiredForm
+{
+    internal WiredSendLinkDataframeActionForm(WiredConfig configuration, WiredFormLayout layout) : base(configuration, layout) { }
+
+    /// <summary>Gets or sets rows. 0..12 typed rows; normalized unique keys of 1..40 ASCII word characters; JSON text &lt;=3000 UTF-8 bytes; joined keys &lt;=400 characters; joined variable IDs &lt;=240 characters</summary>
+    /// <remarks>Client label: wiredfurni.params.link.row_count. Send row i uses furniture source slot i+1 or user source slot i; furniture slot 0 selects Link endpoints. Receive variable destinations must be writable user-created context variables.</remarks>
+    public IReadOnlyList<WiredSendDataframeRow> Rows
+    {
+        get => GetField("rows").SendRows!;
+        set => SetField("rows", new() { SendRows = value });
+    }
+}
+
+/// <summary>Typed settings for ReceiveLinkDataframe (trigger code 30).</summary>
+public sealed class WiredReceiveLinkDataframeTriggerForm : WiredForm
+{
+    internal WiredReceiveLinkDataframeTriggerForm(WiredConfig configuration, WiredFormLayout layout) : base(configuration, layout) { }
+
+    /// <summary>Gets or sets rows. 0..12 typed rows; normalized unique keys of 1..40 ASCII word characters; JSON text &lt;=3000 UTF-8 bytes; joined keys &lt;=400 characters; joined variable IDs &lt;=240 characters</summary>
+    /// <remarks>Client label: wiredfurni.params.link.row_count. Send row i uses furniture source slot i+1 or user source slot i; furniture slot 0 selects Link endpoints. Receive variable destinations must be writable user-created context variables.</remarks>
+    public IReadOnlyList<WiredReceiveDataframeRow> Rows
+    {
+        get => GetField("rows").ReceiveRows!;
+        set => SetField("rows", new() { ReceiveRows = value });
+    }
+}
+
+/// <summary>Typed settings for VariableLeaderboard (addon code 1005).</summary>
+public sealed class WiredVariableLeaderboardAddonForm : WiredForm
+{
+    internal WiredVariableLeaderboardAddonForm(WiredConfig configuration, WiredFormLayout layout) : base(configuration, layout) { }
+
+    /// <summary>Gets or sets sort mode. 0 highest value, 1 lowest value, 2 oldest creation, 3 latest creation, 4 oldest update, 5 latest update</summary>
+    /// <remarks>Client label: wiredfurni.params.variable_leaderboard.section.sorting. Column, filter and stacked-variable capabilities must be satisfied before saving</remarks>
+    public WiredSortOrderOption SortMode
+    {
+        get => (WiredSortOrderOption)GetField("sort_mode").Integer.GetValueOrDefault();
+        set => SetField("sort_mode", new(Integer: (int)value));
+    }
+
+    /// <summary>Gets or sets column count. 1..4</summary>
+    /// <remarks>Client label: wiredfurni.params.variable_leaderboard.columns.count. Column, filter and stacked-variable capabilities must be satisfied before saving</remarks>
+    public int ColumnCount
+    {
+        get => GetField("column_count").Integer.GetValueOrDefault();
+        set => SetField("column_count", new(Integer: value));
+    }
+
+    /// <summary>Gets or sets column 1 type. -1..5; -1 unused; select a column type supported by the stacked variables</summary>
+    /// <remarks>Client label: wiredfurni.params.variable_leaderboard.columns.count. Column, filter and stacked-variable capabilities must be satisfied before saving</remarks>
+    public int Column1Type
+    {
+        get => GetField("column_1_type").Integer.GetValueOrDefault();
+        set => SetField("column_1_type", new(Integer: value));
+    }
+
+    /// <summary>Gets or sets column 2 type. -1..5; -1 unused; select a column type supported by the stacked variables</summary>
+    /// <remarks>Client label: wiredfurni.params.variable_leaderboard.columns.count. Column, filter and stacked-variable capabilities must be satisfied before saving</remarks>
+    public int Column2Type
+    {
+        get => GetField("column_2_type").Integer.GetValueOrDefault();
+        set => SetField("column_2_type", new(Integer: value));
+    }
+
+    /// <summary>Gets or sets column 3 type. -1..5; -1 unused; select a column type supported by the stacked variables</summary>
+    /// <remarks>Client label: wiredfurni.params.variable_leaderboard.columns.count. Column, filter and stacked-variable capabilities must be satisfied before saving</remarks>
+    public int Column3Type
+    {
+        get => GetField("column_3_type").Integer.GetValueOrDefault();
+        set => SetField("column_3_type", new(Integer: value));
+    }
+
+    /// <summary>Gets or sets column 4 type. -1..5; -1 unused; select a column type supported by the stacked variables</summary>
+    /// <remarks>Client label: wiredfurni.params.variable_leaderboard.columns.count. Column, filter and stacked-variable capabilities must be satisfied before saving</remarks>
+    public int Column4Type
+    {
+        get => GetField("column_4_type").Integer.GetValueOrDefault();
+        set => SetField("column_4_type", new(Integer: value));
+    }
+
+    /// <summary>Gets or sets filter enabled. 0=false, 1=true</summary>
+    /// <remarks>Client label: wiredfurni.params.variable_leaderboard. Column, filter and stacked-variable capabilities must be satisfied before saving</remarks>
+    public bool FilterEnabled
+    {
+        get => GetField("filter_enabled").Boolean.GetValueOrDefault();
+        set => SetField("filter_enabled", new(Boolean: value));
+    }
+
+    /// <summary>Gets or sets comparison enabled. 0=false, 1=true</summary>
+    /// <remarks>Client label: wiredfurni.params.variable_leaderboard. Column, filter and stacked-variable capabilities must be satisfied before saving</remarks>
+    public bool ComparisonEnabled
+    {
+        get => GetField("comparison_enabled").Boolean.GetValueOrDefault();
+        set => SetField("comparison_enabled", new(Boolean: value));
+    }
+
+    /// <summary>Gets or sets operand kind. 0 constant, 1 variable</summary>
+    /// <remarks>Client label: wiredfurni.params.variable_leaderboard. Column, filter and stacked-variable capabilities must be satisfied before saving</remarks>
+    public WiredValueSource OperandKind
+    {
+        get => (WiredValueSource)GetField("operand_kind").Integer.GetValueOrDefault();
+        set => SetField("operand_kind", new(Integer: (int)value));
+    }
+
+    /// <summary>Gets or sets display override count. 0..10</summary>
+    /// <remarks>Client label: wiredfurni.params.variable_leaderboard. Column, filter and stacked-variable capabilities must be satisfied before saving</remarks>
+    public int DisplayOverrideCount
+    {
+        get => GetField("display_override_count").Integer.GetValueOrDefault();
+        set => SetField("display_override_count", new(Integer: value));
+    }
+
+    /// <summary>Gets or sets tile x. Signed 32-bit integer</summary>
+    /// <remarks>Client label: wiredfurni.params.variable_leaderboard. Column, filter and stacked-variable capabilities must be satisfied before saving</remarks>
+    public int TileX
+    {
+        get => GetField("tile_x").Integer.GetValueOrDefault();
+        set => SetField("tile_x", new(Integer: value));
+    }
+
+    /// <summary>Gets or sets tile y. Signed 32-bit integer</summary>
+    /// <remarks>Client label: wiredfurni.params.variable_leaderboard. Column, filter and stacked-variable capabilities must be satisfied before saving</remarks>
+    public int TileY
+    {
+        get => GetField("tile_y").Integer.GetValueOrDefault();
+        set => SetField("tile_y", new(Integer: value));
+    }
+
+    /// <summary>Gets or sets offset x. -32..32</summary>
+    /// <remarks>Client label: wiredfurni.params.variable_leaderboard. Column, filter and stacked-variable capabilities must be satisfied before saving</remarks>
+    public int OffsetX
+    {
+        get => GetField("offset_x").Integer.GetValueOrDefault();
+        set => SetField("offset_x", new(Integer: value));
+    }
+
+    /// <summary>Gets or sets altitude. Signed 32-bit integer</summary>
+    /// <remarks>Client label: wiredfurni.params.variable_leaderboard. Column, filter and stacked-variable capabilities must be satisfied before saving</remarks>
+    public int Altitude
+    {
+        get => GetField("altitude").Integer.GetValueOrDefault();
+        set => SetField("altitude", new(Integer: value));
+    }
+
+    /// <summary>Gets or sets column 1 width. 0 small, 1 medium, 2 large, 3 extra large</summary>
+    /// <remarks>Client label: wiredfurni.params.variable_leaderboard.column_width. Column, filter and stacked-variable capabilities must be satisfied before saving</remarks>
+    public WiredColumn1WidthOption Column1Width
+    {
+        get => (WiredColumn1WidthOption)GetField("column_1_width").Integer.GetValueOrDefault();
+        set => SetField("column_1_width", new(Integer: (int)value));
+    }
+
+    /// <summary>Gets or sets column 2 width. 0 small, 1 medium, 2 large, 3 extra large</summary>
+    /// <remarks>Client label: wiredfurni.params.variable_leaderboard.column_width. Column, filter and stacked-variable capabilities must be satisfied before saving</remarks>
+    public WiredColumn1WidthOption Column2Width
+    {
+        get => (WiredColumn1WidthOption)GetField("column_2_width").Integer.GetValueOrDefault();
+        set => SetField("column_2_width", new(Integer: (int)value));
+    }
+
+    /// <summary>Gets or sets column 3 width. 0 small, 1 medium, 2 large, 3 extra large</summary>
+    /// <remarks>Client label: wiredfurni.params.variable_leaderboard.column_width. Column, filter and stacked-variable capabilities must be satisfied before saving</remarks>
+    public WiredColumn1WidthOption Column3Width
+    {
+        get => (WiredColumn1WidthOption)GetField("column_3_width").Integer.GetValueOrDefault();
+        set => SetField("column_3_width", new(Integer: (int)value));
+    }
+
+    /// <summary>Gets or sets column 4 width. 0 small, 1 medium, 2 large, 3 extra large</summary>
+    /// <remarks>Client label: wiredfurni.params.variable_leaderboard.column_width. Column, filter and stacked-variable capabilities must be satisfied before saving</remarks>
+    public WiredColumn1WidthOption Column4Width
+    {
+        get => (WiredColumn1WidthOption)GetField("column_4_width").Integer.GetValueOrDefault();
+        set => SetField("column_4_width", new(Integer: (int)value));
+    }
+
+    /// <summary>Gets or sets page size option. Client page-size option code</summary>
+    /// <remarks>Client label: wiredfurni.params.variable_leaderboard. Column, filter and stacked-variable capabilities must be satisfied before saving</remarks>
+    public int PageSizeOption
+    {
+        get => GetField("page_size_option").Integer.GetValueOrDefault();
+        set => SetField("page_size_option", new(Integer: value));
+    }
+
+    /// <summary>Gets or sets filter variable. Unsigned decimal variable identifier; 0 means unused</summary>
+    /// <remarks>Client label: wiredfurni.params.variable_leaderboard. Column, filter and stacked-variable capabilities must be satisfied before saving</remarks>
+    public string FilterVariable
+    {
+        get => GetField("filter_variable").Text!;
+        set => SetField("filter_variable", new(Text: value));
+    }
+
+    /// <summary>Gets or sets global operand variable. Unsigned decimal variable identifier; 0 means unused</summary>
+    /// <remarks>Client label: wiredfurni.params.variable_leaderboard. Column, filter and stacked-variable capabilities must be satisfied before saving</remarks>
+    public string GlobalOperandVariable
+    {
+        get => GetField("global_operand_variable").Text!;
+        set => SetField("global_operand_variable", new(Text: value));
+    }
+
+    /// <summary>Gets or sets display variable 1. Unsigned decimal variable identifier; 0 means unused</summary>
+    /// <remarks>Client label: wiredfurni.params.variable_leaderboard. Column, filter and stacked-variable capabilities must be satisfied before saving</remarks>
+    public string DisplayVariable1
+    {
+        get => GetField("display_variable_1").Text!;
+        set => SetField("display_variable_1", new(Text: value));
+    }
+
+    /// <summary>Gets or sets display variable 2. Unsigned decimal variable identifier; 0 means unused</summary>
+    /// <remarks>Client label: wiredfurni.params.variable_leaderboard. Column, filter and stacked-variable capabilities must be satisfied before saving</remarks>
+    public string DisplayVariable2
+    {
+        get => GetField("display_variable_2").Text!;
+        set => SetField("display_variable_2", new(Text: value));
+    }
+
+    /// <summary>Gets or sets display variable 3. Unsigned decimal variable identifier; 0 means unused</summary>
+    /// <remarks>Client label: wiredfurni.params.variable_leaderboard. Column, filter and stacked-variable capabilities must be satisfied before saving</remarks>
+    public string DisplayVariable3
+    {
+        get => GetField("display_variable_3").Text!;
+        set => SetField("display_variable_3", new(Text: value));
+    }
+
+    /// <summary>Gets or sets display variable 4. Unsigned decimal variable identifier; 0 means unused</summary>
+    /// <remarks>Client label: wiredfurni.params.variable_leaderboard. Column, filter and stacked-variable capabilities must be satisfied before saving</remarks>
+    public string DisplayVariable4
+    {
+        get => GetField("display_variable_4").Text!;
+        set => SetField("display_variable_4", new(Text: value));
+    }
+
+    /// <summary>Gets or sets display variable 5. Unsigned decimal variable identifier; 0 means unused</summary>
+    /// <remarks>Client label: wiredfurni.params.variable_leaderboard. Column, filter and stacked-variable capabilities must be satisfied before saving</remarks>
+    public string DisplayVariable5
+    {
+        get => GetField("display_variable_5").Text!;
+        set => SetField("display_variable_5", new(Text: value));
+    }
+
+    /// <summary>Gets or sets display variable 6. Unsigned decimal variable identifier; 0 means unused</summary>
+    /// <remarks>Client label: wiredfurni.params.variable_leaderboard. Column, filter and stacked-variable capabilities must be satisfied before saving</remarks>
+    public string DisplayVariable6
+    {
+        get => GetField("display_variable_6").Text!;
+        set => SetField("display_variable_6", new(Text: value));
+    }
+
+    /// <summary>Gets or sets display variable 7. Unsigned decimal variable identifier; 0 means unused</summary>
+    /// <remarks>Client label: wiredfurni.params.variable_leaderboard. Column, filter and stacked-variable capabilities must be satisfied before saving</remarks>
+    public string DisplayVariable7
+    {
+        get => GetField("display_variable_7").Text!;
+        set => SetField("display_variable_7", new(Text: value));
+    }
+
+    /// <summary>Gets or sets display variable 8. Unsigned decimal variable identifier; 0 means unused</summary>
+    /// <remarks>Client label: wiredfurni.params.variable_leaderboard. Column, filter and stacked-variable capabilities must be satisfied before saving</remarks>
+    public string DisplayVariable8
+    {
+        get => GetField("display_variable_8").Text!;
+        set => SetField("display_variable_8", new(Text: value));
+    }
+
+    /// <summary>Gets or sets display variable 9. Unsigned decimal variable identifier; 0 means unused</summary>
+    /// <remarks>Client label: wiredfurni.params.variable_leaderboard. Column, filter and stacked-variable capabilities must be satisfied before saving</remarks>
+    public string DisplayVariable9
+    {
+        get => GetField("display_variable_9").Text!;
+        set => SetField("display_variable_9", new(Text: value));
+    }
+
+    /// <summary>Gets or sets display variable 10. Unsigned decimal variable identifier; 0 means unused</summary>
+    /// <remarks>Client label: wiredfurni.params.variable_leaderboard. Column, filter and stacked-variable capabilities must be satisfied before saving</remarks>
+    public string DisplayVariable10
+    {
+        get => GetField("display_variable_10").Text!;
+        set => SetField("display_variable_10", new(Text: value));
+    }
+
+    /// <summary>Gets or sets title. Maximum 50 characters; tabs are not allowed</summary>
+    /// <remarks>Client label: wiredfurni.params.variable_leaderboard. Column, filter and stacked-variable capabilities must be satisfied before saving</remarks>
+    public string Title
+    {
+        get => GetField("title").Text!;
+        set => SetField("title", new(Text: value));
+    }
+
+    /// <summary>Gets or sets description. Maximum 80 characters; tabs are not allowed</summary>
+    /// <remarks>Client label: wiredfurni.params.variable_leaderboard. Column, filter and stacked-variable capabilities must be satisfied before saving</remarks>
+    public string Description
+    {
+        get => GetField("description").Text!;
+        set => SetField("description", new(Text: value));
+    }
+
+    /// <summary>Gets or sets column 1 label. Maximum 12 characters; tabs are not allowed</summary>
+    /// <remarks>Client label: wiredfurni.params.variable_leaderboard. Column, filter and stacked-variable capabilities must be satisfied before saving</remarks>
+    public string Column1Label
+    {
+        get => GetField("column_1_label").Text!;
+        set => SetField("column_1_label", new(Text: value));
+    }
+
+    /// <summary>Gets or sets column 2 label. Maximum 12 characters; tabs are not allowed</summary>
+    /// <remarks>Client label: wiredfurni.params.variable_leaderboard. Column, filter and stacked-variable capabilities must be satisfied before saving</remarks>
+    public string Column2Label
+    {
+        get => GetField("column_2_label").Text!;
+        set => SetField("column_2_label", new(Text: value));
+    }
+
+    /// <summary>Gets or sets column 3 label. Maximum 12 characters; tabs are not allowed</summary>
+    /// <remarks>Client label: wiredfurni.params.variable_leaderboard. Column, filter and stacked-variable capabilities must be satisfied before saving</remarks>
+    public string Column3Label
+    {
+        get => GetField("column_3_label").Text!;
+        set => SetField("column_3_label", new(Text: value));
+    }
+
+    /// <summary>Gets or sets column 4 label. Maximum 12 characters; tabs are not allowed</summary>
+    /// <remarks>Client label: wiredfurni.params.variable_leaderboard. Column, filter and stacked-variable capabilities must be satisfied before saving</remarks>
+    public string Column4Label
+    {
+        get => GetField("column_4_label").Text!;
+        set => SetField("column_4_label", new(Text: value));
+    }
+
+    /// <summary>Gets or sets literal operand. Canonical signed 64-bit decimal string</summary>
+    /// <remarks>Client label: wiredfurni.params.variable_leaderboard. Column, filter and stacked-variable capabilities must be satisfied before saving</remarks>
+    public string LiteralOperand
+    {
+        get => GetField("literal_operand").Text!;
+        set => SetField("literal_operand", new(Text: value));
+    }
+
+    /// <summary>Gets or sets display name 1. Maximum 22 characters; tabs are not allowed</summary>
+    /// <remarks>Client label: wiredfurni.params.variable_leaderboard. Column, filter and stacked-variable capabilities must be satisfied before saving</remarks>
+    public string DisplayName1
+    {
+        get => GetField("display_name_1").Text!;
+        set => SetField("display_name_1", new(Text: value));
+    }
+
+    /// <summary>Gets or sets display name 2. Maximum 22 characters; tabs are not allowed</summary>
+    /// <remarks>Client label: wiredfurni.params.variable_leaderboard. Column, filter and stacked-variable capabilities must be satisfied before saving</remarks>
+    public string DisplayName2
+    {
+        get => GetField("display_name_2").Text!;
+        set => SetField("display_name_2", new(Text: value));
+    }
+
+    /// <summary>Gets or sets display name 3. Maximum 22 characters; tabs are not allowed</summary>
+    /// <remarks>Client label: wiredfurni.params.variable_leaderboard. Column, filter and stacked-variable capabilities must be satisfied before saving</remarks>
+    public string DisplayName3
+    {
+        get => GetField("display_name_3").Text!;
+        set => SetField("display_name_3", new(Text: value));
+    }
+
+    /// <summary>Gets or sets display name 4. Maximum 22 characters; tabs are not allowed</summary>
+    /// <remarks>Client label: wiredfurni.params.variable_leaderboard. Column, filter and stacked-variable capabilities must be satisfied before saving</remarks>
+    public string DisplayName4
+    {
+        get => GetField("display_name_4").Text!;
+        set => SetField("display_name_4", new(Text: value));
+    }
+
+    /// <summary>Gets or sets display name 5. Maximum 22 characters; tabs are not allowed</summary>
+    /// <remarks>Client label: wiredfurni.params.variable_leaderboard. Column, filter and stacked-variable capabilities must be satisfied before saving</remarks>
+    public string DisplayName5
+    {
+        get => GetField("display_name_5").Text!;
+        set => SetField("display_name_5", new(Text: value));
+    }
+
+    /// <summary>Gets or sets display name 6. Maximum 22 characters; tabs are not allowed</summary>
+    /// <remarks>Client label: wiredfurni.params.variable_leaderboard. Column, filter and stacked-variable capabilities must be satisfied before saving</remarks>
+    public string DisplayName6
+    {
+        get => GetField("display_name_6").Text!;
+        set => SetField("display_name_6", new(Text: value));
+    }
+
+    /// <summary>Gets or sets display name 7. Maximum 22 characters; tabs are not allowed</summary>
+    /// <remarks>Client label: wiredfurni.params.variable_leaderboard. Column, filter and stacked-variable capabilities must be satisfied before saving</remarks>
+    public string DisplayName7
+    {
+        get => GetField("display_name_7").Text!;
+        set => SetField("display_name_7", new(Text: value));
+    }
+
+    /// <summary>Gets or sets display name 8. Maximum 22 characters; tabs are not allowed</summary>
+    /// <remarks>Client label: wiredfurni.params.variable_leaderboard. Column, filter and stacked-variable capabilities must be satisfied before saving</remarks>
+    public string DisplayName8
+    {
+        get => GetField("display_name_8").Text!;
+        set => SetField("display_name_8", new(Text: value));
+    }
+
+    /// <summary>Gets or sets display name 9. Maximum 22 characters; tabs are not allowed</summary>
+    /// <remarks>Client label: wiredfurni.params.variable_leaderboard. Column, filter and stacked-variable capabilities must be satisfied before saving</remarks>
+    public string DisplayName9
+    {
+        get => GetField("display_name_9").Text!;
+        set => SetField("display_name_9", new(Text: value));
+    }
+
+    /// <summary>Gets or sets display name 10. Maximum 22 characters; tabs are not allowed</summary>
+    /// <remarks>Client label: wiredfurni.params.variable_leaderboard. Column, filter and stacked-variable capabilities must be satisfied before saving</remarks>
+    public string DisplayName10
+    {
+        get => GetField("display_name_10").Text!;
+        set => SetField("display_name_10", new(Text: value));
     }
 }

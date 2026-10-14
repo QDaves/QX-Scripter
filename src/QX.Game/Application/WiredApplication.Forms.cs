@@ -69,7 +69,12 @@ internal sealed partial class WiredApplication
         WiredSnapshot state = wired.Snapshot;
         if (state.Generation != request.ExpectedGeneration || state.Revision != request.ExpectedRevision ||
             state.Configuration?.Id != request.FurniId)
-            throw new InvalidOperationException("The reviewed Wired configuration is stale. Read it again before saving.");
+            throw new WiredFormReviewException();
         return state;
     }
+}
+
+internal sealed class WiredFormReviewException : InvalidOperationException
+{
+    internal WiredFormReviewException() : base("The reviewed Wired configuration is stale. Read it again before saving.") { }
 }

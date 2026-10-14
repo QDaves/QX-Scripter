@@ -31,7 +31,9 @@ public enum WiredFormFieldKind
     /// <summary>Selected neighborhood tiles.</summary>
     Neighborhood,
     /// <summary>Reward table entries.</summary>
-    Rewards
+    Rewards,
+    SendDataframe,
+    ReceiveDataframe
 }
 
 /// <summary>A furniture input source. Availability comes from the received configuration.</summary>
@@ -129,7 +131,11 @@ public sealed record WiredFormValue(
     string? Text = null,
     IReadOnlyList<WiredTileOffset>? Tiles = null,
     IReadOnlyList<WiredRewardEntry>? Rewards = null,
-    string? Choice = null);
+    string? Choice = null)
+{
+    public IReadOnlyList<WiredSendDataframeRow>? SendRows { get; init; }
+    public IReadOnlyList<WiredReceiveDataframeRow>? ReceiveRows { get; init; }
+}
 
 /// <summary>An edit to one named form field.</summary>
 /// <param name="Name">The field name from the form definition.</param>
@@ -151,7 +157,12 @@ public sealed record WiredFormFieldDefinition(
     string Values,
     string Initial,
     string Dependency,
-    bool Writable);
+    bool Writable)
+{
+    public int? Minimum { get; init; }
+    public int? Maximum { get; init; }
+    public int? MaximumLength { get; init; }
+}
 
 /// <summary>A registered Wired form and its verified named controls.</summary>
 /// <param name="Category">The configuration category.</param>
@@ -174,11 +185,14 @@ public sealed record WiredFormDefinition(
     IReadOnlyList<string> ExternalVariables,
     IReadOnlyList<string> Evidence)
 {
+    public string? SettingsType => WiredFormRegistry.Find(Category, Code) is null
+        ? null : WiredFormRegistry.Draft(Category, Code).GetType().Name;
+
     /// <summary>Gets concise usage knowledge with explicit evidence levels, or null for an unknown form.</summary>
     public WiredFormUsage? Usage => WiredFormKnowledge.Find(Category, Code);
 }
 
-internal enum WiredFieldStorage { Integer, Text, TextPart, TextTail, Variable, Neighborhood, Rewards }
+internal enum WiredFieldStorage { Integer, Text, TextPart, TextTail, Variable, Neighborhood, Rewards, SendDataframe, ReceiveDataframe, JsonString }
 
 internal sealed record WiredFieldLayout(
     WiredFormFieldDefinition Definition,

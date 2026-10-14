@@ -39,6 +39,9 @@ public sealed record VariableFxConfigEntry(
     /// <summary>Gets the icon the room gave this variable, such as <c>gold</c> or <c>ranch.tomato</c>, or <see langword="null"/> when <see cref="Extra"/> has no <c>icon</c> entry.</summary>
     public string? Icon => Extra.GetValueOrDefault("icon");
 
+    public int StackOrder => int.TryParse(Extra.GetValueOrDefault("stack_order"),
+        NumberStyles.Integer, CultureInfo.InvariantCulture, out int order) ? order : 0;
+
     internal static VariableFxConfigEntry Parse(in PacketReader p) => new(
         p.ReadInt(),
         p.ReadBool(),

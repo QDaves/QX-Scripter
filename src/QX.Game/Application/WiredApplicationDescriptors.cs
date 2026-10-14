@@ -61,7 +61,7 @@ internal static partial class WiredApplicationDescriptors
         WiredConfigurationApplySnapshotRequest>(
         ApplicationMemberIds.WiredConfigurationSnapshotApply,
         "Apply Wired snapshot",
-        "Stores the current state of one Wired furni as its restore snapshot.",
+        "Requests restoration of selected furniture from a Wired's stored snapshot. Does not capture current values. Unsupported forms may leave the room unchanged; this operation only confirms dispatch.",
         MessageKeys.Wired.Configuration.ApplySnapshot,
         [new("furni_id", typeof(Id), true, null, "Positive Wired furni identifier.", IdConstraint())],
         WriteHints(false, true));
@@ -144,7 +144,7 @@ internal static partial class WiredApplicationDescriptors
         WiredVariableCollectionSnapshot>(
         ApplicationMemberIds.WiredVariablesList,
         "List Wired variables",
-        "Runs the chunked difference protocol to completion and returns an immutable full variable-definition snapshot.",
+        "Returns a complete immutable variable-definition snapshot. Repeated reads verify the live room hash before reusing a complete snapshot. A changed or missing hash triggers a fresh complete difference stream within the original timeout; stale cached data is never returned. After a missing hash, reads use fresh difference streams for the rest of that room generation so late hash replies cannot validate a newer cache. Room/session changes cancel the read.",
         MessageKeys.Wired.Variables.DifferencesRequest,
         MessageKeys.Wired.Variables.Differences,
         [
@@ -158,7 +158,7 @@ internal static partial class WiredApplicationDescriptors
         WiredVariablesObjectSnapshot>(
         ApplicationMemberIds.WiredVariablesObjectGet,
         "Inspect Wired object variables",
-        "Returns the Wired variable values held by one furni, room user or global scope.",
+        "Returns the Wired variable values held by one furni, room user or global scope. The client display is signed 32-bit; MayBeClamped marks boundary values that may represent larger 64-bit Wired values.",
         MessageKeys.Wired.Variables.ObjectRequest,
         MessageKeys.Wired.Variables.Object,
         [
@@ -173,7 +173,7 @@ internal static partial class WiredApplicationDescriptors
         WiredVariableHoldersSnapshot>(
         ApplicationMemberIds.WiredVariablesHoldersGet,
         "Get Wired variable holders",
-        "Returns one variable definition and every object currently holding its value.",
+        "Returns one variable definition and every object currently holding its value. MayBeClamped identifies signed 32-bit display boundaries; do not infer an exact 64-bit value from them.",
         MessageKeys.Wired.Variables.HoldersRequest,
         MessageKeys.Wired.Variables.Holders,
         [VariableIdParameter(), TimeoutParameter()],
@@ -193,7 +193,7 @@ internal static partial class WiredApplicationDescriptors
         WiredPermanentVariablesSnapshot>(
         ApplicationMemberIds.WiredVariablesPermanentGet,
         "Get permanent Wired variables",
-        "Returns permanent variable storage and timestamps for one entity.",
+        "Returns permanent variable storage and timestamps for one entity. MayBeClamped marks signed 32-bit display boundaries that may hide a larger 64-bit value.",
         MessageKeys.Wired.Variables.PermanentRequest,
         MessageKeys.Wired.Variables.Permanent,
         [EntityTypeParameter(), EntityIdParameter(), TimeoutParameter()],
@@ -504,6 +504,7 @@ internal static partial class WiredApplicationDescriptors
         [
             Send(MessageKeys.Wired.Chests.OpenRequest),
             Observe(MessageKeys.Wired.Chests.ItemsChunk),
+            Send(MessageKeys.Wired.Chests.Close),
             Send(MessageKeys.Wired.Chests.StartAdding),
             Observe(MessageKeys.Wired.Trade.Initiated),
             Send(MessageKeys.Wired.Trade.ItemsUpdate),

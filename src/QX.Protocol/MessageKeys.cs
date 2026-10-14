@@ -143,6 +143,25 @@ public static class MessageKeys
     /// <summary>Contains the wired message keys.</summary>
     public static class Wired
     {
+        public static class SharedAddons
+        {
+            public static readonly MessageKey Synchronize = new("wired.shared_addons.synchronize");
+        }
+
+        public static class Leaderboards
+        {
+            public static readonly MessageKey Snapshot = new("wired.leaderboards.snapshot");
+            public static readonly MessageKey ChunkUpdate = new("wired.leaderboards.chunk.update");
+            public static readonly MessageKey SubscriptionReplace = new("wired.leaderboards.subscription.replace");
+        }
+
+        public static class Labels
+        {
+            public static readonly MessageKey Snapshot = new("wired.labels.snapshot");
+            public static readonly MessageKey Updated = new("wired.labels.updated");
+            public static readonly MessageKey TextUpdate = new("wired.labels.text.update");
+            public static readonly MessageKey SettingsUpdate = new("wired.labels.settings.update");
+        }
         /// <summary>Contains Wired Account messages.</summary>
         public static class Account
         {
@@ -1375,6 +1394,8 @@ public static class MessageKeys
             public static readonly MessageKey DataUpdated = new("room.floor_item.data_updated");
             /// <summary>The <c>room.floor_item.data_batch_updated</c> key of the incoming Flash message <c>ObjectsDataUpdate</c>.</summary>
             public static readonly MessageKey DataBatchUpdated = new("room.floor_item.data_batch_updated");
+
+            public static readonly MessageKey Recolored = new("room.floor_item.recolored");
         }
 
         /// <summary>Contains the wall item message keys.</summary>

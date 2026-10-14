@@ -29,17 +29,24 @@ public abstract class ItemData : IParserComposer<ItemData>
     /// </remarks>
     public string Value { get; set; } = "";
 
-    /// <summary>Gets <see cref="Value"/> as a state number.</summary>
+    /// <summary>Gets the map's state entry, or <see cref="Value"/>, as a state number.</summary>
     /// <remarks>
     /// <c>C</c>, <c>FALSE</c> and <c>OFF</c> give 0, <c>O</c>, <c>TRUE</c> and <c>ON</c> give 1, an
     /// integer gives its own value and anything else gives -1. The text match is case-sensitive.
     /// </remarks>
-    public int State => Value switch
+    public int State
     {
-        "C" or "FALSE" or "OFF" => 0,
-        "O" or "TRUE" or "ON" => 1,
-        _ => int.TryParse(Value, out int state) ? state : -1
-    };
+        get
+        {
+            string value = this is MapData map && map.Entries.TryGetValue("state", out string? mapped) ? mapped : Value;
+            return value switch
+            {
+                "C" or "FALSE" or "OFF" => 0,
+                "O" or "TRUE" or "ON" => 1,
+                _ => int.TryParse(value, out int state) ? state : -1
+            };
+        }
+    }
 
     /// <summary>Initializes a new instance of the <see cref="ItemData"/> class.</summary>
     /// <param name="type">The shape of the payload.</param>

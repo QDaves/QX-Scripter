@@ -7,6 +7,12 @@ public abstract class WiredForm
     private readonly WiredConfigWrite update;
     private readonly InputSourcesConf sources;
     private readonly int[] defaults;
+    private readonly HashSet<string> edited = new(StringComparer.Ordinal);
+
+    public IReadOnlySet<string> EditedControls => new HashSet<string>(edited, StringComparer.Ordinal);
+
+    public IReadOnlyList<WiredFormEdit> EditedFields => Array.AsReadOnly(Definition.Fields
+        .Where(control => edited.Contains(control.Name)).Select(control => new WiredFormEdit(control.Name, GetField(control.Name))).ToArray());
 
     internal WiredForm(WiredConfig configuration, WiredFormLayout layout)
     {
@@ -108,19 +114,26 @@ public abstract class WiredForm
             update.StuffIds2 = selected;
         else
             update.StuffIds = selected;
+        edited.Add(secondary ? "$secondary_furniture" : "$furniture");
     }
 
     /// <summary>Selects a furniture source allowed by the received definition.</summary>
     /// <param name="selection">The source selection index shown by AllowedFurnitureSources.</param>
     /// <param name="source">The source to select.</param>
-    public void SelectFurnitureSource(int selection, WiredFurnitureSource source) =>
+    public void SelectFurnitureSource(int selection, WiredFurnitureSource source)
+    {
         update.FurniSourceTypes = select_source(selection, (int)source, sources.AllowedFurniSources, update.FurniSourceTypes, sources.DefaultFurniSources);
+        edited.Add("$furniture_source:" + selection);
+    }
 
     /// <summary>Selects a user source allowed by the received definition.</summary>
     /// <param name="selection">The source selection index shown by AllowedUserSources.</param>
     /// <param name="source">The source to select.</param>
-    public void SelectUserSource(int selection, WiredUserSource source) =>
+    public void SelectUserSource(int selection, WiredUserSource source)
+    {
         update.UserSourceTypes = select_source(selection, (int)source, sources.AllowedUserSources, update.UserSourceTypes, sources.DefaultUserSources);
+        edited.Add("$user_source:" + selection);
+    }
 
     /// <summary>Gets a named field as a typed value. Reading does not normalize its stored bytes.</summary>
     /// <param name="name">The field name from Definition.Fields.</param>
@@ -135,6 +148,8 @@ public abstract class WiredForm
             WiredFormFieldKind.Text or WiredFormFieldKind.Variable => new(Text: text_at(field)),
             WiredFormFieldKind.Neighborhood => new(Tiles: WiredFormPacking.ReadNeighborhood(update.IntParams.Skip(field.Index).ToArray())),
             WiredFormFieldKind.Rewards => new(Rewards: WiredFormPacking.ReadRewards(update.StringParam)),
+            WiredFormFieldKind.SendDataframe => new() { SendRows = WiredDataframeCodec.ReadSend(update) },
+            WiredFormFieldKind.ReceiveDataframe => new() { ReceiveRows = WiredDataframeCodec.ReadReceive(update) },
             _ => throw new InvalidOperationException("Unsupported field kind.")
         };
     }
@@ -149,7 +164,7 @@ public abstract class WiredForm
         if (!field.Definition.Writable)
             throw new ArgumentException("This field is derived from another control.", nameof(name));
         int count = (value.Integer.HasValue ? 1 : 0) + (value.Boolean.HasValue ? 1 : 0) +
-            (value.Text is not null ? 1 : 0) + (value.Tiles is not null ? 1 : 0) + (value.Rewards is not null ? 1 : 0) + (value.Choice is not null ? 1 : 0);
+            (value.Text is not null ? 1 : 0) + (value.Tiles is not null ? 1 : 0) + (value.Rewards is not null ? 1 : 0) + (value.Choice is not null ? 1 : 0) + (value.SendRows is not null ? 1 : 0) + (value.ReceiveRows is not null ? 1 : 0);
         if (count != 1)
             throw new ArgumentException("Supply exactly one typed field value.", nameof(value));
         if (value.Choice is { } choice)
@@ -191,12 +206,25 @@ public abstract class WiredForm
                 for (int index = 0; index < words.Count; index++)
                     put_integer(field.Index + index, words[index]);
                 break;
+            case WiredFormFieldKind.SendDataframe when value.SendRows is { } sent:
+                var send_payload = WiredDataframeCodec.WriteSend(sent);
+                update.IntParams = send_payload.Integers;
+                update.StringParam = send_payload.Text;
+                update.VariableIds = send_payload.Variables;
+                break;
+            case WiredFormFieldKind.ReceiveDataframe when value.ReceiveRows is { } received:
+                var receive_payload = WiredDataframeCodec.WriteReceive(received);
+                update.IntParams = receive_payload.Integers;
+                update.StringParam = receive_payload.Text;
+                update.VariableIds = receive_payload.Variables;
+                break;
             case WiredFormFieldKind.Rewards when value.Rewards is { } rewards:
                 update.StringParam = WiredFormPacking.WriteRewards(rewards, integer_at(1) == 1);
                 break;
             default:
                 throw new ArgumentException($"Field '{name}' requires {field.Definition.Kind}.", nameof(value));
         }
+        edited.Add(name);
     }
 
     /// <summary>Applies named edits atomically; an invalid edit leaves all fields unchanged.</summary>
@@ -207,6 +235,7 @@ public abstract class WiredForm
         IReadOnlyList<int> integers = update.IntParams;
         IReadOnlyList<string> variables = update.VariableIds;
         string text = update.StringParam;
+        string[] previous_edits = edited.ToArray();
         try
         {
             foreach (WiredFormEdit edit in edits)
@@ -220,6 +249,8 @@ public abstract class WiredForm
             update.IntParams = integers;
             update.VariableIds = variables;
             update.StringParam = text;
+            edited.Clear();
+            edited.UnionWith(previous_edits);
             throw;
         }
     }
@@ -236,7 +267,7 @@ public abstract class WiredForm
         (WiredSourceDomain)GetField(domainField).Integer.GetValueOrDefault(),
         GetField(variableField).Text!);
 
-    /// <summary>Writes the four fields of a value-or-variable control atomically.</summary>
+    /// <summary>Writes a value-or-variable control atomically, retaining the unused reference for constants.</summary>
     /// <param name="sourceField">The constant-or-variable discriminator field.</param>
     /// <param name="valueField">The constant value field.</param>
     /// <param name="domainField">The source domain field.</param>
@@ -245,6 +276,14 @@ public abstract class WiredForm
     protected void WriteReference(string sourceField, string valueField, string domainField, string variableField, WiredValueReference value)
     {
         ArgumentNullException.ThrowIfNull(value);
+        if (value.Source == WiredValueSource.Constant)
+        {
+            SetFields([
+                new(sourceField, new(Integer: (int)value.Source)),
+                new(valueField, new(Integer: value.Value))
+            ]);
+            return;
+        }
         SetFields([
             new(sourceField, new(Integer: (int)value.Source)),
             new(valueField, new(Integer: value.Value)),
@@ -265,7 +304,7 @@ public abstract class WiredForm
         UserSourceTypes = update.UserSourceTypes.ToArray()
     };
 
-    /// <summary>Gets or sets the action delay in half-second pulses.</summary>
+    /// <summary>Gets or sets the encoded action delay: nonnegative half-second pulses or negative milliseconds.</summary>
     public int? ActionDelay
     {
         get => update is UpdateAction action ? action.Delay : null;
@@ -275,10 +314,16 @@ public abstract class WiredForm
                 throw new InvalidOperationException("This form is not an action.");
             if (value is not { } delay)
                 throw new ArgumentNullException(nameof(value));
-            ArgumentOutOfRangeException.ThrowIfNegative(delay);
-            ArgumentOutOfRangeException.ThrowIfGreaterThan(delay, 20);
+            _ = WiredDelay.ToMilliseconds(delay);
             action.Delay = delay;
+            edited.Add("$action_delay");
         }
+    }
+
+    public int? ActionDelayMilliseconds
+    {
+        get => ActionDelay is { } delay ? WiredDelay.ToMilliseconds(delay) : null;
+        set => ActionDelay = value is { } milliseconds ? WiredDelay.FromMilliseconds(milliseconds) : null;
     }
 
     /// <summary>Gets or sets the condition's quantifier code.</summary>
@@ -290,6 +335,7 @@ public abstract class WiredForm
             if (update is not UpdateCondition condition)
                 throw new InvalidOperationException("This form is not a condition.");
             condition.Quantifier = value ?? throw new ArgumentNullException(nameof(value));
+            edited.Add("$condition_quantifier");
         }
     }
 
@@ -302,6 +348,7 @@ public abstract class WiredForm
             if (update is not UpdateSelector selector)
                 throw new InvalidOperationException("This form is not a selector.");
             selector.IsFilter = value ?? throw new ArgumentNullException(nameof(value));
+            edited.Add("$selector_filter");
         }
     }
 
@@ -314,6 +361,7 @@ public abstract class WiredForm
             if (update is not UpdateSelector selector)
                 throw new InvalidOperationException("This form is not a selector.");
             selector.IsInvert = value ?? throw new ArgumentNullException(nameof(value));
+            edited.Add("$selector_invert");
         }
     }
 

@@ -57,6 +57,10 @@ that reaches the member from a script.
 `get_scripting_guide` returns an overview and the list of topics. With a topic it returns that page of
 this documentation, so the whole guide is available to the client.
 
+For Wired construction, start with `application_wired_build_guide` and
+[Building with Wired](wired-building.md). It describes typed plans, BC placement, selectors,
+configuration readback and usage measurement. Scripts and MCP use the same builder.
+
 ## Scripts
 
 A script that is open in the editor is read and changed live in its tab. A tab without unsaved changes

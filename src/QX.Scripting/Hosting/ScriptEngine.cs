@@ -58,6 +58,7 @@ public static class ScriptEngine
         "Qx.Interception",
         "Qx.Game",
         "Qx.Game.Application",
+        "Qx.Game.WiredSimulation",
         "Qx.Model",
         "Qx.Model.Figures",
         "Qx.Model.Messages.Incoming",

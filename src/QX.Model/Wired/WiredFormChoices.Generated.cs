@@ -83,6 +83,20 @@ public static class WiredFormChoices
     private static readonly IReadOnlyList<WiredFormChoice> choices_72 = Array.AsReadOnly<WiredFormChoice>([new("WhileUserInRoom", 0), new("Permanent", 10), new("PermanentSharedAcrossRooms", 11)]);
     private static readonly IReadOnlyList<WiredFormChoice> choices_73 = Array.AsReadOnly<WiredFormChoice>([new("WhileRoomActive", 1), new("Permanent", 10), new("PermanentSharedAcrossRooms", 11)]);
 
+    private static readonly IReadOnlyList<WiredFormChoice> choices_74 = Array.AsReadOnly<WiredFormChoice>([new("SelectedUsers", 0), new("Everyone", 1)]);
+
+    private static readonly IReadOnlyList<WiredFormChoice> choices_75 = Array.AsReadOnly<WiredFormChoice>([new("Visible", 0), new("Invisible", 100)]);
+
+    private static readonly IReadOnlyList<WiredFormChoice> choices_76 = Array.AsReadOnly<WiredFormChoice>([new("Instant", 0), new("Linear", 1), new("EaseIn", 2), new("EaseOut", 3), new("EaseInOut", 4)]);
+
+    private static readonly IReadOnlyList<WiredFormChoice> choices_77 = Array.AsReadOnly<WiredFormChoice>([new("Outline", 0), new("SoftGlow", 1), new("Darken", 2), new("ColorTint", 3), new("Brighten", 4), new("NeonAura", 5)]);
+
+    private static readonly IReadOnlyList<WiredFormChoice> choices_78 = Array.AsReadOnly<WiredFormChoice>([new("Steady", 0), new("Pulse", 1)]);
+
+    private static readonly IReadOnlyList<WiredFormChoice> choices_79 = Array.AsReadOnly<WiredFormChoice>([new("TriggerText", 0), new("CustomMessage", 1)]);
+
+    private static readonly IReadOnlyList<WiredFormChoice> choices_80 = Array.AsReadOnly<WiredFormChoice>([new("Small", 0), new("Medium", 1), new("Large", 2), new("ExtraLarge", 3)]);
+
     /// <summary>Gets named choices for a field; empty means no finite verified option set.</summary>
     /// <param name="definition">The form definition.</param>
     /// <param name="field">The stable field name.</param>
@@ -200,6 +214,19 @@ public static class WiredFormChoices
             (WiredFormCategory.Variable, 0, "availability") => choices_71,
             (WiredFormCategory.Variable, 1, "availability") => choices_72,
             (WiredFormCategory.Variable, 2, "availability") => choices_73,
+            (WiredFormCategory.Action, 61, "audience") => choices_74,
+            (WiredFormCategory.Action, 61, "transparency") => choices_75,
+            (WiredFormCategory.Action, 61, "easing") => choices_76,
+            (WiredFormCategory.Action, 62, "audience") => choices_74,
+            (WiredFormCategory.Action, 62, "highlight_type") => choices_77,
+            (WiredFormCategory.Action, 62, "animation") => choices_78,
+            (WiredFormCategory.Action, 62, "easing") => choices_76,
+            (WiredFormCategory.Action, 63, "message_source") => choices_79,
+            (WiredFormCategory.Addon, 1005, "sort_mode") => choices_56,
+            (WiredFormCategory.Addon, 1005, "column_1_width") => choices_80,
+            (WiredFormCategory.Addon, 1005, "column_2_width") => choices_80,
+            (WiredFormCategory.Addon, 1005, "column_3_width") => choices_80,
+            (WiredFormCategory.Addon, 1005, "column_4_width") => choices_80,
             _ => []
         };
 

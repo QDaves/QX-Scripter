@@ -19,6 +19,7 @@ A script imports every namespace marked imported. A type from a namespace marked
 | <xref:Qx.Model.Messages.Incoming> | Parsed messages the hotel sends. | imported |
 | <xref:Qx.Model.Messages.Outgoing> | Messages the client sends. | imported |
 | <xref:Qx.Game.Application> | The application layer behind `Application`, the MCP `application_*` tools and the command line: member ids, requests, results and events. | imported |
+| <xref:Qx.Game.WiredSimulation> | Offline Wired simulation, detached room models, events, diagnostics and assertions. | imported |
 | <xref:Qx.Interception> | Packet interception: the interceptor, intercepted packets and the hotel session. | imported |
 | <xref:Qx.Messages> | Packets, headers, packet readers and writers, and wire profiles. | imported |
 | <xref:Qx.Protocol> | Message keys, the Flash message names in `Msg`, and the message registry and catalogs. | imported |

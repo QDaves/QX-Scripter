@@ -37,7 +37,10 @@ internal static partial class WiredFormKnowledge
             (23, "Starts a stack when a matching user leaves the room."),
             (24, "Starts a stack when one user clicks another user."),
             (25, "Starts a stack when a Wired transaction completes successfully."),
-            (26, "Starts a stack when a Wired transaction fails."));
+            (26, "Starts a stack when a Wired transaction fails."),
+            (28, "Starts a stack when the room's Wired system initializes."),
+            (29, "Starts a stack when a selected WIRED Link endpoint receives a message."),
+            (30, "Starts a stack when a selected WIRED Link endpoint receives a dataframe and binds its configured fields."));
 
         add(WiredFormCategory.Action,
             (0, "Advances or reverses the state of selected furniture."),
@@ -49,8 +52,8 @@ internal static partial class WiredFormKnowledge
             (8, "Teleports selected users to selected destination furniture."),
             (9, "Adds selected users to a game team."),
             (10, "Removes selected users from their game team."),
-            (11, "Moves furniture toward the nearest user in the same row or column."),
-            (12, "Moves furniture away from the nearest user in the same row or column."),
+            (11, "Moves furniture toward a nearby aligned user; other target positions can produce different cardinal steps."),
+            (12, "Moves furniture away from a nearby aligned user, retaining its direction for other target positions; adjacent users can trigger collision instead."),
             (13, "Moves furniture in a direction and configures its response to a blocked move."),
             (14, "Changes the score of an explicitly selected game team."),
             (15, "Changes selected furniture to a random state."),
@@ -69,17 +72,17 @@ internal static partial class WiredFormKnowledge
             (28, "Starts, pauses or resets selected clock-counter furniture."),
             (29, "Sets the altitude of selected furniture."),
             (30, "Sends a signal and its selected user/furniture payload, including the negative-action variant."),
-            (31, "Freezes selected users to restrict their movement."),
+            (31, "Freezes selected users and applies a selected visual effect; effect option zero is an actual effect, not disabled."),
             (32, "Releases selected users from a Wired movement freeze."),
             (33, "Moves furniture by relative offsets."),
-            (34, "Moves furniture relative to separate destination furniture."),
+            (34, "Transfers selected furniture directly to separate destination furniture, subject to movement physics and destination stacking."),
             (35, "Moves furniture toward selected users."),
             (38, "Adjusts the time of selected clock-counter furniture."),
             (39, "Assigns a variable to the selected holders with the configured initial value."),
             (40, "Removes a variable from selected holders."),
             (41, "Changes a variable value using the configured operation and operands."),
             (42, "Moves or rotates selected users."),
-            (43, "Moves selected users toward destination furniture."),
+            (43, "Transfers selected users directly to walkable destination furniture without the classic teleport effect; walking continuation is configurable."),
             (44, "Teleports selected users to a configured room."),
             (45, "Requests a currency payout from a selected chest."),
             (46, "Requests a furniture payout from a selected chest."),
@@ -94,7 +97,11 @@ internal static partial class WiredFormKnowledge
             (56, "Removes temporary furniture selected by the effect."),
             (57, "Moves a selection of furniture together as a group."),
             (58, "Configures progress on a reward track."),
-            (59, "Resets reward-track progress using the configured reset options."));
+            (59, "Resets reward-track progress using the configured reset options."),
+            (61, "Changes transparency and click-through behavior for the selected entities and viewers."),
+            (62, "Changes the highlight style, color and animation for the selected entities and viewers."),
+            (63, "Sends trigger text or a configured message through selected WIRED Link endpoints."),
+            (64, "Sends configured numeric values, variable values and text fields through selected WIRED Link endpoints."));
 
         add(WiredFormCategory.Condition,
             (0, "Compares selected furniture with the enabled components of a saved snapshot."),
@@ -178,6 +185,9 @@ internal static partial class WiredFormKnowledge
             (1000, "Maps numeric variable values to configured text outputs."),
             (1001, "Derives levels and progress information from an experience variable."),
             (1002, "Derives time-related outputs from a variable."),
+            (1003, "Chooses which variable add-on categories are shared with other rooms."),
+            (1004, "Chooses which shared variable add-on categories are imported from another room."),
+            (1005, "Displays configurable rankings from one or more persisted user variables."),
             (1200, "Displays a user or furniture variable as a health indicator."),
             (1201, "Displays a user or furniture variable as a progress bar."),
             (1202, "Displays level and progress information for a user or furniture variable."),
@@ -186,7 +196,8 @@ internal static partial class WiredFormKnowledge
             (1205, "Displays a user or furniture variable as a styled number."),
             (2000, "Configures a global text placeholder."),
             (2001, "Configures achievement-related variable behavior."),
-            (2002, "Configures Web API access to supported variables."));
+            (2002, "Configures Web API access to supported variables."),
+            (2003, "Selects whether incoming messages and dataframes are displayed for the chosen WIRED Link endpoints."));
 
         add(WiredFormCategory.Variable,
             (0, "Defines a variable whose holders are furniture items."),
@@ -197,7 +208,8 @@ internal static partial class WiredFormKnowledge
             (5, "Defines the configured quest variable and progress settings."),
             (6, "Defines a chain of quest-variable stages."),
             (7, "Defines an echo variable using the configured source reference."),
-            (8, "Defines the configured daily-task variable."));
+            (8, "Defines the configured daily-task variable."),
+            (9, "Resolves a variable through an execution-context accessor containing the target variable box's furniture ID."));
 
         return result;
     }

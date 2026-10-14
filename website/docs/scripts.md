@@ -6,7 +6,7 @@ scope without a prefix, and these namespaces are imported:
 `System`, `System.Collections.Generic`, `System.Collections.Concurrent`, `System.Diagnostics`,
 `System.Globalization`, `System.IO`, `System.Linq`, `System.Text`, `System.Text.RegularExpressions`,
 `System.Threading`, `System.Threading.Tasks`, `Qx`, `Qx.Messages`, `Qx.Protocol`, `Qx.Interception`,
-`Qx.Game`, `Qx.Game.Application`, `Qx.Model`, `Qx.Model.Figures`, `Qx.Model.Messages.Incoming`,
+`Qx.Game`, `Qx.Game.Application`, `Qx.Game.WiredSimulation`, `Qx.Model`, `Qx.Model.Figures`, `Qx.Model.Messages.Incoming`,
 `Qx.Model.Messages.Outgoing`, `Qx.Model.Wired`, `Qx.Platform` and `Qx.Scripting`.
 
 ## Output

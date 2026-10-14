@@ -103,6 +103,8 @@ public sealed class ApplicationRuntime : IApplicationRuntime, IDisposable
         var created_features = new List<IApplicationFeature>();
         try
         {
+            created_features.Add(new WiredBuildApplication(this, game, interceptor, clock, ReportObserverError));
+            created_features.Add(new WiredSimulationApplication(game, this));
             message_dispatcher.Attach(interceptor);
             created_features.Add(
                 new RoomChatApplication(

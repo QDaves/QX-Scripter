@@ -167,7 +167,7 @@ public sealed record WiredConfigurationGetRequest(
 public sealed record WiredConfigurationOpenRequest(Id FurniId);
 
 /// <summary>
-/// Represents a request to store the current state of one wired furni item as its restore snapshot.
+/// Represents a request to restore selected furniture from a wired furni item's stored snapshot.
 /// </summary>
 /// <remarks>
 /// Used by <see cref="ApplicationMemberIds.WiredConfigurationSnapshotApply"/>. The message is sent without
@@ -361,7 +361,10 @@ public sealed record WiredVariableDifferencesSnapshot(
 /// </summary>
 /// <param name="VariableId">The id of the variable.</param>
 /// <param name="Value">The variable value.</param>
-public sealed record WiredVariableValueSnapshot(string VariableId, int Value);
+public sealed record WiredVariableValueSnapshot(string VariableId, int Value)
+{
+    public bool MayBeClamped => Value is int.MinValue or int.MaxValue;
+}
 
 /// <summary>
 /// Represents the wired variable values held by one furni item, room user or the global scope.
@@ -416,7 +419,10 @@ public sealed record WiredVariableStorageSnapshot(
     long CreationTime,
     string CreationTimeText,
     long LastUpdateTime,
-    string LastUpdateTimeText);
+    string LastUpdateTimeText)
+{
+    public bool MayBeClamped => Value is int.MinValue or int.MaxValue;
+}
 
 /// <summary>
 /// Represents the permanent wired variables stored for one entity.
@@ -1064,7 +1070,12 @@ public enum WiredChangeKind
     /// <summary>A wired trade transaction notification was received.</summary>
     TradeNotification,
     /// <summary>The wired state was cleared because a room was entered or left or the game state was reset.</summary>
-    Reset
+    Reset,
+    LabelsReceived,
+    LabelsUpdated,
+    LeaderboardsReceived,
+    LeaderboardChunkUpdated,
+    LeaderboardSubscriptionChanged
 }
 
 /// <summary>

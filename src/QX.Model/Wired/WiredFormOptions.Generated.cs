@@ -1046,3 +1046,84 @@ public enum WiredGlobalVariableAvailabilityOption
     /// <summary>PermanentSharedAcrossRooms.</summary>
     PermanentSharedAcrossRooms = 11
 }
+
+/// <summary>0 selected users, 1 everyone</summary>
+public enum WiredSetFurniTransparencyActionAudienceOption
+{
+    /// <summary>SelectedUsers.</summary>
+    SelectedUsers = 0,
+    /// <summary>Everyone.</summary>
+    Everyone = 1
+}
+
+/// <summary>0 visible, 100 invisible</summary>
+public enum WiredTransparencyOption
+{
+    /// <summary>Visible.</summary>
+    Visible = 0,
+    /// <summary>Invisible.</summary>
+    Invisible = 100
+}
+
+/// <summary>0 instant, 1 linear, 2 ease in, 3 ease out, 4 ease in out</summary>
+public enum WiredEasingOption
+{
+    /// <summary>Instant.</summary>
+    Instant = 0,
+    /// <summary>Linear.</summary>
+    Linear = 1,
+    /// <summary>EaseIn.</summary>
+    EaseIn = 2,
+    /// <summary>EaseOut.</summary>
+    EaseOut = 3,
+    /// <summary>EaseInOut.</summary>
+    EaseInOut = 4
+}
+
+/// <summary>0 outline, 1 soft glow, 2 darken, 3 color tint, 4 brighten, 5 neon aura</summary>
+public enum WiredHighlightTypeOption
+{
+    /// <summary>Outline.</summary>
+    Outline = 0,
+    /// <summary>SoftGlow.</summary>
+    SoftGlow = 1,
+    /// <summary>Darken.</summary>
+    Darken = 2,
+    /// <summary>ColorTint.</summary>
+    ColorTint = 3,
+    /// <summary>Brighten.</summary>
+    Brighten = 4,
+    /// <summary>NeonAura.</summary>
+    NeonAura = 5
+}
+
+/// <summary>0 steady, 1 pulse</summary>
+public enum WiredAnimationOption
+{
+    /// <summary>Steady.</summary>
+    Steady = 0,
+    /// <summary>Pulse.</summary>
+    Pulse = 1
+}
+
+/// <summary>0 trigger text, 1 custom message</summary>
+public enum WiredMessageSourceOption
+{
+    /// <summary>TriggerText.</summary>
+    TriggerText = 0,
+    /// <summary>CustomMessage.</summary>
+    CustomMessage = 1
+}
+
+/// <summary>0 small, 1 medium, 2 large, 3 extra large</summary>
+public enum WiredColumn1WidthOption
+{
+    /// <summary>Small.</summary>
+    Small = 0,
+    /// <summary>Medium.</summary>
+    Medium = 1,
+    /// <summary>Large.</summary>
+    Large = 2,
+    /// <summary>ExtraLarge.</summary>
+    ExtraLarge = 3
+}

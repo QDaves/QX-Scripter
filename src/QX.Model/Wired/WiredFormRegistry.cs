@@ -3,10 +3,19 @@ namespace Qx.Model.Wired;
 /// <summary>The forms registered by the analyzed Flash client, including alternate negative-variant codes.</summary>
 public static partial class WiredFormRegistry
 {
-    private static readonly IReadOnlyList<WiredFormLayout> layouts = create_layouts();
+    private static readonly IReadOnlyList<WiredFormLayout> layouts = create_layouts().Select(layout => layout with
+    {
+        Definition = layout.Definition with
+        {
+            Fields = Array.AsReadOnly(layout.Fields.Select(control => control.Definition with
+            {
+                Minimum = control.Minimum, Maximum = control.Maximum, MaximumLength = control.MaximumLength
+            }).ToArray())
+        }
+    }).ToArray();
     private static readonly IReadOnlyDictionary<(WiredFormCategory Category, int Code), WiredFormLayout> by_code = index_layouts();
 
-    /// <summary>Gets all 176 distinct form definitions. The client registers the same code-only trigger twice.</summary>
+    /// <summary>Gets all registered distinct form definitions. The client registers the same code-only trigger twice.</summary>
     public static IReadOnlyList<WiredFormDefinition> Definitions { get; } = Array.AsReadOnly(layouts.Select(layout => layout.Definition).ToArray());
 
     /// <summary>Gets the number of client registrations, including both identical trigger-code-11 classes.</summary>

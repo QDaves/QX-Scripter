@@ -156,9 +156,17 @@ public static class MessageContracts
         Recycler.Finished,
         Wired.Account.Preferences,
         Wired.WebApi.KeyGenerate,
+        Wired.SharedAddons.Synchronize,
         Wired.WebApi.KeyResult,
         Wired.State.Permissions,
         Wired.State.Environment,
+        Wired.Leaderboards.Snapshot,
+        Wired.Leaderboards.ChunkUpdate,
+        Wired.Leaderboards.SubscriptionReplace,
+        Wired.Labels.Snapshot,
+        Wired.Labels.Updated,
+        Wired.Labels.TextUpdate,
+        Wired.Labels.SettingsUpdate,
         Wired.State.ClickSettings,
         Wired.State.MenuError,
         Wired.State.RewardResult,
@@ -251,6 +259,7 @@ public static class MessageContracts
         Wired.Trade.Cancel,
         Wired.Trade.Notification,
         Notifications.MessageOfTheDay,
+        Notifications.Dialog,
         Polls.Contents,
         Polls.Error,
         Polls.Offer,
@@ -353,6 +362,7 @@ public static class MessageContracts
         Room.FloorItem.Updated,
         Room.FloorItem.DataUpdated,
         Room.FloorItem.DataBatchUpdated,
+        Room.FloorItem.Recolored,
         Room.FloorItem.ThrowDice,
         Room.FloorItem.DiceOff,
         Room.FloorItem.DiceValue,
@@ -1603,6 +1613,33 @@ public static class MessageContracts
     /// <summary>Contains the wired message contracts.</summary>
     public static class Wired
     {
+        public static class SharedAddons
+        {
+            public static readonly MessageContract<SynchronizeSharedAddons> Synchronize =
+                Flash<SynchronizeSharedAddons>(MessageKeys.Wired.SharedAddons.Synchronize);
+        }
+
+        public static class Leaderboards
+        {
+            public static readonly MessageContract<VariableLeaderboardSnapshot> Snapshot =
+                Flash<VariableLeaderboardSnapshot>(MessageKeys.Wired.Leaderboards.Snapshot);
+            public static readonly MessageContract<VariableLeaderboardChunkUpdate> ChunkUpdate =
+                Flash<VariableLeaderboardChunkUpdate>(MessageKeys.Wired.Leaderboards.ChunkUpdate);
+            public static readonly MessageContract<VariableLeaderboardReplaceSubscription> SubscriptionReplace =
+                Flash<VariableLeaderboardReplaceSubscription>(MessageKeys.Wired.Leaderboards.SubscriptionReplace);
+        }
+
+        public static class Labels
+        {
+            public static readonly MessageContract<FurnitureLabelsAndRegions> Snapshot =
+                Flash<FurnitureLabelsAndRegions>(MessageKeys.Wired.Labels.Snapshot);
+            public static readonly MessageContract<FurnitureLabelsAndRegionsUpdate> Updated =
+                Flash<FurnitureLabelsAndRegionsUpdate>(MessageKeys.Wired.Labels.Updated);
+            public static readonly MessageContract<SetFurnitureLabelData> TextUpdate =
+                Flash<SetFurnitureLabelData>(MessageKeys.Wired.Labels.TextUpdate);
+            public static readonly MessageContract<SetFurnitureLabelSettings> SettingsUpdate =
+                Flash<SetFurnitureLabelSettings>(MessageKeys.Wired.Labels.SettingsUpdate);
+        }
         /// <summary>Contains Wired Account messages.</summary>
         public static class Account
         {
@@ -2042,6 +2079,9 @@ public static class MessageContracts
     /// <summary>Contains the notification message contracts.</summary>
     public static class Notifications
     {
+        public static readonly MessageContract<NotificationDialog> Dialog =
+            Flash<NotificationDialog>(MessageKeys.Notifications.Dialog);
+
         /// <summary>The contract for the incoming <c>MOTDNotification</c> message, which carries the hotel's messages of the day.</summary>
         public static readonly MessageContract<MOTDNotification> MessageOfTheDay =
             Flash<MOTDNotification>(MessageKeys.Notifications.MessageOfTheDay);
@@ -2495,6 +2535,9 @@ public static class MessageContracts
             /// <summary>The contract for the incoming <c>ObjectsDataUpdate</c> message, which carries the new data of several floor items at once.</summary>
             public static readonly MessageContract<FloorItemsDataUpdate> DataBatchUpdated =
                 Flash<FloorItemsDataUpdate>(MessageKeys.Room.FloorItem.DataBatchUpdated);
+
+            public static readonly MessageContract<FurniRecolorUpdate> Recolored =
+                Flash<FurniRecolorUpdate>(MessageKeys.Room.FloorItem.Recolored);
 
             /// <summary>The contract for the outgoing <c>UseFurniture</c> message, which uses a floor item.</summary>
             public static readonly MessageContract<UseFloorItemRequest> Use =

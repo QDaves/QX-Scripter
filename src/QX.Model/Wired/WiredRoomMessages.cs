@@ -952,7 +952,7 @@ public sealed record WiredClickUser(int Index) : IParserComposer<WiredClickUser>
         p.WriteInt(value.Index);
 }
 
-/// <summary>Sent when the user stores the current state of a wired furni item as its restore snapshot.</summary>
+/// <summary>Sent when the user applies a wired furni item's stored snapshot to selected furniture.</summary>
 /// <remarks>Sent as the Flash <c>ApplySnapshot</c> message.</remarks>
 /// <param name="FurniId">The id of the wired furni item, written as a 32 bit integer.</param>
 public sealed record WiredApplySnapshot(Id FurniId) : IParserComposer<WiredApplySnapshot>

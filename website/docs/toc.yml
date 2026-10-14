@@ -30,6 +30,8 @@
       href: marketplace.md
     - name: Wired values
       href: wired.md
+    - name: Building with Wired
+      href: wired-building.md
     - name: Variable Fx
       href: variable-fx.md
     - name: Game data

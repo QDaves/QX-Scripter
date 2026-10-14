@@ -22,6 +22,9 @@ internal sealed partial class WiredApplication : IApplicationFeature
     private readonly SemaphoreSlim save_lock = new(1, 1);
     private readonly SemaphoreSlim deposit_lock = new(1, 1);
     private readonly SemaphoreSlim variables_lock = new(1, 1);
+    private WiredVariableCollectionSnapshot? variable_cache;
+    private WiredOperationScope? variable_cache_scope;
+    private WiredOperationScope? variable_hash_failed_scope;
     private readonly SemaphoreSlim web_api_lock = new(1, 1);
     private readonly ApplicationEventSource<WiredChanged> changed;
     private readonly ApplicationEventSource<WiredEvent<WiredPermissions>> permissions_changed;
@@ -112,6 +115,11 @@ internal sealed partial class WiredApplication : IApplicationFeature
                     WiredApplicationDescriptors.FormDefinitions, list_form_definitions),
                 new ApplicationCallBinding<WiredFxStylesRequest, IReadOnlyList<WiredFxStyleDefinition>>(
                     WiredApplicationDescriptors.FxStyles, list_fx_styles),
+                new ApplicationCallBinding<WiredOverlaysRequest, WiredOverlaysView>(WiredApplicationDescriptors.Overlays, read_overlays),
+                new ApplicationCallBinding<WiredLabelTextRequest, WiredFurnitureLabel>(WiredApplicationDescriptors.LabelText, set_label_text),
+                new ApplicationCallBinding<WiredLabelSettingsRequest, WiredFurnitureLabel>(WiredApplicationDescriptors.LabelSettings, set_label_settings),
+                new ApplicationCallBinding<WiredLeaderboardsRequest, WiredOverlaysView>(WiredApplicationDescriptors.LeaderboardsRefresh, refresh_leaderboards),
+                new ApplicationCallBinding<WiredLeaderboardPageRequest, WiredLeaderboardPage>(WiredApplicationDescriptors.LeaderboardPage, read_leaderboard_page),
                 new ApplicationCallBinding<WiredAreaHideGetRequest, WiredAreaHideView>(WiredApplicationDescriptors.AreaHideGet, get_area_hide),
                 new ApplicationCallBinding<WiredAreaHideSetRequest, WiredDispatchResult>(WiredApplicationDescriptors.AreaHideSet, set_area_hide),
                 new ApplicationCallBinding<WiredAreaHideToggleRequest, WiredDispatchResult>(WiredApplicationDescriptors.AreaHideToggle, toggle_area_hide),
@@ -173,6 +181,8 @@ internal sealed partial class WiredApplication : IApplicationFeature
                     WiredApplicationDescriptors.PreferencesGet, read_preferences),
                 new ApplicationCallBinding<WiredWebApiKeyRequest, WiredWebApiKeyResult>(
                     WiredApplicationDescriptors.WebApiKeyGenerate, generate_web_api_key),
+                new ApplicationCallBinding<WiredSharedAddonsSynchronizeRequest, WiredDispatchResult>(
+                    WiredApplicationDescriptors.SharedAddonsSynchronize, synchronize_shared_addons),
                 new ApplicationCallBinding<WiredPreferencesSetRequest, WiredDispatchResult>(
                     WiredApplicationDescriptors.PreferencesSet, SetPreferences),
                 new ApplicationCallBinding<WiredChestRequest, WiredDispatchResult>(
@@ -603,6 +613,35 @@ internal sealed partial class WiredApplication : IApplicationFeature
         try
         {
             CaptureCurrentState(scope, operation_token);
+            if (variable_cache is { } cached && variable_cache_scope == scope && variable_hash_failed_scope != scope &&
+                interceptor.Messages.TryGetHeader(MessageKeys.Wired.Variables.HashRequest, out _) &&
+                interceptor.Messages.TryGetHeader(MessageKeys.Wired.Variables.Hash, out _))
+            {
+                int remaining = RemainingMilliseconds(started, request.TimeoutMilliseconds);
+                int probe_timeout = Math.Max(1, Math.Min(1500, remaining / 4));
+                WiredAllVariablesHash? hash = null;
+                try
+                {
+                    hash = await Request(
+                        MessageContracts.Wired.Variables.HashRequest,
+                        new WiredGetAllVariablesHash(),
+                        MessageContracts.Wired.Variables.Hash,
+                        null,
+                        static value => value,
+                        probe_timeout,
+                        scope,
+                        operation_token).ConfigureAwait(false);
+                }
+                catch (RequestTimeoutException)
+                {
+                    variable_hash_failed_scope = scope;
+                    RemainingMilliseconds(started, request.TimeoutMilliseconds);
+                }
+                CaptureCurrentState(scope, operation_token);
+                if (hash?.AllVariablesHash == cached.AllVariablesHash) return cached;
+                variable_cache = null;
+                variable_cache_scope = null;
+            }
             using var updates = new WiredUpdateQueue(wired, scope.WiredGeneration);
             DispatchInRoom(
                 MessageContracts.Wired.Variables.DifferencesRequest,
@@ -655,12 +694,15 @@ internal sealed partial class WiredApplication : IApplicationFeature
                             value.Variable.VariableId,
                             value.PerVariableHash))
                     ];
-                    return new WiredVariableCollectionSnapshot(
+                    var snapshot = new WiredVariableCollectionSnapshot(
                         scope.WiredGeneration,
                         difference.AllVariablesHash,
                         chunk,
                         Array.AsReadOnly(values),
                         Array.AsReadOnly(final_cache));
+                    variable_cache = snapshot;
+                    variable_cache_scope = scope;
+                    return snapshot;
                 }
             }
             throw new InvalidDataException(
@@ -1159,27 +1201,7 @@ internal sealed partial class WiredApplication : IApplicationFeature
         {
             CaptureCurrentState(scope, operation_token);
             using var updates = new WiredUpdateQueue(wired, scope.WiredGeneration);
-            DispatchInRoom(
-                MessageContracts.Wired.Chests.OpenRequest,
-                new OpenChestAndGetContents(request.ChestId),
-                scope,
-                operation_token);
-            WiredStateUpdate opened = await updates.WaitAsync(
-                candidate =>
-                    candidate.Kind is WiredStateChangeKind.ChestItemsChunk &&
-                    candidate.Value is WiredChestItemsChunkSnapshot chunk &&
-                    (Id)chunk.ChestId == request.ChestId &&
-                    candidate.State.Chests.Any(chest =>
-                        chest.ChestId == request.ChestId && chest.ItemsComplete),
-                interceptor,
-                scope.Session,
-                time_provider,
-                started,
-                request.TimeoutMilliseconds,
-                updates.Revision,
-                MessageKeys.Wired.Chests.OpenRequest.Value,
-                MessageKeys.Wired.Chests.ItemsChunk.Value,
-                operation_token).ConfigureAwait(false);
+            WiredStateUpdate opened = await open_deposit_chest(request, updates, scope, started, operation_token).ConfigureAwait(false);
             DispatchInRoom(
                 MessageContracts.Wired.Chests.StartAdding,
                 new StartAddingToChest(request.ChestId),
@@ -1853,6 +1875,11 @@ internal sealed partial class WiredApplication : IApplicationFeature
         WiredStateChangeKind.TradeCancelled => WiredChangeKind.TradeCancelled,
         WiredStateChangeKind.TradeCompleted => WiredChangeKind.TradeCompleted,
         WiredStateChangeKind.TradeNotification => WiredChangeKind.TradeNotification,
+        WiredStateChangeKind.LabelsReceived => WiredChangeKind.LabelsReceived,
+        WiredStateChangeKind.LabelsUpdated => WiredChangeKind.LabelsUpdated,
+        WiredStateChangeKind.LeaderboardsReceived => WiredChangeKind.LeaderboardsReceived,
+        WiredStateChangeKind.LeaderboardChunkUpdated => WiredChangeKind.LeaderboardChunkUpdated,
+        WiredStateChangeKind.LeaderboardSubscriptionChanged => WiredChangeKind.LeaderboardSubscriptionChanged,
         WiredStateChangeKind.Reset => WiredChangeKind.Reset,
         _ => throw new ArgumentOutOfRangeException(nameof(kind))
     };

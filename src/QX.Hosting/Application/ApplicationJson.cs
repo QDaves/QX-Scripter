@@ -92,7 +92,7 @@ public static class ApplicationJson
         var properties = new Dictionary<string, object?>(StringComparer.Ordinal);
         foreach (ApplicationParameterDescriptor parameter in descriptor.Parameters)
         {
-            Dictionary<string, object?> schema = SchemaFor(parameter.Type, []);
+            Dictionary<string, object?> schema = SchemaFor(parameter.Type, [], true);
             schema["description"] = parameter.Description;
             ApplyConstraints(schema, parameter.Type, parameter.Constraints);
             if (!parameter.Required)
@@ -250,7 +250,8 @@ public static class ApplicationJson
 
     private static Dictionary<string, object?> SchemaFor(
         Type type,
-        HashSet<Type> visited)
+        HashSet<Type> visited,
+        bool input = false)
     {
         Type effective = Nullable.GetUnderlyingType(type) ?? type;
         if (Nullable.GetUnderlyingType(type) is { } underlying)
@@ -259,7 +260,7 @@ public static class ApplicationJson
             {
                 ["anyOf"] = new object[]
                 {
-                    SchemaFor(underlying, visited),
+                    SchemaFor(underlying, visited, input),
                     new Dictionary<string, object?> { ["type"] = "null" }
                 }
             };
@@ -270,6 +271,8 @@ public static class ApplicationJson
             return new() { ["type"] = "boolean" };
         if (effective == typeof(int) || effective == typeof(short) || effective == typeof(byte))
             return new() { ["type"] = "integer" };
+        if (effective == typeof(double) || effective == typeof(float) || effective == typeof(decimal))
+            return new() { ["type"] = "number" };
         if (effective == typeof(long) || effective == typeof(Id))
         {
             return new()
@@ -296,7 +299,7 @@ public static class ApplicationJson
                 ["type"] = "object",
                 ["additionalProperties"] = SchemaFor(
                     dictionary_value_type,
-                    visited)
+                    visited, input)
             };
         }
         Type? element_type = CollectionElement(effective);
@@ -305,7 +308,7 @@ public static class ApplicationJson
             return new()
             {
                 ["type"] = "array",
-                ["items"] = SchemaFor(element_type, visited)
+                ["items"] = SchemaFor(element_type, visited, input)
             };
         }
         if (!visited.Add(effective))
@@ -313,6 +316,10 @@ public static class ApplicationJson
 
         var properties = new Dictionary<string, object?>(StringComparer.Ordinal);
         var required = new List<string>();
+        ParameterInfo[] parameters = input
+            ? effective.GetConstructors().OrderByDescending(constructor => constructor.GetParameters().Length)
+                .FirstOrDefault()?.GetParameters() ?? []
+            : [];
         foreach (PropertyInfo property in effective
                      .GetProperties(BindingFlags.Public | BindingFlags.Instance)
                      .Where(property => property.GetMethod is not null && property.GetIndexParameters().Length == 0)
@@ -321,9 +328,15 @@ public static class ApplicationJson
             JsonIgnoreAttribute? ignore = property.GetCustomAttribute<JsonIgnoreAttribute>();
             if (ignore?.Condition is JsonIgnoreCondition.Always)
                 continue;
-            Dictionary<string, object?> schema = SchemaFor(property.PropertyType, visited);
-            if (!property.PropertyType.IsValueType &&
-                new NullabilityInfoContext().Create(property).ReadState is NullabilityState.Nullable)
+            ParameterInfo? parameter = parameters.FirstOrDefault(parameter =>
+                string.Equals(parameter.Name, property.Name, StringComparison.OrdinalIgnoreCase));
+            if (input && parameter is null && property.SetMethod is not { IsPublic: true } &&
+                property.GetCustomAttribute<JsonIncludeAttribute>() is null)
+                continue;
+            bool nullable = Nullable.GetUnderlyingType(property.PropertyType) is not null ||
+                !property.PropertyType.IsValueType && new NullabilityInfoContext().Create(property).ReadState is NullabilityState.Nullable;
+            Dictionary<string, object?> schema = SchemaFor(property.PropertyType, visited, input);
+            if (!property.PropertyType.IsValueType && nullable)
             {
                 schema = new Dictionary<string, object?>
                 {
@@ -335,8 +348,12 @@ public static class ApplicationJson
                 };
             }
             string name = Snake(property.Name);
+            bool optional = parameter?.HasDefaultValue == true || input && parameter is null && nullable &&
+                property.GetCustomAttribute<JsonRequiredAttribute>() is null &&
+                property.GetCustomAttribute<System.Runtime.CompilerServices.RequiredMemberAttribute>() is null;
+            if (optional) schema["default"] = SchemaValue(parameter?.DefaultValue);
             properties[name] = schema;
-            if (ignore is null || ignore.Condition is JsonIgnoreCondition.Never)
+            if (!optional && (ignore is null || ignore.Condition is JsonIgnoreCondition.Never))
                 required.Add(name);
         }
         visited.Remove(effective);

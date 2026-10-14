@@ -700,16 +700,41 @@ public sealed class McpServer
 
     private static Dictionary<string, object?> ToolContent(McpTool tool, string text)
     {
-        Dictionary<string, object?> content = ToolContent(text, false);
-        if (tool.OutputSchema is not null)
-        {
-            using JsonDocument document = JsonDocument.Parse(text);
-            if (document.RootElement.ValueKind is not JsonValueKind.Object)
-                throw new JsonException($"MCP tool '{tool.Name}' returned a non-object structured result.");
-            content["structuredContent"] = document.RootElement.Clone();
-        }
+        if (tool.OutputSchema is null)
+            return ToolContent(text, false);
+        JsonElement output = StructuredOutput(tool, text);
+        if (!ObjectOutput(tool))
+            output = JsonSerializer.SerializeToElement(new { result = output });
+        Dictionary<string, object?> content = ToolContent(output.GetRawText(), false);
+        content["structuredContent"] = output;
         return content;
     }
+
+    private static bool ObjectOutput(McpTool tool)
+    {
+        JsonElement schema = JsonSerializer.SerializeToElement(tool.OutputSchema);
+        return schema.ValueKind is JsonValueKind.Object &&
+            schema.TryGetProperty("type", out JsonElement type) &&
+            type.ValueKind is JsonValueKind.String && type.GetString() == "object";
+    }
+
+    private static JsonElement StructuredOutput(McpTool tool, string text)
+    {
+        using JsonDocument document = JsonDocument.Parse(text);
+        if (ObjectOutput(tool) && document.RootElement.ValueKind is not JsonValueKind.Object)
+            throw new JsonException($"MCP tool '{tool.Name}' returned a non-object structured result.");
+        return document.RootElement.Clone();
+    }
+
+    private static object StructuredSchema(McpTool tool) => ObjectOutput(tool)
+        ? tool.OutputSchema!
+        : new Dictionary<string, object?>
+        {
+            ["type"] = "object",
+            ["properties"] = new Dictionary<string, object?> { ["result"] = tool.OutputSchema },
+            ["required"] = new[] { "result" },
+            ["additionalProperties"] = false
+        };
 
     private List<McpTool> BuildTools(IEnumerable<McpTool>? additional_tools)
     {
@@ -1680,7 +1705,7 @@ public sealed class McpServer
         if (!string.IsNullOrWhiteSpace(tool.Title))
             definition["title"] = tool.Title;
         if (tool.OutputSchema is not null)
-            definition["outputSchema"] = tool.OutputSchema;
+            definition["outputSchema"] = StructuredSchema(tool);
         if (tool.Metadata is not null)
             definition["_meta"] = tool.Metadata;
         return definition;
@@ -1714,13 +1739,11 @@ public sealed class McpServer
             object output = text;
             try
             {
-                output = JsonSerializer.Deserialize<JsonElement>(text);
+                output = StructuredOutput(tool, text);
             }
             catch (JsonException) when (tool.OutputSchema is null)
             {
             }
-            if (tool.OutputSchema is not null && output is JsonElement { ValueKind: not JsonValueKind.Object })
-                throw new JsonException($"MCP tool '{tool.Name}' returned a non-object structured result.");
             return JsonSerializer.Serialize(new { result = output });
         }
     };

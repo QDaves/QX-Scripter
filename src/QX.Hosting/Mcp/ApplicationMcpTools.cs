@@ -15,6 +15,7 @@ public static class ApplicationMcpTools
 
     private static readonly HashSet<string> listed = new(StringComparer.Ordinal)
     {
+        ApplicationMemberIds.WiredBuildGuide,
         ApplicationMemberIds.RoomEnter,
         ApplicationMemberIds.RoomLeave,
         ApplicationMemberIds.RoomChatTalk,

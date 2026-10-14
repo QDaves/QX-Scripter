@@ -1,5 +1,7 @@
+using System.Buffers;
 using System.Collections;
 using System.Diagnostics.CodeAnalysis;
+using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -107,8 +109,29 @@ public sealed partial class ProductData : IReadOnlyDictionary<string, ProductInf
         [JsonConverter(typeof(StringValueJsonConverter))]
         public string? Code { get; set; }
 
-        [JsonPropertyName("name")] public string? Name { get; set; }
-        [JsonPropertyName("description")] public string? Description { get; set; }
+        [JsonPropertyName("name"), JsonConverter(typeof(ProductTextJsonConverter))]
+        public string? Name { get; set; }
+
+        [JsonPropertyName("description"), JsonConverter(typeof(ProductTextJsonConverter))]
+        public string? Description { get; set; }
+    }
+
+    private sealed class ProductTextJsonConverter : JsonConverter<string>
+    {
+        public override string Read(ref Utf8JsonReader reader, Type type, JsonSerializerOptions options)
+        {
+            if (reader.TokenType == JsonTokenType.String)
+                return reader.GetString() ?? "";
+            if (reader.TokenType is JsonTokenType.Number or JsonTokenType.True or JsonTokenType.False)
+                return reader.HasValueSequence
+                    ? Encoding.UTF8.GetString(reader.ValueSequence.ToArray())
+                    : Encoding.UTF8.GetString(reader.ValueSpan);
+            reader.Skip();
+            return "";
+        }
+
+        public override void Write(Utf8JsonWriter writer, string value, JsonSerializerOptions options) =>
+            writer.WriteStringValue(value);
     }
 
     private sealed class StringValueJsonConverter : JsonConverter<string>

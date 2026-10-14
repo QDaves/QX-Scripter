@@ -53,7 +53,13 @@
                      StrokeThickness="1.5"
                      StrokeLineCap="Round"
                      IsHitTestVisible="False"
-                     IsVisible="False" />
+                     IsVisible="False">
+            <Rectangle.Transitions>
+              <Transitions>
+                <BrushTransition Property="Stroke" Duration="0:0:0.1" />
+              </Transitions>
+            </Rectangle.Transitions>
+          </Rectangle>
           <Border Name="PART_FocusRing"
                   Margin="{DynamicResource QxFocusRingMargin}"
                   BorderThickness="{DynamicResource QxFocusRingThickness}"

@@ -135,18 +135,30 @@ public sealed class RunButton : Button
             RunButtonState.Running or RunButtonState.Ready => StopCommand,
             _ => null
         };
-        RestartLap();
+        update_lap();
     }
 
     void OnCometChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
     {
-        if (e.Property == BoundsProperty && State != RunButtonState.Idle)
+        if (e.Property == BoundsProperty && e.GetOldValue<Rect>().Size != e.GetNewValue<Rect>().Size && State != RunButtonState.Idle)
             RestartLap();
     }
 
     void RestartLap()
     {
         StopLap();
+        update_lap();
+    }
+
+    void update_lap()
+    {
+        if (State == RunButtonState.Idle)
+        {
+            StopLap();
+            return;
+        }
+        if (IsCometRunning)
+            return;
         if (_comet is not { } comet || State == RunButtonState.Idle || !this.IsAttachedToVisualTree())
             return;
         double thickness = Math.Max(0.5, comet.StrokeThickness);

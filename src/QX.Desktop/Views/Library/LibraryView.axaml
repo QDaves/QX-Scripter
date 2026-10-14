@@ -2,230 +2,148 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:b="using:Qx.Desktop.Behaviors"
              xmlns:c="using:Qx.Desktop.Controls"
-             xmlns:lib="using:Qx.Presentation.Services.Library"
              xmlns:vm="using:Qx.Presentation.ViewModels.Library"
              x:Class="Qx.Desktop.Views.Library.LibraryView"
              x:DataType="vm:LibraryViewModel">
-
   <UserControl.Styles>
-    <Style Selector="ListBox.scripts">
-      <Setter Property="ItemContainerTheme" Value="{StaticResource Library.RowItem}" />
-      <Setter Property="ItemsPanel" Value="{StaticResource Library.ListPanel}" />
-      <Setter Property="Padding" Value="{StaticResource Library.ListPadding}" />
-    </Style>
-    <Style Selector="ListBox.scripts.grid">
-      <Setter Property="ItemContainerTheme" Value="{StaticResource Library.TileItem}" />
-      <Setter Property="ItemsPanel" Value="{StaticResource Library.TilePanel}" />
-      <Setter Property="ItemTemplate" Value="{StaticResource Library.GridTemplate}" />
-      <Setter Property="Padding" Value="{StaticResource Library.GridPadding}" />
-    </Style>
-    <Style Selector="ListBoxItem:pointerover :is(Panel).hover-actions,
-                     ListBoxItem:selected :is(Panel).hover-actions,
-                     ListBoxItem:focus-within :is(Panel).hover-actions">
-      <Setter Property="Opacity" Value="1" />
-      <Setter Property="IsHitTestVisible" Value="True" />
-    </Style>
-    <Style Selector="Button.column">
-      <Setter Property="Padding" Value="0" />
-      <Setter Property="HorizontalAlignment" Value="Left" />
-    </Style>
-    <Style Selector="TextBlock.column">
-      <Setter Property="Foreground" Value="{DynamicResource QxTextSecondaryBrush}" />
-    </Style>
-    <Style Selector="TextBlock.column.sorted">
-      <Setter Property="Foreground" Value="{DynamicResource QxTextPrimaryBrush}" />
+    <Style Selector="Border.community-sheen">
+      <Style.Animations>
+        <Animation Duration="0:0:4.8" IterationCount="Infinite">
+          <KeyFrame Cue="0%"><Setter Property="TranslateTransform.X" Value="-80" /></KeyFrame>
+          <KeyFrame Cue="42%"><Setter Property="TranslateTransform.X" Value="210" /></KeyFrame>
+          <KeyFrame Cue="100%"><Setter Property="TranslateTransform.X" Value="210" /></KeyFrame>
+        </Animation>
+      </Style.Animations>
     </Style>
   </UserControl.Styles>
-
-  <c:PageLayout Page="{Binding}" CountText="{Binding CountText}">
-
+  <c:PageLayout Page="{Binding}">
     <c:PageLayout.Actions>
-      <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-        <Button Theme="{StaticResource QxLinkButton}"
-                Command="{Binding CommunityCommand}"
-                ToolTip.Tip="Find and share scripts on qxscripter.xyz"
-                AutomationProperties.Name="Community scripts"
-                AutomationProperties.HelpText="Opens qxscripter.xyz in your browser">
-          <StackPanel Orientation="Horizontal" Spacing="5">
-            <TextBlock Text="Community scripts" VerticalAlignment="Center" />
-            <c:Icon Kind="OpenExternal" Size="13" VerticalAlignment="Center" />
-          </StackPanel>
-        </Button>
-      </StackPanel>
+      <Button Classes="primary" Content="New script" Command="{Binding NewScriptCommand}" />
     </c:PageLayout.Actions>
-
-    <c:PageLayout.Toolbar>
-      <c:FilterBar>
-        <c:FilterBar.Search>
+    <Grid ColumnDefinitions="184,*">
+      <Border BorderThickness="0,0,1,0" BorderBrush="{DynamicResource QxBorderSubtleBrush}">
+        <Grid RowDefinitions="Auto,*,Auto" Margin="0,16,0,12">
+          <TextBlock Text="Browse" Classes="small secondary strong" Margin="20,0,12,12" />
+          <ListBox Name="Categories" Grid.Row="1"
+                   ItemsSource="{Binding Filters}"
+                   SelectedItem="{Binding SelectedFilter, Mode=TwoWay}"
+                   ItemContainerTheme="{StaticResource Library.FilterItem}"
+                   AutomationProperties.Name="Script categories">
+            <ListBox.ItemTemplate>
+              <DataTemplate x:DataType="vm:LibraryFilterOption">
+                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                  <TextBlock Text="{Binding Name}" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding Name}" />
+                  <TextBlock Grid.Column="1" Text="{Binding Count}" Classes="small tertiary" VerticalAlignment="Center" />
+                </Grid>
+              </DataTemplate>
+            </ListBox.ItemTemplate>
+          </ListBox>
+          <StackPanel Grid.Row="2" Margin="12,12,8,0" Spacing="4">
+            <Button Classes="subtle small" Command="{Binding OpenFolderCommand}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left">
+              <StackPanel Orientation="Horizontal" Spacing="8">
+                <c:Icon Kind="FolderOpen" Size="14" VerticalAlignment="Center" />
+                <TextBlock Text="Scripts folder" />
+              </StackPanel>
+            </Button>
+            <Grid>
+              <Button Theme="{StaticResource Library.CommunityLink}" Classes="small" Command="{Binding CommunityCommand}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left">
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                  <c:Icon Kind="OpenExternal" Size="14" VerticalAlignment="Center" />
+                  <TextBlock Text="Community scripts" />
+                </StackPanel>
+              </Button>
+              <Border ClipToBounds="True" CornerRadius="{DynamicResource QxRadiusSm}" IsHitTestVisible="False">
+                <Grid ClipToBounds="True">
+                  <Border Classes="community-sheen" Width="60" HorizontalAlignment="Left" Opacity="0.28">
+                    <Border.RenderTransform>
+                      <TranslateTransform X="-80" />
+                    </Border.RenderTransform>
+                    <Border.Background>
+                      <LinearGradientBrush StartPoint="0%,100%" EndPoint="100%,0%">
+                        <GradientStop Offset="0.15" Color="Transparent" />
+                        <GradientStop Offset="0.5" Color="{DynamicResource QxAccentColor}" />
+                        <GradientStop Offset="0.85" Color="Transparent" />
+                      </LinearGradientBrush>
+                    </Border.Background>
+                  </Border>
+                </Grid>
+              </Border>
+            </Grid>
+          </StackPanel>
+        </Grid>
+      </Border>
+      <Grid Grid.Column="1" RowDefinitions="Auto,Auto,*">
+        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12" Margin="24,16,24,16">
           <c:SearchBox Name="Search"
-                       Width="240"
-                       PlaceholderText="Search by name or category"
+                       Width="NaN" HorizontalAlignment="Stretch"
+                       PlaceholderText="Search scripts"
                        Text="{Binding SearchText, Mode=TwoWay}"
                        b:FocusRequest.IsRequested="{Binding SearchFocusRequested, Mode=TwoWay}"
                        AutomationProperties.Name="Search scripts"
-                       AutomationProperties.HelpText="Filters saved scripts by name or category" />
-        </c:FilterBar.Search>
-        <c:FilterBar.Filters>
-          <ComboBox Width="150"
-                    ItemsSource="{Binding Sorts}"
+                       AutomationProperties.HelpText="Search by name or category within this view" />
+          <ComboBox Grid.Column="1" Width="144" ItemsSource="{Binding Sorts}"
                     SelectedItem="{Binding SelectedSort, Mode=TwoWay}"
-                    ToolTip.Tip="Sort scripts"
                     AutomationProperties.Name="Sort scripts">
-            <ComboBox.SelectionBoxItemTemplate>
-              <DataTemplate x:DataType="vm:LibrarySortOption">
-                <StackPanel Orientation="Horizontal" Spacing="6">
-                  <c:Icon Kind="Sort" Size="14" Classes="tertiary" VerticalAlignment="Center" />
-                  <TextBlock Text="{Binding Label}" VerticalAlignment="Center" />
-                </StackPanel>
-              </DataTemplate>
-            </ComboBox.SelectionBoxItemTemplate>
             <ComboBox.ItemTemplate>
               <DataTemplate x:DataType="vm:LibrarySortOption">
-                <TextBlock Text="{Binding Label}" VerticalAlignment="Center" />
+                <TextBlock Text="{Binding Label}" />
               </DataTemplate>
             </ComboBox.ItemTemplate>
           </ComboBox>
-        </c:FilterBar.Filters>
-        <c:FilterBar.Trailing>
-          <c:SegmentedControl SelectedIndex="{Binding ViewIndex, Mode=TwoWay}">
-            <ListBoxItem ToolTip.Tip="List view" AutomationProperties.Name="List view">
-              <c:Segment Icon="ViewList" />
-            </ListBoxItem>
-            <ListBoxItem ToolTip.Tip="Grid view" AutomationProperties.Name="Grid view">
-              <c:Segment Icon="ViewGrid" />
-            </ListBoxItem>
-          </c:SegmentedControl>
-        </c:FilterBar.Trailing>
-      </c:FilterBar>
-    </c:PageLayout.Toolbar>
-
-    <Grid RowDefinitions="Auto,*">
-
-      <Border Classes="hairline-bottom"
-              Height="32"
-              Padding="24,0"
-              IsVisible="{Binding !IsGrid}">
-        <Grid ColumnDefinitions="28,*,200,160,96">
-          <Button Grid.Column="1"
-                  Classes="subtle small column"
-                  Command="{Binding SortByCommand}"
-                  CommandParameter="{x:Static lib:LibrarySort.Name}"
-                  ToolTip.Tip="Sort by name">
-            <StackPanel Orientation="Horizontal" Spacing="4">
-              <TextBlock Text="Name" Classes="small strong column" Classes.sorted="{Binding SortsByName}" />
-              <c:Icon Kind="{Binding SortIcon}" Size="12" Classes="accent" IsVisible="{Binding SortsByName}" VerticalAlignment="Center" />
-            </StackPanel>
-          </Button>
-          <Button Grid.Column="2"
-                  Classes="subtle small column"
-                  Command="{Binding SortByCommand}"
-                  CommandParameter="{x:Static lib:LibrarySort.LastRun}"
-                  ToolTip.Tip="Sort by last run">
-            <StackPanel Orientation="Horizontal" Spacing="4">
-              <TextBlock Text="Last run" Classes="small strong column" Classes.sorted="{Binding SortsByLastRun}" />
-              <c:Icon Kind="{Binding SortIcon}" Size="12" Classes="accent" IsVisible="{Binding SortsByLastRun}" VerticalAlignment="Center" />
-            </StackPanel>
-          </Button>
-          <Button Grid.Column="3"
-                  Classes="subtle small column"
-                  Command="{Binding SortByCommand}"
-                  CommandParameter="{x:Static lib:LibrarySort.Modified}"
-                  ToolTip.Tip="Sort by last edit">
-            <StackPanel Orientation="Horizontal" Spacing="4">
-              <TextBlock Text="Edited" Classes="small strong column" Classes.sorted="{Binding SortsByEdited}" />
-              <c:Icon Kind="{Binding SortIcon}" Size="12" Classes="accent" IsVisible="{Binding SortsByEdited}" VerticalAlignment="Center" />
-            </StackPanel>
-          </Button>
         </Grid>
-      </Border>
-
-      <ListBox Name="Scripts"
-             Grid.Row="1"
-             Classes="scripts"
-             Classes.grid="{Binding IsGrid}"
-             ItemsSource="{Binding Rows}"
-             SelectionMode="Single"
-             b:ListBehaviors.Selection="{Binding Selection}"
-             AutomationProperties.Name="Saved scripts"
-             AutomationProperties.HelpText="Press Enter or double-click to open, F2 to rename, Delete to remove">
-      <ListBox.KeyBindings>
-        <KeyBinding Gesture="Enter" Command="{Binding OpenCommand}" />
-        <KeyBinding Gesture="F2" Command="{Binding RenameCommand}" />
-        <KeyBinding Gesture="Delete" Command="{Binding DeleteCommand}" />
-      </ListBox.KeyBindings>
-      <ListBox.DataTemplates>
-
-        <StaticResource ResourceKey="Library.GroupTemplate" />
-
-        <DataTemplate DataType="vm:LibraryScriptRow" x:DataType="vm:LibraryScriptRow">
-          <Grid ColumnDefinitions="28,*,200,160,96"
-                Background="Transparent"
-                ToolTip.Tip="{Binding DetailTooltip}"
-                AutomationProperties.Name="{Binding AccessibilityText}">
-            <c:Icon Grid.Column="0" Kind="Script" Size="16" Classes="tertiary" VerticalAlignment="Center" />
-            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-              <TextBlock Text="{Binding Name}"
-                         Classes="body strong"
-                         VerticalAlignment="Center"
-                         TextTrimming="CharacterEllipsis" />
-              <c:Chip Text="{Binding CategoryName}"
-                      Icon="Category"
-                      MaxWidth="140"
-                      IsVisible="{Binding ShowCategory}" />
-            </StackPanel>
-            <TextBlock Grid.Column="2"
-                       Text="{Binding RunText}"
-                       Classes="small"
-                       VerticalAlignment="Center"
-                       TextTrimming="CharacterEllipsis"
-                       Classes.running="{Binding IsRunning}"
-                       Classes.accent="{Binding IsReady}"
-                       Classes.secondary="{Binding HasRun}"
-                       Classes.danger="{Binding IsFailed}"
-                       Classes.tertiary="{Binding IsNeverRun}" />
-            <TextBlock Grid.Column="3"
-                       Text="{Binding EditedText}"
-                       Classes="small tertiary"
-                       VerticalAlignment="Center"
-                       TextTrimming="CharacterEllipsis" />
-            <StackPanel Grid.Column="4"
-                        Classes="hover-actions"
-                        Orientation="Horizontal"
-                        Spacing="2"
-                        HorizontalAlignment="Right"
-                        VerticalAlignment="Center">
-              <Button Classes="icon small"
-                      Command="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).RenameCommand}"
-                      CommandParameter="{Binding}"
-                      ToolTip.Tip="Rename (F2)"
-                      AutomationProperties.Name="Rename script">
-                <c:Icon Kind="Rename" Size="14" />
-              </Button>
-              <Button Classes="icon small"
-                      Command="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).RevealCommand}"
-                      CommandParameter="{Binding}"
-                      ToolTip.Tip="Show in folder"
-                      AutomationProperties.Name="Show in folder">
-                <c:Icon Kind="FolderOpen" Size="14" />
-              </Button>
-              <Button Name="DeleteScript"
-                      Classes="icon small"
-                      IsVisible="{Binding CanDelete}"
-                      Command="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).DeleteCommand}"
-                      CommandParameter="{Binding}"
-                      ToolTip.Tip="Delete script"
-                      AutomationProperties.Name="{Binding DeleteAccessibilityText}">
-                <c:Icon Kind="Delete" Size="14" />
-              </Button>
-            </StackPanel>
-          </Grid>
-        </DataTemplate>
-
-      </ListBox.DataTemplates>
-      </ListBox>
-
+        <Grid Grid.Row="1" ColumnDefinitions="*,Auto" Margin="24,0,24,10">
+          <TextBlock Text="{Binding FilterTitle}" Classes="strong" FontSize="15" TextTrimming="CharacterEllipsis" />
+          <TextBlock Grid.Column="1" Text="{Binding CountText}" Classes="small tertiary" VerticalAlignment="Center" Margin="12,0,0,0" />
+        </Grid>
+        <Grid Grid.Row="2">
+          <ListBox Name="Scripts" ItemsSource="{Binding Rows}"
+                   IsVisible="{Binding HasResults}"
+                   ItemContainerTheme="{StaticResource Library.RowItem}"
+                   ItemsPanel="{StaticResource Library.ListPanel}"
+                   Padding="0,0,0,12"
+                   SelectionMode="Single" b:ListBehaviors.Selection="{Binding Selection}"
+                   AutomationProperties.Name="Saved scripts"
+                   AutomationProperties.HelpText="Press Enter or double-click to open, F2 to rename, Delete to remove">
+            <ListBox.KeyBindings>
+              <KeyBinding Gesture="Enter" Command="{Binding OpenCommand}" />
+              <KeyBinding Gesture="F2" Command="{Binding RenameCommand}" />
+              <KeyBinding Gesture="Delete" Command="{Binding DeleteCommand}" />
+            </ListBox.KeyBindings>
+            <ListBox.ItemTemplate>
+              <DataTemplate x:DataType="vm:LibraryScriptRow">
+                <Grid ColumnDefinitions="24,*,Auto,Auto" ColumnSpacing="12"
+                      Background="Transparent" ToolTip.Tip="{Binding DetailTooltip}"
+                      AutomationProperties.Name="{Binding AccessibilityText}">
+                  <c:Icon Kind="Script" Size="19" Classes="tertiary" VerticalAlignment="Center" />
+                  <Grid Grid.Column="1" RowDefinitions="Auto,Auto" RowSpacing="5">
+                    <TextBlock Text="{Binding Name}" Classes="body strong" TextTrimming="CharacterEllipsis" />
+                    <WrapPanel Grid.Row="1">
+                      <TextBlock Text="{Binding CategoryName}" Classes="small secondary" Margin="0,0,16,0" />
+                      <TextBlock Text="{Binding EditedText}" Classes="small tertiary" Margin="0,0,16,0" />
+                      <TextBlock Text="{Binding RunText}" Classes="small"
+                                 Classes.running="{Binding IsRunning}" Classes.accent="{Binding IsReady}"
+                                 Classes.secondary="{Binding HasRun}" Classes.danger="{Binding IsFailed}"
+                                 Classes.tertiary="{Binding IsNeverRun}" />
+                    </WrapPanel>
+                  </Grid>
+                  <Button Grid.Column="2" Classes="subtle small" Content="Open" VerticalAlignment="Center"
+                          Command="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).OpenCommand}"
+                          CommandParameter="{Binding}" AutomationProperties.Name="Open script" />
+                  <Button Grid.Column="3" Classes="icon small" VerticalAlignment="Center"
+                          Click="open_menu" ToolTip.Tip="More actions" AutomationProperties.Name="Script actions">
+                    <c:Icon Kind="Dots" Size="16" />
+                  </Button>
+                </Grid>
+              </DataTemplate>
+            </ListBox.ItemTemplate>
+          </ListBox>
+          <StackPanel IsVisible="{Binding !HasResults}" VerticalAlignment="Center" Margin="24" Spacing="16">
+            <c:EmptyState Icon="Script" Title="{Binding EmptyHeading}" Description="{Binding EmptyDetail}" />
+            <Button Content="Show all scripts" Classes="subtle" HorizontalAlignment="Center"
+                    Command="{Binding ClearFiltersCommand}" />
+          </StackPanel>
+        </Grid>
+      </Grid>
     </Grid>
-
   </c:PageLayout>
-
 </UserControl>

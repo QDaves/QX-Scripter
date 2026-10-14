@@ -1,0 +1,17 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:c="using:Qx.Desktop.Controls"
+             xmlns:d="using:Qx.Presentation.Dialogs"
+             x:Class="Qx.Desktop.Views.Dialogs.SaveChangesDialogView"
+             x:DataType="d:SaveChangesDialogViewModel">
+  <c:Dialog CloseCommand="{Binding CancelCommand}" Title="{Binding Title}" Icon="{Binding Icon}">
+    <TextBlock Text="{Binding Message}" TextWrapping="Wrap" LineHeight="{DynamicResource QxLineHeightBody}" />
+    <c:Dialog.Buttons>
+      <StackPanel Orientation="Horizontal" Spacing="8">
+        <Button Classes="large" Content="Cancel" IsCancel="True" Command="{Binding CancelCommand}" />
+        <Button Classes="large" Content="Discard" Command="{Binding DiscardCommand}" />
+        <Button Classes="large primary" Content="{Binding SaveText}" IsDefault="True" Command="{Binding SaveCommand}" />
+      </StackPanel>
+    </c:Dialog.Buttons>
+  </c:Dialog>
+</UserControl>

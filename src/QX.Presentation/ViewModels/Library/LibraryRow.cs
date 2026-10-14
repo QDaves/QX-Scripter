@@ -1,9 +1,6 @@
-using System.Globalization;
 using CommunityToolkit.Mvvm.ComponentModel;
-using Qx.Presentation.Mvvm;
 using Qx.Presentation.Services.Library;
 using Qx.Presentation.Services.Status;
-using Qx.Presentation.Visuals;
 using Qx.Scripting.Hosting;
 
 namespace Qx.Presentation.ViewModels.Library;
@@ -17,40 +14,18 @@ public enum LibraryRunState
     Failed
 }
 
-public abstract class LibraryRow : ObservableObject
+public sealed partial class LibraryFilterOption(string key, string name, string? category) : ObservableObject
 {
-}
-
-public sealed partial class LibraryGroupRow : LibraryRow, ISectionHeader
-{
-    public LibraryGroupRow(string name, bool invented)
-    {
-        ArgumentException.ThrowIfNullOrWhiteSpace(name);
-        Name = name;
-        IsInvented = invented;
-        IsExpanded = true;
-    }
-
-    public string Name { get; }
-
-    public bool IsInvented { get; }
-
-    public bool CanEdit => !IsInvented;
+    public string Key { get; } = key;
+    public string Name { get; } = name;
+    public string? Category { get; } = category;
+    public bool CanEdit => Category is not null;
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(CountText))]
     public partial int Count { get; set; }
-
-    [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(FoldIcon))]
-    public partial bool IsExpanded { get; set; }
-
-    public string CountText => Count.ToString(CultureInfo.CurrentCulture);
-
-    public IconKind FoldIcon => IsExpanded ? IconKind.ChevronDown : IconKind.ChevronRight;
 }
 
-public sealed partial class LibraryScriptRow : LibraryRow
+public sealed partial class LibraryScriptRow : ObservableObject
 {
     public const string Uncategorised = "Uncategorised";
 
@@ -83,9 +58,6 @@ public sealed partial class LibraryScriptRow : LibraryRow
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsRunning), nameof(IsReady), nameof(HasRun), nameof(IsFailed), nameof(IsNeverRun))]
     public partial LibraryRunState RunState { get; private set; }
-
-    [ObservableProperty]
-    public partial bool ShowCategory { get; set; }
 
     [ObservableProperty]
     public partial string RunText { get; private set; } = "";
@@ -122,7 +94,7 @@ public sealed partial class LibraryScriptRow : LibraryRow
         EditedAt = editedAt;
         LastRun = run;
         RunState = StateOf(run, running, armed);
-        CanDelete = !running;
+        CanDelete = !running && !armed;
         Refresh(now);
     }
 

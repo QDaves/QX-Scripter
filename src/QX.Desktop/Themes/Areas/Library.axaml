@@ -1,155 +1,26 @@
 <ResourceDictionary xmlns="https://github.com/avaloniaui"
-                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-                    xmlns:c="using:Qx.Desktop.Controls"
-                    xmlns:vm="using:Qx.Presentation.ViewModels.Library">
-
-  <x:Double x:Key="Library.RowHeight">36</x:Double>
-  <x:Double x:Key="Library.GroupHeight">32</x:Double>
-  <x:Double x:Key="Library.TileWidth">224</x:Double>
-  <x:Double x:Key="Library.TileHeight">72</x:Double>
-  <x:Double x:Key="Library.TilePitchWidth">232</x:Double>
-  <x:Double x:Key="Library.TilePitchHeight">80</x:Double>
-  <x:Double x:Key="Library.GroupPitchHeight">52</x:Double>
-  <Thickness x:Key="Library.RowMargin">12,0</Thickness>
-  <Thickness x:Key="Library.GroupMargin">12,16,12,4</Thickness>
-  <Thickness x:Key="Library.RowPadding">12,0</Thickness>
-  <Thickness x:Key="Library.TilePadding">12,10</Thickness>
-  <Thickness x:Key="Library.ListPadding">0,4,0,12</Thickness>
-  <Thickness x:Key="Library.GridPadding">12,8,12,12</Thickness>
-
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <ControlTheme x:Key="Library.CommunityLink" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+    <Setter Property="Background" Value="{DynamicResource QxAccentSoftBrush}" />
+    <Setter Property="Foreground" Value="{DynamicResource QxAccentBrush}" />
+    <Setter Property="BorderBrush" Value="Transparent" />
+    <Style Selector="^:pointerover">
+      <Setter Property="Background" Value="{DynamicResource QxFillSelectedHoverBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource QxAccentBrush}" />
+    </Style>
+  </ControlTheme>
   <ControlTheme x:Key="Library.RowItem" TargetType="ListBoxItem" BasedOn="{StaticResource {x:Type ListBoxItem}}">
-    <Setter Property="Margin" Value="{StaticResource Library.RowMargin}" />
-    <Setter Property="Padding" Value="{StaticResource Library.RowPadding}" />
-    <Setter Property="MinHeight" Value="{StaticResource Library.RowHeight}" />
-    <Style Selector="^.group">
-      <Setter Property="Margin" Value="{StaticResource Library.GroupMargin}" />
-      <Setter Property="MinHeight" Value="{StaticResource Library.GroupHeight}" />
-      <Style Selector="^:selected /template/ ContentPresenter#PART_ContentPresenter">
-        <Setter Property="Background" Value="Transparent" />
-      </Style>
-      <Style Selector="^:pointerover /template/ ContentPresenter#PART_ContentPresenter">
-        <Setter Property="Background" Value="{DynamicResource QxFillSubtleBrush}" />
-      </Style>
-      <Style Selector="^:selected:pointerover /template/ ContentPresenter#PART_ContentPresenter">
-        <Setter Property="Background" Value="{DynamicResource QxFillSubtleBrush}" />
-      </Style>
-    </Style>
+    <Setter Property="Margin" Value="12,2" />
+    <Setter Property="Padding" Value="12,10" />
+    <Setter Property="MinHeight" Value="68" />
+    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
   </ControlTheme>
-
-  <ControlTheme x:Key="Library.TileItem" TargetType="ListBoxItem" BasedOn="{StaticResource QxTile}">
-    <Setter Property="Width" Value="{StaticResource Library.TileWidth}" />
-    <Setter Property="Height" Value="{StaticResource Library.TileHeight}" />
-    <Setter Property="Padding" Value="{StaticResource Library.TilePadding}" />
-    <Style Selector="^.group">
-      <Setter Property="Width" Value="NaN" />
-      <Setter Property="Height" Value="NaN" />
-      <Setter Property="MinHeight" Value="{StaticResource Library.GroupHeight}" />
-      <Setter Property="Margin" Value="{StaticResource Library.GroupMargin}" />
-      <Setter Property="Padding" Value="{StaticResource Library.RowPadding}" />
-      <Setter Property="BorderBrush" Value="Transparent" />
-      <Setter Property="VerticalContentAlignment" Value="Center" />
-      <Style Selector="^:pointerover">
-        <Setter Property="Background" Value="{DynamicResource QxFillSubtleBrush}" />
-        <Setter Property="BorderBrush" Value="Transparent" />
-      </Style>
-      <Style Selector="^:selected">
-        <Setter Property="Background" Value="Transparent" />
-        <Setter Property="BorderBrush" Value="Transparent" />
-      </Style>
-      <Style Selector="^:selected:pointerover">
-        <Setter Property="Background" Value="{DynamicResource QxFillSubtleBrush}" />
-      </Style>
-    </Style>
+  <ControlTheme x:Key="Library.FilterItem" TargetType="ListBoxItem" BasedOn="{StaticResource {x:Type ListBoxItem}}">
+    <Setter Property="Margin" Value="8,2" />
+    <Setter Property="Padding" Value="12,9" />
+    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
   </ControlTheme>
-
   <ItemsPanelTemplate x:Key="Library.ListPanel">
     <VirtualizingStackPanel />
   </ItemsPanelTemplate>
-
-  <ItemsPanelTemplate x:Key="Library.TilePanel">
-    <c:UniformTilePanel ItemWidth="{StaticResource Library.TilePitchWidth}" ItemHeight="{StaticResource Library.TilePitchHeight}" HeaderHeight="{StaticResource Library.GroupPitchHeight}" />
-  </ItemsPanelTemplate>
-
-  <DataTemplate x:Key="Library.GroupTemplate" DataType="vm:LibraryGroupRow" x:DataType="vm:LibraryGroupRow">
-
-    <Grid ColumnDefinitions="Auto,Auto,Auto,*"
-
-          Background="Transparent"
-
-          AutomationProperties.Name="{Binding Name}">
-
-      <c:Icon Grid.Column="0"
-
-              Kind="{Binding FoldIcon}"
-
-              Size="14"
-
-              Classes="tertiary"
-
-              Margin="0,0,8,0"
-
-              VerticalAlignment="Center" />
-
-      <TextBlock Grid.Column="1"
-
-                 Text="{Binding Name}"
-
-                 Classes="small"
-
-                 FontWeight="SemiBold"
-
-                 MaxWidth="320"
-
-                 VerticalAlignment="Center"
-
-                 TextTrimming="CharacterEllipsis"
-
-                 Foreground="{DynamicResource QxTextSecondaryBrush}"
-
-                 ToolTip.Tip="{Binding Name}" />
-
-      <c:CountBadge Grid.Column="2" Margin="8,0,0,0" Text="{Binding CountText}" />
-
-      <Rectangle Grid.Column="3" Classes="rule" Margin="12,0,0,0" VerticalAlignment="Center" />
-
-    </Grid>
-
-  </DataTemplate>
-
-  <DataTemplate x:Key="Library.TileTemplate" DataType="vm:LibraryScriptRow" x:DataType="vm:LibraryScriptRow">
-    <Grid RowDefinitions="Auto,*" ToolTip.Tip="{Binding DetailTooltip}">
-      <StackPanel Orientation="Horizontal" Spacing="8">
-        <c:Icon Kind="Script" Size="14" Classes="tertiary" VerticalAlignment="Center" />
-        <TextBlock Text="{Binding Name}"
-                   Classes="body strong"
-                   VerticalAlignment="Center"
-                   TextTrimming="CharacterEllipsis" />
-      </StackPanel>
-      <Grid Grid.Row="1" ColumnDefinitions="Auto,*,Auto" VerticalAlignment="Bottom">
-        <TextBlock Text="{Binding RunText}"
-                   Classes="small"
-                   VerticalAlignment="Center"
-                   Classes.running="{Binding IsRunning}"
-                   Classes.accent="{Binding IsReady}"
-                   Classes.secondary="{Binding HasRun}"
-                   Classes.danger="{Binding IsFailed}"
-                   Classes.tertiary="{Binding IsNeverRun}" />
-        <c:Chip Grid.Column="2"
-                Text="{Binding CategoryName}"
-                Icon="Category"
-                IsVisible="{Binding ShowCategory}"
-                MaxWidth="100" />
-      </Grid>
-    </Grid>
-  </DataTemplate>
-
-  <DataTemplate x:Key="Library.GridTemplate" x:DataType="vm:LibraryRow">
-    <ContentControl Content="{Binding}" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch">
-      <ContentControl.DataTemplates>
-        <StaticResource ResourceKey="Library.GroupTemplate" />
-        <StaticResource ResourceKey="Library.TileTemplate" />
-      </ContentControl.DataTemplates>
-    </ContentControl>
-  </DataTemplate>
-
 </ResourceDictionary>

@@ -13,7 +13,6 @@ public sealed class ScriptLibraryStore : IScriptLibrary, IDisposable
     readonly HashSet<string> _collapsed = new(StringComparer.OrdinalIgnoreCase);
     readonly Dictionary<string, LastRun> _runs = new(StringComparer.OrdinalIgnoreCase);
     IReadOnlyList<string>? _categories;
-    LibraryView _view;
     LibrarySort _sort;
 
     public ScriptLibraryStore(IAppPaths paths, IUiDispatcher dispatcher, TimeProvider time)
@@ -21,18 +20,6 @@ public sealed class ScriptLibraryStore : IScriptLibrary, IDisposable
         ArgumentNullException.ThrowIfNull(paths);
         Load(paths.LibraryFile);
         _file = new AtomicJsonFile(paths.LibraryFile, "library", "The script library could not be saved", Render, dispatcher, time);
-    }
-
-    public LibraryView View
-    {
-        get => _view;
-        set
-        {
-            if (_view == value)
-                return;
-            _view = value;
-            Save();
-        }
     }
 
     public LibrarySort Sort
@@ -182,7 +169,6 @@ public sealed class ScriptLibraryStore : IScriptLibrary, IDisposable
 
     string Render() => LibraryCodec.Write(new LibraryDocument
     {
-        View = _view.ToString().ToLowerInvariant(),
         Sort = _sort.ToString().ToLowerInvariant(),
         Collapsed = [.. _collapsed.OrderBy(category => category, StringComparer.OrdinalIgnoreCase)],
         Scripts = _scripts.Count == 0 ? null : new Dictionary<string, ScriptMeta>(_scripts, StringComparer.OrdinalIgnoreCase)
@@ -195,7 +181,6 @@ public sealed class ScriptLibraryStore : IScriptLibrary, IDisposable
             if (!File.Exists(path))
                 return;
             LibraryDocument document = LibraryCodec.Read(File.ReadAllText(path));
-            _view = Enum.TryParse(document.View, ignoreCase: true, out LibraryView view) ? view : LibraryView.List;
             _sort = Enum.TryParse(document.Sort, ignoreCase: true, out LibrarySort sort) ? sort : LibrarySort.Modified;
             foreach (string category in document.Collapsed ?? [])
             {

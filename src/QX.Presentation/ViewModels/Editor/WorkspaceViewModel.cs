@@ -182,6 +182,13 @@ public sealed partial class WorkspaceViewModel : PageViewModel, IApiInsertTarget
     }
 
     [RelayCommand]
+    async Task SaveDocumentAsync(ScriptDocument? document, CancellationToken cancellation_token)
+    {
+        if (document is not null)
+            await _commands.SaveAsync(document, cancellation_token);
+    }
+
+    [RelayCommand]
     async Task SaveAsAsync(CancellationToken cancellation_token)
     {
         if (Active is { } document)

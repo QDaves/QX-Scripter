@@ -19,7 +19,7 @@ public sealed record LibrarySortOption(LibrarySort Sort, string Label);
 
 public sealed partial class LibraryViewModel : PageViewModel
 {
-    public const string Subheading = "Open, organise and manage your saved scripts.";
+    public const string Subheading = "Your scripts, ready when you need them.";
     public const string CommunityUrl = "http://qxscripter.xyz/";
     public const string CommunityTitle = "Community scripts";
     public const string NewScriptText = "New script";
@@ -39,13 +39,15 @@ public sealed partial class LibraryViewModel : PageViewModel
     readonly IUiDispatcher _dispatcher;
     readonly TimeProvider _time;
     readonly Dictionary<string, LibraryScriptRow> _scripts;
-    readonly Dictionary<string, LibraryGroupRow> _groups = new(StringComparer.CurrentCultureIgnoreCase);
-    readonly HashSet<string> _search_folds = new(StringComparer.CurrentCultureIgnoreCase);
+    readonly Dictionary<string, LibraryFilterOption> _filters = new(StringComparer.CurrentCultureIgnoreCase);
+    readonly LibraryFilterOption _all = new("all", "All scripts", null);
+    readonly LibraryFilterOption _active = new("active", "Active scripts", null);
+    readonly LibraryFilterOption _ungrouped = new("ungrouped", "Uncategorised", null);
     readonly SerialOperation _loading = new();
     readonly Debouncer _rescan;
-    LibraryGroupRow? _uncategorised;
     IDisposable? _watch;
     ITimer? _clock;
+    bool _applying;
 
     public LibraryViewModel(
         IScriptLibrary library,
@@ -71,7 +73,7 @@ public sealed partial class LibraryViewModel : PageViewModel
         Subtitle = Subheading;
         Sorts = [new LibrarySortOption(LibrarySort.Modified, "Last edited"), new LibrarySortOption(LibrarySort.LastRun, "Last run"), new LibrarySortOption(LibrarySort.Name, "Name")];
         SelectedSort = OptionFor(_library.Sort);
-        ViewIndex = _library.View == LibraryView.Grid ? 1 : 0;
+        SelectedFilter = _all;
         _library.Changed += OnLibraryChanged;
         _runs.Changed += OnRunsChanged;
         Own(() =>
@@ -82,19 +84,31 @@ public sealed partial class LibraryViewModel : PageViewModel
         Apply();
     }
 
-    public ObservableCollection<LibraryRow> Rows { get; } = [];
+    public ObservableCollection<LibraryScriptRow> Rows { get; } = [];
 
     public SelectionList<LibraryScriptRow> Selection { get; } = new();
 
     public IReadOnlyList<LibrarySortOption> Sorts { get; }
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(SortsByName), nameof(SortsByLastRun), nameof(SortsByEdited), nameof(SortIcon))]
     public partial LibrarySortOption SelectedSort { get; set; }
 
+    public ObservableCollection<LibraryFilterOption> Filters { get; } = [];
+
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(IsGrid))]
-    public partial int ViewIndex { get; set; }
+    [NotifyPropertyChangedFor(nameof(FilterTitle))]
+    public partial LibraryFilterOption? SelectedFilter { get; set; }
+
+    [ObservableProperty]
+    public partial bool HasResults { get; private set; }
+
+    [ObservableProperty]
+    public partial string EmptyHeading { get; private set; } = EmptyTitle;
+
+    [ObservableProperty]
+    public partial string EmptyDetail { get; private set; } = EmptyMessage;
+
+    public string FilterTitle => SelectedFilter?.Name ?? _all.Name;
 
     [ObservableProperty]
     public partial string SearchText { get; set; } = "";
@@ -104,18 +118,6 @@ public sealed partial class LibraryViewModel : PageViewModel
 
     [ObservableProperty]
     public partial bool SearchFocusRequested { get; set; }
-
-    public bool IsGrid => ViewIndex == 1;
-
-    public bool IsSearching => SearchText.Trim().Length > 0;
-
-    public bool SortsByName => SelectedSort.Sort == LibrarySort.Name;
-
-    public bool SortsByLastRun => SelectedSort.Sort == LibrarySort.LastRun;
-
-    public bool SortsByEdited => SelectedSort.Sort == LibrarySort.Modified;
-
-    public IconKind SortIcon => SortsByName ? IconKind.ArrowUp : IconKind.ArrowDown;
 
     public override bool TryClearSearch()
     {
@@ -127,7 +129,7 @@ public sealed partial class LibraryViewModel : PageViewModel
 
     public LibraryScriptRow? SelectFirstResult()
     {
-        if ((Selection.First ?? Rows.OfType<LibraryScriptRow>().FirstOrDefault()) is not { } wanted)
+        if ((Selection.First ?? Rows.FirstOrDefault()) is not { } wanted)
             return null;
         Selection.Select([wanted]);
         return wanted;
@@ -153,9 +155,6 @@ public sealed partial class LibraryViewModel : PageViewModel
 
     [RelayCommand]
     void NewScript() => _commands.NewDocument();
-
-    [RelayCommand]
-    void SortBy(LibrarySort sort) => SelectedSort = OptionFor(sort);
 
     [RelayCommand]
     async Task OpenAsync(LibraryScriptRow? row, CancellationToken cancellation_token)
@@ -219,28 +218,21 @@ public sealed partial class LibraryViewModel : PageViewModel
     }
 
     [RelayCommand]
-    void ToggleGroup(LibraryGroupRow? group)
+    void ClearFilters()
     {
-        if (group is null)
-            return;
-        bool expanded = !group.IsExpanded;
-        group.IsExpanded = expanded;
-        if (IsSearching)
-        {
-            if (expanded)
-                _search_folds.Remove(group.Name);
-            else
-                _search_folds.Add(group.Name);
-        }
-        else
-        {
-            _library.SetCollapsed(group.Name, !expanded);
-        }
-        Apply();
+        SearchText = "";
+        SelectedFilter = _all;
     }
 
     [RelayCommand]
-    async Task RenameCategoryAsync(LibraryGroupRow? group, CancellationToken cancellation_token)
+    async Task OpenFolderAsync(CancellationToken cancellation_token)
+    {
+        if (!await _launcher.OpenFolderAsync(_files.ScriptsDirectory, cancellation_token))
+            await _dialogs.AlertAsync("Could not open the folder", "The scripts folder could not be opened.", cancellation_token);
+    }
+
+    [RelayCommand]
+    async Task RenameCategoryAsync(LibraryFilterOption? group, CancellationToken cancellation_token)
     {
         if (group is not { CanEdit: true })
             return;
@@ -256,7 +248,7 @@ public sealed partial class LibraryViewModel : PageViewModel
     }
 
     [RelayCommand]
-    async Task ClearCategoryAsync(LibraryGroupRow? group, CancellationToken cancellation_token)
+    async Task ClearCategoryAsync(LibraryFilterOption? group, CancellationToken cancellation_token)
     {
         if (group is not { CanEdit: true })
             return;
@@ -306,8 +298,6 @@ public sealed partial class LibraryViewModel : PageViewModel
 
     partial void OnSearchTextChanged(string value)
     {
-        if (value.Trim().Length == 0)
-            _search_folds.Clear();
         Apply();
     }
 
@@ -319,13 +309,7 @@ public sealed partial class LibraryViewModel : PageViewModel
         Apply();
     }
 
-    partial void OnViewIndexChanged(int value)
-    {
-        LibraryView wanted = value == 1 ? LibraryView.Grid : LibraryView.List;
-        if (_library.View != wanted)
-            _library.View = wanted;
-        Apply();
-    }
+    partial void OnSelectedFilterChanged(LibraryFilterOption? value) => Apply();
 
     LibrarySortOption OptionFor(LibrarySort sort) => Sorts.FirstOrDefault(option => option.Sort == sort) ?? Sorts[0];
 
@@ -338,12 +322,15 @@ public sealed partial class LibraryViewModel : PageViewModel
     void OnLibraryChanged()
     {
         SelectedSort = OptionFor(_library.Sort);
-        ViewIndex = _library.View == LibraryView.Grid ? 1 : 0;
         RefreshRows();
         Apply();
     }
 
-    void OnRunsChanged() => RefreshRows();
+    void OnRunsChanged()
+    {
+        RefreshRows();
+        Apply();
+    }
 
     async Task ReloadAsync(CancellationToken cancellation_token)
     {
@@ -412,78 +399,71 @@ public sealed partial class LibraryViewModel : PageViewModel
 
     void Apply()
     {
-        string query = SearchText.Trim();
-        bool searching = query.Length > 0;
-        List<LibraryScriptRow> visible = [.. _scripts.Values.Where(row => Keep(row, query))];
-        visible.Sort(Compare);
-        List<LibraryRow> next = Flatten(visible, searching);
-        string? selected = Selection.First?.Path;
-        CollectionSync.Sync(Rows, next, KeyOf, KeyOf, static row => row, static (row, item) => _ = item);
-        if (selected is not null &&
-            Selection.First is null &&
-            Rows.OfType<LibraryScriptRow>().FirstOrDefault(row => PathComparison.Same(row.Path, selected)) is { } again)
+        if (_applying)
+            return;
+        _applying = true;
+        try
         {
-            Selection.Select([again]);
-        }
-        CountText = searching
-            ? $"{visible.Count} of {_scripts.Count}"
-            : _scripts.Count == 1 ? "1 script" : $"{_scripts.Count} scripts";
-        if (_scripts.Count == 0)
-            State.ShowEmpty(IconKind.FileText, EmptyTitle, EmptyMessage, NewScriptCommand, NewScriptText);
-        else if (visible.Count == 0)
-            State.ShowEmpty(IconKind.Search, NoMatchTitle, $"Try another search for “{query}”.");
-        else
+            string query = SearchText.Trim();
+            bool searching = query.Length > 0;
+            update_filters();
+            List<LibraryScriptRow> visible = [.. _scripts.Values.Where(row => matches_filter(row) && Keep(row, query))];
+            visible.Sort(Compare);
+            string? selected = Selection.First?.Path;
+            CollectionSync.Sync(Rows, visible, static row => row.Path, static row => row.Path, static row => row, static (row, item) => _ = item);
+            Selection.Prune(visible);
+            if (selected is not null &&
+                Selection.First is null &&
+                Rows.FirstOrDefault(row => PathComparison.Same(row.Path, selected)) is { } again)
+            {
+                Selection.Select([again]);
+            }
+            CountText = visible.Count == 1 ? "1 script" : $"{visible.Count} scripts";
+            HasResults = visible.Count > 0;
+            EmptyHeading = _scripts.Count == 0 ? EmptyTitle : NoMatchTitle;
+            EmptyDetail = _scripts.Count == 0 ? EmptyMessage
+                : searching ? $"No scripts match “{query}”. Try another search or category."
+                : "There are no scripts in this view. Choose another category or create a script.";
             State.ShowReady();
+        }
+        finally
+        {
+            _applying = false;
+        }
     }
 
-    List<LibraryRow> Flatten(List<LibraryScriptRow> visible, bool searching)
+    void update_filters()
     {
-        var next = new List<LibraryRow>(visible.Count + 4);
-        bool grouped = visible.Any(row => row.HasCategory);
-        foreach (LibraryScriptRow row in visible)
-            row.ShowCategory = !grouped && row.HasCategory;
-        if (!grouped)
+        string selected_key = SelectedFilter?.Key ?? _all.Key;
+        _all.Count = _scripts.Count;
+        _active.Count = _scripts.Values.Count(row => row.IsRunning || row.IsReady);
+        _ungrouped.Count = _scripts.Values.Count(row => !row.HasCategory);
+        var next = new List<LibraryFilterOption> { _all, _active, _ungrouped };
+        foreach (var category in _scripts.Values.Where(row => row.HasCategory)
+            .GroupBy(row => row.CategoryName, StringComparer.CurrentCultureIgnoreCase)
+            .OrderBy(group => group.Key, StringComparer.CurrentCultureIgnoreCase))
         {
-            next.AddRange(visible);
-            return next;
+            string key = "category:" + category.Key;
+            if (!_filters.TryGetValue(key, out var filter) || filter.Name != category.Key)
+                _filters[key] = filter = new LibraryFilterOption(key, category.Key, category.Key);
+            filter.Count = category.Count();
+            next.Add(filter);
         }
-        int index = 0;
-        while (index < visible.Count)
-        {
-            LibraryScriptRow first = visible[index];
-            int end = index;
-            while (end < visible.Count && SameGroup(first, visible[end]))
-                end++;
-            LibraryGroupRow group = GroupFor(first.CategoryName, !first.HasCategory);
-            group.Count = end - index;
-            group.IsExpanded = searching ? !_search_folds.Contains(group.Name) : !_library.IsCollapsed(group.Name);
-            next.Add(group);
-            if (group.IsExpanded)
-                next.AddRange(visible.GetRange(index, end - index));
-            index = end;
-        }
-        return next;
+        CollectionSync.Sync(Filters, next, static filter => filter.Key, static filter => filter.Key,
+            static filter => filter, static (filter, item) => _ = item);
+        SelectedFilter = Filters.FirstOrDefault(filter => string.Equals(filter.Key, selected_key, StringComparison.CurrentCultureIgnoreCase)) ?? _all;
     }
 
-    LibraryGroupRow GroupFor(string name, bool invented)
+    bool matches_filter(LibraryScriptRow row) => SelectedFilter?.Key switch
     {
-        if (invented)
-            return _uncategorised ??= new LibraryGroupRow(name, invented: true);
-        if (!_groups.TryGetValue(name, out LibraryGroupRow? group) || !string.Equals(group.Name, name, StringComparison.Ordinal))
-        {
-            group = new LibraryGroupRow(name, invented: false);
-            _groups[name] = group;
-        }
-        return group;
-    }
+        "active" => row.IsRunning || row.IsReady,
+        "ungrouped" => !row.HasCategory,
+        _ when SelectedFilter?.Category is { } category => string.Equals(row.CategoryName, category, StringComparison.CurrentCultureIgnoreCase),
+        _ => true
+    };
 
     int Compare(LibraryScriptRow left, LibraryScriptRow right)
     {
-        if (left.HasCategory != right.HasCategory)
-            return left.HasCategory ? -1 : 1;
-        int category = string.Compare(left.CategoryName, right.CategoryName, StringComparison.CurrentCultureIgnoreCase);
-        if (category != 0)
-            return category;
         int inside = _library.Sort switch
         {
             LibrarySort.Name => string.Compare(left.Name, right.Name, StringComparison.CurrentCultureIgnoreCase),
@@ -501,17 +481,6 @@ public sealed partial class LibraryViewModel : PageViewModel
         int run = (right.LastRun?.At ?? DateTimeOffset.MinValue).CompareTo(left.LastRun?.At ?? DateTimeOffset.MinValue);
         return run != 0 ? run : right.EditedAt.CompareTo(left.EditedAt);
     }
-
-    static bool SameGroup(LibraryScriptRow first, LibraryScriptRow other) =>
-        first.HasCategory == other.HasCategory &&
-        string.Equals(first.CategoryName, other.CategoryName, StringComparison.CurrentCultureIgnoreCase);
-
-    static string KeyOf(LibraryRow row) => row switch
-    {
-        LibraryGroupRow group => group.IsInvented ? "\0" : "#" + group.Name,
-        LibraryScriptRow script => "!" + script.Path,
-        _ => "?"
-    };
 
     static bool Keep(LibraryScriptRow row, string query) =>
         query.Length == 0 ||

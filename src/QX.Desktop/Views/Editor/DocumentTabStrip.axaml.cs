@@ -155,6 +155,8 @@ public sealed partial class DocumentTabStrip : UserControl
     static ContextMenu BuildMenu(WorkspaceViewModel workspace, ScriptDocument document)
     {
         var menu = new ContextMenu();
+        menu.Items.Add(Row("Save script", workspace.SaveDocumentCommand, document));
+        menu.Items.Add(new Separator());
         menu.Items.Add(Row("Close", workspace.CloseCommand, document));
         menu.Items.Add(Row("Close others", workspace.CloseOthersCommand, document));
         menu.Items.Add(Row("Close to the right", workspace.CloseToTheRightCommand, document));

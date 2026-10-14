@@ -141,7 +141,7 @@ public sealed class ScriptFileCommands(
     public Task<bool> SaveInPlaceAsync(ScriptDocument document, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(document);
-        return document.FilePath is { } path ? WriteAsync(document, path, cancellationToken) : Task.FromResult(false);
+        return document.FilePath is { } path ? WriteAsync(document, path, cancellationToken, show_error: false) : Task.FromResult(false);
     }
 
     public async Task<FileOperationResult> RenameUnattendedAsync(string path, string typed, CancellationToken cancellationToken)
@@ -258,16 +258,21 @@ public sealed class ScriptFileCommands(
         }
         if (document.IsModified)
         {
-            bool discard = await dialogs.ConfirmAsync(
-                "Discard unsaved changes?",
-                $"“{document.Name}” has unsaved changes. Close it and discard those changes?",
-                "Discard",
-                DialogTone.Destructive,
-                cancellationToken: cancellationToken);
+            SaveChangesChoice choice = await dialogs.ShowAsync(
+                new SaveChangesDialogViewModel($"“{document.Name}” has unsaved changes. Save them to your script library before closing?"),
+                cancellationToken);
             if (!Alive(document))
                 return CloseOutcome.Closed;
-            if (!discard)
+            if (choice == SaveChangesChoice.Cancel ||
+                choice == SaveChangesChoice.Save && (!await SaveAsync(document, cancellationToken) || document.IsModified))
                 return CloseOutcome.Cancelled;
+        }
+        if (!Alive(document))
+            return CloseOutcome.Closed;
+        if (document.Run.IsWorking)
+        {
+            document.Run.RequestStop();
+            return CloseOutcome.Stopping;
         }
         workspace.Remove(document);
         return CloseOutcome.Closed;
@@ -295,15 +300,18 @@ public sealed class ScriptFileCommands(
         int modified = others.Count(document => document.IsModified);
         if (modified > 0)
         {
-            bool discard = await dialogs.ConfirmAsync(
-                "Close other scripts?",
+            SaveChangesChoice choice = await dialogs.ShowAsync(new SaveChangesDialogViewModel(
                 modified == 1
-                    ? "One other script has unsaved changes. Close the others and discard them?"
-                    : $"{modified} other scripts have unsaved changes. Close them and discard those changes?",
-                "Discard and close",
-                DialogTone.Destructive,
-                cancellationToken: cancellation_token);
-            if (!discard || !Alive(keep))
+                    ? "One other script has unsaved changes. Save it before closing?"
+                    : $"{modified} other scripts have unsaved changes. Save them before closing?",
+                modified == 1 ? "Save script" : "Save all"), cancellation_token);
+            if (choice == SaveChangesChoice.Cancel || !Alive(keep))
+                return;
+            if (choice == SaveChangesChoice.Save)
+                foreach (ScriptDocument document in others.Where(document => Alive(document) && document.IsModified))
+                    if (!await SaveAsync(document, cancellation_token) || document.IsModified)
+                        return;
+            if (choice == SaveChangesChoice.Save && others.Any(document => Alive(document) && document.IsModified))
                 return;
         }
         var stopping = new List<ScriptDocument>();
@@ -468,7 +476,7 @@ public sealed class ScriptFileCommands(
         return true;
     }
 
-    async Task<bool> WriteAsync(ScriptDocument document, string path, CancellationToken cancellation_token)
+    async Task<bool> WriteAsync(ScriptDocument document, string path, CancellationToken cancellation_token, bool show_error = true)
     {
         string text = document.Text;
         FileOperationResult written = await files.WriteAsync(path, text, cancellation_token);
@@ -476,7 +484,10 @@ public sealed class ScriptFileCommands(
             return false;
         if (!written.Succeeded)
         {
-            document.Run.Output.Write("Save failed: " + (written.Failure ?? "the script could not be written."), OutputLevel.Error);
+            string failure = written.Failure ?? "The script could not be written.";
+            document.Run.Output.Write("Save failed: " + failure, OutputLevel.Error);
+            if (show_error)
+                await dialogs.AlertAsync("Save failed", failure, cancellation_token);
             return false;
         }
         document.MarkSaved(path, text);

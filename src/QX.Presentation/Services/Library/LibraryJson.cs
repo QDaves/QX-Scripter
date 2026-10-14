@@ -5,8 +5,6 @@ namespace Qx.Presentation.Services.Library;
 
 public sealed record LibraryDocument
 {
-    public string? View { get; init; }
-
     public string? Sort { get; init; }
 
     public IReadOnlyList<string>? Collapsed { get; init; }

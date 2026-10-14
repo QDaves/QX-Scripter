@@ -3,12 +3,6 @@ using Qx.Scripting.Hosting;
 
 namespace Qx.Presentation.Services.Library;
 
-public enum LibraryView
-{
-    List,
-    Grid
-}
-
 public enum LibrarySort
 {
     Modified,
@@ -33,8 +27,6 @@ public sealed record ScriptFileEntry(string Path, string Name, DateTimeOffset Ed
 
 public interface IScriptLibrary
 {
-    LibraryView View { get; set; }
-
     LibrarySort Sort { get; set; }
 
     IReadOnlyList<string> Categories { get; }

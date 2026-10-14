@@ -12,6 +12,7 @@ public static class DesktopViews
         ArgumentNullException.ThrowIfNull(views);
         views
             .Register<ConfirmDialogViewModel>(static () => new ConfirmDialogView())
+            .Register<SaveChangesDialogViewModel>(static () => new SaveChangesDialogView())
             .Register<AlertDialogViewModel>(static () => new AlertDialogView())
             .Register<PromptDialogViewModel>(static () => new PromptDialogView())
             .Register<UpdateDialogViewModel>(static () => new UpdateDialogView());

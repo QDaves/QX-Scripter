@@ -188,7 +188,8 @@ internal sealed class NavigatorApplication : IApplicationFeature
             timeout_ms: request.TimeoutMilliseconds,
             block: false,
             cancellation_token: cancellation_token,
-            max_attempts: 2).ConfigureAwait(false);
+            max_attempts: 2,
+            attempt_start: () => PrepareWindow(session, cancellation_token)).ConfigureAwait(false);
         await commit.WaitAsync(
             state => MetadataMatches(state, response),
             request.TimeoutMilliseconds,
@@ -220,7 +221,8 @@ internal sealed class NavigatorApplication : IApplicationFeature
             timeout_ms: request.TimeoutMilliseconds,
             block: false,
             cancellation_token: cancellation_token,
-            max_attempts: 2).ConfigureAwait(false);
+            max_attempts: 2,
+            attempt_start: () => PrepareWindow(session, cancellation_token)).ConfigureAwait(false);
         await commit.WaitAsync(
             state => FlatCategoriesMatch(state, response),
             request.TimeoutMilliseconds,
@@ -348,6 +350,7 @@ internal sealed class NavigatorApplication : IApplicationFeature
         RequiredText(request.SearchCode, nameof(request.SearchCode));
         ValidateText(request.Filter, nameof(request.Filter));
         Session session = RequireSession(cancellation_token);
+        PrepareWindow(session, cancellation_token);
         messages.Dispatch(
             MessageContracts.Navigator.Personalization.SavedSearchAdd,
             new AddSavedSearchRequest(request.SearchCode, request.Filter),
@@ -365,6 +368,7 @@ internal sealed class NavigatorApplication : IApplicationFeature
         if (request.SavedSearchId < 0)
             throw new ArgumentOutOfRangeException(nameof(request.SavedSearchId));
         Session session = RequireSession(cancellation_token);
+        PrepareWindow(session, cancellation_token);
         messages.Dispatch(
             MessageContracts.Navigator.Personalization.SavedSearchDelete,
             new DeleteSavedSearchRequest(request.SavedSearchId),
@@ -401,6 +405,7 @@ internal sealed class NavigatorApplication : IApplicationFeature
         ValidateText(request.Description, nameof(request.Description));
         RequiredText(request.Model, nameof(request.Model));
         Session session = RequireSession(cancellation_token);
+        PrepareWindow(session, cancellation_token);
         messages.Dispatch(
             MessageContracts.Navigator.RoomCreate,
             new CreateRoomRequest(
@@ -423,6 +428,7 @@ internal sealed class NavigatorApplication : IApplicationFeature
         ThrowIfDisposed();
         ArgumentNullException.ThrowIfNull(request);
         Session session = RequireSession(cancellation_token);
+        PrepareWindow(session, cancellation_token);
         messages.Dispatch(
             MessageContracts.Navigator.RoomDelete,
             new DeleteRoomRequest(request.RoomId),
@@ -439,6 +445,7 @@ internal sealed class NavigatorApplication : IApplicationFeature
         ThrowIfDisposed();
         ArgumentNullException.ThrowIfNull(request);
         Session session = RequireSession(cancellation_token);
+        PrepareWindow(session, cancellation_token);
         messages.Dispatch(
             MessageContracts.Navigator.HomeRoomUpdate,
             new SetHomeRoomRequest(request.RoomId),
@@ -479,7 +486,8 @@ internal sealed class NavigatorApplication : IApplicationFeature
             timeout_ms: timeout_milliseconds,
             block: false,
             cancellation_token: cancellation_token,
-            max_attempts: 2).ConfigureAwait(false);
+            max_attempts: 2,
+            attempt_start: () => PrepareWindow(session, cancellation_token)).ConfigureAwait(false);
         RequireCurrentState(session);
         return NavigatorManager.Snapshot(result);
     }
@@ -497,9 +505,18 @@ internal sealed class NavigatorApplication : IApplicationFeature
         ArgumentNullException.ThrowIfNull(create);
         RequiredText(request.SearchCode, nameof(request.SearchCode));
         Session session = RequireSession(cancellation_token);
+        PrepareWindow(session, cancellation_token);
         messages.Dispatch(contract, create(request.SearchCode), session, cancellation_token);
         return OperationResult(request.SearchCode);
     }
+
+    private void PrepareWindow(Session session, CancellationToken cancellation_token) =>
+        messages.Dispatch(
+            MessageContracts.Navigator.WindowSettings,
+            new EventLogRequest("NewNavigator", "Interface", "windowsettings", "578 x 600", 0),
+            session,
+            cancellation_token,
+            () => RequireDispatch(session, cancellation_token));
 
     private Session RequireSession(CancellationToken cancellation_token)
     {

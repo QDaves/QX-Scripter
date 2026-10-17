@@ -421,6 +421,7 @@ public static class MessageContracts
         Groups.Members.Snapshot,
         Groups.Memberships.Request,
         Groups.Memberships.Snapshot,
+        Navigator.WindowSettings,
         Navigator.State.MetadataRequest,
         Navigator.State.Metadata,
         Navigator.State.FlatCategoriesRequest,
@@ -1151,6 +1152,9 @@ public static class MessageContracts
     /// <summary>Contains the navigator message contracts.</summary>
     public static class Navigator
     {
+        public static readonly MessageContract<EventLogRequest> WindowSettings =
+            Flash<EventLogRequest>(MessageKeys.Navigator.WindowSettings);
+
         /// <summary>Contains the navigator state message contracts.</summary>
         public static class State
         {

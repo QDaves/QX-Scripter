@@ -39,6 +39,7 @@ internal static class NavigatorApplicationDescriptors
         [ApplicationStateKey.HotelConnected],
         [new(ApplicationStateKey.NavigatorMetadataLoaded, ApplicationStateEffectKind.Changes)],
         [
+            new(MessageKeys.Navigator.WindowSettings, MessageDirection.Out, ApplicationMessageRole.Send),
             new(MessageKeys.Navigator.State.MetadataRequest, MessageDirection.Out, ApplicationMessageRole.Send),
             new(MessageKeys.Navigator.State.Metadata, MessageDirection.In, ApplicationMessageRole.Observe)
         ],
@@ -56,6 +57,7 @@ internal static class NavigatorApplicationDescriptors
         [ApplicationStateKey.HotelConnected],
         [new(ApplicationStateKey.NavigatorFlatCategoriesLoaded, ApplicationStateEffectKind.Changes)],
         [
+            new(MessageKeys.Navigator.WindowSettings, MessageDirection.Out, ApplicationMessageRole.Send),
             new(MessageKeys.Navigator.State.FlatCategoriesRequest, MessageDirection.Out, ApplicationMessageRole.Send),
             new(MessageKeys.Navigator.State.FlatCategories, MessageDirection.In, ApplicationMessageRole.Observe)
         ],
@@ -269,6 +271,7 @@ internal static class NavigatorApplicationDescriptors
             [ApplicationStateKey.HotelConnected],
             messages:
             [
+                new(MessageKeys.Navigator.WindowSettings, MessageDirection.Out, ApplicationMessageRole.Send),
                 new(request_key, MessageDirection.Out, ApplicationMessageRole.Send),
                 new(
                     result_key ?? MessageKeys.Navigator.Search.Result,
@@ -293,7 +296,11 @@ internal static class NavigatorApplicationDescriptors
             typeof(NavigatorOperationResult),
             parameters,
             [ApplicationStateKey.HotelConnected],
-            messages: [new(request_key, MessageDirection.Out, ApplicationMessageRole.Send)],
+            messages:
+            [
+                new(MessageKeys.Navigator.WindowSettings, MessageDirection.Out, ApplicationMessageRole.Send),
+                new(request_key, MessageDirection.Out, ApplicationMessageRole.Send)
+            ],
             toolHints: hints);
 
     private static ApplicationDescriptor RoomOperation<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TRequest>(
@@ -311,7 +318,11 @@ internal static class NavigatorApplicationDescriptors
             typeof(NavigatorRoomOperationResult),
             parameters,
             [ApplicationStateKey.HotelConnected],
-            messages: [new(request_key, MessageDirection.Out, ApplicationMessageRole.Send)],
+            messages:
+            [
+                new(MessageKeys.Navigator.WindowSettings, MessageDirection.Out, ApplicationMessageRole.Send),
+                new(request_key, MessageDirection.Out, ApplicationMessageRole.Send)
+            ],
             toolHints: new(false, true, false, true));
 
     private static ApplicationParameterDescriptor TimeoutParameter() => new(

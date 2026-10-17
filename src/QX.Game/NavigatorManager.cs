@@ -341,7 +341,7 @@ public sealed class NavigatorManager : GameStateManager
     /// </summary>
     /// <param name="roomId">The id of the room.</param>
     public void SetHomeRoom(Id roomId) =>
-        SendMessage(
+        SendNavigator(
             MessageContracts.Navigator.HomeRoomUpdate,
             new SetHomeRoomRequest(roomId));
 
@@ -361,7 +361,7 @@ public sealed class NavigatorManager : GameStateManager
         int category,
         int maxVisitors,
         int tradeMode) =>
-        SendMessage(
+        SendNavigator(
             MessageContracts.Navigator.RoomCreate,
             new CreateRoomRequest(
                 name,
@@ -376,9 +376,21 @@ public sealed class NavigatorManager : GameStateManager
     /// </summary>
     /// <param name="roomId">The id of the room.</param>
     public void DeleteRoom(Id roomId) =>
-        SendMessage(
+        SendNavigator(
             MessageContracts.Navigator.RoomDelete,
             new DeleteRoomRequest(roomId));
+
+    private void SendNavigator<T>(MessageContract<T> contract, T request)
+        where T : Qx.Messages.IParserComposer<T>
+    {
+        var session = CurrentSession
+            ?? throw new InvalidOperationException("An active hotel session is required.");
+        SendMessage(
+            MessageContracts.Navigator.WindowSettings,
+            new EventLogRequest("NewNavigator", "Interface", "windowsettings", "578 x 600", 0),
+            session);
+        SendMessage(contract, request, session);
+    }
 
     internal static NavigatorSearchSnapshot Snapshot(NavigatorSearchResult value)
     {

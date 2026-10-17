@@ -93,7 +93,7 @@ public sealed partial class NavigatorViewModel : PageViewModel
     public NoticeLine Notices { get; }
 
     [ObservableProperty]
-    public partial NavigatorSearchList SelectedList { get; set; } = NavigatorSearchOptions.Lists[0];
+    public partial NavigatorSearchList SelectedList { get; set; } = NavigatorSearchOptions.For(NavigatorSearchMode.Popular);
 
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(SearchCommand))]
@@ -162,6 +162,10 @@ public sealed partial class NavigatorViewModel : PageViewModel
     {
         await RefreshAsync(cancellationToken);
         await FetchAsync(cancellationToken);
+        if (!cancellationToken.IsCancellationRequested && !_has_result &&
+            SelectedList.Mode == NavigatorSearchMode.Popular &&
+            _gateway.Gate(ApplicationMemberIds.NavigatorSearchPopular).Available)
+            await SearchAsync();
         AskForQueryFocus();
     }
 

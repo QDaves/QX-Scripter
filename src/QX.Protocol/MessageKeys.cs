@@ -811,6 +811,8 @@ public static class MessageKeys
     /// <summary>Contains the navigator message keys.</summary>
     public static class Navigator
     {
+        public static readonly MessageKey WindowSettings = new("navigator.window_settings");
+
         /// <summary>Contains the navigator state message keys.</summary>
         public static class State
         {

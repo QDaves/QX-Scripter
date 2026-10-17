@@ -1,5 +1,6 @@
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Media;
 using Avalonia.Threading;
@@ -40,6 +41,12 @@ public sealed class PanelOutputView : Decorator
     {
         base.OnDetachedFromVisualTree(e);
         Bind(null);
+    }
+
+    protected override void OnPointerWheelChanged(PointerWheelEventArgs e)
+    {
+        base.OnPointerWheelChanged(e);
+        e.Handled = true;
     }
 
     void Bind(PanelOutputNode? node)

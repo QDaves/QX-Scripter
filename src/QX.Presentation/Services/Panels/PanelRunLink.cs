@@ -27,6 +27,9 @@ public sealed class PanelRunLink : IDisposable
         _host.Cleared += OnCleared;
         _host.Changed += OnChanged;
         _host.ProgressChanged += OnProgress;
+        _host.ProgressDetailChanged += OnProgressDetail;
+        _host.OptionsChanged += OnOptions;
+        _host.ValidationChanged += OnValidation;
         _host.StatusChanged += OnStatus;
         _host.EnabledChanged += OnEnabled;
         _host.VisibilityChanged += OnVisibility;
@@ -49,6 +52,9 @@ public sealed class PanelRunLink : IDisposable
         _host.Cleared -= OnCleared;
         _host.Changed -= OnChanged;
         _host.ProgressChanged -= OnProgress;
+        _host.ProgressDetailChanged -= OnProgressDetail;
+        _host.OptionsChanged -= OnOptions;
+        _host.ValidationChanged -= OnValidation;
         _host.StatusChanged -= OnStatus;
         _host.EnabledChanged -= OnEnabled;
         _host.VisibilityChanged -= OnVisibility;
@@ -93,6 +99,12 @@ public sealed class PanelRunLink : IDisposable
     void OnChanged(string name, string value) => Enqueue(() => _panel.SetFieldValue(name, value));
 
     void OnProgress(string name, double fraction) => Enqueue(() => _panel.SetProgress(name, fraction));
+
+    void OnProgressDetail(string name, bool indeterminate, string caption) => Enqueue(() => _panel.SetProgressDetail(name, indeterminate, caption));
+
+    void OnOptions(string name, IReadOnlyList<string> options, string selected) => Enqueue(() => _panel.SetOptions(name, options, selected));
+
+    void OnValidation(string name, string message) => Enqueue(() => _panel.SetValidation(name, message));
 
     void OnStatus(string name, string text) => Enqueue(() => _panel.SetStatus(name, text));
 

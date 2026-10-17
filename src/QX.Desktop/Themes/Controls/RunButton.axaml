@@ -122,6 +122,11 @@
     <Style Selector="^:disabled">
       <Setter Property="Opacity" Value="{DynamicResource QxDisabledOpacity}" />
     </Style>
+    <Style Selector="^:panel">
+      <Setter Property="Background" Value="{DynamicResource QxFillHoverBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource QxTextSecondaryBrush}" />
+      <Setter Property="AutomationProperties.Name" Value="UI mode. Active while this tab is open." />
+    </Style>
   </ControlTheme>
 
 </ResourceDictionary>

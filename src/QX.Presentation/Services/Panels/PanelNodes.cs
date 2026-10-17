@@ -67,7 +67,17 @@ public abstract partial class PanelFieldNode : PanelNode
 
     public string? Help { get; protected init; }
 
+    [ObservableProperty]
+    public partial string ValidationMessage { get; set; } = "";
+
     public abstract string ReadValue();
+
+    public override void CarryFrom(PanelNode previous)
+    {
+        base.CarryFrom(previous);
+        if (previous is PanelFieldNode field)
+            ValidationMessage = field.ValidationMessage;
+    }
 
     public void WriteValue(string value)
     {
@@ -174,7 +184,25 @@ public sealed partial class PanelSelectFieldNode : PanelFieldNode
         Seed(() => Selected = Options.FirstOrDefault(option => string.Equals(option, wanted, StringComparison.Ordinal)) ?? Options.FirstOrDefault());
     }
 
-    public IReadOnlyList<string> Options { get; }
+    public ObservableCollection<string> Options { get; }
+
+    public void SetOptions(IReadOnlyList<string> options, string selected)
+    {
+        Seed(() =>
+        {
+            Options.Clear();
+            foreach (string option in options)
+                Options.Add(option);
+            Selected = Options.Contains(selected) ? selected : Options.FirstOrDefault();
+        });
+    }
+
+    public override void CarryFrom(PanelNode previous)
+    {
+        base.CarryFrom(previous);
+        if (previous is PanelSelectFieldNode select && Field.Options.SequenceEqual(select.Field.Options))
+            SetOptions(select.Options, select.ReadValue());
+    }
 
     [ObservableProperty]
     public partial string? Selected { get; set; }
@@ -253,8 +281,18 @@ public sealed partial class PanelFileFieldNode : PanelFieldNode
         : base(source, edited)
     {
         Placeholder ??= "No file selected";
+        IsImage = source.Field.Kind == UiFieldKind.Image;
+        ShowPicker = !IsImage || source.Attr.Flag("picker") == true;
+        ImageHeight = double.TryParse(source.Attr.Text("height"), NumberStyles.Float, CultureInfo.InvariantCulture, out double height)
+            && double.IsFinite(height) ? Math.Clamp(height, 32, 1200) : 240;
         WriteValue(source.Field.Default);
     }
+
+    public bool IsImage { get; }
+
+    public bool ShowPicker { get; }
+
+    public double ImageHeight { get; }
 
     [ObservableProperty]
     public partial string Path { get; set; } = "";
@@ -311,6 +349,7 @@ public sealed partial class PanelButtonNode : PanelNode
     public partial bool IsPanelBusy { get; set; }
 
     [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(PressCommand))]
     public partial bool IsBusy { get; set; }
 
     protected override void OnPropertyChanged(PropertyChangedEventArgs args)
@@ -327,7 +366,7 @@ public sealed partial class PanelButtonNode : PanelNode
             IsBusy = button.IsBusy;
     }
 
-    bool CanPress() => IsWanted && !IsPanelBusy;
+    bool CanPress() => IsWanted && !IsPanelBusy && !IsBusy;
 
     [RelayCommand(CanExecute = nameof(CanPress))]
     void Press() => _pressed(Name);
@@ -609,6 +648,7 @@ public sealed partial class PanelProgressNode : PanelNode
     {
         Name = source.Name;
         Label = source.Label;
+        IsIndeterminate = source.Attr.Flag("indeterminate") ?? false;
     }
 
     public override string Name { get; }
@@ -618,11 +658,21 @@ public sealed partial class PanelProgressNode : PanelNode
     [ObservableProperty]
     public partial double Fraction { get; set; }
 
+    [ObservableProperty]
+    public partial bool IsIndeterminate { get; set; }
+
+    [ObservableProperty]
+    public partial string Caption { get; set; } = "";
+
     public override void CarryFrom(PanelNode previous)
     {
         base.CarryFrom(previous);
         if (previous is PanelProgressNode progress)
+        {
             Fraction = progress.Fraction;
+            IsIndeterminate = progress.IsIndeterminate;
+            Caption = progress.Caption;
+        }
     }
 }
 

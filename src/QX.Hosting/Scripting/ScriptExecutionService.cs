@@ -18,6 +18,7 @@ public sealed record ScriptExecutionRequest
     public required string SourceIdentity { get; init; }
     public required string FileName { get; init; }
     public TimeSpan? Timeout { get; init; }
+    public bool WaitForCatalog { get; init; } = true;
     public TimeSpan BackgroundDrainTimeout { get; init; } = TimeSpan.FromMilliseconds(500);
     public Action<string>? OutputWritten { get; init; }
     public Action<Diagnostic>? DiagnosticReported { get; init; }
@@ -283,7 +284,8 @@ public sealed class ScriptExecutionService(
         try
         {
             ChangeState(ScriptRunState.Compiling);
-            await extension.WaitForCatalogBuildAsync(run_source.Token).ConfigureAwait(false);
+            if (request.WaitForCatalog)
+                await extension.WaitForCatalogBuildAsync(run_source.Token).ConfigureAwait(false);
             stage = "compile";
             ScriptProgram program = await Task.Run(
                 () => ScriptEngine.Prepare(request.Code, request.FileName, scriptsDirectory, extension.Messages),

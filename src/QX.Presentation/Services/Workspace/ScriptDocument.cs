@@ -42,6 +42,7 @@ public sealed partial class ScriptDocument : ObservableObject, IRunSource, IDisp
     string _text;
     bool _disposed;
     bool _console_seeded;
+    bool _refreshing;
     string? _disk_text;
 
     public ScriptDocument(string name, string text, string? filePath, IUiDispatcher dispatcher, TimeProvider time, Func<ScriptDocument, DocumentParts> parts)
@@ -69,6 +70,8 @@ public sealed partial class ScriptDocument : ObservableObject, IRunSource, IDisp
     public PanelDocument Panel { get; }
 
     public bool IsClosed { get; private set; }
+
+    internal bool ActivationDeferred { get; set; }
 
     public string StatusText => Run.IsArmedIdle && Run.IsAlive ? "ready" : Run.State switch
     {
@@ -232,6 +235,37 @@ public sealed partial class ScriptDocument : ObservableObject, IRunSource, IDisp
 
     public void SetPanelMode(bool panelMode) => PanelMode = panelMode && HasUi;
 
+    public void ActivatePanel(bool restart = false)
+    {
+        if (!HasUi || IsClosed || _disposed || _refreshing || ActivationDeferred)
+            return;
+        if (Run.IsAlive && (restart || !string.Equals(Run.StartedCode, Text, StringComparison.Ordinal)))
+        {
+            RefreshPanelAsync().Observe("scripts");
+            return;
+        }
+        if (!Run.IsAlive)
+        {
+            Panel.Rebuild(Text);
+            Run.Start(null, panelMode: true);
+        }
+    }
+
+    async Task RefreshPanelAsync()
+    {
+        _refreshing = true;
+        try
+        {
+            Run.RequestStop();
+            await Run.Completion.WaitAsync(CancellationToken.None);
+        }
+        finally
+        {
+            _refreshing = false;
+        }
+        ActivatePanel();
+    }
+
     internal void MarkClosed() => IsClosed = true;
 
     public void Dispose()
@@ -239,6 +273,7 @@ public sealed partial class ScriptDocument : ObservableObject, IRunSource, IDisp
         if (_disposed)
             return;
         _disposed = true;
+        Run.RequestStop();
         Run.PropertyChanged -= OnRunChanged;
         _panel_probe.Dispose();
         Console.Dispose();
@@ -283,11 +318,17 @@ public sealed partial class ScriptDocument : ObservableObject, IRunSource, IDisp
 
     void ProbePanel()
     {
+        bool discovered = !HasUi;
         Describe(UiSpec.Parse(Text));
         SeedConsole();
         if (!HasUi && PanelMode)
             PanelMode = false;
         if (PanelMode)
             Panel.Rebuild(Text);
+        if (discovered && HasUi)
+        {
+            SetPanelMode(true);
+            ActivatePanel();
+        }
     }
 }

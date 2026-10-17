@@ -24,7 +24,8 @@ public enum UiFieldKind
     /// <summary>A slider limited to the <c>min</c> and <c>max</c> range, declared with <c>//@ui:slider</c>.</summary>
     Slider,
     /// <summary>A color input that holds a <c>#RRGGBB</c> value, declared with <c>//@ui:color</c>.</summary>
-    Color
+    Color,
+    Image
 }
 
 /// <summary>Specifies how prominent a panel button is.</summary>
@@ -456,6 +457,8 @@ public sealed partial class UiSpec
             Field(UiFieldKind.Select)),
         (new("file", "//@ui:file name \"Label\"", "A file picker, read as the chosen path.", []),
             Field(UiFieldKind.File)),
+        (new("image", "//@ui:image name \"Label\"", "An image from a local file. Use Ui.Set to replace it; picker=true adds a file picker.", []),
+            Field(UiFieldKind.Image)),
         (new("color", "//@ui:color name \"Label\" =\"#8EA2FF\"", "A color input, read as a #RRGGBB string.", []),
             Field(UiFieldKind.Color)),
         (new("label", "//@ui:label \"Text\"", "Static text.", []),

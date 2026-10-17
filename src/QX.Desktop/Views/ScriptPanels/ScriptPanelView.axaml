@@ -59,7 +59,7 @@
   <UserControl.DataTemplates>
 
     <DataTemplate DataType="nodes:PanelTextFieldNode" x:DataType="nodes:PanelTextFieldNode">
-      <StackPanel IsVisible="{Binding IsVisible}" ToolTip.Tip="{Binding Tooltip}">
+      <StackPanel IsEnabled="{Binding IsWanted}" IsVisible="{Binding IsVisible}" ToolTip.Tip="{Binding Tooltip}">
         <TextBlock Classes="field-label" Text="{Binding Label}" />
         <TextBox Text="{Binding Text, Mode=TwoWay}"
                  Classes.qx-multiline="{Binding IsMultiline}"
@@ -68,11 +68,13 @@
                  AutomationProperties.HelpText="{Binding Help}" />
         <TextBlock Classes="helper" Text="{Binding Help}" TextWrapping="Wrap"
                    IsVisible="{Binding Help, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+        <TextBlock Classes="helper danger" Text="{Binding ValidationMessage}" TextWrapping="Wrap"
+                   IsVisible="{Binding ValidationMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
       </StackPanel>
     </DataTemplate>
 
     <DataTemplate DataType="nodes:PanelNumberFieldNode" x:DataType="nodes:PanelNumberFieldNode">
-      <StackPanel IsVisible="{Binding IsVisible}" ToolTip.Tip="{Binding Tooltip}">
+      <StackPanel IsEnabled="{Binding IsWanted}" IsVisible="{Binding IsVisible}" ToolTip.Tip="{Binding Tooltip}">
         <TextBlock Classes="field-label" Text="{Binding Label}" />
         <TextBox Classes="mono" Text="{Binding Text, Mode=TwoWay}"
                  PlaceholderText="{Binding Placeholder}"
@@ -80,21 +82,25 @@
                  AutomationProperties.HelpText="{Binding Help}" />
         <TextBlock Classes="helper" Text="{Binding Help}" TextWrapping="Wrap"
                    IsVisible="{Binding Help, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+        <TextBlock Classes="helper danger" Text="{Binding ValidationMessage}" TextWrapping="Wrap"
+                   IsVisible="{Binding ValidationMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
       </StackPanel>
     </DataTemplate>
 
     <DataTemplate DataType="nodes:PanelBoolFieldNode" x:DataType="nodes:PanelBoolFieldNode">
-      <StackPanel IsVisible="{Binding IsVisible}" ToolTip.Tip="{Binding Tooltip}">
+      <StackPanel IsEnabled="{Binding IsWanted}" IsVisible="{Binding IsVisible}" ToolTip.Tip="{Binding Tooltip}">
         <CheckBox Content="{Binding Label}" IsChecked="{Binding IsChecked, Mode=TwoWay}"
                   AutomationProperties.Name="{Binding Label}"
                   AutomationProperties.HelpText="{Binding Help}" />
         <TextBlock Classes="helper" Text="{Binding Help}" Margin="24,6,0,0" TextWrapping="Wrap"
                    IsVisible="{Binding Help, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+        <TextBlock Classes="helper danger" Text="{Binding ValidationMessage}" TextWrapping="Wrap"
+                   IsVisible="{Binding ValidationMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
       </StackPanel>
     </DataTemplate>
 
     <DataTemplate DataType="nodes:PanelSelectFieldNode" x:DataType="nodes:PanelSelectFieldNode">
-      <StackPanel IsVisible="{Binding IsVisible}" ToolTip.Tip="{Binding Tooltip}">
+      <StackPanel IsEnabled="{Binding IsWanted}" IsVisible="{Binding IsVisible}" ToolTip.Tip="{Binding Tooltip}">
         <TextBlock Classes="field-label" Text="{Binding Label}" />
         <ComboBox ItemsSource="{Binding Options}" SelectedItem="{Binding Selected, Mode=TwoWay}"
                   HorizontalAlignment="Stretch"
@@ -103,11 +109,13 @@
                   AutomationProperties.HelpText="{Binding Help}" />
         <TextBlock Classes="helper" Text="{Binding Help}" TextWrapping="Wrap"
                    IsVisible="{Binding Help, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+        <TextBlock Classes="helper danger" Text="{Binding ValidationMessage}" TextWrapping="Wrap"
+                   IsVisible="{Binding ValidationMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
       </StackPanel>
     </DataTemplate>
 
     <DataTemplate DataType="nodes:PanelSliderFieldNode" x:DataType="nodes:PanelSliderFieldNode">
-      <StackPanel IsVisible="{Binding IsVisible}" ToolTip.Tip="{Binding Tooltip}">
+      <StackPanel IsEnabled="{Binding IsWanted}" IsVisible="{Binding IsVisible}" ToolTip.Tip="{Binding Tooltip}">
         <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,4">
           <TextBlock Classes="field-label" Text="{Binding Label}" Margin="0" VerticalAlignment="Center" />
           <Border Grid.Column="1" Classes="value-chip">
@@ -119,11 +127,13 @@
                 AutomationProperties.Name="{Binding Label}" />
         <TextBlock Classes="helper" Text="{Binding Help}" TextWrapping="Wrap"
                    IsVisible="{Binding Help, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+        <TextBlock Classes="helper danger" Text="{Binding ValidationMessage}" TextWrapping="Wrap"
+                   IsVisible="{Binding ValidationMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
       </StackPanel>
     </DataTemplate>
 
     <DataTemplate DataType="nodes:PanelColorFieldNode" x:DataType="nodes:PanelColorFieldNode">
-      <StackPanel IsVisible="{Binding IsVisible}" ToolTip.Tip="{Binding Tooltip}">
+      <StackPanel IsEnabled="{Binding IsWanted}" IsVisible="{Binding IsVisible}" ToolTip.Tip="{Binding Tooltip}">
         <TextBlock Classes="field-label" Text="{Binding Label}" />
         <DockPanel>
           <local:PanelColorSwatch DockPanel.Dock="Left" Value="{Binding Text}"
@@ -138,13 +148,21 @@
         </DockPanel>
         <TextBlock Classes="helper" Text="{Binding Help}" TextWrapping="Wrap"
                    IsVisible="{Binding Help, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+        <TextBlock Classes="helper danger" Text="{Binding ValidationMessage}" TextWrapping="Wrap"
+                   IsVisible="{Binding ValidationMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
       </StackPanel>
     </DataTemplate>
 
     <DataTemplate DataType="nodes:PanelFileFieldNode" x:DataType="nodes:PanelFileFieldNode">
-      <StackPanel IsVisible="{Binding IsVisible}" ToolTip.Tip="{Binding Tooltip}">
+      <StackPanel IsEnabled="{Binding IsWanted}" IsVisible="{Binding IsVisible}" ToolTip.Tip="{Binding Tooltip}">
         <TextBlock Classes="field-label" Text="{Binding Label}" />
-        <DockPanel>
+        <Border IsVisible="{Binding IsImage}" Height="{Binding ImageHeight}" Padding="8" Margin="0,0,0,8"
+                Background="{DynamicResource QxSurfaceBaseBrush}" BorderBrush="{DynamicResource QxBorderSubtleBrush}"
+                BorderThickness="1" CornerRadius="{DynamicResource QxRadiusSm}">
+          <Image Tag="{Binding Path}" Stretch="Uniform" Loaded="ImageLoaded" Unloaded="ImageUnloaded"
+                 AutomationProperties.Name="{Binding Label}" />
+        </Border>
+        <DockPanel IsVisible="{Binding ShowPicker}">
           <Button DockPanel.Dock="Right" Content="Browse" Margin="8,0,0,0"
                   Command="{Binding $parent[local:ScriptPanelView].((vm:ScriptPanelViewModel)DataContext).BrowseCommand}"
                   CommandParameter="{Binding}"
@@ -154,6 +172,8 @@
         </DockPanel>
         <TextBlock Classes="helper" Text="{Binding Help}" TextWrapping="Wrap"
                    IsVisible="{Binding Help, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+        <TextBlock Classes="helper danger" Text="{Binding ValidationMessage}" TextWrapping="Wrap"
+                   IsVisible="{Binding ValidationMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
       </StackPanel>
     </DataTemplate>
 
@@ -228,10 +248,12 @@
         <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,6">
           <TextBlock Classes="field-label" Text="{Binding Label}" Margin="0" VerticalAlignment="Center" />
           <TextBlock Grid.Column="1" Classes="mono caption" FontWeight="Medium"
-                     Text="{Binding Fraction, Converter={StaticResource PanelPercent}}" VerticalAlignment="Center" />
+                     Text="{Binding Fraction, Converter={StaticResource PanelPercent}}" IsVisible="{Binding !IsIndeterminate}" VerticalAlignment="Center" />
         </Grid>
-        <ProgressBar Classes="running" Minimum="0" Maximum="1" Value="{Binding Fraction}"
+        <ProgressBar Classes="running" Minimum="0" Maximum="1" Value="{Binding Fraction}" IsIndeterminate="{Binding IsIndeterminate}"
                      AutomationProperties.Name="{Binding Label}" />
+        <TextBlock Classes="helper" Text="{Binding Caption}" TextWrapping="Wrap"
+                   IsVisible="{Binding Caption, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
       </StackPanel>
     </DataTemplate>
 
@@ -295,7 +317,7 @@
 
   </UserControl.DataTemplates>
 
-  <Grid RowDefinitions="Auto,*">
+  <Grid RowDefinitions="Auto,Auto,*">
 
     <Border Grid.Row="0" IsVisible="{Binding HasErrors}" Padding="32,8" Classes="hairline-bottom"
             Background="{DynamicResource QxDangerBandBrush}">
@@ -303,11 +325,19 @@
         <c:Icon Kind="Error" Size="16" VerticalAlignment="Center" Foreground="{DynamicResource QxDangerBrush}" />
         <TextBlock Grid.Column="1" Classes="body danger" Text="{Binding ErrorSummary}" TextTrimming="CharacterEllipsis"
                    Margin="8,0" VerticalAlignment="Center" />
-        <Button Grid.Column="2" Theme="{StaticResource QxLinkButton}" Content="View in code" Command="{Binding ShowCodeCommand}" />
+        <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="12">
+          <Button Theme="{StaticResource QxLinkButton}" Content="Retry" Command="{Binding RetryCommand}" />
+          <Button Theme="{StaticResource QxLinkButton}" Content="View in code" Command="{Binding ShowCodeCommand}" />
+        </StackPanel>
       </Grid>
     </Border>
 
-    <Panel Grid.Row="1">
+    <StackPanel Grid.Row="1" Margin="32,12" Spacing="8" IsVisible="{Binding Panel.IsStarting}">
+      <TextBlock Classes="small secondary" Text="Preparing interface…" />
+      <ProgressBar IsIndeterminate="True" Height="3" />
+    </StackPanel>
+
+    <Panel Grid.Row="2">
       <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto" Padding="32,24,32,32">
         <StackPanel x:Name="Page">
           <SelectableTextBlock Classes="body secondary" Text="{Binding Panel.Description}" TextWrapping="Wrap" Margin="0,0,0,24"

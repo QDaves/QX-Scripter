@@ -1,7 +1,8 @@
 # Panels
 
 A script declares its own user interface with `//@ui:` directives. The desktop app shows it in the
-tab's panel view. Typing `//@` in the editor lists every directive with its syntax.
+tab's panel view. An open UI tab initializes automatically and stays active until closed, including
+when another tab is selected. Typing `//@` in the editor lists every directive with its syntax.
 
 ```csharp
 //@ui:title Greeter
@@ -36,6 +37,7 @@ text is what the panel shows. Without a label the name is turned into one, so `m
 | `//@ui:bool name "Label" =true` | `bool` |
 | `//@ui:select name "Label" [A,B,C] =A` | `string`, the first option without a default |
 | `//@ui:file name "Label"` | a file path |
+| `//@ui:image name "Label" [height=240] [picker=true]` | a local image path, displayed as a preview |
 | `//@ui:color name "Label" ="#8EA2FF"` | `string` |
 
 Inputs also take `help="..."`, a line under the control, and `placeholder="..."`, hint text inside
@@ -48,7 +50,7 @@ it. `min` and `max` are a hint on `int` and `number` and a real range on `slider
 | `//@ui:label "Text"` | Static text. |
 | `//@ui:button name "Label" [style=primary\|normal\|quiet\|danger]` | A button. The first one is filled. |
 | `//@ui:output name "Label" [height=200] [wrap] [mono=false] [toolbar=false]` | A text box the script writes to. |
-| `//@ui:progress name "Label"` | A progress bar. |
+| `//@ui:progress name "Label" [indeterminate=true]` | A progress bar, optionally without a known total. |
 | `//@ui:status name "Label" ="text"` | A status line. |
 | `//@ui:table name "Label" [Col,Col] [height=220] [selectable=false] [toolbar=false]` | A table. |
 
@@ -85,9 +87,21 @@ a name the panel does not declare is reported as warning `QX1005`. A name the sc
 
 ## Required panels
 
-A script with `//@ui:required` opens in panel view, and **Run** starts it there. Runs without a panel,
+A script with `//@ui:required` opens and initializes in panel view. Runs without a panel,
 such as the command line or the MCP tools `run_script` and `run_code`, are refused with an error
 instead of running with default values.
+
+In panel view the toolbar displays a fixed-width **UI mode** indicator. Actions belong to the
+buttons inside the panel. UI scripts stay alive when switched to code view; returning to the panel
+applies edited code by stopping the old execution before initializing its replacement. Closing the
+tab cancels its actions and removes its event subscriptions. A failed initialization has a **Retry**
+button next to **View in code**.
+
+Image previews decode local PNG, JPEG, WebP and other formats supported by the desktop image
+decoder. Set the image path with `Ui.Set("preview", path)`. Add `picker=true` to let the user choose
+a file. Remote images should be downloaded by the script before setting the local path. Preview
+decoding runs off the UI thread, is limited to 64 MB per source, and limits the decoded preview to
+2048 pixels on its longest side without changing the original file.
 
 ## Tables
 

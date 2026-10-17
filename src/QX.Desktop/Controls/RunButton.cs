@@ -14,7 +14,7 @@ using Qx.Presentation.Visuals;
 
 namespace Qx.Desktop.Controls;
 
-[PseudoClasses(":idle", ":compiling", ":running", ":ready", ":stopping", ":busy", ":active", ":keycap")]
+[PseudoClasses(":idle", ":compiling", ":running", ":ready", ":stopping", ":busy", ":active", ":keycap", ":panel")]
 public sealed class RunButton : Button
 {
     public static readonly TimeSpan LapDuration = TimeSpan.FromSeconds(1.6);
@@ -22,6 +22,9 @@ public sealed class RunButton : Button
 
     public static readonly StyledProperty<RunButtonState> StateProperty =
         AvaloniaProperty.Register<RunButton, RunButtonState>(nameof(State));
+
+    public static readonly StyledProperty<bool> PanelModeProperty =
+        AvaloniaProperty.Register<RunButton, bool>(nameof(PanelMode));
 
     public static readonly StyledProperty<ICommand?> RunCommandProperty =
         AvaloniaProperty.Register<RunButton, ICommand?>(nameof(RunCommand));
@@ -59,6 +62,12 @@ public sealed class RunButton : Button
         set => SetValue(RunCommandProperty, value);
     }
 
+    public bool PanelMode
+    {
+        get => GetValue(PanelModeProperty);
+        set => SetValue(PanelModeProperty, value);
+    }
+
     public ICommand? StopCommand
     {
         get => GetValue(StopCommandProperty);
@@ -93,7 +102,7 @@ public sealed class RunButton : Button
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
     {
         base.OnPropertyChanged(change);
-        if (change.Property == StateProperty || change.Property == RunCommandProperty || change.Property == StopCommandProperty)
+        if (change.Property == StateProperty || change.Property == PanelModeProperty || change.Property == RunCommandProperty || change.Property == StopCommandProperty)
             Apply();
     }
 
@@ -112,6 +121,17 @@ public sealed class RunButton : Button
     void Apply()
     {
         RunButtonState state = State;
+        PseudoClasses.Set(":panel", PanelMode);
+        if (PanelMode)
+        {
+            foreach (string name in new[] { ":idle", ":compiling", ":running", ":ready", ":stopping", ":busy", ":active", ":keycap" })
+                PseudoClasses.Set(name, false);
+            Label = "UI mode";
+            Glyph = IconKind.PanelView;
+            Command = null;
+            StopLap();
+            return;
+        }
         PseudoClasses.Set(":idle", state == RunButtonState.Idle);
         PseudoClasses.Set(":compiling", state == RunButtonState.Compiling);
         PseudoClasses.Set(":running", state == RunButtonState.Running);
@@ -152,7 +172,7 @@ public sealed class RunButton : Button
 
     void update_lap()
     {
-        if (State == RunButtonState.Idle)
+        if (PanelMode || State == RunButtonState.Idle)
         {
             StopLap();
             return;

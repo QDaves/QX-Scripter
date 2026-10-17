@@ -29,6 +29,7 @@ public sealed class ScriptWorkspace : IScriptWorkspace, IDisposable
     ScriptDocument? _active;
     Debouncer? _disk_check;
     IDisposable? _disk_watch;
+    bool _restoring;
 
     public ScriptWorkspace(
         ScriptDocumentFactory factory,
@@ -89,12 +90,13 @@ public sealed class ScriptWorkspace : IScriptWorkspace, IDisposable
     public ScriptDocument Add(string name, string code, string? path, bool modified)
     {
         ScriptDocument document = _factory.Create(name, code ?? "", path);
+        document.ActivationDeferred = _restoring;
         if (path is not null && _settings.PanelFor(PathComparison.Full(path)) is { } memory)
         {
             document.Panel.Restore(memory.Values);
             document.SetPanelMode(memory.Panel || document.PanelRequired);
         }
-        else if (document.PanelRequired)
+        else if (document.HasUi)
         {
             document.SetPanelMode(true);
         }
@@ -106,6 +108,8 @@ public sealed class ScriptWorkspace : IScriptWorkspace, IDisposable
         Active = document;
         DocumentsChanged?.Invoke();
         WatchDisk();
+        if (!_restoring)
+            document.ActivatePanel();
         return document;
     }
 
@@ -267,6 +271,7 @@ public sealed class ScriptWorkspace : IScriptWorkspace, IDisposable
 
     public async Task RestoreAsync(CancellationToken cancellationToken)
     {
+        _restoring = true;
         try
         {
             if (_settings.Current.RestoreSession && _settings.Current.Session is { } session)
@@ -285,6 +290,12 @@ public sealed class ScriptWorkspace : IScriptWorkspace, IDisposable
         }
         finally
         {
+            _restoring = false;
+            foreach (ScriptDocument document in _documents)
+                document.ActivationDeferred = false;
+            if (!cancellationToken.IsCancellationRequested)
+                foreach (ScriptDocument document in _documents)
+                    document.ActivatePanel();
             StartAutosave();
             DocumentsChanged?.Invoke();
         }

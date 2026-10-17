@@ -172,7 +172,32 @@ public sealed partial class PanelDocument : ObservableObject, IPanelRunTarget, I
     public void SetProgress(string name, double fraction)
     {
         if (_progress.TryGetValue(name, out PanelProgressNode? progress))
+        {
             progress.Fraction = double.IsFinite(fraction) ? Math.Clamp(fraction, 0, 1) : 0;
+            progress.IsIndeterminate = false;
+        }
+    }
+
+    public void SetProgressDetail(string name, bool indeterminate, string caption)
+    {
+        if (!_progress.TryGetValue(name, out PanelProgressNode? progress))
+            return;
+        progress.IsIndeterminate = indeterminate;
+        progress.Caption = caption;
+    }
+
+    public void SetOptions(string name, IReadOnlyList<string> options, string selected)
+    {
+        if (_fields.GetValueOrDefault(name) is not PanelSelectFieldNode field)
+            return;
+        field.SetOptions(options, selected);
+        _values[name] = field.ReadValue();
+    }
+
+    public void SetValidation(string name, string message)
+    {
+        if (_fields.TryGetValue(name, out PanelFieldNode? field))
+            field.ValidationMessage = message;
     }
 
     public void SetStatus(string name, string text)
@@ -238,6 +263,9 @@ public sealed partial class PanelDocument : ObservableObject, IPanelRunTarget, I
     public void SetRunBusy(bool busy)
     {
         _run_busy = busy;
+        if (!busy && !_document.Run.IsAlive)
+            foreach (PanelButtonNode button in _buttons.Values)
+                button.IsBusy = false;
         ApplyBusy();
     }
 
@@ -360,7 +388,7 @@ public sealed partial class PanelDocument : ObservableObject, IPanelRunTarget, I
                     UiFieldKind.Select => new PanelSelectFieldNode(field, OnFieldEdited),
                     UiFieldKind.Slider => new PanelSliderFieldNode(field, OnFieldEdited),
                     UiFieldKind.Color => new PanelColorFieldNode(field, OnFieldEdited),
-                    UiFieldKind.File => new PanelFileFieldNode(field, OnFieldEdited),
+                    UiFieldKind.File or UiFieldKind.Image => new PanelFileFieldNode(field, OnFieldEdited),
                     _ => new PanelTextFieldNode(field, OnFieldEdited)
                 };
                 return Register(_fields, made.Name, made);

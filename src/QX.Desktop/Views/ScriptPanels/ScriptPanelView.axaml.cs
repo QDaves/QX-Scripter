@@ -53,6 +53,11 @@ public sealed partial class ScriptPanelView : UserControl
 
     public void Release()
     {
+        foreach (Image image in _images.Keys.ToArray())
+        {
+            image.PropertyChanged -= ImageChanged;
+            ClearImage(image);
+        }
         RemoveHandler(KeyDownEvent, OnKeyDown);
         if (_panel is { } panel)
         {

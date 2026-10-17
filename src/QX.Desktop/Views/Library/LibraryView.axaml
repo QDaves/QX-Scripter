@@ -23,21 +23,42 @@
     <Grid ColumnDefinitions="184,*">
       <Border BorderThickness="0,0,1,0" BorderBrush="{DynamicResource QxBorderSubtleBrush}">
         <Grid RowDefinitions="Auto,*,Auto" Margin="0,16,0,12">
-          <TextBlock Text="Browse" Classes="small secondary strong" Margin="20,0,12,12" />
-          <ListBox Name="Categories" Grid.Row="1"
-                   ItemsSource="{Binding Filters}"
-                   SelectedItem="{Binding SelectedFilter, Mode=TwoWay}"
-                   ItemContainerTheme="{StaticResource Library.FilterItem}"
-                   AutomationProperties.Name="Script categories">
-            <ListBox.ItemTemplate>
-              <DataTemplate x:DataType="vm:LibraryFilterOption">
-                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
-                  <TextBlock Text="{Binding Name}" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding Name}" />
-                  <TextBlock Grid.Column="1" Text="{Binding Count}" Classes="small tertiary" VerticalAlignment="Center" />
-                </Grid>
-              </DataTemplate>
-            </ListBox.ItemTemplate>
-          </ListBox>
+          <TextBlock Text="Library views" Classes="small secondary strong" Margin="20,0,12,12" />
+          <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Disabled">
+            <StackPanel>
+              <ListBox ItemsSource="{Binding FixedFilters}"
+                       SelectedItem="{Binding SelectedFixedFilter, Mode=TwoWay}"
+                       ItemContainerTheme="{StaticResource Library.FilterItem}"
+                       AutomationProperties.Name="Built-in library views">
+                <ListBox.ItemTemplate>
+                  <DataTemplate x:DataType="vm:LibraryFilterOption">
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                      <TextBlock Text="{Binding Name}" FontWeight="Medium" TextTrimming="CharacterEllipsis" />
+                      <TextBlock Grid.Column="1" Text="{Binding Count}" Classes="small tertiary" VerticalAlignment="Center" />
+                    </Grid>
+                  </DataTemplate>
+                </ListBox.ItemTemplate>
+              </ListBox>
+              <Border Height="1" Background="{DynamicResource QxBorderSubtleBrush}" Margin="20,20,16,16" />
+              <TextBlock Text="Your categories" Classes="small secondary strong" Margin="20,0,12,12" />
+              <TextBlock Text="Assign a category from a script’s menu." Classes="small tertiary"
+                         TextWrapping="Wrap" Margin="20,0,16,0" IsVisible="{Binding !HasCategories}" />
+              <ListBox Name="Categories"
+                       ItemsSource="{Binding CategoryFilters}"
+                       SelectedItem="{Binding SelectedCategory, Mode=TwoWay}"
+                       ItemContainerTheme="{StaticResource Library.FilterItem}"
+                       AutomationProperties.Name="Script categories">
+                <ListBox.ItemTemplate>
+                  <DataTemplate x:DataType="vm:LibraryFilterOption">
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                      <TextBlock Text="{Binding Name}" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding Name}" />
+                      <TextBlock Grid.Column="1" Text="{Binding Count}" Classes="small tertiary" VerticalAlignment="Center" />
+                    </Grid>
+                  </DataTemplate>
+                </ListBox.ItemTemplate>
+              </ListBox>
+            </StackPanel>
+          </ScrollViewer>
           <StackPanel Grid.Row="2" Margin="12,12,8,0" Spacing="4">
             <Button Classes="subtle small" Command="{Binding OpenFolderCommand}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left">
               <StackPanel Orientation="Horizontal" Spacing="8">

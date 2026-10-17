@@ -23,9 +23,10 @@ public sealed class ScriptUiHost
 {
     private readonly ScriptUi _ui;
     private readonly Dictionary<string, List<Func<Task>>> _clicks = new(StringComparer.OrdinalIgnoreCase);
-    private readonly Dictionary<string, List<Action<string>>> _changes = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, List<Func<string, Task>>> _changes = new(StringComparer.OrdinalIgnoreCase);
     private readonly Lock _handler_sync = new();
     private Task _changing = Task.CompletedTask;
+    private bool _closed;
     private string? _clicked;
     private Func<string, string, Task<bool>>? _confirm;
     private Func<string, string, Task<string?>>? _prompt;
@@ -64,6 +65,12 @@ public sealed class ScriptUiHost
     /// <summary>Occurs when the script moves a progress bar.</summary>
     /// <remarks>The arguments are the bar name and the fraction done, between 0 and 1.</remarks>
     public event Action<string, double>? ProgressChanged;
+
+    public event Action<string, bool, string>? ProgressDetailChanged;
+
+    public event Action<string, IReadOnlyList<string>, string>? OptionsChanged;
+
+    public event Action<string, string>? ValidationChanged;
 
     /// <summary>Occurs when the script replaces a status line.</summary>
     /// <remarks>The arguments are the line name and the new text.</remarks>
@@ -211,8 +218,7 @@ public sealed class ScriptUiHost
     /// <para>
     /// The handlers registered with <see cref="ScriptUi.OnChange(string, Action{string})"/> run on
     /// the thread pool, never on the calling thread. They start one at a time, in the order the
-    /// values were pushed, each once the one before has returned, so an async handler lets the next
-    /// one start at its first <c>await</c>.
+    /// values were pushed, each once the preceding handler has completed, including its asynchronous work.
     /// </para>
     /// </remarks>
     /// <param name="name">The control's name.</param>
@@ -226,18 +232,31 @@ public sealed class ScriptUiHost
 
         lock (_handler_sync)
         {
-            if (!_changes.TryGetValue(name, out List<Action<string>>? list))
+            if (_closed || !_changes.TryGetValue(name, out List<Func<string, Task>>? list))
                 return;
-            Action<string>[] handlers = [.. list];
+            Func<string, Task>[] handlers = [.. list];
             _changing = _changing.ContinueWith(
-                _ =>
+                async _ =>
                 {
-                    foreach (Action<string> handler in handlers)
-                        handler(stored);
+                    foreach (Func<string, Task> handler in handlers)
+                    {
+                        lock (_handler_sync)
+                            if (_closed) return;
+                        await handler(stored).ConfigureAwait(false);
+                    }
                 },
                 CancellationToken.None,
                 TaskContinuationOptions.None,
-                TaskScheduler.Default);
+                TaskScheduler.Default).Unwrap();
+        }
+    }
+
+    public Task FinishChanges()
+    {
+        lock (_handler_sync)
+        {
+            _closed = true;
+            return _changing;
         }
     }
 
@@ -254,10 +273,13 @@ public sealed class ScriptUiHost
     }
 
     internal void AddChange(string name, Action<string> handler)
+        => AddChange(name, value => { handler(value); return Task.CompletedTask; });
+
+    internal void AddChange(string name, Func<string, Task> handler)
     {
         lock (_handler_sync)
         {
-            if (!_changes.TryGetValue(name, out List<Action<string>>? list))
+            if (!_changes.TryGetValue(name, out List<Func<string, Task>>? list))
                 _changes[name] = list = [];
             list.Add(handler);
         }
@@ -272,6 +294,12 @@ public sealed class ScriptUiHost
     internal void RaiseChanged(string name, string value) => Changed?.Invoke(name, value);
 
     internal void RaiseProgressChanged(string name, double fraction) => ProgressChanged?.Invoke(name, fraction);
+
+    internal void RaiseProgressDetailChanged(string name, bool indeterminate, string caption) => ProgressDetailChanged?.Invoke(name, indeterminate, caption);
+
+    internal void RaiseOptionsChanged(string name, IReadOnlyList<string> options, string selected) => OptionsChanged?.Invoke(name, options, selected);
+
+    internal void RaiseValidationChanged(string name, string message) => ValidationChanged?.Invoke(name, message);
 
     internal void RaiseStatusChanged(string name, string text) => StatusChanged?.Invoke(name, text);
 

@@ -29,7 +29,8 @@ public enum PressOutcome
 {
     HandlerStarted,
     StopRequested,
-    RunStarted
+    RunStarted,
+    Ignored
 }
 
 public interface IRunSource
@@ -43,6 +44,10 @@ public interface IRunSource
     string Text { get; }
 
     bool PanelRequired { get; }
+
+    bool HasUi => PanelRequired;
+
+    bool IsClosed => false;
 }
 
 public interface IRunHooks
@@ -82,6 +87,7 @@ public sealed partial class ScriptRunController : ObservableObject
     RunFrame? _frame;
     ArmedRun? _armed;
     long _epoch;
+    bool _restarting;
 
     public ScriptRunController(
         IRunSource source,
@@ -109,6 +115,8 @@ public sealed partial class ScriptRunController : ObservableObject
     public ReadOnlyObservableCollection<ScriptExecutionError> Errors { get; }
 
     public Task Completion { get; private set; } = Task.CompletedTask;
+
+    public string? StartedCode { get; private set; }
 
     public event Action? Started;
 
@@ -157,9 +165,9 @@ public sealed partial class ScriptRunController : ObservableObject
 
     public RunStartOutcome Start(string? pressedButton, bool panelMode)
     {
-        if (IsAlive)
+        if (IsAlive || _source.IsClosed || _lifetime.IsCancellationRequested)
             return RunStartOutcome.AlreadyAlive;
-        var frame = new RunFrame(++_epoch, CancellationTokenSource.CreateLinkedTokenSource(_lifetime), panelMode || _source.PanelRequired);
+        var frame = new RunFrame(++_epoch, CancellationTokenSource.CreateLinkedTokenSource(_lifetime), panelMode || _source.HasUi);
         _frame = frame;
         _armed = null;
         _errors.Clear();
@@ -187,14 +195,32 @@ public sealed partial class ScriptRunController : ObservableObject
     {
         ArgumentException.ThrowIfNullOrEmpty(button);
         if (_armed is { } armed && armed.Ui.HandledButtons.Contains(button, StringComparer.OrdinalIgnoreCase))
-            return FireHandler(armed, button) ? PressOutcome.HandlerStarted : PressOutcome.StopRequested;
+            return FireHandler(armed, button) ? PressOutcome.HandlerStarted : PressOutcome.Ignored;
         if (IsAlive)
         {
-            RequestStop();
-            return PressOutcome.StopRequested;
+            if (_armed is null || !_panel.DeclaredButtons.Contains(button) || _restarting)
+                return PressOutcome.Ignored;
+            RestartAsync(button).Observe("scripts");
+            return PressOutcome.RunStarted;
         }
         Start(button, panelMode: true);
         return PressOutcome.RunStarted;
+    }
+
+    async Task RestartAsync(string button)
+    {
+        _restarting = true;
+        try
+        {
+            RequestStop();
+            await Completion.WaitAsync(CancellationToken.None);
+            if (!_source.IsClosed && !_lifetime.IsCancellationRequested)
+                Start(button, panelMode: true);
+        }
+        finally
+        {
+            _restarting = false;
+        }
     }
 
     partial void OnStateChanged(ScriptRunState value) => _panel.SetRunBusy(IsAlive && !PanelArmed);
@@ -206,6 +232,7 @@ public sealed partial class ScriptRunController : ObservableObject
         string file_name = _source.FilePath ?? ScriptFileName.Normalize(_source.Name) + ScriptFileName.Extension;
         string identity = _source.FilePath is { } path ? Path.GetFullPath(path) : _source.ExecutionIdentity;
         string code = _source.Text;
+        StartedCode = code;
         IDisposable? link = null;
         ScriptRunState terminal = ScriptRunState.Faulted;
         try
@@ -217,6 +244,7 @@ public sealed partial class ScriptRunController : ObservableObject
             ScriptExecutionResult result = await _scripts.RunAsync(new ScriptExecutionRequest
             {
                 Code = code,
+                WaitForCatalog = !frame.PanelMode,
                 SourceIdentity = identity,
                 FileName = file_name,
                 OutputWritten = line => Output.Write(line, OutputLevel.Info),
@@ -304,7 +332,7 @@ public sealed partial class ScriptRunController : ObservableObject
             return false;
         _panel.EndStarting(pressed_button);
         ScriptUiHost ui = ScriptUiHost.Of(globals.Ui);
-        if (!ui.HasHandlers)
+        if (!ui.HasHandlers && !_source.HasUi)
             return false;
         foreach (string handled in ui.HandledButtons)
         {
@@ -321,8 +349,13 @@ public sealed partial class ScriptRunController : ObservableObject
 
     bool FireHandler(ArmedRun armed, string button)
     {
-        if (armed.Frame.StartHandlerAsync(() => armed.Ui.Invoke(button) ?? Task.CompletedTask) is not { } work)
+        if (!armed.Busy.Add(button))
             return false;
+        if (armed.Frame.StartHandlerAsync(() => armed.Ui.Invoke(button) ?? Task.CompletedTask) is not { } work)
+        {
+            armed.Busy.Remove(button);
+            return false;
+        }
         BusyHandlers++;
         _panel.SetButtonBusy(button, true);
         WatchHandlerAsync(armed, button, work).Observe("scripts");
@@ -356,21 +389,23 @@ public sealed partial class ScriptRunController : ObservableObject
         finally
         {
             armed.Frame.ForgetHandler(work);
+            armed.Busy.Remove(button);
             if (ReferenceEquals(_armed, armed))
+            {
                 BusyHandlers = Math.Max(0, BusyHandlers - 1);
-            _panel.SetButtonBusy(button, false);
+                _panel.SetButtonBusy(button, false);
+            }
         }
     }
 
     async Task DrainHandlersAsync(RunFrame frame)
     {
         Task[] pending = frame.BeginDrain();
+        Task changes = _armed is { } armed && ReferenceEquals(armed.Frame, frame) ? armed.Ui.FinishChanges() : Task.CompletedTask;
         _dispatcher.Post(() => Disarm(frame));
-        if (pending.Length == 0)
-            return;
         try
         {
-            await Task.WhenAll(pending).ConfigureAwait(false);
+            await Task.WhenAll(pending.Append(changes)).ConfigureAwait(false);
         }
         catch (Exception error) when (error is not OutOfMemoryException)
         {
@@ -438,5 +473,7 @@ public sealed partial class ScriptRunController : ObservableObject
         public RunFrame Frame { get; } = frame;
 
         public ScriptUiHost Ui { get; } = ui;
+
+        public HashSet<string> Busy { get; } = new(StringComparer.OrdinalIgnoreCase);
     }
 }

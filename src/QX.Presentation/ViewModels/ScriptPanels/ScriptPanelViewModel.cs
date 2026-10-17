@@ -46,16 +46,12 @@ public sealed partial class ScriptPanelViewModel : ViewModelBase
 
     public RunPhase RunPhase => Run.Phase;
 
-    public bool ShowStandInRun => Panel.DeclaredButtons.Count == 0;
-
-    public bool ShowRunControl => ShowStandInRun || Run.IsAlive;
-
     public bool HasErrors => Run.Errors.Count > 0;
 
     public string ErrorSummary => Run.Errors.Count == 0 ? "" : Run.Errors[0].Format().Split('\n')[0].TrimEnd('\r');
 
     [RelayCommand]
-    void StandInRun() => PanelPress.Route(Run, null);
+    void Retry() => Document.ActivatePanel(restart: true);
 
     [RelayCommand]
     void Stop() => Run.RequestStop();
@@ -81,8 +77,6 @@ public sealed partial class ScriptPanelViewModel : ViewModelBase
                 button.PressCommand.Execute(null);
             return;
         }
-        if (ShowStandInRun && StandInRunCommand.CanExecute(null))
-            StandInRunCommand.Execute(null);
     }
 
     PanelButtonNode? Primary()
@@ -140,8 +134,6 @@ public sealed partial class ScriptPanelViewModel : ViewModelBase
         if (args.PropertyName is not (nameof(ScriptRunController.State) or nameof(ScriptRunController.PanelArmed) or nameof(ScriptRunController.BusyHandlers)))
             return;
         OnPropertyChanged(nameof(RunPhase));
-        OnPropertyChanged(nameof(ShowStandInRun));
-        OnPropertyChanged(nameof(ShowRunControl));
         OnPropertyChanged(nameof(IsWorking));
         RefreshErrors();
     }

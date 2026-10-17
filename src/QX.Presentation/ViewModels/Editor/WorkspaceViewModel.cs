@@ -270,7 +270,7 @@ public sealed partial class WorkspaceViewModel : PageViewModel, IApiInsertTarget
     [RelayCommand]
     public void ToggleRun()
     {
-        if (Active is not { } document)
+        if (Active is not { } document || IsPanelView)
             return;
         if (document.Run.IsAlive)
         {
@@ -308,6 +308,7 @@ public sealed partial class WorkspaceViewModel : PageViewModel, IApiInsertTarget
             return;
         document.SetPanelMode(true);
         document.Panel.Rebuild(document.Text);
+        document.ActivatePanel();
         _workspace.RememberPanel(document);
         ActiveView = DocumentView.Panel;
     }

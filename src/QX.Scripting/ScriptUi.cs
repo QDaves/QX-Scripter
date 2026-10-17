@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.Globalization;
+using System.Runtime.ExceptionServices;
 using Qx.Scripting.Hosting;
 
 namespace Qx.Scripting;
@@ -83,8 +84,7 @@ public sealed class ScriptUi
     /// <para>
     /// Like a click handler, it keeps a panel script running after its last statement. Handlers
     /// never run on the panel's thread. They start one at a time, in the order the edits were made,
-    /// each once the one before has returned, so an async handler lets the next one start at its
-    /// first <c>await</c>. An exception a handler throws is reported as a script error, which stops
+    /// each once the preceding handler has completed, including its asynchronous work. An exception a handler throws is reported as a script error, which stops
     /// the run in the QX host, as it does for the <c>On...</c> events of the globals.
     /// </para>
     /// <para>
@@ -119,6 +119,54 @@ public sealed class ScriptUi
     {
         ArgumentNullException.ThrowIfNull(handler);
         OnChange(name, _ => handler());
+    }
+
+    public void OnChange(string name, Func<string, Task> handler)
+    {
+        ArgumentException.ThrowIfNullOrEmpty(name);
+        ArgumentNullException.ThrowIfNull(handler);
+        Host.AddChange(name, async value =>
+        {
+            Task pending = Task.CompletedTask;
+            _guard(text => pending = handler(text) ?? Task.CompletedTask)(value);
+            try
+            {
+                await pending.ConfigureAwait(false);
+            }
+            catch (Exception error)
+            {
+                _guard(_ => ExceptionDispatchInfo.Capture(error).Throw())(value);
+            }
+        });
+    }
+
+    public void SetOptions(string name, IEnumerable<string> options, string? selected = null)
+    {
+        ArgumentException.ThrowIfNullOrEmpty(name);
+        ArgumentNullException.ThrowIfNull(options);
+        string[] choices = [.. options.Where(option => option is not null).Distinct(StringComparer.Ordinal)];
+        string value = choices.FirstOrDefault(option => string.Equals(option, selected ?? String(name), StringComparison.Ordinal))
+            ?? choices.FirstOrDefault() ?? "";
+        Store(name, value);
+        Host.RaiseOptionsChanged(name, choices, value);
+    }
+
+    public void Validation(string name, string? message = null)
+    {
+        ArgumentException.ThrowIfNullOrEmpty(name);
+        Host.RaiseValidationChanged(name, message ?? "");
+    }
+
+    public void Progress(string name, double value, string caption)
+    {
+        Progress(name, value);
+        Host.RaiseProgressDetailChanged(name, false, caption ?? "");
+    }
+
+    public void Indeterminate(string name, string caption = "")
+    {
+        ArgumentException.ThrowIfNullOrEmpty(name);
+        Host.RaiseProgressDetailChanged(name, true, caption ?? "");
     }
 
     /// <summary>
@@ -352,8 +400,7 @@ public sealed class ScriptUi
     /// Marks a button as working, so it shows that something is happening.
     /// </summary>
     /// <remarks>
-    /// Separate from <see cref="Enable"/>: a button can be busy and still clickable, and a script
-    /// that wants both says both. The panel clears it by itself when the handler returns, so this
+    /// Separate from <see cref="Enable"/>: a busy button rejects repeated presses until its work ends. The panel clears it by itself when the handler returns, so this
     /// is only needed for work a script starts elsewhere.
     /// </remarks>
     /// <param name="button">The button's name.</param>

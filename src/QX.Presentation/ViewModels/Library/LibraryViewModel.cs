@@ -95,6 +95,24 @@ public sealed partial class LibraryViewModel : PageViewModel
 
     public ObservableCollection<LibraryFilterOption> Filters { get; } = [];
 
+    public IReadOnlyList<LibraryFilterOption> FixedFilters => [_all, _active, _ungrouped];
+
+    public ObservableCollection<LibraryFilterOption> CategoryFilters { get; } = [];
+
+    public bool HasCategories => CategoryFilters.Count > 0;
+
+    public LibraryFilterOption? SelectedFixedFilter
+    {
+        get => SelectedFilter is { CanEdit: false } filter ? filter : null;
+        set { if (value is not null) SelectedFilter = value; }
+    }
+
+    public LibraryFilterOption? SelectedCategory
+    {
+        get => SelectedFilter is { CanEdit: true } filter ? filter : null;
+        set { if (value is not null) SelectedFilter = value; }
+    }
+
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(FilterTitle))]
     public partial LibraryFilterOption? SelectedFilter { get; set; }
@@ -309,7 +327,12 @@ public sealed partial class LibraryViewModel : PageViewModel
         Apply();
     }
 
-    partial void OnSelectedFilterChanged(LibraryFilterOption? value) => Apply();
+    partial void OnSelectedFilterChanged(LibraryFilterOption? value)
+    {
+        OnPropertyChanged(nameof(SelectedFixedFilter));
+        OnPropertyChanged(nameof(SelectedCategory));
+        Apply();
+    }
 
     LibrarySortOption OptionFor(LibrarySort sort) => Sorts.FirstOrDefault(option => option.Sort == sort) ?? Sorts[0];
 
@@ -451,6 +474,9 @@ public sealed partial class LibraryViewModel : PageViewModel
         }
         CollectionSync.Sync(Filters, next, static filter => filter.Key, static filter => filter.Key,
             static filter => filter, static (filter, item) => _ = item);
+        CollectionSync.Sync(CategoryFilters, next.Where(filter => filter.CanEdit).ToList(), static filter => filter.Key, static filter => filter.Key,
+            static filter => filter, static (filter, item) => _ = item);
+        OnPropertyChanged(nameof(HasCategories));
         SelectedFilter = Filters.FirstOrDefault(filter => string.Equals(filter.Key, selected_key, StringComparison.CurrentCultureIgnoreCase)) ?? _all;
     }
 

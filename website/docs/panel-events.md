@@ -1,7 +1,8 @@
 # Panel events
 
-A panel script registers handlers and returns. The script stays alive, and every button press calls
-its handler instead of starting the script again.
+A panel script initializes when its tab opens. It stays alive until the tab closes, and every
+button press calls its handler instead of starting the script again. Game event subscriptions
+remain active even in a panel with no UI handlers and while another tab is selected.
 
 ```csharp
 //@ui:string message "Message" ="hello"
@@ -13,16 +14,16 @@ Ui.OnClick("say", () => Talk(Ui.String("message")));
 ## Handlers
 
 `Ui.OnClick(name, handler)` takes an `Action` or a `Func<Task>`. Handlers run next to each other, so a
-button that works for a minute does not stop the others from answering. A handler that must not run
-twice disables its own button while it works.
+button that works for a minute does not stop the others from answering. The pressed button spins
+and rejects additional presses until its handler completes. Other buttons remain usable.
 
 Reads inside a handler return what the panel shows now, so a running loop sees edits made while it
 runs.
 
 `Ui.OnChange(name, handler)` runs when the user edits a control. The handler takes the new value as a
-`string`, or takes nothing and reads the control itself. Change handlers start one at a time, in the
-order the edits were made, each once the one before has returned, so an async handler lets the next
-one start at its first `await`. A value the script writes with `Ui.Set` does not call them. Like a
+`string`, or takes nothing and reads the control itself. The `Func<string, Task>` overload supports
+asynchronous work. Changes run in order, waiting for the preceding handler including its awaits.
+A value the script writes with `Ui.Set` or `Ui.SetOptions` does not call them. Like a
 click handler, a change handler keeps the script alive. An exception it throws is a script error and
 stops the run.
 
@@ -54,10 +55,14 @@ Each read returns the fallback when the control is missing or empty.
 | `Ui.Clear(name)` | Empties an output box or a table. |
 | `Ui.Set(name, value)` | Changes what an input shows. |
 | `Ui.Progress(name, value)`, `Ui.Progress(name, done, total)` | Sets a progress bar, 0 to 1. |
+| `Ui.Progress(name, value, caption)` | Sets progress and explanatory text below the bar. |
+| `Ui.Indeterminate(name, caption)` | Shows activity while the total is unknown. The next `Progress` returns to a measured bar. |
+| `Ui.SetOptions(name, options, selected)` | Replaces dropdown choices, preserves a valid selection or selects the first, and updates reads immediately. |
+| `Ui.Validation(name, message)` | Shows a field error. Pass `null` or an empty string to clear it. |
 | `Ui.Status(name, text)` | Sets a status line. |
-| `Ui.Enable(name, on)` | Enables or disables a button. |
+| `Ui.Enable(name, on)` | Enables or disables a field or button. |
 | `Ui.Show(name, on)` | Shows or hides a control. A hidden control takes no space. |
-| `Ui.Busy(button, busy)` | Shows a button as working without disabling it. |
+| `Ui.Busy(button, busy)` | Shows a button as working and prevents additional presses. |
 | `Ui.Toast(text, problem)` | Shows a short message that fades. |
 | `Ui.Download(fileName, content)` | Offers a file to save. |
 | `Ui.AddRow(table, cells)`, `Ui.SetRows(table, rows)` | Fills a table. |
@@ -124,18 +129,22 @@ Ui.OnClick("start", async () =>
 
 ## Running and stopping
 
-**Run** starts a script in the view that is shown. In panel view the run stays alive on its handlers
-after the script's last statement. In code view it ends there and stops everything it started, so a
-panel script that must keep running declares `//@ui:required`.
+Opening a UI tab starts its initializer once. The toolbar shows **UI mode**, with actions and their
+busy states controlled by panel buttons. F5 does not start or stop an execution while panel view is
+shown. Switching to code view leaves the existing execution alive; normal code-view stop and the
+global stop-all command remain available. Returning to panel view applies source changes.
 
-The toolbar **Stop** always ends the run. A stop button the script declares only does what its
-handler does.
+A stop button declared by the script does what its handler specifies. Use the script's `Ct` token
+for cancellable background work so closing the tab stops it promptly. Non-UI scripts retain normal
+manual Run/Stop behavior. Command-line and MCP executions still require an explicit run request;
+`//@ui:required` refuses those executions because they have no interactive panel.
+
+UI initialization does not wait for a hotel connection. Register connection and game events during
+initialization, and place operations that require hotel data in the relevant event or button handler.
 
 ## Scripts without handlers
 
-A script that registers no handlers runs from the top on every press and ends. `Ui.Clicked(name)`
-says whether a button started it and `Ui.ClickedButton` names the button. This suits a form: fill
-it in, press once, read the result.
-
-Outside panel view every read returns its fallback, `Ui.Clicked` is `false`, handlers are never
-called and writes do nothing, so a panel script also runs from the editor.
+A script with no UI handlers also stays alive, keeping its game-event subscriptions. Legacy forms
+using `Ui.Clicked(name)` are supported: pressing a declared button stops the previous execution and
+initializes a replacement with that button recorded. Prefer `Ui.OnClick` for new panels to avoid
+reinitializing state on each action.

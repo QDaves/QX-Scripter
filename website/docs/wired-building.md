@@ -4,6 +4,24 @@ Use `WiredBuildPlan` to describe furniture and Wired stacks before changing a ro
 builder runs through scripts and the application layer used by MCP. It uses the existing typed
 forms for all registered triggers, effects, conditions, selectors, add-ons and variables.
 
+## Knowledge through MCP
+
+`get_wired_knowledge` without arguments returns the starting guide, required reading, defaults and
+indexes. The bundled knowledge covers configuration, source slots, selectors, variables, signals,
+limits, recipes, observed behavior and simulation caveats. It is available without a hotel
+connection and requires no local paths or separate installation.
+
+Use `search_wired_knowledge` with a classname, variable name or topic to find relevant documents.
+`list_wired_knowledge` browses by a path prefix such as `notes/` or `generated/forms/`.
+Pass a returned path to `get_wired_knowledge`; `pointer` selects a JSON subtree such as
+`/current_qx/fields`. Follow every `next_offset` to read the complete result. Read offsets count
+UTF-16 characters, while list and search offsets count documents. Results remain bounded, and
+large documents are fully accessible through paging.
+
+Read the relevant dependency IDs and execution-limit guidance before constructing a system.
+Recorded measurements retain their date and scope. The current received form and its allowed
+sources remain authoritative; knowledge does not grant permission to change a room.
+
 ## First stack
 
 Choose free tiles and furniture available in the current hotel's Builders Club catalog. Each stack

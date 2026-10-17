@@ -2196,6 +2196,12 @@ internal sealed class McpHost(
     public string GetScriptingGuide(string topic) =>
         string.IsNullOrWhiteSpace(topic) ? ScriptingGuide.Overview() : ScriptingGuide.Read(topic);
 
+    public string GetWiredKnowledge(string path, string pointer, int offset, int limit) => WiredKnowledge.Read(path, pointer, offset, limit);
+
+    public string ListWiredKnowledge(string path, int offset, int limit) => WiredKnowledge.List(path, offset, limit);
+
+    public string SearchWiredKnowledge(string query, string path, int offset, int limit) => WiredKnowledge.Search(query, path, offset, limit);
+
     private static string Editor(
         IEditorBridge? editor,
         Func<IEditorBridge, string> operation)

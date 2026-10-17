@@ -353,6 +353,9 @@ public interface IMcpHost
     string GetTypeInfo(string name, string member);
     string SearchMembers(string query, string kind, bool includeGenerated, int limit, int offset);
     string GetScriptingGuide(string topic);
+    string GetWiredKnowledge(string path, string pointer, int offset, int limit) => "Wired knowledge is not available in this host.";
+    string ListWiredKnowledge(string path, int offset, int limit) => "Wired knowledge is not available in this host.";
+    string SearchWiredKnowledge(string query, string path, int offset, int limit) => "Wired knowledge is not available in this host.";
     string CompileCheck(string code);
 
     string ListTabs() => AsyncOnly(nameof(ListTabsAsync));

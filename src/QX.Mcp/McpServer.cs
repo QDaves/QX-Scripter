@@ -64,10 +64,12 @@ public sealed class McpServer
         nextOffset; every result says whether its namespace is imported or which using it needs.
         Before Wired construction, configuration or repair, call get_wired_knowledge with no path.
         It returns essential defaults, required starting documents and an index into the bundled
-        Wired knowledge. Read the relevant rules, source-slot dependencies and execution limits.
-        search_wired_knowledge finds furniture classes, variables and patterns; list_wired_knowledge
-        browses the package. get_wired_knowledge reads a document or JSON pointer in bounded pages.
-        Follow next_offset until the required material is complete. No local files are required.
+        qx-wired skill: SKILL.md is its guide, references/catalog/overview.md lists every Wired form
+        by type and references/ holds the documents. Read the relevant rules, source-slot
+        dependencies and execution limits. search_wired_knowledge finds furniture
+        classes, variables and patterns; list_wired_knowledge browses the skill. get_wired_knowledge
+        reads a document or JSON pointer in bounded pages. Follow next_offset until the required
+        material is complete. No local files are required.
         get_type returns one type with its documentation; a type with more than 150 members lists
         only their names, and member picks the members to read. compile_check compiles a script
         without running it and also reports unknown message names (QX1001), message types a message
@@ -1501,9 +1503,9 @@ public sealed class McpServer
         new McpTool
         {
             Name = "get_wired_knowledge",
-            Description = "Read bundled Wired building knowledge. With no path returns the starting guide and indexes. With a package-relative path reads the document, optionally narrowed by an RFC 6901 JSON pointer. Offsets count UTF-16 characters; follow next_offset for remaining content. Available without a hotel connection.",
+            Description = "Read the bundled qx-wired skill. With no path returns the starting guide and indexes. SKILL.md is the skill guide; a skill-relative path such as references/index/wired.json reads a document, optionally narrowed by an RFC 6901 JSON pointer. Offsets count UTF-16 characters; follow next_offset for remaining content. Available without a hotel connection.",
             InputSchema = OptionalSchema(
-                ("path", "string", "Knowledge document path; omit for the starting guide", "", null, null),
+                ("path", "string", "Skill-relative document path such as SKILL.md or references/index/wired.json; omit for the starting guide", "", null, null),
                 ("pointer", "string", "Optional JSON pointer into the document, e.g. /current_qx or /rules/0", "", null, null),
                 ("offset", "integer", "Character offset from a previous response", 0, 0, int.MaxValue),
                 ("limit", "integer", "Maximum characters returned", 12000, 1, 32000)),
@@ -1513,9 +1515,9 @@ public sealed class McpServer
         new McpTool
         {
             Name = "list_wired_knowledge",
-            Description = "Browse bundled Wired knowledge documents by optional path prefix. Returns titles, paths and pagination. Read a result with get_wired_knowledge.",
+            Description = "Browse the documents of the bundled qx-wired skill by optional path prefix such as references/notes/. Returns titles, paths and pagination. Read a result with get_wired_knowledge.",
             InputSchema = OptionalSchema(
-                ("path", "string", "Optional package-relative directory or filename prefix", "", null, null),
+                ("path", "string", "Optional skill-relative directory or filename prefix", "", null, null),
                 ("offset", "integer", "Document offset from a previous response", 0, 0, MaxOffset),
                 ("limit", "integer", "Maximum documents returned", 40, 1, 100)),
             Annotations = ClosedReadOnly,
@@ -1524,9 +1526,9 @@ public sealed class McpServer
         new McpTool
         {
             Name = "search_wired_knowledge",
-            Description = "Search all bundled Wired knowledge by furniture classname, variable, source, rule or gameplay pattern. All query terms must match. Returns ranked document paths and excerpts; follow next_offset for additional matches.",
+            Description = "Search the bundled qx-wired skill by furniture classname, variable, source, rule or gameplay pattern. All query terms must match. Returns ranked document paths and excerpts; follow next_offset for additional matches.",
             InputSchema = MixedSchema([("query", "string", "Search terms, at most 512 characters")],
-                ("path", "string", "Optional package-relative directory prefix", "", null, null),
+                ("path", "string", "Optional skill-relative directory prefix", "", null, null),
                 ("offset", "integer", "Search result offset from a previous response", 0, 0, MaxOffset),
                 ("limit", "integer", "Maximum matching documents returned", 15, 1, 50)),
             Annotations = ClosedReadOnly,

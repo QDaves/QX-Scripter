@@ -18,7 +18,7 @@
 
   <ItemGroup>
     <EmbeddedResource Include="..\..\website\docs\*.md;..\..\website\docs\toc.yml" LogicalName="Qx.Docs.%(Filename)%(Extension)" />
-    <EmbeddedResource Include="Knowledge/wired-knowledge.zip" LogicalName="Qx.WiredKnowledge.zip" />
+    <EmbeddedResource Include="Knowledge/qx-wired.skill" LogicalName="Qx.WiredSkill" />
   </ItemGroup>
 
 </Project>

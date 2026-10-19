@@ -6,13 +6,19 @@ forms for all registered triggers, effects, conditions, selectors, add-ons and v
 
 ## Knowledge through MCP
 
+The Wired knowledge ships as the Agent Skill `qx-wired`, packaged as
+`src/QX.Hosting/Knowledge/qx-wired.skill` and embedded into QX. `SKILL.md` is the guide; the JSON
+documents live in `references/`. The same file can be installed as a skill in any agent that
+supports the Agent Skills format.
+
 `get_wired_knowledge` without arguments returns the starting guide, required reading, defaults and
 indexes. The bundled knowledge covers configuration, source slots, selectors, variables, signals,
 limits, recipes, observed behavior and simulation caveats. It is available without a hotel
 connection and requires no local paths or separate installation.
 
 Use `search_wired_knowledge` with a classname, variable name or topic to find relevant documents.
-`list_wired_knowledge` browses by a path prefix such as `notes/` or `generated/forms/`.
+`list_wired_knowledge` browses by a path prefix such as `references/notes/` or
+`references/generated/forms/`.
 Pass a returned path to `get_wired_knowledge`; `pointer` selects a JSON subtree such as
 `/current_qx/fields`. Follow every `next_offset` to read the complete result. Read offsets count
 UTF-16 characters, while list and search offsets count documents. Results remain bounded, and

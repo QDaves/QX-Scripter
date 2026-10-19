@@ -18,7 +18,7 @@ public enum WiredUsageEvidence
 {
     /// <summary>Supported by the analyzed client controls or protocol models.</summary>
     ClientConfiguration,
-    /// <summary>Described by the hotel's furniture metadata.</summary>
+    /// <summary>Described by the hotel's furniture metadata or an official Wired update announcement.</summary>
     HotelDescription,
     /// <summary>Practical reference advice not independently verified as server behavior.</summary>
     CommunityReference
@@ -54,6 +54,8 @@ internal static partial class WiredFormKnowledge
             rules.Add(new(topic, text, WiredUsageEvidence.CommunityReference, "reference:" + lines));
         void hotel(WiredUsageTopic topic, string text, string identifier) =>
             rules.Add(new(topic, text, WiredUsageEvidence.HotelDescription, "furnidata:" + identifier));
+        void announcement(WiredUsageTopic topic, string text, string identifier) =>
+            rules.Add(new(topic, text, WiredUsageEvidence.HotelDescription, "announcement:" + identifier));
         void companions(params string[] identifiers) => related.UnionWith(identifiers);
 
         client(WiredUsageTopic.Inputs,
@@ -109,9 +111,19 @@ internal static partial class WiredFormKnowledge
 
         if (category == WiredFormCategory.Addon && code == 1003)
         {
+            announcement(WiredUsageTopic.Setup, "Place the Share add-on on top of a permanently shared variable definition. It publishes the selected categories of the add-ons attached to that definition to rooms that reference the variable.", "wired-updates-20261019");
+            announcement(WiredUsageTopic.Behavior, "A room that references the shared variable through WIRED Variable: From Another Room with an Import add-on reuses the shared text connectors, subvariable creators and variable FX, so these add-ons are not duplicated per room.", "wired-updates-20261019");
             client(WiredUsageTopic.Behavior, "Saving the three category switches does not press Synchronize. The separate synchronization command sends the current sharing add-on furniture ID and requires Wired write permission.", "VariableAddonShareAddon.synchronize; VariableAddonShareAddon.onEditInitialized");
             client(WiredUsageTopic.Pitfall, "SynchronizeWiredSharedAddons requires a fresh form review and reports dispatch only, not confirmed propagation to other rooms. After saving changes, read the form again before synchronizing.", "SynchronizeSharedAddonsMessageComposer; wired.shared_addons.synchronize");
-            companions("wf_xtra_var_import");
+            companions("wf_xtra_var_import", "wf_var_reference");
+        }
+
+        if (category == WiredFormCategory.Addon && code == 1004)
+        {
+            announcement(WiredUsageTopic.Setup, "Place the Import add-on on top of a WIRED Variable: From Another Room that references a shared variable. The source definition must publish its add-ons with a Share add-on.", "wired-updates-20261019");
+            client(WiredUsageTopic.Inputs, "Text connectors, subvariable creators and variable FX are three independent switches with the same layout as the Share add-on. Enable only the categories that should be imported.", "VariableAddonImportAddon; VariableAddonShareAddon");
+            client(WiredUsageTopic.Pitfall, "Import selects add-on categories, not variable values. Values come from the referenced variable itself; the import does not copy numbers into a local variable.", "VariableAddonImportAddon; ReferenceVariable");
+            companions("wf_var_reference", "wf_xtra_var_share");
         }
 
         if ((category == WiredFormCategory.Trigger && code == 3) || (category == WiredFormCategory.Condition && code is 3 or 4) || (category == WiredFormCategory.Action && code == 1))
@@ -273,7 +285,18 @@ internal static partial class WiredFormKnowledge
             client(WiredUsageTopic.Inputs, "Choose user, furniture, room/global or execution-context scope to match the value being stored. Availability and persistence are controlled by the variable definition; do not infer them solely from its name.", "VariableTarget; AvailabilityType; UserVariable; Furniture; GlobalVariable; ContextVariable");
 
         if (category == WiredFormCategory.Variable && code == 4)
+        {
             client(WiredUsageTopic.Setup, "Select an available shared variable from the referenced room and respect its returned permissions. A cross-room reference is not a copy of the source variable.", "ReferenceVariable; WiredSharedVariable");
+            announcement(WiredUsageTopic.Setup, "To reuse the source variable's text connectors, subvariable creators or variable FX, place an Import add-on on this reference variable instead of rebuilding them. The source room must publish them with a Share add-on.", "wired-updates-20261019");
+            companions("wf_xtra_var_import");
+        }
+
+        if (category == WiredFormCategory.Variable && code == 9)
+        {
+            announcement(WiredUsageTopic.Behavior, "Store the furniture ID of a variable box in the pointer's accessor context variable; the pointer then acts as that variable. One Wired setup can serve a group of variables that need the same logic instead of duplicating the setup per variable.", "wired-updates-20261019");
+            client(WiredUsageTopic.Inputs, "The accessor is a numeric user-created context variable. Set it to the intended variable box furniture ID in the same execution before effects or conditions use the pointer.", "PointerVariable; ContextVariable");
+            companions("wf_var_context");
+        }
 
         return new(purpose, rules.AsReadOnly(), Array.AsReadOnly(related.Order(StringComparer.Ordinal).ToArray()));
     }

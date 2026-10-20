@@ -51,6 +51,7 @@ internal sealed partial class WiredApplication
         WiredSnapshot state = validate_form_review(request);
         WiredForm form = WiredFormView.ReadForm(state.Configuration!);
         request.Patch.Apply(form);
+        WiredFormRules.Check(form, WiredFormRules.DarkenLevels(game.GameData.Variables?[WiredFormRules.DarkenLevelsVariable]));
         Action validation = () => validate_form_review(request);
         return form.ToUpdate() switch
         {

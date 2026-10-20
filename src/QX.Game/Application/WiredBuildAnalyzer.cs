@@ -32,6 +32,7 @@ public static class WiredBuildAnalyzer
                 {
                     WiredForm draft = WiredFormRegistry.Draft(category, code);
                     item.Settings?.Apply(draft);
+                    WiredFormRules.Check(draft);
                     foreach (var binding in item.VariablesByName ?? new Dictionary<string, string>())
                     {
                         if (!draft.Definition.Fields.Any(field => field.Name == binding.Key && field.Kind == WiredFormFieldKind.Variable && field.Writable) ||

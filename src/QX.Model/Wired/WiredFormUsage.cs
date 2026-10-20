@@ -298,6 +298,12 @@ internal static partial class WiredFormKnowledge
             companions("wf_var_context");
         }
 
+        if (category == WiredFormCategory.Action && code == 62)
+        {
+            client(WiredUsageTopic.Inputs, "Strength must match the highlight type: 0 or 100 for outline, soft glow and neon aura; 0, 25, 50, 75 or 100 for color tint; 0 or 38 for brighten (the editor shows 76); a level from the hotel variable wired.furni_highlight.darken_levels for darken. Darken is unavailable while no level is above 0.", "SetFurniHighlight.updateStrengthOptions; SetFurniHighlight.darkenLevels");
+            client(WiredUsageTopic.Inputs, "Colors come from the 21-color client palette SetFurniHighlight.HIGHLIGHT_COLORS; color tint uses it without white. Darken saves color 0, brighten saves 16777215 and supports only the pulse animation. Other values are rejected with invalid_color or invalid_strength.", "SetFurniHighlight.HIGHLIGHT_COLORS; SetFurniHighlight.readIntParamsFromForm");
+        }
+
         return new(purpose, rules.AsReadOnly(), Array.AsReadOnly(related.Order(StringComparer.Ordinal).ToArray()));
     }
 }

@@ -21,14 +21,14 @@ internal static class WiredFormRules
             : Array.AsReadOnly(configured.Split(',', StringSplitOptions.TrimEntries)
                 .Select(level => int.TryParse(level, out int value) ? value : 0).ToArray());
 
-    internal static void Check(WiredForm form, IReadOnlyList<int>? darken_levels = null)
+    internal static void Check(WiredForm form, IReadOnlyList<int>? darken_levels = null, bool colors = true)
     {
         ArgumentNullException.ThrowIfNull(form);
         if (form is WiredSetFurniHighlightActionForm highlight)
-            check_highlight(highlight, darken_levels ?? default_darken_levels);
+            check_highlight(highlight, darken_levels ?? default_darken_levels, colors);
     }
 
-    private static void check_highlight(WiredSetFurniHighlightActionForm form, IReadOnlyList<int> darken_levels)
+    private static void check_highlight(WiredSetFurniHighlightActionForm form, IReadOnlyList<int> darken_levels, bool colors)
     {
         switch (form.HighlightType)
         {
@@ -48,11 +48,13 @@ internal static class WiredFormRules
                 break;
             case WiredHighlightTypeOption.ColorTint:
                 require_strength(form, tint_strengths, "Color tint");
-                require_color(form, highlight_colors.Skip(1));
+                if (colors)
+                    require_color(form, highlight_colors.Skip(1));
                 break;
             case WiredHighlightTypeOption.Outline or WiredHighlightTypeOption.SoftGlow or WiredHighlightTypeOption.NeonAura:
                 require_strength(form, glow_strengths, form.HighlightType.ToString());
-                require_color(form, highlight_colors);
+                if (colors)
+                    require_color(form, highlight_colors);
                 break;
         }
     }

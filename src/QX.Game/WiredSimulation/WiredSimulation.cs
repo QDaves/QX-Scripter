@@ -527,6 +527,8 @@ public sealed partial class WiredSimulation
                 }
                 catch (ArgumentException error) { fail("form.invalid", error.Message, node.FurnitureId); }
             }
+            try { WiredFormRules.Check(form, colors: false); }
+            catch (ArgumentException error) { fail("form.invalid", error.Message, node.FurnitureId); }
             var fields = WiredSimulationNode.From(form).Fields.ToDictionary(StringComparer.Ordinal);
             foreach (var field in definition.Fields.Where(value => (!value.Writable || !active_field(node, value.Name)) && node.Fields.ContainsKey(value.Name)))
             {

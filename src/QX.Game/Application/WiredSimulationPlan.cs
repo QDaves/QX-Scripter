@@ -64,6 +64,7 @@ public static class WiredSimulationPlan
                 if (form.SelectorInvert.HasValue) form.SelectorInvert = previous.Invert;
             }
             entry.Settings?.Apply(form);
+            WiredFormRules.Check(form, colors: previous is null || entry.Settings?.Fields?.Any(field => field.Name is "color_rgb" or "highlight_type") == true);
             if (entry.FurnitureKeys is not null) form.SelectFurniture(entry.FurnitureKeys.Select(key => (Id)keys[key]).ToArray());
             if (entry.SecondaryFurnitureKeys is not null) form.SelectFurniture(entry.SecondaryFurnitureKeys.Select(key => (Id)keys[key]).ToArray(), true);
             foreach (var variable in entry.VariablesByName ?? new Dictionary<string, string>())

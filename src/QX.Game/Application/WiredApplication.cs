@@ -26,6 +26,7 @@ internal sealed partial class WiredApplication : IApplicationFeature
     private WiredOperationScope? variable_cache_scope;
     private WiredOperationScope? variable_hash_failed_scope;
     private readonly SemaphoreSlim web_api_lock = new(1, 1);
+    private readonly SemaphoreSlim link_lock = new(1, 1);
     private readonly ApplicationEventSource<WiredChanged> changed;
     private readonly ApplicationEventSource<WiredEvent<WiredPermissions>> permissions_changed;
     private readonly ApplicationEventSource<WiredEvent<WiredEnvironment>> environment_changed;
@@ -183,6 +184,18 @@ internal sealed partial class WiredApplication : IApplicationFeature
                     WiredApplicationDescriptors.WebApiKeyGenerate, generate_web_api_key),
                 new ApplicationCallBinding<WiredSharedAddonsSynchronizeRequest, WiredDispatchResult>(
                     WiredApplicationDescriptors.SharedAddonsSynchronize, synchronize_shared_addons),
+                new ApplicationCallBinding<WiredLinkRequest, WiredLinkConfiguration>(
+                    WiredApplicationDescriptors.LinkConfigurationGet, get_link_configuration),
+                new ApplicationCallBinding<WiredLinkSaveRequest, WiredLinkOperationResult>(
+                    WiredApplicationDescriptors.LinkConfigurationSave, save_link_configuration),
+                new ApplicationCallBinding<WiredLinkNetworkCreateRequest, WiredLinkOperationResult>(
+                    WiredApplicationDescriptors.LinkNetworkCreate, create_link_network),
+                new ApplicationCallBinding<WiredLinkNetworkRenameRequest, WiredLinkOperationResult>(
+                    WiredApplicationDescriptors.LinkNetworkRename, rename_link_network),
+                new ApplicationCallBinding<WiredLinkNetworkRequest, WiredLinkOperationResult>(
+                    WiredApplicationDescriptors.LinkNetworkDelete, delete_link_network),
+                new ApplicationCallBinding<WiredLinkNetworkRequest, WiredLinkConnections>(
+                    WiredApplicationDescriptors.LinkConnectionsGet, get_link_connections),
                 new ApplicationCallBinding<WiredPreferencesSetRequest, WiredDispatchResult>(
                     WiredApplicationDescriptors.PreferencesSet, SetPreferences),
                 new ApplicationCallBinding<WiredChestRequest, WiredDispatchResult>(
@@ -1655,7 +1668,8 @@ internal sealed partial class WiredApplication : IApplicationFeature
         Func<TResponse, TResult> snapshot,
         int timeout_milliseconds,
         WiredOperationScope scope,
-        CancellationToken cancellation_token)
+        CancellationToken cancellation_token,
+        bool block = false)
         where TRequest : IParserComposer<TRequest>
         where TResponse : IParserComposer<TResponse>
     {
@@ -1674,7 +1688,7 @@ internal sealed partial class WiredApplication : IApplicationFeature
                 IsCurrent(scope) &&
                 (match?.Invoke(value) ?? true),
             timeout_milliseconds,
-            block: false,
+            block: block,
             cancellation_token: operation_token,
             max_attempts: 1,
             dispatch_guard: () => CaptureCurrentState(scope, operation_token)).ConfigureAwait(false);

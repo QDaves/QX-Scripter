@@ -1155,6 +1155,16 @@ public static class Msg
         public const string WiredFurniTrigger = "WiredFurniTrigger";
         /// <summary>The incoming Flash message <c>WiredFurniVariable</c>.</summary>
         public const string WiredFurniVariable = "WiredFurniVariable";
+        /// <summary>The incoming Flash message <c>WiredLinkConfiguration</c>.</summary>
+        public const string WiredLinkConfiguration = "WiredLinkConfiguration";
+        /// <summary>The incoming Flash message <c>WiredLinkConfigurationInvalidated</c>.</summary>
+        public const string WiredLinkConfigurationInvalidated = "WiredLinkConfigurationInvalidated";
+        /// <summary>The incoming Flash message <c>WiredLinkConnections</c>.</summary>
+        public const string WiredLinkConnections = "WiredLinkConnections";
+        /// <summary>The incoming Flash message <c>WiredLinkOpen</c>.</summary>
+        public const string WiredLinkOpen = "WiredLinkOpen";
+        /// <summary>The incoming Flash message <c>WiredLinkOperationResult</c>.</summary>
+        public const string WiredLinkOperationResult = "WiredLinkOperationResult";
         /// <summary>The incoming Flash message <c>WiredMenuError</c>.</summary>
         public const string WiredMenuError = "WiredMenuError";
         /// <summary>The incoming Flash message <c>WiredMovements</c>.</summary>
@@ -2364,6 +2374,18 @@ public static class Msg
         public const string WiredGetVariableOwnersPage = "WiredGetVariableOwnersPage";
         /// <summary>The outgoing Flash message <c>WiredGetVariablesForObject</c>.</summary>
         public const string WiredGetVariablesForObject = "WiredGetVariablesForObject";
+        /// <summary>The outgoing Flash message <c>WiredLinkCreateNetwork</c>.</summary>
+        public const string WiredLinkCreateNetwork = "WiredLinkCreateNetwork";
+        /// <summary>The outgoing Flash message <c>WiredLinkDeleteNetwork</c>.</summary>
+        public const string WiredLinkDeleteNetwork = "WiredLinkDeleteNetwork";
+        /// <summary>The outgoing Flash message <c>WiredLinkGetConfiguration</c>.</summary>
+        public const string WiredLinkGetConfiguration = "WiredLinkGetConfiguration";
+        /// <summary>The outgoing Flash message <c>WiredLinkGetConnections</c>.</summary>
+        public const string WiredLinkGetConnections = "WiredLinkGetConnections";
+        /// <summary>The outgoing Flash message <c>WiredLinkRenameNetwork</c>.</summary>
+        public const string WiredLinkRenameNetwork = "WiredLinkRenameNetwork";
+        /// <summary>The outgoing Flash message <c>WiredLinkSaveConfiguration</c>.</summary>
+        public const string WiredLinkSaveConfiguration = "WiredLinkSaveConfiguration";
         /// <summary>The outgoing Flash message <c>WiredOpenContract</c>.</summary>
         public const string WiredOpenContract = "WiredOpenContract";
         /// <summary>The outgoing Flash message <c>WiredSetObjectVariableValue</c>.</summary>

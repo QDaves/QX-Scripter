@@ -169,6 +169,33 @@ public static class MessageKeys
             public static readonly MessageKey Preferences = new("wired.account.preferences");
         }
 
+        /// <summary>Contains WIRED Link network messages.</summary>
+        public static class Link
+        {
+            /// <summary>The WiredLinkOpen message key.</summary>
+            public static readonly MessageKey Open = new("wired.link.open");
+            /// <summary>The WiredLinkConfiguration message key.</summary>
+            public static readonly MessageKey Configuration = new("wired.link.configuration");
+            /// <summary>The WiredLinkOperationResult message key.</summary>
+            public static readonly MessageKey Result = new("wired.link.result");
+            /// <summary>The WiredLinkConnections message key.</summary>
+            public static readonly MessageKey Connections = new("wired.link.connections");
+            /// <summary>The WiredLinkConfigurationInvalidated message key.</summary>
+            public static readonly MessageKey Invalidated = new("wired.link.invalidated");
+            /// <summary>The WiredLinkGetConfiguration message key.</summary>
+            public static readonly MessageKey ConfigurationGet = new("wired.link.configuration.get");
+            /// <summary>The WiredLinkSaveConfiguration message key.</summary>
+            public static readonly MessageKey ConfigurationSave = new("wired.link.configuration.save");
+            /// <summary>The WiredLinkCreateNetwork message key.</summary>
+            public static readonly MessageKey NetworkCreate = new("wired.link.network.create");
+            /// <summary>The WiredLinkRenameNetwork message key.</summary>
+            public static readonly MessageKey NetworkRename = new("wired.link.network.rename");
+            /// <summary>The WiredLinkDeleteNetwork message key.</summary>
+            public static readonly MessageKey NetworkDelete = new("wired.link.network.delete");
+            /// <summary>The WiredLinkGetConnections message key.</summary>
+            public static readonly MessageKey ConnectionsGet = new("wired.link.connections.get");
+        }
+
         /// <summary>Contains Wired WebApi messages.</summary>
         public static class WebApi
         {

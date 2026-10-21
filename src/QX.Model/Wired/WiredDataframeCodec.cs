@@ -15,6 +15,9 @@ public sealed record WiredReceiveDataframeRow(string Key, WiredDataframeDestinat
 
 internal static class WiredDataframeCodec
 {
+    internal const int MaximumRows = 12;
+    private const int unused_send_target = -20;
+
     internal sealed record Payload(int[] Integers, string Text, string[] Variables);
 
     public static IReadOnlyList<WiredSendDataframeRow> ReadSend(WiredConfigWrite value)
@@ -41,10 +44,11 @@ internal static class WiredDataframeCodec
     private static int count_of(WiredConfigWrite value, int stride)
     {
         if (value.IntParams.Count == 0 && value.VariableIds.Count == 0 && value.StringParam.Length == 0) return 0;
-        if (value.IntParams.Count == 0) throw new InvalidDataException("Missing dataframe row count.");
+        if (value.IntParams.Count != 1 + stride * MaximumRows || value.VariableIds.Count != MaximumRows)
+            throw new InvalidDataException($"A dataframe stores its row count, {MaximumRows} row slots and {MaximumRows} variable IDs.");
         int count = value.IntParams[0];
-        if (count is < 0 or > 12 || value.IntParams.Count != 1 + stride * count || value.VariableIds.Count != count)
-            throw new InvalidDataException("Dataframe row count does not match its numeric or variable payload.");
+        if (count is < 0 or > MaximumRows)
+            throw new InvalidDataException("The dataframe row count is outside 0..12.");
         return count;
     }
 
@@ -73,7 +77,7 @@ internal static class WiredDataframeCodec
     public static Payload WriteSend(IReadOnlyList<WiredSendDataframeRow> rows)
     {
         ArgumentNullException.ThrowIfNull(rows);
-        if (rows.Count > 12) throw new ArgumentOutOfRangeException(nameof(rows), "A dataframe supports at most 12 rows.");
+        if (rows.Count > MaximumRows) throw new ArgumentOutOfRangeException(nameof(rows), "A dataframe supports at most 12 rows.");
         var integers = new List<int> { rows.Count };
         var text = new List<string[]>();
         var variables = new List<string>();
@@ -93,13 +97,18 @@ internal static class WiredDataframeCodec
             text.Add([key, row.Text]);
             variables.Add(row.VariableId);
         }
+        for (int i = rows.Count; i < MaximumRows; i++)
+        {
+            integers.AddRange([(int)WiredDataframeSource.Number, 0, unused_send_target]);
+            variables.Add("0");
+        }
         return payload(integers, text, variables);
     }
 
     public static Payload WriteReceive(IReadOnlyList<WiredReceiveDataframeRow> rows)
     {
         ArgumentNullException.ThrowIfNull(rows);
-        if (rows.Count > 12) throw new ArgumentOutOfRangeException(nameof(rows), "A dataframe supports at most 12 rows.");
+        if (rows.Count > MaximumRows) throw new ArgumentOutOfRangeException(nameof(rows), "A dataframe supports at most 12 rows.");
         var integers = new List<int> { rows.Count };
         var text = new List<string[]>();
         var variables = new List<string>();
@@ -130,6 +139,11 @@ internal static class WiredDataframeCodec
             text.Add([key, row.Destination == WiredDataframeDestination.Placeholder ? destination[5..] : row.Placeholder]);
             variables.Add(row.VariableId);
         }
+        for (int i = rows.Count; i < MaximumRows; i++)
+        {
+            integers.Add((int)WiredDataframeDestination.Placeholder);
+            variables.Add("0");
+        }
         return payload(integers, text, variables);
     }
 
@@ -148,7 +162,7 @@ internal static class WiredDataframeCodec
             writer.WriteEndArray();
         }
         string encoded = Encoding.UTF8.GetString(buffer.GetBuffer(), 0, checked((int)buffer.Length));
-        if (Encoding.UTF8.GetByteCount(encoded) > 3000 || string.Join('|', text.Select(row => row[0])).Length > 400 ||
+        if (Encoding.UTF8.GetByteCount(encoded) > 3000 || string.Join('|', integers).Length > 400 ||
             string.Join('|', variables).Length > 240)
             throw new ArgumentException("The dataframe exceeds the client storage limits.");
         return new(integers.ToArray(), encoded, variables.ToArray());

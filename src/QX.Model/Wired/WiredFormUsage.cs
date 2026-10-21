@@ -109,6 +109,13 @@ internal static partial class WiredFormKnowledge
             companions("wf_link");
         }
 
+        if ((category == WiredFormCategory.Action && code is 63 or 64) || (category == WiredFormCategory.Trigger && code is 29 or 30))
+        {
+            client(WiredUsageTopic.Setup, "Select placed WIRED Link furniture as the endpoints. The network and the receive-local switch belong to the Link itself and are saved through its network window, not through this form.", "WiredLinkController; WiredLinkSaveConfigurationMessageComposer");
+            client(WiredUsageTopic.Pitfall, "Only the Link owner can create, rename, delete or select networks, and a network can be used by only one Link per room.", "WiredLinkController; wiredlink.error.1; wiredlink.error.5");
+            companions("wf_link", "wf_xtra_link_speaker");
+        }
+
         if (category == WiredFormCategory.Addon && code == 1003)
         {
             announcement(WiredUsageTopic.Setup, "Place the Share add-on on top of a permanently shared variable definition. It publishes the selected categories of the add-ons attached to that definition to rooms that reference the variable.", "wired-updates-20261019");

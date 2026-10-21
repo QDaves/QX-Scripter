@@ -6083,7 +6083,7 @@ public sealed class WiredSendLinkDataframeActionForm : WiredForm
 {
     internal WiredSendLinkDataframeActionForm(WiredConfig configuration, WiredFormLayout layout) : base(configuration, layout) { }
 
-    /// <summary>Gets or sets rows. 0..12 typed rows; normalized unique keys of 1..40 ASCII word characters; JSON text &lt;=3000 UTF-8 bytes; joined keys &lt;=400 characters; joined variable IDs &lt;=240 characters</summary>
+    /// <summary>Gets or sets rows. 0..12 typed rows; normalized unique keys of 1..40 ASCII word characters; JSON text of the used rows &lt;=3000 UTF-8 bytes; all 37 integer parameters joined with | &lt;=400 characters; all 12 variable IDs joined with | &lt;=240 characters</summary>
     /// <remarks>Client label: wiredfurni.params.link.row_count. Send row i uses furniture source slot i+1 or user source slot i; furniture slot 0 selects Link endpoints. Receive variable destinations must be writable user-created context variables.</remarks>
     public IReadOnlyList<WiredSendDataframeRow> Rows
     {
@@ -6097,7 +6097,7 @@ public sealed class WiredReceiveLinkDataframeTriggerForm : WiredForm
 {
     internal WiredReceiveLinkDataframeTriggerForm(WiredConfig configuration, WiredFormLayout layout) : base(configuration, layout) { }
 
-    /// <summary>Gets or sets rows. 0..12 typed rows; normalized unique keys of 1..40 ASCII word characters; JSON text &lt;=3000 UTF-8 bytes; joined keys &lt;=400 characters; joined variable IDs &lt;=240 characters</summary>
+    /// <summary>Gets or sets rows. 0..12 typed rows; normalized unique keys of 1..40 ASCII word characters; JSON text of the used rows &lt;=3000 UTF-8 bytes; all 13 integer parameters joined with | &lt;=400 characters; all 12 variable IDs joined with | &lt;=240 characters</summary>
     /// <remarks>Client label: wiredfurni.params.link.row_count. Send row i uses furniture source slot i+1 or user source slot i; furniture slot 0 selects Link endpoints. Receive variable destinations must be writable user-created context variables.</remarks>
     public IReadOnlyList<WiredReceiveDataframeRow> Rows
     {

@@ -1171,6 +1171,18 @@ public static class ApplicationMemberIds
     /// <summary>Generates a Wired Web API key and waits for its correlated result.</summary>
     public const string WiredWebApiKeyGenerate = "wired.web_api.key.generate";
     public const string WiredSharedAddonsSynchronize = "wired.shared_addons.synchronize";
+    /// <summary>Reads the network configuration of a WIRED Link without opening its window by default.</summary>
+    public const string WiredLinkConfigurationGet = "wired.link.configuration.get";
+    /// <summary>Connects or disconnects a WIRED Link and sets its own-room receiving.</summary>
+    public const string WiredLinkConfigurationSave = "wired.link.configuration.save";
+    /// <summary>Creates a WIRED Link network owned by the account.</summary>
+    public const string WiredLinkNetworkCreate = "wired.link.network.create";
+    /// <summary>Renames a WIRED Link network owned by the account.</summary>
+    public const string WiredLinkNetworkRename = "wired.link.network.rename";
+    /// <summary>Deletes a WIRED Link network and disconnects its Links in every room.</summary>
+    public const string WiredLinkNetworkDelete = "wired.link.network.delete";
+    /// <summary>Lists the Links connected to a WIRED Link network, including unloaded rooms.</summary>
+    public const string WiredLinkConnectionsGet = "wired.link.connections.get";
     /// <summary>The id of the <c>wired.chest.open</c> operation, which requests the contents of a Wired chest.</summary>
     public const string WiredChestOpen = "wired.chest.open";
     /// <summary>The id of the <c>wired.chest.close</c> operation, which closes a Wired chest.</summary>

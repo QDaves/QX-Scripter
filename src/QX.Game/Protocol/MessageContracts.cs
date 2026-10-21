@@ -155,6 +155,17 @@ public static class MessageContracts
         Recycler.Status,
         Recycler.Finished,
         Wired.Account.Preferences,
+        Wired.Link.Open,
+        Wired.Link.Configuration,
+        Wired.Link.Result,
+        Wired.Link.Connections,
+        Wired.Link.Invalidated,
+        Wired.Link.ConfigurationGet,
+        Wired.Link.ConfigurationSave,
+        Wired.Link.NetworkCreate,
+        Wired.Link.NetworkRename,
+        Wired.Link.NetworkDelete,
+        Wired.Link.ConnectionsGet,
         Wired.WebApi.KeyGenerate,
         Wired.SharedAddons.Synchronize,
         Wired.WebApi.KeyResult,
@@ -1650,6 +1661,44 @@ public static class MessageContracts
             /// <summary>The AccountPreferences message contract.</summary>
             public static readonly MessageContract<AccountPreferences> Preferences =
                 Flash<AccountPreferences>(MessageKeys.Wired.Account.Preferences);
+        }
+
+        /// <summary>Contains WIRED Link network messages.</summary>
+        public static class Link
+        {
+            /// <summary>The WiredLinkOpen message contract.</summary>
+            public static readonly MessageContract<WiredLinkOpen> Open =
+                Flash<WiredLinkOpen>(MessageKeys.Wired.Link.Open);
+            /// <summary>The WiredLinkConfiguration message contract.</summary>
+            public static readonly MessageContract<WiredLinkConfiguration> Configuration =
+                Flash<WiredLinkConfiguration>(MessageKeys.Wired.Link.Configuration);
+            /// <summary>The WiredLinkOperationResult message contract.</summary>
+            public static readonly MessageContract<WiredLinkOperationResult> Result =
+                Flash<WiredLinkOperationResult>(MessageKeys.Wired.Link.Result);
+            /// <summary>The WiredLinkConnections message contract.</summary>
+            public static readonly MessageContract<WiredLinkConnections> Connections =
+                Flash<WiredLinkConnections>(MessageKeys.Wired.Link.Connections);
+            /// <summary>The WiredLinkConfigurationInvalidated message contract.</summary>
+            public static readonly MessageContract<WiredLinkConfigurationInvalidated> Invalidated =
+                Flash<WiredLinkConfigurationInvalidated>(MessageKeys.Wired.Link.Invalidated);
+            /// <summary>The WiredLinkGetConfiguration message contract.</summary>
+            public static readonly MessageContract<WiredLinkGetConfiguration> ConfigurationGet =
+                Flash<WiredLinkGetConfiguration>(MessageKeys.Wired.Link.ConfigurationGet);
+            /// <summary>The WiredLinkSaveConfiguration message contract.</summary>
+            public static readonly MessageContract<WiredLinkSaveConfiguration> ConfigurationSave =
+                Flash<WiredLinkSaveConfiguration>(MessageKeys.Wired.Link.ConfigurationSave);
+            /// <summary>The WiredLinkCreateNetwork message contract.</summary>
+            public static readonly MessageContract<WiredLinkCreateNetwork> NetworkCreate =
+                Flash<WiredLinkCreateNetwork>(MessageKeys.Wired.Link.NetworkCreate);
+            /// <summary>The WiredLinkRenameNetwork message contract.</summary>
+            public static readonly MessageContract<WiredLinkRenameNetwork> NetworkRename =
+                Flash<WiredLinkRenameNetwork>(MessageKeys.Wired.Link.NetworkRename);
+            /// <summary>The WiredLinkDeleteNetwork message contract.</summary>
+            public static readonly MessageContract<WiredLinkDeleteNetwork> NetworkDelete =
+                Flash<WiredLinkDeleteNetwork>(MessageKeys.Wired.Link.NetworkDelete);
+            /// <summary>The WiredLinkGetConnections message contract.</summary>
+            public static readonly MessageContract<WiredLinkGetConnections> ConnectionsGet =
+                Flash<WiredLinkGetConnections>(MessageKeys.Wired.Link.ConnectionsGet);
         }
 
         /// <summary>Contains Wired WebApi messages.</summary>

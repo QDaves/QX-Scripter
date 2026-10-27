@@ -711,6 +711,12 @@ public static class Msg
         public const string NftCollectionsScore = "NftCollectionsScore";
         /// <summary>The incoming Flash message <c>NftEmeraldConvertResult</c>.</summary>
         public const string NftEmeraldConvertResult = "NftEmeraldConvertResult";
+        /// <summary>The incoming Flash message <c>NftMarketplaceBuyOfferResult</c>.</summary>
+        public const string NftMarketplaceBuyOfferResult = "NftMarketplaceBuyOfferResult";
+        /// <summary>The incoming Flash message <c>NftMarketplaceItemStats</c>.</summary>
+        public const string NftMarketplaceItemStats = "NftMarketplaceItemStats";
+        /// <summary>The incoming Flash message <c>NftMarketplaceMakeOfferResult</c>.</summary>
+        public const string NftMarketplaceMakeOfferResult = "NftMarketplaceMakeOfferResult";
         /// <summary>The incoming Flash message <c>NftRewardItemClaimResult</c>.</summary>
         public const string NftRewardItemClaimResult = "NftRewardItemClaimResult";
         /// <summary>The incoming Flash message <c>NftStoreOffers</c>.</summary>
@@ -1962,6 +1968,12 @@ public static class Msg
         public const string NftCollectiblesClaimBonusItem = "NftCollectiblesClaimBonusItem";
         /// <summary>The outgoing Flash message <c>NftCollectiblesClaimRewardItem</c>.</summary>
         public const string NftCollectiblesClaimRewardItem = "NftCollectiblesClaimRewardItem";
+        /// <summary>The outgoing Flash message <c>NftMarketplaceBuyOffer</c>.</summary>
+        public const string NftMarketplaceBuyOffer = "NftMarketplaceBuyOffer";
+        /// <summary>The outgoing Flash message <c>NftMarketplaceGetItemStats</c>.</summary>
+        public const string NftMarketplaceGetItemStats = "NftMarketplaceGetItemStats";
+        /// <summary>The outgoing Flash message <c>NftMarketplaceMakeOffer</c>.</summary>
+        public const string NftMarketplaceMakeOffer = "NftMarketplaceMakeOffer";
         /// <summary>The outgoing Flash message <c>NftStorePurchase</c>.</summary>
         public const string NftStorePurchase = "NftStorePurchase";
         /// <summary>The outgoing Flash message <c>NftTransferAssets</c>.</summary>

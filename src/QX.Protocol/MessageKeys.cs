@@ -671,6 +671,16 @@ public static class MessageKeys
     /// <summary>Contains the marketplace message keys.</summary>
     public static class Marketplace
     {
+        public static class Nft
+        {
+            public static readonly MessageKey Buy = new("marketplace.nft.offer.buy");
+            public static readonly MessageKey BuyResult = new("marketplace.nft.offer.buy.result");
+            public static readonly MessageKey Make = new("marketplace.nft.offer.make");
+            public static readonly MessageKey MakeResult = new("marketplace.nft.offer.make.result");
+            public static readonly MessageKey ItemStatsRequest = new("marketplace.nft.item_stats.request");
+            public static readonly MessageKey ItemStats = new("marketplace.nft.item_stats");
+        }
+
         /// <summary>Contains the marketplace configuration message keys.</summary>
         public static class Configuration
         {

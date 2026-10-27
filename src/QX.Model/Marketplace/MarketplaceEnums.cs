@@ -50,7 +50,14 @@ public enum MarketplaceOfferType
     /// 4: a floor item that has already been used, which additionally carries a used flag.
     /// </summary>
     /// <remarks>Rejected on legacy Flash builds, whose offer layout only knows types 1 to 3.</remarks>
-    UsableFloor = 4
+    UsableFloor = 4,
+    Nft = 5
+}
+
+public enum MarketplaceCurrency
+{
+    Credits,
+    Emeralds
 }
 
 /// <summary>Specifies which slice of the local user's own marketplace offers a request asks for.</summary>

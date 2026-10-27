@@ -476,6 +476,12 @@ public static class MessageContracts
         Inventory.Pets.Snapshot,
         Inventory.Pets.Added,
         Inventory.Pets.Removed,
+        Marketplace.Nft.Buy,
+        Marketplace.Nft.BuyResult,
+        Marketplace.Nft.Make,
+        Marketplace.Nft.MakeResult,
+        Marketplace.Nft.ItemStatsRequest,
+        Marketplace.Nft.ItemStats,
         Marketplace.Configuration.Request,
         Marketplace.Configuration.Snapshot,
         Marketplace.Eligibility.Request,
@@ -1395,6 +1401,22 @@ public static class MessageContracts
     /// <summary>Contains the marketplace message contracts.</summary>
     public static class Marketplace
     {
+        public static class Nft
+        {
+            public static readonly MessageContract<NftMarketplaceBuyOffer> Buy =
+                Flash<NftMarketplaceBuyOffer>(MessageKeys.Marketplace.Nft.Buy);
+            public static readonly MessageContract<NftMarketplaceBuyOfferResult> BuyResult =
+                Flash<NftMarketplaceBuyOfferResult>(MessageKeys.Marketplace.Nft.BuyResult);
+            public static readonly MessageContract<NftMarketplaceMakeOffer> Make =
+                Flash<NftMarketplaceMakeOffer>(MessageKeys.Marketplace.Nft.Make);
+            public static readonly MessageContract<NftMarketplaceMakeOfferResult> MakeResult =
+                Flash<NftMarketplaceMakeOfferResult>(MessageKeys.Marketplace.Nft.MakeResult);
+            public static readonly MessageContract<NftMarketplaceGetItemStats> ItemStatsRequest =
+                Flash<NftMarketplaceGetItemStats>(MessageKeys.Marketplace.Nft.ItemStatsRequest);
+            public static readonly MessageContract<NftMarketplaceItemStats> ItemStats =
+                Flash<NftMarketplaceItemStats>(MessageKeys.Marketplace.Nft.ItemStats);
+        }
+
         /// <summary>Contains the marketplace configuration message contracts.</summary>
         public static class Configuration
         {

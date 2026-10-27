@@ -27,11 +27,16 @@ public sealed record MarketplaceOffer
     public int UniqueSeriesSize { get; init; }
     /// <summary>Gets whether the item of a used floor offer has been used, or <see langword="null"/> for other offer types.</summary>
     public bool? IsUsed { get; init; }
-    /// <summary>Gets the price of the offer in credits.</summary>
+    public string? ProductCode { get; init; }
+    public int NftFurniType { get; init; }
+    public bool IsNft => WireType == 5;
+    public MarketplaceCurrency Currency => IsNft
+        ? MarketplaceCurrency.Emeralds : MarketplaceCurrency.Credits;
+    /// <summary>Gets the price of the offer in its currency.</summary>
     public int Price { get; init; }
     /// <summary>Gets the number of minutes until the offer expires.</summary>
     public int MinutesRemaining { get; init; }
-    /// <summary>Gets the average price of the item in credits.</summary>
+    /// <summary>Gets the average price of the item in its currency.</summary>
     public int AveragePrice { get; init; }
     /// <summary>Gets the trade volume of the item, which the offer layout does not carry, so parsed offers report 0.</summary>
     public int TradeVolume { get; init; }
@@ -43,9 +48,9 @@ public sealed record MarketplaceOffer
     /// </summary>
     public long? StatusTimeMilliseconds { get; init; }
     /// <summary>Gets whether the offer contains a floor item, which includes limited edition and used floor offers.</summary>
-    public bool IsFloor => WireType is 1 or 3 or 4;
+    public bool IsFloor => WireType is 1 or 3 or 4 || IsNft && NftFurniType == 1;
     /// <summary>Gets whether the offer contains a wall item.</summary>
-    public bool IsWall => WireType == 2;
+    public bool IsWall => WireType == 2 || IsNft && NftFurniType == 2;
     /// <summary>Gets whether the offer contains a limited edition item.</summary>
     public bool IsLimitedEdition => WireType == 3;
     /// <summary>Gets whether the offer is a used floor offer that carries <see cref="IsUsed"/>.</summary>
@@ -78,6 +83,8 @@ internal static class MarketplaceCodec
         int serial_number = 0;
         int series_size = 0;
         bool? is_used = null;
+        string? product_code = null;
+        int nft_furni_type = 0;
 
         switch (type)
         {
@@ -98,6 +105,11 @@ internal static class MarketplaceCodec
                 kind = p.ReadInt();
                 data = p.Parse<ItemData>();
                 is_used = p.ReadBool();
+                break;
+            case 5:
+                product_code = p.ReadString();
+                kind = p.ReadInt();
+                nft_furni_type = p.ReadInt();
                 break;
         }
 
@@ -127,6 +139,8 @@ internal static class MarketplaceCodec
             UniqueSerialNumber = serial_number,
             UniqueSeriesSize = series_size,
             IsUsed = is_used,
+            ProductCode = product_code,
+            NftFurniType = nft_furni_type,
             Price = price,
             MinutesRemaining = minutes_remaining,
             AveragePrice = average_price,
@@ -164,6 +178,12 @@ internal static class MarketplaceCodec
                     throw new InvalidDataException(
                         "Flash marketplace type 4 offers require the used state.");
                 }
+                break;
+            case 5:
+                MarketplaceWire.RequireString(
+                    offer.ProductCode ?? throw new InvalidDataException(
+                        "NFT marketplace offers require a product code."),
+                    nameof(offer.ProductCode), in p);
                 break;
         }
 
@@ -203,6 +223,11 @@ internal static class MarketplaceCodec
                 p.WriteInt(offer.Kind);
                 p.Compose(offer.Data!);
                 p.WriteBool(offer.IsUsed!.Value);
+                break;
+            case 5:
+                p.WriteString(offer.ProductCode!);
+                p.WriteInt(offer.Kind);
+                p.WriteInt(offer.NftFurniType);
                 break;
         }
 
@@ -718,13 +743,29 @@ public sealed record MarketplaceConfiguration(
     int RevenueLimit,
     int HalfTaxLimit) : IParserComposer<MarketplaceConfiguration>
 {
+    public NftMarketplaceConfiguration? Nft { get; init; }
+
     /// <summary>Parses the message from a packet.</summary>
     /// <param name="p">The packet reader.</param>
     public static MarketplaceConfiguration Parse(in PacketReader p) =>
         FlashWire.Parse(in p, ParseFlash);
 
-    private static MarketplaceConfiguration ParseFlash(in PacketReader p) =>
-        Read(in p);
+    private static MarketplaceConfiguration ParseFlash(in PacketReader p)
+    {
+        MarketplaceConfiguration configuration = Read(in p);
+        return p.Available switch
+        {
+            0 => configuration,
+            25 => configuration with
+            {
+                Nft = new NftMarketplaceConfiguration(
+                    p.ReadBool(), p.ReadInt(), p.ReadInt(), p.ReadInt(),
+                    p.ReadInt(), p.ReadInt(), p.ReadInt())
+            },
+            _ => throw new InvalidDataException(
+                $"Unsupported marketplace configuration tail length {p.Available}.")
+        };
+    }
 
     private static MarketplaceConfiguration Read(in PacketReader p) => new(
         p.ReadBool(),
@@ -761,8 +802,27 @@ public sealed record MarketplaceConfiguration(
         p.WriteInt(value.SellingFeePercentage);
         p.WriteInt(value.RevenueLimit);
         p.WriteInt(value.HalfTaxLimit);
+        if (value.Nft is { } nft)
+        {
+            p.WriteBool(nft.IsEnabled);
+            p.WriteInt(nft.OfferMinimumPrice);
+            p.WriteInt(nft.OfferMaximumPrice);
+            p.WriteInt(nft.OfferDurationMinutes);
+            p.WriteInt(nft.MaximumOpenOffers);
+            p.WriteInt(nft.SellingFeePercentage);
+            p.WriteInt(nft.HalfTaxLimit);
+        }
     }
 }
+
+public sealed record NftMarketplaceConfiguration(
+    bool IsEnabled,
+    int OfferMinimumPrice,
+    int OfferMaximumPrice,
+    int OfferDurationMinutes,
+    int MaximumOpenOffers,
+    int SellingFeePercentage,
+    int HalfTaxLimit);
 
 /// <summary>Represents the hotel's answer to a request to cancel all of the local user's marketplace offers.</summary>
 public sealed record MarketplaceCancelAllOffersResult
@@ -998,7 +1058,7 @@ internal static class MarketplaceWire
 
     public static void RequireOfferType(int type)
     {
-        if (type is < 1 or > 4)
+        if (type is < 1 or > 5)
             throw new InvalidDataException($"Unsupported marketplace offer type {type}.");
     }
 

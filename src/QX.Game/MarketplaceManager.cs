@@ -28,9 +28,9 @@ public readonly record struct MarketplaceItemKey(
 /// <param name="UniqueSerialNumber">The serial number of a limited edition offer, or 0 for other offer types.</param>
 /// <param name="UniqueSeriesSize">The series size of a limited edition offer, or 0 for other offer types.</param>
 /// <param name="IsUsed">Whether the item of a used floor offer has been used, or <see langword="null"/> for other offer types.</param>
-/// <param name="Price">The price of the offer in credits.</param>
+/// <param name="Price">The price of the offer in its currency.</param>
 /// <param name="MinutesRemaining">The number of minutes until the offer expires.</param>
-/// <param name="AveragePrice">The average price of the item in credits.</param>
+/// <param name="AveragePrice">The average price of the item in its currency.</param>
 /// <param name="TradeVolume">The trade volume of the item, which the parsed offer layout does not carry and is 0.</param>
 /// <param name="Offers">The number of open offers for the item in a search result, or 0 for the local user's own offers.</param>
 /// <param name="StatusTimeMilliseconds">
@@ -69,7 +69,12 @@ public sealed record MarketplaceOfferSnapshot(
     /// <summary>
     /// Gets whether the offer contains a wall item.
     /// </summary>
-    public bool IsWall => OfferType is MarketplaceOfferType.Wall;
+    public bool IsWall => OfferType is MarketplaceOfferType.Wall || IsNft && NftFurniType == 2;
+    public string? ProductCode { get; init; }
+    public int NftFurniType { get; init; }
+    public bool IsNft => OfferType is MarketplaceOfferType.Nft;
+    public MarketplaceCurrency Currency => IsNft
+        ? MarketplaceCurrency.Emeralds : MarketplaceCurrency.Credits;
     /// <summary>
     /// Gets the marketplace category the offered item belongs to.
     /// </summary>
@@ -85,6 +90,8 @@ public sealed record MarketplaceOfferSnapshot(
             MarketplaceFurniCategory.Floor,
         MarketplaceOfferType.Wall => MarketplaceFurniCategory.Wall,
         MarketplaceOfferType.LimitedEdition => MarketplaceFurniCategory.Limited,
+        MarketplaceOfferType.Nft when NftFurniType is 1 or 2 =>
+            (MarketplaceFurniCategory)NftFurniType,
         _ => throw new InvalidDataException(
             $"Unsupported marketplace offer type {WireType}.")
     };
@@ -600,7 +607,11 @@ public sealed class MarketplaceManager : GameStateManager
         value.AveragePrice,
         value.TradeVolume,
         value.Offers,
-        value.StatusTimeMilliseconds);
+        value.StatusTimeMilliseconds)
+    {
+        ProductCode = value.ProductCode,
+        NftFurniType = value.NftFurniType
+    };
 
     private static ItemDataSnapshot SnapshotOf(ItemData value)
     {
@@ -646,6 +657,8 @@ public sealed class MarketplaceManager : GameStateManager
                 first.UniqueSerialNumber != second.UniqueSerialNumber ||
                 first.UniqueSeriesSize != second.UniqueSeriesSize ||
                 first.IsUsed != second.IsUsed ||
+                first.ProductCode != second.ProductCode ||
+                first.NftFurniType != second.NftFurniType ||
                 first.Price != second.Price ||
                 first.MinutesRemaining != second.MinutesRemaining ||
                 first.AveragePrice != second.AveragePrice ||

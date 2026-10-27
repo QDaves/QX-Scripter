@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using Qx.Diagnostics;
 using Qx.Presentation.Services.Drafts;
 using Qx.Presentation.Services.Files;
+using Qx.Presentation.Services.Library;
 using Qx.Presentation.Services.Output;
 using Qx.Presentation.Services.Settings;
 using Qx.Presentation.Threading;
@@ -87,9 +88,10 @@ public sealed class ScriptWorkspace : IScriptWorkspace, IDisposable
         return Add(name, "", null, modified: false);
     }
 
-    public ScriptDocument Add(string name, string code, string? path, bool modified)
+    public ScriptDocument Add(string name, string code, string? path, bool modified, CommunityOrigin? community = null)
     {
         ScriptDocument document = _factory.Create(name, code ?? "", path);
+        document.Community = community;
         document.ActivationDeferred = _restoring;
         if (path is not null && _settings.PanelFor(PathComparison.Full(path)) is { } memory)
         {
@@ -260,11 +262,11 @@ public sealed class ScriptWorkspace : IScriptWorkspace, IDisposable
             if (document.FilePath is { } path)
             {
                 if (includeModifiedFiles && document.IsModified)
-                    drafts.Add(new Draft(document.Name, document.Text, path));
+                    drafts.Add(new Draft(document.Name, document.Text, path, document.Community));
                 continue;
             }
             if (!string.IsNullOrWhiteSpace(document.Text))
-                drafts.Add(new Draft(document.Name, document.Text));
+                drafts.Add(new Draft(document.Name, document.Text, Community: document.Community));
         }
         return drafts;
     }
@@ -417,11 +419,12 @@ public sealed class ScriptWorkspace : IScriptWorkspace, IDisposable
             }
             if (document is null)
                 return;
+            document.Community = draft.Community;
             document.ReplaceText(draft.Code);
             Active = document;
             return;
         }
-        Add(draft.Name, draft.Code, null, modified: true);
+        Add(draft.Name, draft.Code, null, modified: true, community: draft.Community);
     }
 
     async Task<OpenResult> AwaitSharedAsync(Task<OpenResult> running, CancellationToken cancellation_token)

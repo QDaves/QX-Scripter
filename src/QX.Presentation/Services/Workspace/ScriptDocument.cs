@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using Qx.Presentation.Services.Files;
+using Qx.Presentation.Services.Library;
 using Qx.Presentation.Services.Panels;
 using Qx.Presentation.Services.Runs;
 using Qx.Presentation.Threading;
@@ -70,6 +71,8 @@ public sealed partial class ScriptDocument : ObservableObject, IRunSource, IDisp
     public PanelDocument Panel { get; }
 
     public bool IsClosed { get; private set; }
+
+    public CommunityOrigin? Community { get; internal set; }
 
     internal bool ActivationDeferred { get; set; }
 

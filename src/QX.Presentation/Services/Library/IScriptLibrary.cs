@@ -15,8 +15,10 @@ public sealed record ScriptMeta
     [JsonPropertyName("group")]
     public string? Category { get; init; }
 
+    public CommunityOrigin? Community { get; init; }
+
     [JsonIgnore]
-    public bool IsEmpty => string.IsNullOrWhiteSpace(Category);
+    public bool IsEmpty => string.IsNullOrWhiteSpace(Category) && Community is null;
 
     public static ScriptMeta Empty { get; } = new();
 }
@@ -54,6 +56,10 @@ public interface IScriptLibrary
     void RecordRunStarted(string name, DateTimeOffset at);
 
     void RecordRunFinished(string name, ScriptRunState outcome);
+
+    bool IsCommunityApproved(string id, string sha256);
+
+    void ApproveCommunity(string id, string sha256);
 
     Task FlushAsync(CancellationToken cancellationToken);
 

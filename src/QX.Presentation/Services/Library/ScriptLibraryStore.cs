@@ -12,6 +12,7 @@ public sealed class ScriptLibraryStore : IScriptLibrary, IDisposable
     readonly Dictionary<string, ScriptMeta> _scripts = new(StringComparer.OrdinalIgnoreCase);
     readonly HashSet<string> _collapsed = new(StringComparer.OrdinalIgnoreCase);
     readonly Dictionary<string, LastRun> _runs = new(StringComparer.OrdinalIgnoreCase);
+    readonly Dictionary<string, HashSet<string>> _community_approvals = new(StringComparer.Ordinal);
     IReadOnlyList<string>? _categories;
     LibrarySort _sort;
 
@@ -156,6 +157,20 @@ public sealed class ScriptLibraryStore : IScriptLibrary, IDisposable
 
     public Task FlushAsync(CancellationToken cancellationToken) => _file.FlushAsync(cancellationToken);
 
+    public bool IsCommunityApproved(string id, string sha256) =>
+        _community_approvals.TryGetValue(id, out HashSet<string>? approved) && approved.Contains(sha256);
+
+    public void ApproveCommunity(string id, string sha256)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(id);
+        if (!IsCodeHash(sha256))
+            throw new ArgumentException("A SHA-256 code hash is required.", nameof(sha256));
+        if (!_community_approvals.TryGetValue(id, out HashSet<string>? approved))
+            _community_approvals[id] = approved = new(StringComparer.Ordinal);
+        if (approved.Add(sha256))
+            _file.Schedule();
+    }
+
     public bool FlushNow(TimeSpan budget) => _file.FlushNow(budget);
 
     public void Dispose() => _file.Dispose();
@@ -171,7 +186,9 @@ public sealed class ScriptLibraryStore : IScriptLibrary, IDisposable
     {
         Sort = _sort.ToString().ToLowerInvariant(),
         Collapsed = [.. _collapsed.OrderBy(category => category, StringComparer.OrdinalIgnoreCase)],
-        Scripts = _scripts.Count == 0 ? null : new Dictionary<string, ScriptMeta>(_scripts, StringComparer.OrdinalIgnoreCase)
+        Scripts = _scripts.Count == 0 ? null : new Dictionary<string, ScriptMeta>(_scripts, StringComparer.OrdinalIgnoreCase),
+        CommunityApprovals = _community_approvals.Count == 0 ? null : _community_approvals.ToDictionary(
+            entry => entry.Key, entry => entry.Value.Order(StringComparer.Ordinal).ToArray(), StringComparer.Ordinal)
     });
 
     void Load(string path)
@@ -192,9 +209,20 @@ public sealed class ScriptLibraryStore : IScriptLibrary, IDisposable
                 if (!string.IsNullOrWhiteSpace(name) && meta is { IsEmpty: false })
                     _scripts[name] = meta;
             }
+            foreach ((string id, string[] hashes) in document.CommunityApprovals ?? new Dictionary<string, string[]>())
+            {
+                if (string.IsNullOrWhiteSpace(id) || hashes is null)
+                    continue;
+                HashSet<string> approved = new(hashes.Where(IsCodeHash), StringComparer.Ordinal);
+                if (approved.Count > 0)
+                    _community_approvals[id] = approved;
+            }
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException or JsonException)
         {
         }
     }
+
+    static bool IsCodeHash(string? value) =>
+        value is { Length: 64 } && value.All(character => character is >= '0' and <= '9' or >= 'a' and <= 'f');
 }

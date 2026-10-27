@@ -15,6 +15,7 @@ public sealed class ScriptDocumentFactory(
     IScriptPrompts prompts,
     IScriptFileService files,
     IScriptLibrary library,
+    CommunityCopies community,
     IClipboardService clipboard,
     IUiDispatcher dispatcher,
     TimeProvider time,
@@ -25,7 +26,7 @@ public sealed class ScriptDocumentFactory(
         {
             var output = new OutputBuffer(dispatcher, time);
             var panel = new PanelDocument(document, prompts, clipboard, dispatcher, time);
-            var hooks = new DocumentRunHooks(document, files, library);
+            var hooks = new DocumentRunHooks(document, files, library, community);
             var run = new ScriptRunController(document, runtime.Scripts, dispatcher, time, hooks, panel, output, lifetime.Token);
             var console = new OutputConsoleViewModel(output, clipboard, dispatcher, time);
             panel.ButtonPressed += button => PanelPress.Route(run, button);

@@ -12,6 +12,7 @@ public static class PageCatalog
         new(PageKey.Editor, "Editor", "Editor", IconKind.Code, PageGroup.Workspace, 0, "view.editor"),
         new(PageKey.Log, "Application log", "Application log", IconKind.Log, PageGroup.Workspace, 1, "page.log"),
         new(PageKey.Library, "Script library", "Script library", IconKind.Library, PageGroup.Workspace, 2, "page.library"),
+        new(PageKey.Community, "Community scripts", "Community scripts", IconKind.Store, PageGroup.Workspace, 3, "page.community"),
         new(PageKey.Room, "Room", "Room", IconKind.Room, PageGroup.Game, 1, "page.room"),
         new(PageKey.General, "General", "General", IconKind.General, PageGroup.Game, 2, "page.general"),
         new(PageKey.Chat, "Chat", "Chat", IconKind.Chat, PageGroup.Game, 3, "page.chat"),

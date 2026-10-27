@@ -20,8 +20,8 @@ public sealed record LibrarySortOption(LibrarySort Sort, string Label);
 public sealed partial class LibraryViewModel : PageViewModel
 {
     public const string Subheading = "Your scripts, ready when you need them.";
-    public const string CommunityUrl = "http://qxscripter.xyz/";
-    public const string CommunityTitle = "Community scripts";
+    public const string CommunityUrl = "https://qxscripter.xyz/";
+    public const string CommunityTitle = "QXScripter.xyz";
     public const string NewScriptText = "New script";
     public const string EmptyTitle = "No saved scripts yet";
     public const string EmptyMessage = "Create your first script to add it here.";
@@ -222,7 +222,9 @@ public sealed partial class LibraryViewModel : PageViewModel
     {
         if (Target(row) is not { } script)
             return;
-        ScriptMeta current = script.DeclaredGroup is { } declared ? new ScriptMeta { Category = declared } : _library.Get(script.Name);
+        ScriptMeta current = _library.Get(script.Name);
+        if (script.DeclaredGroup is { } declared)
+            current = current with { Category = declared };
         var dialog = new CategoryDialogViewModel(script.Name, current, Categories());
         ScriptMeta? meta = await _dialogs.ShowAsync(dialog, cancellation_token);
         if (meta is null || !_scripts.ContainsKey(script.Path))
@@ -417,6 +419,7 @@ public sealed partial class LibraryViewModel : PageViewModel
     {
         bool working = _runs.WorkingPaths.Contains(row.Path);
         bool armed = !working && _runs.LivePaths.Contains(row.Path);
+        row.OriginText = _library.Get(row.Name).Community is { } source ? $"Local copy · {source.Author} · v{source.Version}" : "";
         row.Apply(edited_at, row.DeclaredGroup ?? _library.Get(row.Name).Category, _library.LastRunOf(row.Name), working, armed, now);
     }
 

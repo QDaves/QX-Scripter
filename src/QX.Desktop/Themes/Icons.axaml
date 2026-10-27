@@ -4,6 +4,7 @@
   <x:String x:Key="QxIconPaint">Stroke</x:String>
   <x:Double x:Key="QxIconViewBox">24</x:Double>
   <x:Double x:Key="QxIconStrokeWidth">1.5</x:Double>
+  <StreamGeometry x:Key="Icon.Store">M3 10l2 -7h14l2 7 M3 10a3 3 0 0 0 6 0a3 3 0 0 0 6 0a3 3 0 0 0 6 0 M5 13v8h14v-8 M9 21v-6h6v6</StreamGeometry>
 
   <StreamGeometry x:Key="Icon.WindowMinimize">M5 12l14 0</StreamGeometry>
   <StreamGeometry x:Key="Icon.WindowMaximize">M3 5a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v14a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-14</StreamGeometry>

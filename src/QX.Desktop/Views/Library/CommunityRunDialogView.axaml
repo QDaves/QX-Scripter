@@ -1,0 +1,33 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:c="using:Qx.Desktop.Controls"
+             xmlns:vm="using:Qx.Presentation.ViewModels.Library"
+             x:Class="Qx.Desktop.Views.Library.CommunityRunDialogView"
+             x:DataType="vm:CommunityRunDialogViewModel">
+  <c:Dialog CloseCommand="{Binding CancelCommand}" Title="{Binding Title}" Icon="{Binding Icon}" Tone="{Binding Tone}">
+    <StackPanel Spacing="12">
+      <StackPanel Spacing="4">
+        <TextBlock Text="{Binding Script}" Classes="strong primary" TextWrapping="Wrap" />
+        <TextBlock Text="{Binding Author}" Classes="small secondary" TextWrapping="Wrap" />
+      </StackPanel>
+      <TextBlock Text="This script can read or change your files, use the network and start programs with your permissions."
+                 TextWrapping="Wrap" LineHeight="{DynamicResource QxLineHeightBody}" />
+      <TextBlock Text="Community scripts are not reviewed. Your approval applies only to this exact code."
+                 Classes="small secondary" TextWrapping="Wrap" />
+    </StackPanel>
+    <c:Dialog.Buttons>
+      <Grid ColumnDefinitions="28,Auto" ColumnSpacing="12">
+        <TextBlock Name="RunCountdown" Text="{Binding CountdownText}" Classes="small secondary"
+                   FontFamily="{DynamicResource QxMonoFont}" VerticalAlignment="Center" />
+        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+          <Button Content="Cancel" Command="{Binding CancelCommand}" IsCancel="True" />
+          <Button Content="Review script" Command="{Binding ReviewCommand}" />
+          <Button Name="RunButton" Command="{Binding AcceptCommand}" Classes="danger" IsDefault="True" Width="144"
+                  AutomationProperties.Name="Run script">
+            <TextBlock Name="RunLabel" Text="Run script" />
+          </Button>
+        </StackPanel>
+      </Grid>
+    </c:Dialog.Buttons>
+  </c:Dialog>
+</UserControl>

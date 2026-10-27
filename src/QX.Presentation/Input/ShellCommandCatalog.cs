@@ -4,6 +4,7 @@ public static class ShellCommandCatalog
 {
     public const string FileNew = "file.new";
     public const string PageLibrary = "page.library";
+    public const string PageCommunity = "page.community";
     public const string FileSave = "file.save";
     public const string FileSaveAs = "file.saveAs";
     public const string FileClose = "file.close";
@@ -39,6 +40,7 @@ public static class ShellCommandCatalog
     [
         new(FileNew, "New script", CommandGroup.Script, [new KeyChord(ChordKey.N, ChordModifiers.Primary)], KeyRoute.Tunnel),
         new(PageLibrary, "Open the script library", CommandGroup.Script, [new KeyChord(ChordKey.O, ChordModifiers.Primary)], KeyRoute.Tunnel),
+        new(PageCommunity, "Browse QXScripter.xyz", CommandGroup.Script, []),
         new(FileSave, "Save", CommandGroup.Script, [new KeyChord(ChordKey.S, ChordModifiers.Primary)], KeyRoute.Tunnel, KeyScope.EditorPage),
         new(FileSaveAs, "Save as…", CommandGroup.Script, [new KeyChord(ChordKey.S, ChordModifiers.Primary | ChordModifiers.Shift)], KeyRoute.Tunnel, KeyScope.EditorPage),
         new(FileClose, "Close the tab", CommandGroup.Script, [new KeyChord(ChordKey.W, ChordModifiers.Primary)], KeyRoute.Tunnel, KeyScope.EditorPage),

@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using Qx.Presentation.Services.Drafts;
 using Qx.Presentation.Services.Lifecycle;
+using Qx.Presentation.Services.Library;
 
 namespace Qx.Presentation.Services.Workspace;
 
@@ -28,7 +29,7 @@ public interface IScriptWorkspace : IWorkspaceSession
 
     ScriptDocument AddNew();
 
-    ScriptDocument Add(string name, string code, string? path, bool modified);
+    ScriptDocument Add(string name, string code, string? path, bool modified, CommunityOrigin? community = null);
 
     Task<OpenResult> OpenAsync(string path, CancellationToken cancellationToken);
 

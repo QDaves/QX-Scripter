@@ -36,6 +36,7 @@ public abstract partial class PageViewModel : ViewModelBase
     protected CancellationToken ActivationToken => _activation?.Token ?? CancellationToken.None;
 
     public virtual bool TryClearSearch() => false;
+    public virtual bool TryReselect() => false;
 
     internal void Activate()
     {

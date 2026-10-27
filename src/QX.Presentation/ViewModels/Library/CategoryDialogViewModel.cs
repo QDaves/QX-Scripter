@@ -14,12 +14,14 @@ public sealed partial class CategoryDialogViewModel : DialogViewModel<ScriptMeta
     public const string AcceptText = "Save";
 
     readonly string _script;
+    readonly ScriptMeta _current;
 
     public CategoryDialogViewModel(string scriptName, ScriptMeta current, IReadOnlyList<string> categories)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(scriptName);
         ArgumentNullException.ThrowIfNull(current);
         _script = scriptName;
+        _current = current;
         Categories = categories ?? throw new ArgumentNullException(nameof(categories));
         Text = current.Category?.Trim() ?? "";
     }
@@ -44,6 +46,6 @@ public sealed partial class CategoryDialogViewModel : DialogViewModel<ScriptMeta
     void Accept()
     {
         string typed = Text.Trim();
-        Close(new ScriptMeta { Category = typed.Length == 0 ? null : typed });
+        Close(_current with { Category = typed.Length == 0 ? null : typed });
     }
 }

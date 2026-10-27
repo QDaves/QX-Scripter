@@ -8,5 +8,7 @@ static class LibraryViews
     public static void Register(ViewRegistry views) =>
         views
             .Register<LibraryViewModel>(static () => new LibraryView())
+            .Register<CommunityViewModel>(static () => new CommunityView())
+            .Register<CommunityRunDialogViewModel>(static () => new CommunityRunDialogView())
             .Register<CategoryDialogViewModel>(static () => new CategoryDialogView());
 }

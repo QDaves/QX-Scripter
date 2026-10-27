@@ -66,6 +66,9 @@ public sealed partial class LibraryScriptRow : ObservableObject
     public partial string EditedText { get; private set; } = "";
 
     [ObservableProperty]
+    public partial string OriginText { get; set; } = "";
+
+    [ObservableProperty]
     public partial string DetailTooltip { get; private set; } = "";
 
     [ObservableProperty]

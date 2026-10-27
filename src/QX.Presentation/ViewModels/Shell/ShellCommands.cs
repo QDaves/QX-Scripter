@@ -47,6 +47,7 @@ public static class ShellCommands
         {
             [ShellCommandCatalog.FileNew] = new(new RelayCommand(() => Editor().NewCommand.Execute(null)), Always),
             [ShellCommandCatalog.PageLibrary] = new(Toggle(navigation, PageKey.Library), Always),
+            [ShellCommandCatalog.PageCommunity] = new(Toggle(navigation, PageKey.Community), Always),
             [ShellCommandCatalog.FileSave] = new(new RelayCommand(() => Editor().SaveCommand.Execute(null)), HasActive),
             [ShellCommandCatalog.FileSaveAs] = new(new RelayCommand(() => Editor().SaveAsCommand.Execute(null)), HasActive),
             [ShellCommandCatalog.FileClose] = new(new RelayCommand(() => Editor().CloseCommand.Execute(null)), HasActive),

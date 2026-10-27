@@ -24,6 +24,9 @@ public sealed class UniformTilePanel : VirtualizingPanel
     public static readonly StyledProperty<int> BufferRowsProperty =
         AvaloniaProperty.Register<UniformTilePanel, int>(nameof(BufferRows), 2);
 
+    public static readonly StyledProperty<bool> StretchColumnsProperty =
+        AvaloniaProperty.Register<UniformTilePanel, bool>(nameof(StretchColumns));
+
     readonly Dictionary<int, Control> _realized = [];
     readonly Dictionary<Control, object?> _recycle_keys = new(ReferenceEqualityComparer.Instance);
     readonly Dictionary<object, Stack<Control>> _pool = [];
@@ -34,7 +37,7 @@ public sealed class UniformTilePanel : VirtualizingPanel
 
     static UniformTilePanel()
     {
-        AffectsMeasure<UniformTilePanel>(ItemWidthProperty, ItemHeightProperty, HeaderHeightProperty, BufferRowsProperty);
+        AffectsMeasure<UniformTilePanel>(ItemWidthProperty, ItemHeightProperty, HeaderHeightProperty, BufferRowsProperty, StretchColumnsProperty);
     }
 
     public UniformTilePanel()
@@ -64,6 +67,12 @@ public sealed class UniformTilePanel : VirtualizingPanel
     {
         get => GetValue(BufferRowsProperty);
         set => SetValue(BufferRowsProperty, value);
+    }
+
+    public bool StretchColumns
+    {
+        get => GetValue(StretchColumnsProperty);
+        set => SetValue(StretchColumnsProperty, value);
     }
 
     public int Columns => _columns;
@@ -169,6 +178,7 @@ public sealed class UniformTilePanel : VirtualizingPanel
     void LayoutSlots(IReadOnlyList<object?> items, double width)
     {
         _slots.Clear();
+        double item_width = StretchColumns ? width / _columns : ItemWidth;
         double y = 0;
         int column = 0;
         foreach (object? item in items)
@@ -184,7 +194,7 @@ public sealed class UniformTilePanel : VirtualizingPanel
                 y += HeaderHeight;
                 continue;
             }
-            _slots.Add(new Rect(column * ItemWidth, y, ItemWidth, ItemHeight));
+            _slots.Add(new Rect(column * item_width, y, item_width, ItemHeight));
             if (++column == _columns)
             {
                 column = 0;

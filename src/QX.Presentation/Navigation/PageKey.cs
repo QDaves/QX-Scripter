@@ -15,5 +15,6 @@ public enum PageKey
     GameData,
     BugReport,
     Settings,
-    About
+    About,
+    Community
 }

@@ -23,6 +23,8 @@ public interface IScriptFileCommands
 {
     ScriptDocument NewDocument();
 
+    ScriptDocument OpenCommunity(CommunityScript script);
+
     Task<ScriptDocument?> OpenAsync(string path, CancellationToken cancellationToken);
 
     Task OpenDroppedAsync(IReadOnlyList<string> paths, CancellationToken cancellationToken);
@@ -71,6 +73,18 @@ public sealed class ScriptFileCommands(
     public ScriptDocument NewDocument()
     {
         ScriptDocument document = workspace.AddNew();
+        navigation.Navigate(PageKey.Editor);
+        return document;
+    }
+
+    public ScriptDocument OpenCommunity(CommunityScript script)
+    {
+        ArgumentNullException.ThrowIfNull(script);
+        ScriptDocument? document = workspace.Documents.FirstOrDefault(open => !open.IsClosed && open.FilePath is null &&
+            open.Community is { } origin && origin.Id == script.Id && origin.Sha256 == script.Sha256 && open.Text == script.Code);
+        document ??= workspace.Add(script.Title, script.Code, null, modified: false,
+            community: new(script.Id, script.Version, script.Author.Name, script.Sha256, Title: script.Title));
+        workspace.Active = document;
         navigation.Navigate(PageKey.Editor);
         return document;
     }
@@ -491,6 +505,12 @@ public sealed class ScriptFileCommands(
             return false;
         }
         document.MarkSaved(path, text);
+        if (document.Community is { } origin)
+        {
+            string name = ScriptFileName.NameOf(path);
+            library.Set(name, library.Get(name) with { Community = origin });
+            await library.FlushAsync(cancellation_token);
+        }
         return true;
     }
 

@@ -16,5 +16,5 @@ public enum IconKind
     Kick, Moderate, Shield, Idle, Hide, Show, Toggle, Move, Pickup, RotateLeft, RotateRight, Area, Door,
     Flood, Walk, Refresh, Import, Add, Tag, Buy, ShopPrices, Text, Id, Variables, Products, Link, Thumbnail,
     Client, Connection, ConnectionOff, Dots, Lock, Minus, Monitor, Folder, File, Bans, Enter, Keyboard, Terminal,
-    Typing, History, Clock, Command, Help, PanelBottom, Redo, ChevronsUpDown
+    Typing, History, Clock, Command, Help, PanelBottom, Redo, ChevronsUpDown, Store
 }

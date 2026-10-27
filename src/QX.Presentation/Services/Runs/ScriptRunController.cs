@@ -52,6 +52,8 @@ public interface IRunSource
 
 public interface IRunHooks
 {
+    Task<bool> AllowRunAsync(string code, CancellationToken cancellationToken) => Task.FromResult(true);
+
     Task SaveBeforeRunAsync(string code, CancellationToken cancellationToken);
 
     void RecordStarted(DateTimeOffset at);
@@ -240,6 +242,12 @@ public sealed partial class ScriptRunController : ObservableObject
             Output.Clear();
             if (frame.PanelMode)
                 _panel.BeginStarting(pressed_button);
+            if (!await _hooks.AllowRunAsync(code, frame.Source.Token))
+            {
+                terminal = ScriptRunState.Stopped;
+                frame.PublishTerminal();
+                return;
+            }
             await _hooks.SaveBeforeRunAsync(code, frame.Source.Token);
             ScriptExecutionResult result = await _scripts.RunAsync(new ScriptExecutionRequest
             {
@@ -274,6 +282,11 @@ public sealed partial class ScriptRunController : ObservableObject
                 else if (terminal == ScriptRunState.Stopped)
                     Output.Write("[stopped]", OutputLevel.Info);
             }
+        }
+        catch (OperationCanceledException) when (frame.Source.IsCancellationRequested)
+        {
+            terminal = ScriptRunState.Stopped;
+            frame.PublishTerminal();
         }
         catch (Exception error)
         {

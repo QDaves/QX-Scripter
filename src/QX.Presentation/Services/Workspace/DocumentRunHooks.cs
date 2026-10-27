@@ -5,8 +5,17 @@ using Qx.Scripting.Hosting;
 
 namespace Qx.Presentation.Services.Workspace;
 
-public sealed class DocumentRunHooks(ScriptDocument document, IScriptFileService files, IScriptLibrary library) : IRunHooks
+public sealed class DocumentRunHooks(ScriptDocument document, IScriptFileService files, IScriptLibrary library, CommunityCopies? community = null) : IRunHooks
 {
+    public Task<bool> AllowRunAsync(string code, CancellationToken cancellationToken) =>
+        community?.AllowDocumentAsync(document, code, cancellationToken, Review) ?? Task.FromResult(true);
+
+    void Review()
+    {
+        document.SetPanelMode(false);
+        document.Buffer?.Focus();
+    }
+
     public async Task SaveBeforeRunAsync(string code, CancellationToken cancellationToken)
     {
         if (document.FilePath is not { } path)

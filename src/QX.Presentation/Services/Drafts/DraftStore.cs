@@ -1,10 +1,11 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Qx.Presentation.Platform;
+using Qx.Presentation.Services.Library;
 
 namespace Qx.Presentation.Services.Drafts;
 
-public sealed record Draft(string Name, string Code, string? Path = null);
+public sealed record Draft(string Name, string Code, string? Path = null, CommunityOrigin? Community = null);
 
 public interface IDraftStore
 {

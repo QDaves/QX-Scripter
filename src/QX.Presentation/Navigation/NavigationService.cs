@@ -45,6 +45,8 @@ public sealed partial class NavigationService : ObservableObject, INavigationSer
     {
         if (CurrentPage is not null && key == Current && key != PageKey.Editor)
         {
+            if (CurrentPage.TryReselect())
+                return;
             ShowWorkspace();
             return;
         }

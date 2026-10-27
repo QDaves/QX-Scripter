@@ -10,6 +10,8 @@ public sealed record LibraryDocument
     public IReadOnlyList<string>? Collapsed { get; init; }
 
     public IReadOnlyDictionary<string, ScriptMeta>? Scripts { get; init; }
+
+    public IReadOnlyDictionary<string, string[]>? CommunityApprovals { get; init; }
 }
 
 [JsonSourceGenerationOptions(

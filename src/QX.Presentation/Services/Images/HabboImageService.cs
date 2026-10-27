@@ -72,7 +72,7 @@ public sealed class HabboImageService : IImageService, IDisposable
     async Task<byte[]?> FetchAsync(string url)
     {
         string path = DiskPath(url);
-        if (await ReadDiskAsync(path).ConfigureAwait(false) is { } cached && ImageBytes.LooksLikeImage(cached))
+        if (await ReadDiskAsync(path, url).ConfigureAwait(false) is { } cached && ImageBytes.LooksLikeImage(cached))
             return cached;
         byte[]? raw = await DownloadAsync(url).ConfigureAwait(false);
         if (raw is null || !ImageBytes.LooksLikeImage(raw))
@@ -108,11 +108,14 @@ public sealed class HabboImageService : IImageService, IDisposable
         return Path.Combine(_root, name[..2], name + ".img");
     }
 
-    static async Task<byte[]?> ReadDiskAsync(string path)
+    async Task<byte[]?> ReadDiskAsync(string path, string url)
     {
         try
         {
-            return File.Exists(path) ? await File.ReadAllBytesAsync(path).ConfigureAwait(false) : null;
+            if (!File.Exists(path) || HabboUrls.IsUserAvatar(url) &&
+                _time.GetUtcNow().UtcDateTime - File.GetLastWriteTimeUtc(path) >= HabboUrls.UserAvatarCacheLifetime)
+                return null;
+            return await File.ReadAllBytesAsync(path).ConfigureAwait(false);
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {
@@ -120,7 +123,7 @@ public sealed class HabboImageService : IImageService, IDisposable
         }
     }
 
-    static async Task WriteDiskAsync(string path, byte[] raw)
+    async Task WriteDiskAsync(string path, byte[] raw)
     {
         try
         {
@@ -128,6 +131,7 @@ public sealed class HabboImageService : IImageService, IDisposable
             string staging = path + ".tmp";
             await File.WriteAllBytesAsync(staging, raw).ConfigureAwait(false);
             File.Move(staging, path, overwrite: true);
+            File.SetLastWriteTimeUtc(path, _time.GetUtcNow().UtcDateTime);
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {

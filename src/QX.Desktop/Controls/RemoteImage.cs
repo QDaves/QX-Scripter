@@ -6,6 +6,7 @@ using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using Qx.Diagnostics;
+using Qx.Presentation.Services.Images;
 using Qx.Presentation.Threading;
 using Qx.Presentation.Visuals;
 using BitmapCache = Qx.Desktop.Services.BitmapCache;
@@ -110,8 +111,11 @@ public sealed class RemoteImage : TemplatedControl
         {
             CancelLoad();
             Fallback = Request?.Fallback ?? IconKind.None;
-            if (Request is null)
+            if (Request is null || !string.Equals(_shown_for?.Url, Request.Url, StringComparison.Ordinal))
+            {
+                _shown_for = null;
                 Source = null;
+            }
             RefreshPseudoClasses();
             Start();
         }
@@ -149,7 +153,7 @@ public sealed class RemoteImage : TemplatedControl
             Source = cached;
             return;
         }
-        if (!_in_view || _load is not null || ReferenceEquals(_shown_for, request))
+        if (!_in_view || _load is not null || ReferenceEquals(_shown_for, request) && !HabboUrls.IsUserAvatar(request.Url))
             return;
         _load = new CancellationTokenSource();
         LoadAsync(request, images, _load).Observe("images");

@@ -5,6 +5,13 @@ namespace Qx.Presentation.Services.Images;
 
 public static class HabboUrls
 {
+    public static readonly TimeSpan UserAvatarCacheLifetime = TimeSpan.FromMinutes(5);
+
+    public static bool IsUserAvatar(string url) =>
+        Uri.TryCreate(url, UriKind.Absolute, out Uri? uri) &&
+        uri.AbsolutePath.EndsWith("/habbo-imaging/avatarimage", StringComparison.OrdinalIgnoreCase) &&
+        uri.Query.TrimStart('?').Split('&').Any(part => part.StartsWith("user=", StringComparison.OrdinalIgnoreCase));
+
     public static string? Head(string? figure, string webHost) =>
         string.IsNullOrWhiteSpace(figure) ? null : $"https://{Host(webHost)}/habbo-imaging/avatarimage?direction=2&head_direction=2&headonly=1&figure={Uri.EscapeDataString(figure)}";
 

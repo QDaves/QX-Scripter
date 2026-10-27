@@ -122,10 +122,18 @@
     <Style Selector="^:disabled">
       <Setter Property="Opacity" Value="{DynamicResource QxDisabledOpacity}" />
     </Style>
-    <Style Selector="^:panel">
+    <Style Selector="^:panel:compiling">
+      <Setter Property="IsHitTestVisible" Value="True" />
+      <Setter Property="ToolTip.Tip" Value="Stop script (F5)" />
+      <Setter Property="AutomationProperties.Name" Value="Stop script" />
+    </Style>
+    <Style Selector="^:panel:idle">
       <Setter Property="Background" Value="{DynamicResource QxFillHoverBrush}" />
       <Setter Property="Foreground" Value="{DynamicResource QxTextSecondaryBrush}" />
-      <Setter Property="AutomationProperties.Name" Value="UI mode. Active while this tab is open." />
+      <Setter Property="IsHitTestVisible" Value="False" />
+      <Setter Property="Focusable" Value="False" />
+      <Setter Property="ToolTip.Tip" Value="Start using a button in the script UI" />
+      <Setter Property="AutomationProperties.Name" Value="UI mode. Start using a button in the script UI." />
     </Style>
   </ControlTheme>
 

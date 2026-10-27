@@ -54,7 +54,7 @@ public sealed partial class ScriptPanelViewModel : ViewModelBase
     void Retry() => Document.ActivatePanel(restart: true);
 
     [RelayCommand]
-    void Stop() => Run.RequestStop();
+    void Stop() => Document.Stop();
 
     [RelayCommand]
     void ShowCode() => Document.SetPanelMode(false);

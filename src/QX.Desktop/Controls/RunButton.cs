@@ -122,16 +122,6 @@ public sealed class RunButton : Button
     {
         RunButtonState state = State;
         PseudoClasses.Set(":panel", PanelMode);
-        if (PanelMode)
-        {
-            foreach (string name in new[] { ":idle", ":compiling", ":running", ":ready", ":stopping", ":busy", ":active", ":keycap" })
-                PseudoClasses.Set(name, false);
-            Label = "UI mode";
-            Glyph = IconKind.PanelView;
-            Command = null;
-            StopLap();
-            return;
-        }
         PseudoClasses.Set(":idle", state == RunButtonState.Idle);
         PseudoClasses.Set(":compiling", state == RunButtonState.Compiling);
         PseudoClasses.Set(":running", state == RunButtonState.Running);
@@ -139,19 +129,22 @@ public sealed class RunButton : Button
         PseudoClasses.Set(":stopping", state == RunButtonState.Stopping);
         PseudoClasses.Set(":busy", state is RunButtonState.Compiling or RunButtonState.Stopping);
         PseudoClasses.Set(":active", state != RunButtonState.Idle);
-        PseudoClasses.Set(":keycap", state is RunButtonState.Idle or RunButtonState.Running);
+        PseudoClasses.Set(":keycap", PanelMode
+            ? state is RunButtonState.Compiling or RunButtonState.Running or RunButtonState.Ready
+            : state is RunButtonState.Idle or RunButtonState.Running);
         Label = state switch
         {
-            RunButtonState.Compiling => "Compiling",
+            RunButtonState.Compiling => PanelMode ? "Stop" : "Compiling",
             RunButtonState.Running => "Stop",
-            RunButtonState.Ready => "Ready",
+            RunButtonState.Ready => PanelMode ? "Stop" : "Ready",
             RunButtonState.Stopping => "Stopping",
-            _ => "Run"
+            _ => PanelMode ? "UI mode" : "Run"
         };
-        Glyph = state == RunButtonState.Idle ? IconKind.Play : IconKind.Stop;
+        Glyph = state == RunButtonState.Idle ? PanelMode ? IconKind.PanelView : IconKind.Play : IconKind.Stop;
         Command = state switch
         {
-            RunButtonState.Idle => RunCommand,
+            RunButtonState.Idle => PanelMode ? null : RunCommand,
+            RunButtonState.Compiling when PanelMode => StopCommand,
             RunButtonState.Running or RunButtonState.Ready => StopCommand,
             _ => null
         };
@@ -172,7 +165,7 @@ public sealed class RunButton : Button
 
     void update_lap()
     {
-        if (PanelMode || State == RunButtonState.Idle)
+        if (State == RunButtonState.Idle)
         {
             StopLap();
             return;

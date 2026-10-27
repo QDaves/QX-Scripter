@@ -47,7 +47,7 @@ public sealed class ScriptRunRegistry : IScriptRunRegistry, IDisposable
         int stopped = 0;
         foreach (ScriptDocument document in _workspace.Documents)
         {
-            if (document.Run.RequestStop())
+            if (document.Stop())
                 stopped++;
         }
         _scripts.RequestStopAll();

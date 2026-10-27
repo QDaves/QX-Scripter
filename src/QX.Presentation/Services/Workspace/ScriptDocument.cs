@@ -44,6 +44,7 @@ public sealed partial class ScriptDocument : ObservableObject, IRunSource, IDisp
     bool _disposed;
     bool _console_seeded;
     bool _refreshing;
+    bool _panel_stopped;
     string? _disk_text;
 
     public ScriptDocument(string name, string text, string? filePath, IUiDispatcher dispatcher, TimeProvider time, Func<ScriptDocument, DocumentParts> parts)
@@ -238,9 +239,15 @@ public sealed partial class ScriptDocument : ObservableObject, IRunSource, IDisp
 
     public void SetPanelMode(bool panelMode) => PanelMode = panelMode && HasUi;
 
+    public bool Stop()
+    {
+        _panel_stopped = true;
+        return Run.RequestStop();
+    }
+
     public void ActivatePanel(bool restart = false)
     {
-        if (!HasUi || IsClosed || _disposed || _refreshing || ActivationDeferred)
+        if (!HasUi || IsClosed || _disposed || _refreshing || ActivationDeferred || _panel_stopped && !restart)
             return;
         if (Run.IsAlive && (restart || !string.Equals(Run.StartedCode, Text, StringComparison.Ordinal)))
         {
@@ -285,6 +292,8 @@ public sealed partial class ScriptDocument : ObservableObject, IRunSource, IDisp
 
     void OnRunChanged(object? sender, PropertyChangedEventArgs args)
     {
+        if (args.PropertyName == nameof(ScriptRunController.State) && Run.State == ScriptRunState.Compiling)
+            _panel_stopped = false;
         if (args.PropertyName is nameof(ScriptRunController.State) or nameof(ScriptRunController.PanelArmed) or nameof(ScriptRunController.BusyHandlers))
         {
             OnPropertyChanged(nameof(StatusText));

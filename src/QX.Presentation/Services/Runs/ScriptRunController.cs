@@ -89,6 +89,7 @@ public sealed partial class ScriptRunController : ObservableObject
     RunFrame? _frame;
     ArmedRun? _armed;
     long _epoch;
+    long _stop_version;
     bool _restarting;
 
     public ScriptRunController(
@@ -186,6 +187,12 @@ public sealed partial class ScriptRunController : ObservableObject
 
     public bool RequestStop()
     {
+        Interlocked.Increment(ref _stop_version);
+        return Stop();
+    }
+
+    bool Stop()
+    {
         if (!IsAlive || _frame is not { } frame)
             return false;
         State = ScriptRunState.Stopping;
@@ -214,9 +221,10 @@ public sealed partial class ScriptRunController : ObservableObject
         _restarting = true;
         try
         {
-            RequestStop();
+            long stop_version = Volatile.Read(ref _stop_version);
+            Stop();
             await Completion.WaitAsync(CancellationToken.None);
-            if (!_source.IsClosed && !_lifetime.IsCancellationRequested)
+            if (stop_version == Volatile.Read(ref _stop_version) && !_source.IsClosed && !_lifetime.IsCancellationRequested)
                 Start(button, panelMode: true);
         }
         finally

@@ -56,8 +56,7 @@
             <StackPanel Orientation="Horizontal" Spacing="8">
               <Rectangle Classes="divider-vertical" />
               <c:RunButton Name="RunControl" State="{Binding RunPhase, Converter={StaticResource QxRunState}}"
-                           PanelMode="{Binding IsPanelView}"
-                           Focusable="{Binding !IsPanelView}" IsHitTestVisible="{Binding !IsPanelView}"
+                           PanelMode="{Binding CanUsePanelView}"
                            RunCommand="{Binding ToggleRunCommand}"
                            StopCommand="{Binding StopActiveCommand}" />
             </StackPanel>

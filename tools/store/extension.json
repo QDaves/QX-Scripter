@@ -8,7 +8,7 @@
   "readme": "https://github.com/QDaves/QX-Scripter/blob/main/README.md",
   "releases": "https://github.com/QDaves/QX-Scripter/tags",
   "stable": true,
-  "framework": {"name": "QX", "version": "@VERSION@"},
+  "framework": {"name": "QX", "version": "@FRAMEWORK_VERSION@"},
   "language": "C#",
   "commands": {
     "default": ["cmd", "/C", "QX.exe", "-c", "{cookie}", "-p", "{port}", "-f", "{filename}", "--store"],

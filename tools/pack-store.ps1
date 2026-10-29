@@ -6,6 +6,7 @@ param(
 
 $ErrorActionPreference = 'Stop'
 $root = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
+$framework_version = ([xml][IO.File]::ReadAllText((Join-Path $root 'Framework.props'))).Project.PropertyGroup.QxFrameworkVersion
 $output = [IO.Path]::GetFullPath($output)
 $project = Join-Path $root 'src/QX.Desktop/QX.Desktop.csproj'
 $stage = Join-Path $output 'extension'
@@ -73,6 +74,6 @@ Remove-Item -LiteralPath $stage -Recurse -Force
 
 $manifest = Get-Content -LiteralPath (Join-Path $root 'tools/store/extension.json') -Raw
 $updated = [DateTime]::UtcNow.ToString('dd-MM-yyyy HH:mm:ss', [Globalization.CultureInfo]::InvariantCulture)
-[IO.File]::WriteAllText((Join-Path $output 'extension.json'), $manifest.Replace('@VERSION@', $build_version).Replace('@UPDATED@', $updated))
+[IO.File]::WriteAllText((Join-Path $output 'extension.json'), $manifest.Replace('@VERSION@', $build_version).Replace('@FRAMEWORK_VERSION@', $framework_version).Replace('@UPDATED@', $updated))
 Copy-Item -LiteralPath (Join-Path $root 'tools/store/icon.png') -Destination (Join-Path $output 'icon.png')
 Write-Output $archive

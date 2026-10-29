@@ -12,8 +12,12 @@
   </ItemGroup>
 
   <ItemGroup>
-    <EmbeddedResource Include="..\..\website\docs\*.md;..\..\website\docs\toc.yml" LogicalName="Qx.Docs.%(Filename)%(Extension)" />
+    <EmbeddedResource Include="$(QxDocumentationSource)/*.md;$(QxDocumentationSource)/toc.yml" LogicalName="Qx.Docs.%(Filename)%(Extension)" />
     <EmbeddedResource Include="Knowledge/qx-wired.skill" LogicalName="Qx.WiredSkill" />
   </ItemGroup>
+
+  <Target Name="VerifyScriptingDocumentation" BeforeTargets="PrepareForBuild">
+    <Error Condition="!Exists('$(QxDocumentationSource)/toc.yml')" Text="Scripting documentation is missing. Run tools/prepare-docs.ps1 first." />
+  </Target>
 
 </Project>

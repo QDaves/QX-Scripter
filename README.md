@@ -38,9 +38,10 @@ Requires the .NET SDK version in [global.json](global.json).
 ```powershell
 git clone https://github.com/QDaves/QX-Scripter.git
 cd QX-Scripter
-dotnet restore QX.slnx --locked-mode
-dotnet build QX.slnx -c Release --no-restore
+./tools/build-scripter.ps1
 ```
+
+The build restores the published [QX Framework](https://github.com/QDaves/QX) packages from NuGet and fetches the matching scripting documentation. QX Scripter contains only the application; it does not rebuild the framework.
 
 Desktop:
 

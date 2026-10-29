@@ -40,6 +40,10 @@ jobs:
           cache: true
           cache-dependency-path: "**/packages.lock.json"
 
+      - name: Prepare scripting documentation
+        shell: pwsh
+        run: ./tools/prepare-docs.ps1
+
       - name: Restore solution
         run: dotnet restore QX.slnx --locked-mode --disable-build-servers
 

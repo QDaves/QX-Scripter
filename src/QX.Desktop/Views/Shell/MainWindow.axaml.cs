@@ -1,9 +1,9 @@
-using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Platform;
 using Avalonia.VisualTree;
+using Avalonia;
 using Qx.Desktop.Composition;
 using Qx.Desktop.Controls;
 using Qx.Desktop.Services;
@@ -11,8 +11,8 @@ using Qx.Presentation.Input;
 using Qx.Presentation.Navigation;
 using Qx.Presentation.Services.Lifecycle;
 using Qx.Presentation.Threading;
-using Qx.Presentation.ViewModels.Shell;
 using Qx.Presentation.ViewModels.Editor;
+using Qx.Presentation.ViewModels.Shell;
 using BitmapCache = Qx.Desktop.Services.BitmapCache;
 
 namespace Qx.Desktop.Views.Shell;

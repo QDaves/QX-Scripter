@@ -1,12 +1,12 @@
 using System.ComponentModel;
 using System.Xml.Linq;
-using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Media;
 using Avalonia.VisualTree;
-using AvaloniaEdit.Highlighting;
+using Avalonia;
 using AvaloniaEdit.Highlighting.Xshd;
+using AvaloniaEdit.Highlighting;
 using AvaloniaEdit.Search;
 using Qx.Presentation.Services.Library;
 using Qx.Presentation.ViewModels.Library;

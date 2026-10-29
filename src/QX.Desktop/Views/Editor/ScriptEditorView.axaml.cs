@@ -1,11 +1,11 @@
-using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Media;
-using AvaloniaEdit;
+using Avalonia;
 using AvaloniaEdit.Editing;
 using AvaloniaEdit.Highlighting;
+using AvaloniaEdit;
 using Microsoft.CodeAnalysis;
 using Qx.Desktop.Editor;
 using Qx.Desktop.Input;

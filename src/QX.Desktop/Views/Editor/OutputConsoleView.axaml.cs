@@ -1,6 +1,6 @@
 using System.ComponentModel;
-using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
+using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Threading;

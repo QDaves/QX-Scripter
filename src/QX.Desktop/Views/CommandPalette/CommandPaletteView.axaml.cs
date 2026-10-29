@@ -1,10 +1,10 @@
 using System.ComponentModel;
-using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
+using Avalonia;
 using Qx.Presentation.ViewModels.CommandPalette;
 
 namespace Qx.Desktop.Views.CommandPalette;

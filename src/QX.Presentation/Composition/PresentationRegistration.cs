@@ -1,5 +1,4 @@
 using Microsoft.Extensions.DependencyInjection;
-using Qx;
 using Qx.Mcp;
 using Qx.Presentation.Composition.Areas;
 using Qx.Presentation.Dialogs;
@@ -22,9 +21,11 @@ using Qx.Presentation.Services.Settings;
 using Qx.Presentation.Services.Status;
 using Qx.Presentation.Services.Updates;
 using Qx.Presentation.Services.Workspace;
-using Qx.Presentation.ViewModels.Editor;
 using Qx.Presentation.Threading;
+using Qx.Presentation.ViewModels.Editor;
 using Qx.Presentation.ViewModels.Shell;
+using Qx.Scripter;
+using Qx;
 
 namespace Qx.Presentation.Composition;
 

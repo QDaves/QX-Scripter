@@ -1,3 +1,4 @@
+using Qx.Game.Data;
 using Qx.Game;
 using Qx.Model;
 using Qx.Presentation.Services.FurniLookup;

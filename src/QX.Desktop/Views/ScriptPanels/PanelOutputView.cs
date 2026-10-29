@@ -1,9 +1,9 @@
-using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Media;
 using Avalonia.Threading;
+using Avalonia;
 using AvaloniaEdit;
 using Qx.Presentation.Services.Panels;
 

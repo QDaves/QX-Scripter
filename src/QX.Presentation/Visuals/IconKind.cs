@@ -1,3 +1,4 @@
+using Qx.Game.Data;
 namespace Qx.Presentation.Visuals;
 
 public enum IconKind

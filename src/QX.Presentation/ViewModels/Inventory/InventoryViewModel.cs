@@ -1,8 +1,10 @@
 using System.Globalization;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Qx.Game.Api;
+using Qx.Game.Data;
+using Qx.Game.Inventory;
 using Qx.Game;
-using Qx.Game.Application;
 using Qx.Presentation.Collections;
 using Qx.Presentation.Dialogs;
 using Qx.Presentation.Mvvm;
@@ -65,8 +67,8 @@ public sealed partial class InventoryViewModel : PageViewModel, IVisibleItemsSin
         _changed = new CoalescingSignal(dispatcher, Reread);
         Selection.Changed += OnSelectionChanged;
         Own(() => Selection.Changed -= OnSelectionChanged);
-        Own(_gateway.SubscribeSignal(ApplicationMemberIds.InventoryFurniChanged, _changed));
-        Own(_gateway.SubscribeSignal(ApplicationMemberIds.InventoryPetsChanged, _changed));
+        Own(_gateway.SubscribeSignal(ApiIds.InventoryFurniChanged, _changed));
+        Own(_gateway.SubscribeSignal(ApiIds.InventoryPetsChanged, _changed));
         _gateway.SessionChanged += OnSessionChanged;
         Own(() => _gateway.SessionChanged -= OnSessionChanged);
         GameData data = _gateway.Game.GameData;
@@ -285,7 +287,7 @@ public sealed partial class InventoryViewModel : PageViewModel, IVisibleItemsSin
         try
         {
             InventoryStateView? state = await _gateway.QueryAsync<InventoryStateRequest, InventoryStateView>(
-                ApplicationMemberIds.InventoryState,
+                ApiIds.InventoryState,
                 new InventoryStateRequest(),
                 cancellation_token);
             if (state is null)
@@ -294,14 +296,14 @@ public sealed partial class InventoryViewModel : PageViewModel, IVisibleItemsSin
             if (Wanted(state.Furni))
             {
                 loads.Add(_gateway.InvokeAsync<InventoryFurniRefreshRequest, InventoryFurniPage>(
-                    ApplicationMemberIds.InventoryFurniRefresh,
+                    ApiIds.InventoryFurniRefresh,
                     new InventoryFurniRefreshRequest(Limit: InventoryRead.PageLimit),
                     cancellation_token));
             }
             if (Wanted(state.Pets))
             {
                 loads.Add(_gateway.InvokeAsync<InventoryPetRefreshRequest, InventoryPetPage>(
-                    ApplicationMemberIds.InventoryPetsRefresh,
+                    ApiIds.InventoryPetsRefresh,
                     new InventoryPetRefreshRequest(Limit: InventoryRead.PageLimit),
                     cancellation_token));
             }
@@ -338,7 +340,7 @@ public sealed partial class InventoryViewModel : PageViewModel, IVisibleItemsSin
         catch (OperationCanceledException) when (lease.Token.IsCancellationRequested)
         {
         }
-        catch (ApplicationUnavailableException)
+        catch (GameNotReadyException)
         {
             Adopt(InventoryContents.Disconnected);
             await ApplyAsync(CancellationToken.None);

@@ -1,5 +1,6 @@
 using Qx.Diagnostics;
-using Qx.Game.Application;
+using Qx.Game.Api;
+using Qx.Game.Rooms;
 using Qx.Presentation.Services.Game;
 using Qx.Presentation.Threading;
 
@@ -26,7 +27,7 @@ public sealed class ChatFeed : IDisposable
     {
         _gateway = gateway ?? throw new ArgumentNullException(nameof(gateway));
         _dispatcher = dispatcher ?? throw new ArgumentNullException(nameof(dispatcher));
-        _subscription = gateway.Subscribe<RoomChatEntry>(ApplicationMemberIds.RoomChatReceived, OnReceived);
+        _subscription = gateway.Subscribe<RoomChatEntry>(ApiIds.RoomChatReceived, OnReceived);
     }
 
     public event Action<IReadOnlyList<RoomChatEntry>>? Added;
@@ -38,7 +39,7 @@ public sealed class ChatFeed : IDisposable
         try
         {
             RoomChatHistoryPage? latest = await _gateway.QueryAsync<RoomChatHistoryRequest, RoomChatHistoryPage>(
-                ApplicationMemberIds.RoomChatHistory,
+                ApiIds.RoomChatHistory,
                 new RoomChatHistoryRequest(long.MaxValue, 1),
                 cancellationToken);
             if (latest is not null)
@@ -104,7 +105,7 @@ public sealed class ChatFeed : IDisposable
         for (int page_index = 0; page_index < PagesPerDrain; page_index++)
         {
             RoomChatHistoryPage? page = await _gateway.QueryAsync<RoomChatHistoryRequest, RoomChatHistoryPage>(
-                ApplicationMemberIds.RoomChatHistory,
+                ApiIds.RoomChatHistory,
                 new RoomChatHistoryRequest(_cursor, PageSize));
             if (page is null)
                 return false;

@@ -1,6 +1,6 @@
-using Avalonia;
-using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
+using Avalonia.Controls;
+using Avalonia;
 using Qx.Presentation.Platform;
 using Qx.Presentation.Services.Settings;
 

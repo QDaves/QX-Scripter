@@ -1,6 +1,6 @@
 using System.Globalization;
-using System.Text;
 using System.Text.RegularExpressions;
+using System.Text;
 using Qx.Diagnostics;
 
 namespace Qx.Presentation.Services.BugReports;

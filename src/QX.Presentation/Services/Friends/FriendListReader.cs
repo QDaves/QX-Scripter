@@ -1,4 +1,5 @@
-using Qx.Game.Application;
+using Qx.Game.Api;
+using Qx.Game.Friends;
 using Qx.Game.Snapshots;
 using Qx.Presentation.Services.Game;
 
@@ -23,7 +24,7 @@ public static class FriendListReader
         while (true)
         {
             FriendListPage page = await gateway.QueryAsync<FriendsListRequest, FriendListPage>(
-                ApplicationMemberIds.FriendsList,
+                ApiIds.FriendsList,
                 new FriendsListRequest(Offset: offset, Limit: PageSize),
                 cancellation_token);
             first ??= page;

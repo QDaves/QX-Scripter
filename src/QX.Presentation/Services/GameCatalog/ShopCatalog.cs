@@ -1,7 +1,9 @@
+using Qx.Game.Api;
+using Qx.Game.Catalog;
+using Qx.Game.Data;
 using Qx.Game;
-using Qx.Game.Application;
-using Qx.Model;
 using Qx.Model.Messages.Incoming;
+using Qx.Model;
 using Qx.Presentation.Services.Game;
 using Qx.Presentation.Threading;
 
@@ -49,7 +51,7 @@ public sealed class ShopCatalog : IDisposable
         Stop();
         long subscription = Interlocked.Increment(ref _subscription);
         _publications = _gateway.Subscribe<CatalogPublishedEvent>(
-            ApplicationMemberIds.CatalogPublished,
+            ApiIds.CatalogPublished,
             _ => Republished(subscription));
     }
 
@@ -77,13 +79,13 @@ public sealed class ShopCatalog : IDisposable
 
     public async Task<CatalogStateView> StateAsync(CancellationToken cancellationToken) =>
         await _gateway.QueryAsync<CatalogStateRequest, CatalogStateView>(
-            ApplicationMemberIds.CatalogState,
+            ApiIds.CatalogState,
             new CatalogStateRequest(),
             cancellationToken);
 
     public async Task<CatalogLoadView> LoadPagesAsync(long sessionGeneration, long catalogGeneration, CancellationToken cancellationToken) =>
         await _gateway.InvokeAsync<CatalogLoadRequest, CatalogLoadView>(
-            ApplicationMemberIds.CatalogPagesLoad,
+            ApiIds.CatalogPagesLoad,
             new CatalogLoadRequest(
                 OnlyVisible: false,
                 DelayMilliseconds: PageDelayMilliseconds,
@@ -118,7 +120,7 @@ public sealed class ShopCatalog : IDisposable
     {
         ArgumentNullException.ThrowIfNull(shown);
         CatalogPageView page = await _gateway.InvokeAsync<CatalogPageGetRequest, CatalogPageView>(
-            ApplicationMemberIds.CatalogPageGet,
+            ApiIds.CatalogPageGet,
             new CatalogPageGetRequest(
                 shown.PageId,
                 shown.OfferId,
@@ -147,7 +149,7 @@ public sealed class ShopCatalog : IDisposable
     {
         ArgumentNullException.ThrowIfNull(offer);
         return await _gateway.InvokeAsync<CatalogPurchaseSendRequest, CatalogPurchaseDispatchReceipt>(
-            ApplicationMemberIds.CatalogPurchaseSend,
+            ApiIds.CatalogPurchaseSend,
             new CatalogPurchaseSendRequest(
                 offer.PageId,
                 offer.OfferId,

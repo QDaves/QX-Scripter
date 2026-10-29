@@ -1,9 +1,9 @@
-using Qx.Hosting;
+using Qx.Scripter;
 using Qx.Scripting.Hosting;
 
 namespace Qx.App;
 
-internal sealed class ScriptSession(RuntimeHost runtime, TextReader input, TextWriter output)
+internal sealed class ScriptSession(ScripterRuntime runtime, TextReader input, TextWriter output)
 {
     private readonly object gate = new();
     private CancellationTokenSource? script_cancellation;
@@ -208,7 +208,7 @@ internal sealed class ScriptSession(RuntimeHost runtime, TextReader input, TextW
         if (File.Exists(path) || Path.IsPathRooted(file))
             return path;
         return Path.GetFullPath(Path.Combine(
-            StoragePaths.Scripts, file));
+            ScripterPaths.Scripts, file));
     }
 
     internal static async Task<ScriptExecutionRequest> ReadScriptAsync(string file, CancellationToken cancellation_token)
@@ -223,7 +223,7 @@ internal sealed class ScriptSession(RuntimeHost runtime, TextReader input, TextW
     }
 
     internal static async Task<ScriptExecutionResult> RunAsync(
-        RuntimeHost runtime, ScriptExecutionRequest request, CancellationToken cancellation_token)
+        ScripterRuntime runtime, ScriptExecutionRequest request, CancellationToken cancellation_token)
     {
         using var session_cancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellation_token);
         bool finished = false;

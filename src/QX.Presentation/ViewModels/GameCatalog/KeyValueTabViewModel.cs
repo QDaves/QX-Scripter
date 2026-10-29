@@ -1,5 +1,6 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Qx.Game.Data;
 using Qx.Presentation.Collections;
 using Qx.Presentation.Mvvm;
 using Qx.Presentation.Platform;

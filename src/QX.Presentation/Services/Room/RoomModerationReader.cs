@@ -1,4 +1,5 @@
-using Qx.Game.Application;
+using Qx.Game.Api;
+using Qx.Game.Rooms;
 using Qx.Presentation.Services.Game;
 
 namespace Qx.Presentation.Services.Room;
@@ -15,7 +16,7 @@ public static class RoomModerationReader
         ArgumentNullException.ThrowIfNull(gateway);
         RoomModerationStateView first = await gateway
             .QueryAsync<RoomModerationStateRequest, RoomModerationStateView>(
-                ApplicationMemberIds.RoomModerationState,
+                ApiIds.RoomModerationState,
                 new RoomModerationStateRequest(Limit: PageLimit),
                 cancellationToken);
         return await CompleteAsync(gateway, first, cancellationToken);
@@ -30,7 +31,7 @@ public static class RoomModerationReader
         ArgumentNullException.ThrowIfNull(state);
         RoomModerationStateView first = await gateway
             .InvokeAsync<RoomModerationRefreshRequest, RoomModerationStateView>(
-                ApplicationMemberIds.RoomModerationRefresh,
+                ApiIds.RoomModerationRefresh,
                 new RoomModerationRefreshRequest(
                     PageLimit,
                     RefreshTimeoutMilliseconds,
@@ -58,7 +59,7 @@ public static class RoomModerationReader
         {
             RoomModerationStateView page = await gateway
                 .QueryAsync<RoomModerationStateRequest, RoomModerationStateView>(
-                    ApplicationMemberIds.RoomModerationState,
+                    ApiIds.RoomModerationState,
                     new RoomModerationStateRequest(offset, PageLimit, first.BanList.SnapshotRevision),
                     cancellationToken);
             if (page.SessionGeneration != first.SessionGeneration ||

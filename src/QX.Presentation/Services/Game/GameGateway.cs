@@ -1,5 +1,6 @@
+using Qx.Game.Api;
+using Qx.Game.Data;
 using Qx.Game;
-using Qx.Game.Application;
 using Qx.Interception.GEarth;
 using Qx.Presentation.Mvvm;
 using Qx.Presentation.Runtime;
@@ -30,7 +31,7 @@ public sealed class GameGateway : IGameGateway, IAlwaysOn, IDisposable
 
     public GameState Game => _runtime.Game;
 
-    public IApplicationRuntime Application => _runtime.Application;
+    public IGameApi Api => _runtime.Api;
 
     public GEarthExtension Extension => _runtime.Extension;
 
@@ -40,7 +41,7 @@ public sealed class GameGateway : IGameGateway, IAlwaysOn, IDisposable
 
     public MemberGate Gate(string memberId)
     {
-        ApplicationAvailability availability = _runtime.Application.Describe(memberId).Availability;
+        ApiAvailability availability = _runtime.Api.Describe(memberId).Availability;
         return availability.Available ? MemberGate.Open : new MemberGate(false, Explain(availability));
     }
 
@@ -48,9 +49,9 @@ public sealed class GameGateway : IGameGateway, IAlwaysOn, IDisposable
     {
         try
         {
-            return await _runtime.Application.InvokeAsync<TRequest, TResult>(memberId, request, cancellationToken);
+            return await _runtime.Api.InvokeAsync<TRequest, TResult>(memberId, request, cancellationToken);
         }
-        catch (ApplicationUnavailableException error)
+        catch (GameNotReadyException error)
         {
             throw new GameUnavailableException(memberId, Explain(error.Availability), error);
         }
@@ -65,7 +66,7 @@ public sealed class GameGateway : IGameGateway, IAlwaysOn, IDisposable
             {
                 return await read(cancellationToken);
             }
-            catch (InvalidOperationException error) when (error is not ApplicationUnavailableException && attempt < StableReadAttempts)
+            catch (InvalidOperationException error) when (error is not GameNotReadyException && attempt < StableReadAttempts)
             {
                 cancellationToken.ThrowIfCancellationRequested();
             }
@@ -76,21 +77,21 @@ public sealed class GameGateway : IGameGateway, IAlwaysOn, IDisposable
     {
         try
         {
-            return await _runtime.Application.InvokeAsync<TRequest, TResult>(memberId, request, cancellationToken);
+            return await _runtime.Api.InvokeAsync<TRequest, TResult>(memberId, request, cancellationToken);
         }
-        catch (ApplicationUnavailableException error)
+        catch (GameNotReadyException error)
         {
             throw new GameUnavailableException(memberId, Explain(error.Availability), error);
         }
     }
 
     public IDisposable Subscribe<TEvent>(string memberId, Action<TEvent> receiver) =>
-        _runtime.Application.Subscribe(memberId, receiver);
+        _runtime.Api.Subscribe(memberId, receiver);
 
     public IDisposable SubscribeSignal(string memberId, CoalescingSignal signal)
     {
         ArgumentNullException.ThrowIfNull(signal);
-        return _runtime.Application.Subscribe(memberId, (object? _) => signal.Raise());
+        return _runtime.Api.Subscribe(memberId, (object? _) => signal.Raise());
     }
 
     public void Dispose()
@@ -115,14 +116,14 @@ public sealed class GameGateway : IGameGateway, IAlwaysOn, IDisposable
 
     void OnInterceptorChanged() => _session.Raise();
 
-    internal static string Explain(ApplicationAvailability availability)
+    internal static string Explain(ApiAvailability availability)
     {
-        if (availability.MissingStates.Contains(ApplicationStateKey.HotelConnected))
+        if (availability.MissingStates.Contains(GameRequirement.HotelConnected))
             return "Connect to the hotel through G-Earth first.";
-        if (availability.MissingStates.Contains(ApplicationStateKey.RoomReady) ||
-            availability.MissingStates.Contains(ApplicationStateKey.RoomActive))
+        if (availability.MissingStates.Contains(GameRequirement.RoomReady) ||
+            availability.MissingStates.Contains(GameRequirement.RoomActive))
             return "Enter a room first.";
-        if (availability.MissingStates.Contains(ApplicationStateKey.ProfileLoaded))
+        if (availability.MissingStates.Contains(GameRequirement.ProfileLoaded))
             return "Your profile has not arrived from the hotel yet.";
         if (availability.MissingStates.Count > 0)
             return "The hotel has not sent what this needs yet.";

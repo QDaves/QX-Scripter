@@ -1,5 +1,6 @@
+using Qx.Game.Api;
+using Qx.Game.Navigator;
 using Qx.Game;
-using Qx.Game.Application;
 
 namespace Qx.Presentation.ViewModels.Navigator;
 
@@ -27,22 +28,22 @@ public static class NavigatorSearchOptions
 {
     public static IReadOnlyList<NavigatorSearchOption> All { get; } =
     [
-        new("Everything", ApplicationMemberIds.NavigatorSearchText, NavigatorSearchMode.Text, RoomSearchField.Anything, true),
-        new("Owner", ApplicationMemberIds.NavigatorSearchText, NavigatorSearchMode.Text, RoomSearchField.Owner, true),
-        new("Room name", ApplicationMemberIds.NavigatorSearchText, NavigatorSearchMode.Text, RoomSearchField.RoomName, true),
-        new("Tag", ApplicationMemberIds.NavigatorSearchText, NavigatorSearchMode.Text, RoomSearchField.Tag, true),
-        new("Group", ApplicationMemberIds.NavigatorSearchText, NavigatorSearchMode.Text, RoomSearchField.Group, true),
-        new("My rooms", ApplicationMemberIds.NavigatorSearchMyRooms, NavigatorSearchMode.Quick),
-        new("Favourites", ApplicationMemberIds.NavigatorSearchMyFavourites, NavigatorSearchMode.Quick),
-        new("Room rights", ApplicationMemberIds.NavigatorSearchMyRoomRights, NavigatorSearchMode.Quick),
-        new("History", ApplicationMemberIds.NavigatorSearchMyHistory, NavigatorSearchMode.Quick),
-        new("Frequent rooms", ApplicationMemberIds.NavigatorSearchMyFrequentHistory, NavigatorSearchMode.Quick),
-        new("Friends' rooms", ApplicationMemberIds.NavigatorSearchMyFriendsRooms, NavigatorSearchMode.Quick),
-        new("Friends here", ApplicationMemberIds.NavigatorSearchFriendsPresent, NavigatorSearchMode.Quick),
-        new("My guild bases", ApplicationMemberIds.NavigatorSearchMyGuildBases, NavigatorSearchMode.Quick),
-        new("Popular", ApplicationMemberIds.NavigatorSearchPopular, NavigatorSearchMode.Popular),
-        new("Highest score", ApplicationMemberIds.NavigatorSearchHighestScore, NavigatorSearchMode.Ad),
-        new("Guild bases", ApplicationMemberIds.NavigatorSearchGuildBases, NavigatorSearchMode.Ad)
+        new("Everything", ApiIds.NavigatorSearchText, NavigatorSearchMode.Text, RoomSearchField.Anything, true),
+        new("Owner", ApiIds.NavigatorSearchText, NavigatorSearchMode.Text, RoomSearchField.Owner, true),
+        new("Room name", ApiIds.NavigatorSearchText, NavigatorSearchMode.Text, RoomSearchField.RoomName, true),
+        new("Tag", ApiIds.NavigatorSearchText, NavigatorSearchMode.Text, RoomSearchField.Tag, true),
+        new("Group", ApiIds.NavigatorSearchText, NavigatorSearchMode.Text, RoomSearchField.Group, true),
+        new("My rooms", ApiIds.NavigatorSearchMyRooms, NavigatorSearchMode.Quick),
+        new("Favourites", ApiIds.NavigatorSearchMyFavourites, NavigatorSearchMode.Quick),
+        new("Room rights", ApiIds.NavigatorSearchMyRoomRights, NavigatorSearchMode.Quick),
+        new("History", ApiIds.NavigatorSearchMyHistory, NavigatorSearchMode.Quick),
+        new("Frequent rooms", ApiIds.NavigatorSearchMyFrequentHistory, NavigatorSearchMode.Quick),
+        new("Friends' rooms", ApiIds.NavigatorSearchMyFriendsRooms, NavigatorSearchMode.Quick),
+        new("Friends here", ApiIds.NavigatorSearchFriendsPresent, NavigatorSearchMode.Quick),
+        new("My guild bases", ApiIds.NavigatorSearchMyGuildBases, NavigatorSearchMode.Quick),
+        new("Popular", ApiIds.NavigatorSearchPopular, NavigatorSearchMode.Popular),
+        new("Highest score", ApiIds.NavigatorSearchHighestScore, NavigatorSearchMode.Ad),
+        new("Guild bases", ApiIds.NavigatorSearchGuildBases, NavigatorSearchMode.Ad)
     ];
 
     public static IReadOnlyList<NavigatorSearchList> Lists { get; } =

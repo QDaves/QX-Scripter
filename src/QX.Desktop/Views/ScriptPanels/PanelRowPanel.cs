@@ -1,5 +1,5 @@
-using Avalonia;
 using Avalonia.Controls;
+using Avalonia;
 using Qx.Presentation.Services.Panels;
 using Qx.Presentation.Services.ScriptPanels;
 using Qx.Scripting.Hosting;

@@ -1,5 +1,6 @@
 using System.Threading.Channels;
-using Qx.Hosting;
+using Qx.Mcp;
+using Qx.Scripter;
 
 namespace Qx.App;
 
@@ -137,7 +138,7 @@ internal sealed class BoundedNdjsonWriter : IAsyncDisposable
         {
             await foreach (object message in queue.Reader.ReadAllAsync().ConfigureAwait(false))
             {
-                string line = ApplicationJson.Serialize(message, indented: false);
+                string line = GameJson.Serialize(message, indented: false);
                 await writer
                     .WriteLineAsync(line.AsMemory(), shutdown.Token)
                     .ConfigureAwait(false);

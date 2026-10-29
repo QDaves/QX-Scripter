@@ -1,9 +1,10 @@
 using System.Collections.Concurrent;
-using System.Text;
 using System.Text.Json;
+using System.Text;
 using System.Threading.Channels;
-using Qx.Game.Application;
-using Qx.Hosting;
+using Qx.Game.Api;
+using Qx.Mcp;
+using Qx.Scripter;
 using Qx.Scripting.Hosting;
 
 namespace Qx.App;
@@ -15,7 +16,7 @@ internal sealed class ApplicationSession
     private const int MaxSubscriptions = 64;
     private const int InputCapacity = 64;
     private static readonly TimeSpan OutputDrainTimeout = TimeSpan.FromSeconds(5);
-    private readonly RuntimeHost runtime;
+    private readonly ScripterRuntime runtime;
     private readonly SessionInput input;
     private readonly CancellationToken outer_cancellation;
     private readonly CancellationTokenSource lifetime;
@@ -30,7 +31,7 @@ internal sealed class ApplicationSession
     private long next_subscription;
 
     public ApplicationSession(
-        RuntimeHost runtime,
+        ScripterRuntime runtime,
         TextReader input,
         TextWriter output,
         CancellationToken cancellation_token)
@@ -195,12 +196,12 @@ internal sealed class ApplicationSession
             return true;
         }
 
-        ApplicationDescriptor descriptor = ApplicationCommands.EventDescriptor(
-            runtime.Application,
+        ApiDescriptor descriptor = ApplicationCommands.EventDescriptor(
+            runtime.Api,
             request.Member!);
         string subscription_id = $"subscription-{Interlocked.Increment(ref next_subscription)}";
         var subscription = new SessionSubscription(output, subscription_id, descriptor.Id);
-        subscription.Attach(runtime.Application.Subscribe(descriptor.Id, subscription.Publish));
+        subscription.Attach(runtime.Api.Subscribe(descriptor.Id, subscription.Publish));
         if (!subscriptions.TryAdd(subscription_id, subscription))
         {
             subscription.Dispose();
@@ -291,8 +292,8 @@ internal sealed class ApplicationSession
             active.Token.ThrowIfCancellationRequested();
             object? result = request.Method switch
             {
-                "list" => ApplicationCommands.ListMembers(runtime.Application),
-                "describe" => ApplicationCommands.DescribeMember(runtime.Application, request.Member!),
+                "list" => ApplicationCommands.ListMembers(runtime.Api),
+                "describe" => ApplicationCommands.DescribeMember(runtime.Api, request.Member!),
                 "invoke" => await InvokeMemberAsync(request, active.Token).ConfigureAwait(false),
                 "status" => new
                 {
@@ -364,17 +365,17 @@ internal sealed class ApplicationSession
         SessionRequest request,
         CancellationToken cancellation_token)
     {
-        ApplicationDescriptor descriptor = ApplicationCommands.InvokableDescriptor(
-            runtime.Application,
+        ApiDescriptor descriptor = ApplicationCommands.InvokableDescriptor(
+            runtime.Api,
             request.Member!);
-        object arguments = ApplicationJson.Deserialize(request.Arguments!.Value, descriptor);
+        object arguments = GameJson.Deserialize(request.Arguments!.Value, descriptor);
         if (ApplicationCommands.RequiresConnection(descriptor))
         {
             await ApplicationCommands
                 .WaitForConnectionAsync(runtime, cancellation_token)
                 .ConfigureAwait(false);
         }
-        return await runtime.Application
+        return await runtime.Api
             .InvokeAsync(descriptor.Id, arguments, cancellation_token)
             .ConfigureAwait(false);
     }
@@ -383,7 +384,7 @@ internal sealed class ApplicationSession
     {
         switch (error)
         {
-            case ApplicationUnavailableException unavailable:
+            case GameNotReadyException unavailable:
                 output.Error(
                     request_id,
                     "unavailable",

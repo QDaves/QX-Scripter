@@ -1,9 +1,11 @@
 using System.Windows.Input;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using Qx.Game;
-using Qx.Game.Application;
+using Qx.Game.Api;
+using Qx.Game.Friends;
+using Qx.Game.Rooms;
 using Qx.Game.Snapshots;
+using Qx.Game;
 using Qx.Model;
 using Qx.Presentation.Collections;
 using Qx.Presentation.Dialogs;
@@ -69,7 +71,7 @@ public sealed partial class FriendsViewModel : PageViewModel
         _search = Own(new Debouncer(dispatcher, time, SearchDelay, ApplyFilter));
         _friends_changed = new CoalescingSignal(dispatcher, OnFriendsChanged);
         _room_changed = Own(new ThrottledSignal(dispatcher, time, RoomInterval, RefreshHere));
-        Own(gateway.SubscribeSignal(ApplicationMemberIds.FriendsChanged, _friends_changed));
+        Own(gateway.SubscribeSignal(ApiIds.FriendsChanged, _friends_changed));
         RoomManager room = gateway.Game.Room;
         Rows.Applied += OnRowsApplied;
         Selection.Changed += RefreshMenu;
@@ -160,8 +162,8 @@ public sealed partial class FriendsViewModel : PageViewModel
         if (_lifetime.IsStopping)
             return;
         FriendRow? one = Selection.HasOne ? Selection.First : null;
-        MemberGate follow = _gateway.Gate(ApplicationMemberIds.FriendFollow);
-        MemberGate remove = _gateway.Gate(ApplicationMemberIds.FriendsRemove);
+        MemberGate follow = _gateway.Gate(ApiIds.FriendFollow);
+        MemberGate remove = _gateway.Gate(ApiIds.FriendsRemove);
         HasSelection = Selection.HasAny;
         HasOneSelected = one is not null;
         CanFollow = one is { IsOnline: true } && follow.Available;
@@ -214,7 +216,7 @@ public sealed partial class FriendsViewModel : PageViewModel
         try
         {
             await _gateway.InvokeAsync<FriendFollowRequest, FriendOperationResult>(
-                ApplicationMemberIds.FriendFollow,
+                ApiIds.FriendFollow,
                 new FriendFollowRequest(row.Id),
                 cancellation_token);
             Notices.Show(NoticeSeverity.Success, $"Following {row.Name}.");
@@ -329,7 +331,7 @@ public sealed partial class FriendsViewModel : PageViewModel
         try
         {
             await _gateway.InvokeAsync<FriendsRemoveRequest, FriendOperationResult>(
-                ApplicationMemberIds.FriendsRemove,
+                ApiIds.FriendsRemove,
                 new FriendsRemoveRequest([.. picked.Select(row => (Id)row.Id)]),
                 cancellation_token);
             Notices.Show(NoticeSeverity.Success, FriendsText.Removed(picked.Length));
@@ -347,7 +349,7 @@ public sealed partial class FriendsViewModel : PageViewModel
 
     async Task AskAsync(ICommand? cancel, CancellationToken cancellation_token)
     {
-        MemberGate gate = _gateway.Gate(ApplicationMemberIds.FriendsRefresh);
+        MemberGate gate = _gateway.Gate(ApiIds.FriendsRefresh);
         if (!gate.Available)
         {
             if (_all.Count > 0)
@@ -361,7 +363,7 @@ public sealed partial class FriendsViewModel : PageViewModel
         try
         {
             await _gateway.InvokeAsync<FriendsRefreshRequest, FriendListPage>(
-                ApplicationMemberIds.FriendsRefresh,
+                ApiIds.FriendsRefresh,
                 new FriendsRefreshRequest(Limit: FriendListReader.PageSize),
                 cancellation_token);
             answered = true;
@@ -446,7 +448,7 @@ public sealed partial class FriendsViewModel : PageViewModel
             return;
         if (_all.Count == 0)
         {
-            MemberGate gate = _gateway.Gate(ApplicationMemberIds.FriendsRefresh);
+            MemberGate gate = _gateway.Gate(ApiIds.FriendsRefresh);
             if (!gate.Available)
             {
                 State.ShowUnavailable(Descriptor.Icon, gate.Reason);

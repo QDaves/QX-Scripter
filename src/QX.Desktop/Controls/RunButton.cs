@@ -1,14 +1,14 @@
 using System.Windows.Input;
-using Avalonia;
-using Avalonia.Animation;
 using Avalonia.Animation.Easings;
+using Avalonia.Animation;
 using Avalonia.Collections;
-using Avalonia.Controls;
 using Avalonia.Controls.Metadata;
 using Avalonia.Controls.Primitives;
 using Avalonia.Controls.Shapes;
+using Avalonia.Controls;
 using Avalonia.Styling;
 using Avalonia.VisualTree;
+using Avalonia;
 using Qx.Presentation.Threading;
 using Qx.Presentation.Visuals;
 

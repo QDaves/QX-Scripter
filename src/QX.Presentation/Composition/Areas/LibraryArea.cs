@@ -1,7 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Qx.Presentation.Navigation;
-using Qx.Presentation.ViewModels.Library;
 using Qx.Presentation.Services.Library;
+using Qx.Presentation.ViewModels.Library;
 
 namespace Qx.Presentation.Composition.Areas;
 

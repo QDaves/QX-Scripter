@@ -1,10 +1,11 @@
+using Qx.Game.Rooms;
 using Qx.Game;
-using Qx.Game.Rules;
 using Qx.Presentation.Mvvm;
 using Qx.Presentation.Navigation;
 using Qx.Presentation.Platform;
 using Qx.Presentation.Runtime;
 using Qx.Presentation.Services.Game;
+using Qx.Scripter.Rules;
 
 namespace Qx.Presentation.ViewModels.General;
 

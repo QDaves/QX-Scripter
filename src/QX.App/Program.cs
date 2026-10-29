@@ -1,10 +1,12 @@
-using Qx;
 using Qx.Diagnostics;
+using Qx.Game.Api;
+using Qx.Game.Inventory;
+using Qx.Game.Profiles;
 using Qx.Game;
-using Qx.Game.Application;
-using Qx.Hosting;
 using Qx.Interception.GEarth;
+using Qx.Scripter;
 using Qx.Scripting.Hosting;
+using Qx;
 
 if (Qx.App.ApplicationCommands.IsCommand(args))
 {
@@ -83,8 +85,8 @@ static async Task<int> Run(string[] args)
             cts.Cancel();
     };
 
-    string scripts_directory = StoragePaths.Scripts;
-    await using var runtime = new RuntimeHost(new RuntimeHostOptions
+    string scripts_directory = ScripterPaths.Scripts;
+    await using var runtime = new ScripterRuntime(new ScripterRuntimeOptions
     {
         GEarth = options,
         ScriptsDirectory = scripts_directory,
@@ -96,8 +98,8 @@ static async Task<int> Run(string[] args)
     game.Room.Entered += () => Diag.Info($"Entered room {game.Room.RoomId} (owner: {game.Room.IsOwner})");
     game.Room.Left += () => Diag.Info("Left room");
     long logged_profile_generation = -1;
-    using IDisposable profile_subscription = runtime.Application.Subscribe<ProfileChanged>(
-        ApplicationMemberIds.ProfileChanged,
+    using IDisposable profile_subscription = runtime.Api.Subscribe<ProfileChanged>(
+        ApiIds.ProfileChanged,
         change =>
         {
             if (change.Kind is not ProfileChangeKind.Identity ||
@@ -111,8 +113,8 @@ static async Task<int> Run(string[] args)
             Diag.Info($"Signed in as {identity.Name} (#{identity.Id})");
         });
     long logged_inventory_generation = -1;
-    using IDisposable inventory_subscription = runtime.Application.Subscribe<InventoryFurniChanged>(
-        ApplicationMemberIds.InventoryFurniChanged,
+    using IDisposable inventory_subscription = runtime.Api.Subscribe<InventoryFurniChanged>(
+        ApiIds.InventoryFurniChanged,
         change =>
         {
             if (change.Kind is not InventoryChangeKind.Loaded ||
@@ -121,9 +123,9 @@ static async Task<int> Run(string[] args)
                 return;
             }
 
-            InventoryFurniPage page = runtime.Application
+            InventoryFurniPage page = runtime.Api
                 .Invoke<InventoryFurniPageRequest, InventoryFurniPage>(
-                    ApplicationMemberIds.InventoryFurniList,
+                    ApiIds.InventoryFurniList,
                     new InventoryFurniPageRequest(Limit: 1));
             if (page.SessionGeneration != change.SessionGeneration ||
                 page.Revision != change.Revision ||
@@ -191,7 +193,7 @@ static async Task<int> Run(string[] args)
 }
 
 static async Task RunScriptAsync(
-    RuntimeHost runtime,
+    ScripterRuntime runtime,
     string script_path,
     CancellationToken cancellation_token)
 {

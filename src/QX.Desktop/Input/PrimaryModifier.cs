@@ -1,5 +1,5 @@
-using Avalonia;
 using Avalonia.Input;
+using Avalonia;
 
 namespace Qx.Desktop.Input;
 

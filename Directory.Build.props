@@ -16,10 +16,6 @@
     <NoWarn>$(NoWarn);CS1591</NoWarn>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(MSBuildProjectName)' == 'Flazzy'">
-    <GenerateDocumentationFile>false</GenerateDocumentationFile>
-  </PropertyGroup>
-
   <PropertyGroup>
     <QxVersionSeries>0.1</QxVersionSeries>
     <VersionPrefix>$(QxVersionSeries).1</VersionPrefix>
@@ -36,4 +32,5 @@
   <PropertyGroup Condition="'$(QxDebug)' == 'true'">
     <DefineConstants>$(DefineConstants);QX_DEBUG</DefineConstants>
   </PropertyGroup>
+  <Import Project="Framework.props" />
 </Project>

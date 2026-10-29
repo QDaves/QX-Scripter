@@ -1,14 +1,15 @@
 using Qx.Diagnostics;
+using Qx.Game.Api;
 using Qx.Game;
-using Qx.Game.Application;
-using Qx.Game.Rules;
-using Qx.Hosting;
 using Qx.Interception.GEarth;
 using Qx.Mcp;
 using Qx.Platform;
 using Qx.Presentation.Platform;
 using Qx.Presentation.Services.Editor;
 using Qx.Protocol;
+using Qx.Scripter.Rules;
+using Qx.Scripter;
+using Qx.Scripting.Hosting;
 
 namespace Qx.Presentation.Runtime;
 
@@ -16,7 +17,7 @@ public sealed class DesktopRuntime : IAsyncDisposable
 {
     public static readonly TimeSpan DisposeBudget = TimeSpan.FromSeconds(3);
 
-    readonly RuntimeHost _host;
+    readonly ScripterRuntime _host;
     int _disposed;
 
     public DesktopRuntime(LaunchOptions launch, IAppPaths paths, RuntimeProfile profile, int? mcpPort, DeferredEditorBridge editor)
@@ -26,7 +27,7 @@ public sealed class DesktopRuntime : IAsyncDisposable
         ArgumentNullException.ThrowIfNull(editor);
         Launch = launch;
         bool live = profile == RuntimeProfile.Live;
-        var options = new RuntimeHostOptions
+        var options = new ScripterRuntimeOptions
         {
             GEarth = launch.GEarth,
             ScriptsDirectory = paths.ScriptsDirectory,
@@ -42,7 +43,7 @@ public sealed class DesktopRuntime : IAsyncDisposable
         };
         if (mcpPort is { } port)
             options = options with { McpPort = port };
-        _host = new RuntimeHost(options, editor);
+        _host = new ScripterRuntime(options, editor);
         _host.Rules.AntiIdleSeconds = SessionRules.DefaultAntiIdleSeconds;
     }
 
@@ -52,7 +53,7 @@ public sealed class DesktopRuntime : IAsyncDisposable
 
     public GameState Game => _host.Game;
 
-    public IApplicationRuntime Application => _host.Application;
+    public IGameApi Api => _host.Api;
 
     public SessionRules Rules => _host.Rules;
 
@@ -66,7 +67,7 @@ public sealed class DesktopRuntime : IAsyncDisposable
 
     public MessageManager Messages => _host.Messages;
 
-    public RuntimeHostStatus Status => _host.Status;
+    public ScripterRuntimeStatus Status => _host.Status;
 
     public Task TransportTask => _host.TransportTask;
 

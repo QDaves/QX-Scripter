@@ -1,8 +1,8 @@
 using System.ComponentModel;
 using System.Windows.Input;
-using Avalonia;
-using Avalonia.Controls;
 using Avalonia.Controls.Metadata;
+using Avalonia.Controls;
+using Avalonia;
 using Qx.Presentation.Mvvm;
 
 namespace Qx.Desktop.Controls;

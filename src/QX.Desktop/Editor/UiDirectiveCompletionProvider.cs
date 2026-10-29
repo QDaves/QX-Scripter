@@ -1,13 +1,13 @@
 using System.Text.RegularExpressions;
 using Avalonia.Input;
 using Avalonia.Media;
-using AvaloniaEdit;
 using AvaloniaEdit.Document;
 using AvaloniaEdit.Editing;
+using AvaloniaEdit;
 using Qx.Scripting.Hosting;
 using RoslynPad.Editor;
-using RoslynPad.Roslyn;
 using RoslynPad.Roslyn.Completion;
+using RoslynPad.Roslyn;
 
 namespace Qx.Desktop.Editor;
 

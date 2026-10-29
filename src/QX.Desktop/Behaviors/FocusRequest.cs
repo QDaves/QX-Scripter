@@ -1,8 +1,8 @@
-using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Data;
 using Avalonia.Input;
 using Avalonia.Threading;
+using Avalonia;
 
 namespace Qx.Desktop.Behaviors;
 

@@ -1,4 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
+using Qx.Game.Data;
 using Qx.Presentation.Navigation;
 using Qx.Presentation.Services.Game;
 using Qx.Presentation.Services.GameCatalog;

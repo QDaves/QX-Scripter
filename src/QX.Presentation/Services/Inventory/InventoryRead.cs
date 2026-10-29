@@ -1,6 +1,8 @@
-using Qx.Game;
-using Qx.Game.Application;
+using Qx.Game.Api;
+using Qx.Game.Data;
+using Qx.Game.Inventory;
 using Qx.Game.Snapshots;
+using Qx.Game;
 using Qx.Model;
 using Qx.Presentation.Services.FurniLookup;
 using Qx.Presentation.Services.Game;
@@ -17,8 +19,8 @@ public static class InventoryRead
         ArgumentNullException.ThrowIfNull(gateway);
         (InventoryFurniPage furni, InventoryPetPage pets) = await gateway.ReadStableAsync(
             async token => (
-                await InventoryApplicationPages.ReadFurniAsync(gateway.Application, cancellationToken: token),
-                await InventoryApplicationPages.ReadPetsAsync(gateway.Application, cancellationToken: token)),
+                await InventoryPages.ReadFurniAsync(gateway.Api, cancellationToken: token),
+                await InventoryPages.ReadPetsAsync(gateway.Api, cancellationToken: token)),
             cancellationToken);
         GameData data = gateway.Game.GameData;
         return Build(furni, pets, data.Furni, data.Texts);

@@ -1,7 +1,7 @@
 using Avalonia.Media;
-using AvaloniaEdit;
 using AvaloniaEdit.Document;
 using AvaloniaEdit.Editing;
+using AvaloniaEdit;
 using RoslynPad.Editor;
 
 namespace Qx.Desktop.Editor;

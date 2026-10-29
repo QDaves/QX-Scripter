@@ -1,9 +1,11 @@
 using System.Collections.Concurrent;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using Qx.Game;
-using Qx.Game.Application;
+using Qx.Game.Api;
+using Qx.Game.Navigator;
+using Qx.Game.Rooms;
 using Qx.Game.Snapshots;
+using Qx.Game;
 using Qx.Presentation.Collections;
 using Qx.Presentation.Mvvm;
 using Qx.Presentation.Navigation;
@@ -62,8 +64,8 @@ public sealed partial class NavigatorViewModel : PageViewModel
         Notices = Own(new NoticeLine(dispatcher, time));
         _changed = new CoalescingSignal(dispatcher, DrainChanges);
         _received = new CoalescingSignal(dispatcher, DrainResult);
-        Own(gateway.Subscribe<NavigatorChanged>(ApplicationMemberIds.NavigatorChanged, OnNavigatorChanged));
-        Own(gateway.Subscribe<NavigatorSearchReceived>(ApplicationMemberIds.NavigatorSearchReceived, OnSearchReceived));
+        Own(gateway.Subscribe<NavigatorChanged>(ApiIds.NavigatorChanged, OnNavigatorChanged));
+        Own(gateway.Subscribe<NavigatorSearchReceived>(ApiIds.NavigatorSearchReceived, OnSearchReceived));
         Rooms.Applied += OnRoomsApplied;
         Selection.Changed += RefreshMenu;
         gateway.SessionChanged += OnSessionChanged;
@@ -150,7 +152,7 @@ public sealed partial class NavigatorViewModel : PageViewModel
     {
         if (_lifetime.IsStopping)
             return;
-        MemberGate enter = _gateway.Gate(ApplicationMemberIds.RoomEnter);
+        MemberGate enter = _gateway.Gate(ApiIds.RoomEnter);
         HasSelection = Selection.HasAny;
         HasOneSelected = Selection.HasOne;
         EnterAllowed = enter.Available;
@@ -164,7 +166,7 @@ public sealed partial class NavigatorViewModel : PageViewModel
         await FetchAsync(cancellationToken);
         if (!cancellationToken.IsCancellationRequested && !_has_result &&
             SelectedList.Mode == NavigatorSearchMode.Popular &&
-            _gateway.Gate(ApplicationMemberIds.NavigatorSearchPopular).Available)
+            _gateway.Gate(ApiIds.NavigatorSearchPopular).Available)
             await SearchAsync();
         AskForQueryFocus();
     }
@@ -228,7 +230,7 @@ public sealed partial class NavigatorViewModel : PageViewModel
         try
         {
             RoomLifecycleDispatchResult result = await _gateway.InvokeAsync<RoomEnterRequest, RoomLifecycleDispatchResult>(
-                ApplicationMemberIds.RoomEnter,
+                ApiIds.RoomEnter,
                 new RoomEnterRequest(target.Id),
                 _lifetime.Token);
             if (IsDisposed)
@@ -298,7 +300,7 @@ public sealed partial class NavigatorViewModel : PageViewModel
         try
         {
             NavigatorState state = await _gateway.QueryAsync<NavigatorStateRequest, NavigatorState>(
-                ApplicationMemberIds.NavigatorState,
+                ApiIds.NavigatorState,
                 new NavigatorStateRequest(),
                 cancellation_token);
             if (!IsDisposed)
@@ -317,7 +319,7 @@ public sealed partial class NavigatorViewModel : PageViewModel
     {
         if (_metadata_loaded)
             return;
-        MemberGate gate = _gateway.Gate(ApplicationMemberIds.NavigatorMetadataRefresh);
+        MemberGate gate = _gateway.Gate(ApiIds.NavigatorMetadataRefresh);
         if (!gate.Available)
         {
             ShowState();
@@ -326,7 +328,7 @@ public sealed partial class NavigatorViewModel : PageViewModel
         try
         {
             NavigatorState state = await _gateway.InvokeAsync<NavigatorRefreshRequest, NavigatorState>(
-                ApplicationMemberIds.NavigatorMetadataRefresh,
+                ApiIds.NavigatorMetadataRefresh,
                 new NavigatorRefreshRequest(),
                 cancellation_token);
             if (!IsDisposed)

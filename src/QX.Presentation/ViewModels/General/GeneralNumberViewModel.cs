@@ -1,6 +1,6 @@
 using System.Globalization;
 using CommunityToolkit.Mvvm.ComponentModel;
-using Qx.Game.Rules;
+using Qx.Scripter.Rules;
 
 namespace Qx.Presentation.ViewModels.General;
 

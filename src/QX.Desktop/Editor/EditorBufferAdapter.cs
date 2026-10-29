@@ -1,5 +1,5 @@
-using AvaloniaEdit;
 using AvaloniaEdit.Document;
+using AvaloniaEdit;
 using Qx.Presentation.Services.Workspace;
 
 namespace Qx.Desktop.Editor;

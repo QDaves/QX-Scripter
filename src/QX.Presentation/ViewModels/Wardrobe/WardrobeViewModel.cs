@@ -1,6 +1,7 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using Qx.Game.Application;
+using Qx.Game.Api;
+using Qx.Game.Profiles;
 using Qx.Model.Messages.Incoming;
 using Qx.Presentation.Collections;
 using Qx.Presentation.Dialogs;
@@ -136,8 +137,8 @@ public sealed partial class WardrobeViewModel : PageViewModel
     {
         if (_lifetime.IsStopping)
             return;
-        MemberGate wear = _gateway.Gate(ApplicationMemberIds.ProfileFigureSet);
-        MemberGate import = _gateway.Gate(ApplicationMemberIds.ProfileWardrobeGet);
+        MemberGate wear = _gateway.Gate(ApiIds.ProfileFigureSet);
+        MemberGate import = _gateway.Gate(ApiIds.ProfileWardrobeGet);
         HasSelection = Selection.HasAny;
         HasOneSelected = Selection.HasOne;
         IsWearable = wear.Available;
@@ -172,7 +173,7 @@ public sealed partial class WardrobeViewModel : PageViewModel
         try
         {
             ProfileStateView state = await _gateway.QueryAsync<ProfileStateRequest, ProfileStateView>(
-                ApplicationMemberIds.ProfileState,
+                ApiIds.ProfileState,
                 new ProfileStateRequest(),
                 cancellation_token);
             if (state.Identity is not { } me)
@@ -238,7 +239,7 @@ public sealed partial class WardrobeViewModel : PageViewModel
         try
         {
             await _gateway.InvokeAsync<ProfileFigureSetRequest, ProfileDispatchResult>(
-                ApplicationMemberIds.ProfileFigureSet,
+                ApiIds.ProfileFigureSet,
                 new ProfileFigureSetRequest(worn.Gender, worn.Figure),
                 cancellation_token);
             Notices.Show(NoticeSeverity.Success, WardrobeText.Worn(worn.Title));

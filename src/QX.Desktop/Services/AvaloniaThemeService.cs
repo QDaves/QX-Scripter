@@ -1,5 +1,5 @@
-using Avalonia;
 using Avalonia.Styling;
+using Avalonia;
 using Qx.Presentation.Platform;
 using Qx.Presentation.Services.Settings;
 

@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using CommunityToolkit.Mvvm.ComponentModel;
-using Qx.Game.Application;
+using Qx.Game.Api;
+using Qx.Game.Profiles;
 using Qx.Presentation.Dialogs;
 using Qx.Presentation.Mvvm;
 using Qx.Presentation.Navigation;
@@ -55,7 +56,7 @@ public sealed partial class RoomViewModel : PageViewModel
             time,
             Notices);
         _session = new CoalescingSignal(dispatcher, OnSession);
-        Own(gateway.SubscribeSignal(ApplicationMemberIds.ProfileChanged, _session));
+        Own(gateway.SubscribeSignal(ApiIds.ProfileChanged, _session));
         Info = Own(new RoomInfoViewModel(_context));
         Users = Own(new RoomUsersViewModel(_context));
         Visitors = Own(new RoomVisitorsViewModel(_context));
@@ -174,7 +175,7 @@ public sealed partial class RoomViewModel : PageViewModel
         {
             ProfileStateView? profile = await _gateway
                 .QueryAsync<ProfileStateRequest, ProfileStateView?>(
-                    ApplicationMemberIds.ProfileState,
+                    ApiIds.ProfileState,
                     new ProfileStateRequest(),
                     cancellation_token);
             _context.Self = profile?.Identity?.Id;

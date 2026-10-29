@@ -52,10 +52,6 @@ jobs:
       - name: Restore solution
         run: dotnet restore QX.slnx --locked-mode --disable-build-servers
 
-      - name: Verify generated message facade
-        shell: pwsh
-        run: ./tools/generate-message-facade.ps1 -check
-
       - name: Package Desktop
         shell: pwsh
         run: ./tools/publish.ps1 -runtime '${{ matrix.runtime }}' -edition Desktop

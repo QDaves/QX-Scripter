@@ -1,8 +1,11 @@
 using System.Globalization;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Qx.Game.Api;
+using Qx.Game.Friends;
+using Qx.Game.Rooms;
+using Qx.Game.Trading;
 using Qx.Game;
-using Qx.Game.Application;
 using Qx.Model;
 using Qx.Presentation.Collections;
 using Qx.Presentation.Dialogs;
@@ -21,10 +24,10 @@ public abstract partial class RoomPeopleViewModel : ViewModelBase
 
     static readonly string[] _moderation_members =
     [
-        ApplicationMemberIds.RoomModerationMute,
-        ApplicationMemberIds.RoomModerationKick,
-        ApplicationMemberIds.RoomModerationBan,
-        ApplicationMemberIds.RoomModerationBounce
+        ApiIds.RoomModerationMute,
+        ApiIds.RoomModerationKick,
+        ApiIds.RoomModerationBan,
+        ApiIds.RoomModerationBounce
     ];
 
     readonly KeyedRows<string, PersonRowViewModel> _all;
@@ -167,7 +170,7 @@ public abstract partial class RoomPeopleViewModel : ViewModelBase
         try
         {
             await Context.Gateway.InvokeAsync<FriendRequestSendRequest, FriendOperationResult>(
-                ApplicationMemberIds.FriendRequestSend,
+                ApiIds.FriendRequestSend,
                 new FriendRequestSendRequest(row.Name),
                 cancellation_token);
             Context.Say($"Friend request sent to {row.Name}.");
@@ -190,11 +193,11 @@ public abstract partial class RoomPeopleViewModel : ViewModelBase
         {
             TradeStateView trade = await Context.Gateway
                 .QueryAsync<TradeStateRequest, TradeStateView>(
-                    ApplicationMemberIds.TradeState,
+                    ApiIds.TradeState,
                     new TradeStateRequest(),
                     cancellation_token);
             await Context.Gateway.InvokeAsync<TradeOpenRequest, TradeDispatchResult>(
-                ApplicationMemberIds.TradeOpen,
+                ApiIds.TradeOpen,
                 new TradeOpenRequest(
                     target.Index,
                     trade.SessionGeneration,
@@ -309,7 +312,7 @@ public abstract partial class RoomPeopleViewModel : ViewModelBase
             span == 0 ? $"Unmuted {row.Name}." : $"Muted {row.Name} for {minutes} minutes.",
             $"Could not mute {row.Name}",
             (state, token) => Context.Gateway.InvokeAsync<RoomModerationMuteRequest, RoomModerationDispatchResult>(
-                ApplicationMemberIds.RoomModerationMute,
+                ApiIds.RoomModerationMute,
                 new RoomModerationMuteRequest(
                     row.UserId,
                     span,
@@ -331,7 +334,7 @@ public abstract partial class RoomPeopleViewModel : ViewModelBase
             $"Kicked {row.Name}.",
             $"Could not kick {row.Name}",
             (state, token) => Context.Gateway.InvokeAsync<RoomModerationTargetRequest, RoomModerationDispatchResult>(
-                ApplicationMemberIds.RoomModerationKick,
+                ApiIds.RoomModerationKick,
                 new RoomModerationTargetRequest(
                     row.UserId,
                     state.SessionGeneration,
@@ -366,7 +369,7 @@ public abstract partial class RoomPeopleViewModel : ViewModelBase
             $"Banned {row.Name} {word}.",
             $"Could not ban {row.Name}",
             (state, token) => Context.Gateway.InvokeAsync<RoomModerationBanRequest, RoomModerationDispatchResult>(
-                ApplicationMemberIds.RoomModerationBan,
+                ApiIds.RoomModerationBan,
                 new RoomModerationBanRequest(
                     row.UserId,
                     span,
@@ -388,7 +391,7 @@ public abstract partial class RoomPeopleViewModel : ViewModelBase
             $"Bounced {row.Name}.",
             $"Could not bounce {row.Name}",
             (state, token) => Context.Gateway.InvokeAsync<RoomModerationTargetRequest, RoomModerationDispatchResult>(
-                ApplicationMemberIds.RoomModerationBounce,
+                ApiIds.RoomModerationBounce,
                 new RoomModerationTargetRequest(
                     row.UserId,
                     state.SessionGeneration,
@@ -470,7 +473,7 @@ public abstract partial class RoomPeopleViewModel : ViewModelBase
             throw new InvalidOperationException("The selected row is not a current room user.");
         RoomModerationStateView state = await Context.Gateway
             .QueryAsync<RoomModerationStateRequest, RoomModerationStateView>(
-                ApplicationMemberIds.RoomModerationState,
+                ApiIds.RoomModerationState,
                 new RoomModerationStateRequest(),
                 cancellation_token);
         if (!state.RoomReady || state.RoomId <= 0 || state.RoomGeneration != row.RoomGeneration)
@@ -484,7 +487,7 @@ public abstract partial class RoomPeopleViewModel : ViewModelBase
             return (false, null);
         if (TradeTarget(row) is null)
             return (false, "Only somebody standing in this room can be traded with.");
-        MemberGate gate = Context.Gateway.Gate(ApplicationMemberIds.TradeOpen);
+        MemberGate gate = Context.Gateway.Gate(ApiIds.TradeOpen);
         return (gate.Available, gate.Available ? null : gate.Reason);
     }
 

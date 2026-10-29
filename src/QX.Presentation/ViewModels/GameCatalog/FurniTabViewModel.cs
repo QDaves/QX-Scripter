@@ -2,10 +2,13 @@ using System.Globalization;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Qx.Diagnostics;
+using Qx.Game.Api;
+using Qx.Game.Catalog;
+using Qx.Game.Data;
+using Qx.Game.Marketplace;
 using Qx.Game;
-using Qx.Game.Application;
-using Qx.Model;
 using Qx.Model.Messages.Incoming;
+using Qx.Model;
 using Qx.Presentation.Collections;
 using Qx.Presentation.Dialogs;
 using Qx.Presentation.Mvvm;
@@ -197,7 +200,7 @@ public sealed partial class FurniTabViewModel : ViewModelBase, IVisibleItemsSink
 
     public void RefreshGates()
     {
-        _scan_gate = _gateway.Gate(ApplicationMemberIds.CatalogPagesLoad);
+        _scan_gate = _gateway.Gate(ApiIds.CatalogPagesLoad);
         _buy_gate = BuyGate(Source.Value);
         ScanTip = _scan_gate.Available ? "Read every catalog page and cache the results" : _scan_gate.Reason;
         BuyTip = _buy_gate.Available ? null : _buy_gate.Reason;
@@ -441,11 +444,11 @@ public sealed partial class FurniTabViewModel : ViewModelBase, IVisibleItemsSink
     MemberGate BuyGate(BuySource source)
     {
         if (source == BuySource.Marketplace)
-            return _gateway.Gate(ApplicationMemberIds.MarketplaceOfferBuy);
-        MemberGate shop = _gateway.Gate(ApplicationMemberIds.CatalogPurchaseSend);
+            return _gateway.Gate(ApiIds.MarketplaceOfferBuy);
+        MemberGate shop = _gateway.Gate(ApiIds.CatalogPurchaseSend);
         if (source == BuySource.Shop)
             return shop;
-        MemberGate market = _gateway.Gate(ApplicationMemberIds.MarketplaceOfferBuy);
+        MemberGate market = _gateway.Gate(ApiIds.MarketplaceOfferBuy);
         return shop.Available ? market : shop;
     }
 

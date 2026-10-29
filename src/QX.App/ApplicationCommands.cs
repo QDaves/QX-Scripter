@@ -1,8 +1,9 @@
 using System.Text.Json;
-using Qx.Game.Application;
-using Qx.Hosting;
-using Qx.Interception;
+using Qx.Game.Api;
 using Qx.Interception.GEarth;
+using Qx.Interception;
+using Qx.Mcp;
+using Qx.Scripter;
 
 namespace Qx.App;
 
@@ -42,9 +43,9 @@ internal static class ApplicationCommands
         {
             return 130;
         }
-        catch (ApplicationUnavailableException error)
+        catch (GameNotReadyException error)
         {
-            Console.Error.WriteLine(ApplicationJson.Serialize(new
+            Console.Error.WriteLine(GameJson.Serialize(new
             {
                 error = "application_unavailable",
                 message = error.Message,
@@ -78,50 +79,50 @@ internal static class ApplicationCommands
         }
     }
 
-    internal static object[] ListMembers(IApplicationRuntime application)
+    internal static object[] ListMembers(IGameApi application)
     {
         ArgumentNullException.ThrowIfNull(application);
         return application.Members
-            .Where(descriptor => descriptor.Exposure.HasFlag(ApplicationExposure.Cli))
+            .Where(descriptor => descriptor.Exposure.HasFlag(ApiExposure.Cli))
             .OrderBy(descriptor => descriptor.Id, StringComparer.Ordinal)
-            .Select(descriptor => ApplicationJson.Describe(application.Describe(descriptor.Id)))
+            .Select(descriptor => GameJson.Describe(application.Describe(descriptor.Id)))
             .ToArray();
     }
 
-    internal static object DescribeMember(IApplicationRuntime application, string id)
+    internal static object DescribeMember(IGameApi application, string id)
     {
-        ApplicationDescriptor descriptor = CliMember(application, id);
-        return ApplicationJson.Describe(application.Describe(descriptor.Id));
+        ApiDescriptor descriptor = CliMember(application, id);
+        return GameJson.Describe(application.Describe(descriptor.Id));
     }
 
-    internal static ApplicationDescriptor InvokableDescriptor(
-        IApplicationRuntime application,
+    internal static ApiDescriptor InvokableDescriptor(
+        IGameApi application,
         string id)
     {
-        ApplicationDescriptor descriptor = CliMember(application, id);
-        if (descriptor.Kind is ApplicationMemberKind.Event || descriptor.RequestType is null)
+        ApiDescriptor descriptor = CliMember(application, id);
+        if (descriptor.Kind is ApiMemberKind.Event || descriptor.RequestType is null)
             throw new ArgumentException($"Application member '{id}' cannot be invoked.", nameof(id));
         return descriptor;
     }
 
-    internal static ApplicationDescriptor EventDescriptor(
-        IApplicationRuntime application,
+    internal static ApiDescriptor EventDescriptor(
+        IGameApi application,
         string id)
     {
-        ApplicationDescriptor descriptor = CliMember(application, id);
-        if (descriptor.Kind is not ApplicationMemberKind.Event)
+        ApiDescriptor descriptor = CliMember(application, id);
+        if (descriptor.Kind is not ApiMemberKind.Event)
             throw new ArgumentException($"Application member '{id}' is not an event.", nameof(id));
         return descriptor;
     }
 
-    internal static bool RequiresConnection(ApplicationDescriptor descriptor)
+    internal static bool RequiresConnection(ApiDescriptor descriptor)
     {
         ArgumentNullException.ThrowIfNull(descriptor);
-        return descriptor.RequiredStates.Contains(ApplicationStateKey.HotelConnected);
+        return descriptor.RequiredStates.Contains(GameRequirement.HotelConnected);
     }
 
     internal static async Task WaitForConnectionAsync(
-        RuntimeHost runtime,
+        ScripterRuntime runtime,
         CancellationToken cancellation_token)
     {
         if (runtime.Extension.Session is not null)
@@ -154,29 +155,29 @@ internal static class ApplicationCommands
         }
     }
 
-    internal static object AvailabilityDetails(ApplicationUnavailableException error)
+    internal static object AvailabilityDetails(GameNotReadyException error)
     {
         ArgumentNullException.ThrowIfNull(error);
         return new
         {
             member = error.MemberId,
-            availability = ApplicationJson.DescribeAvailability(error.Availability)
+            availability = GameJson.DescribeAvailability(error.Availability)
         };
     }
 
     private static async Task<int> ListAsync(string[] args)
     {
         RequireLength(args, 2, "QX app list");
-        await using RuntimeHost runtime = CreateRuntime(args, offline: true);
-        await WriteAsync(ListMembers(runtime.Application)).ConfigureAwait(false);
+        await using ScripterRuntime runtime = CreateRuntime(args, offline: true);
+        await WriteAsync(ListMembers(runtime.Api)).ConfigureAwait(false);
         return 0;
     }
 
     private static async Task<int> DescribeAsync(string[] args)
     {
         RequireLength(args, 3, "QX app describe <id>");
-        await using RuntimeHost runtime = CreateRuntime(args, offline: true);
-        await WriteAsync(DescribeMember(runtime.Application, args[2])).ConfigureAwait(false);
+        await using ScripterRuntime runtime = CreateRuntime(args, offline: true);
+        await WriteAsync(DescribeMember(runtime.Api, args[2])).ConfigureAwait(false);
         return 0;
     }
 
@@ -185,23 +186,23 @@ internal static class ApplicationCommands
         CancellationToken cancellation_token)
     {
         RequireLength(args, 4, "QX app invoke <id> <json>");
-        await using RuntimeHost runtime = CreateRuntime(args, offline: false);
-        ApplicationDescriptor descriptor = InvokableDescriptor(runtime.Application, args[2]);
-        if (descriptor.InvocationScope is ApplicationInvocationScope.Persistent)
+        await using ScripterRuntime runtime = CreateRuntime(args, offline: false);
+        ApiDescriptor descriptor = InvokableDescriptor(runtime.Api, args[2]);
+        if (descriptor.InvocationScope is ApiLifetime.Persistent)
         {
             throw new ArgumentException(
                 $"Application member '{descriptor.Id}' requires a persistent runtime. Use 'QX app session'.",
                 nameof(args));
         }
         using JsonDocument document = JsonDocument.Parse(args[3]);
-        object request = ApplicationJson.Deserialize(document.RootElement, descriptor);
+        object request = GameJson.Deserialize(document.RootElement, descriptor);
 
         await runtime.StartAsync(cancellation_token).ConfigureAwait(false);
         if (RequiresConnection(descriptor))
         {
             await WaitForConnectionAsync(runtime, cancellation_token).ConfigureAwait(false);
         }
-        object? result = await runtime.Application
+        object? result = await runtime.Api
             .InvokeAsync(descriptor.Id, request, cancellation_token)
             .ConfigureAwait(false);
         await WriteAsync(result).ConfigureAwait(false);
@@ -213,12 +214,12 @@ internal static class ApplicationCommands
         CancellationToken cancellation_token)
     {
         RequireLength(args, 3, "QX app watch <id>");
-        await using RuntimeHost runtime = CreateRuntime(args, offline: false);
-        ApplicationDescriptor descriptor = EventDescriptor(runtime.Application, args[2]);
+        await using ScripterRuntime runtime = CreateRuntime(args, offline: false);
+        ApiDescriptor descriptor = EventDescriptor(runtime.Api, args[2]);
         await using var output = new BoundedNdjsonWriter(Console.Out);
         using CancellationTokenRegistration output_cancellation =
             cancellation_token.Register(output.Abort);
-        using IDisposable subscription = runtime.Application.Subscribe(
+        using IDisposable subscription = runtime.Api.Subscribe(
             descriptor.Id,
             value =>
             {
@@ -258,27 +259,27 @@ internal static class ApplicationCommands
         CancellationToken cancellation_token)
     {
         RequireLength(args, 2, "QX app session");
-        await using RuntimeHost runtime = CreateRuntime(args, offline: false);
+        await using ScripterRuntime runtime = CreateRuntime(args, offline: false);
         await runtime.StartAsync(cancellation_token).ConfigureAwait(false);
         var session = new ApplicationSession(runtime, Console.In, Console.Out, cancellation_token);
         return await session.RunAsync().ConfigureAwait(false);
     }
 
-    private static ApplicationDescriptor CliMember(IApplicationRuntime application, string id)
+    private static ApiDescriptor CliMember(IGameApi application, string id)
     {
         ArgumentNullException.ThrowIfNull(application);
         ArgumentException.ThrowIfNullOrWhiteSpace(id);
-        ApplicationDescriptor descriptor = application.Members.FirstOrDefault(
+        ApiDescriptor descriptor = application.Members.FirstOrDefault(
                 member => string.Equals(member.Id, id, StringComparison.Ordinal))
             ?? throw new KeyNotFoundException($"Unknown application member '{id}'.");
-        if (!descriptor.Exposure.HasFlag(ApplicationExposure.Cli))
+        if (!descriptor.Exposure.HasFlag(ApiExposure.Cli))
             throw new ArgumentException(
                 $"Application member '{id}' is not exposed to the CLI.",
                 nameof(id));
         return descriptor;
     }
 
-    private static RuntimeHost CreateRuntime(string[] args, bool offline)
+    private static ScripterRuntime CreateRuntime(string[] args, bool offline)
     {
         GEarthOptions gearth = GEarthOptions.Parse(args, new GEarthOptions
         {
@@ -288,7 +289,7 @@ internal static class ApplicationCommands
             Port = 9092
         });
         gearth.SearchPorts = !args.Contains("-p") && !gearth.IsLaunchedByGEarth;
-        return new RuntimeHost(new RuntimeHostOptions
+        return new ScripterRuntime(new ScripterRuntimeOptions
         {
             GEarth = gearth,
             EnableTransport = !offline,
@@ -302,7 +303,7 @@ internal static class ApplicationCommands
     private static async Task WriteAsync(object? value)
     {
         await Console.Out
-            .WriteLineAsync(ApplicationJson.Serialize(value))
+            .WriteLineAsync(GameJson.Serialize(value))
             .ConfigureAwait(false);
         await Console.Out.FlushAsync().ConfigureAwait(false);
     }

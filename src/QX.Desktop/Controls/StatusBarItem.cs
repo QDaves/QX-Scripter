@@ -1,6 +1,6 @@
-using Avalonia;
-using Avalonia.Controls;
 using Avalonia.Controls.Metadata;
+using Avalonia.Controls;
+using Avalonia;
 using Qx.Presentation.Visuals;
 
 namespace Qx.Desktop.Controls;

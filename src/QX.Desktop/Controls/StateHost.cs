@@ -1,9 +1,9 @@
 using System.ComponentModel;
 using System.Windows.Input;
-using Avalonia;
-using Avalonia.Controls;
 using Avalonia.Controls.Metadata;
+using Avalonia.Controls;
 using Avalonia.Threading;
+using Avalonia;
 using Qx.Presentation.Mvvm;
 using Qx.Presentation.Visuals;
 

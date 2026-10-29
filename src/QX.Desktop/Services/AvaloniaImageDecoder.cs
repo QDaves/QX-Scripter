@@ -1,7 +1,7 @@
 using System.Runtime.InteropServices;
-using Avalonia;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform;
+using Avalonia;
 using Qx.Presentation.Services.Images;
 
 namespace Qx.Desktop.Services;

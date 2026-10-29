@@ -1,6 +1,6 @@
-using Avalonia;
-using Avalonia.Controls;
 using Avalonia.Controls.Templates;
+using Avalonia.Controls;
+using Avalonia;
 
 namespace Qx.Desktop.Controls;
 

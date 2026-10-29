@@ -1,5 +1,5 @@
+using Qx.Game.Api;
 using Qx.Game;
-using Qx.Game.Application;
 using Qx.Interception.GEarth;
 using Qx.Presentation.Threading;
 
@@ -9,7 +9,7 @@ public interface IGameGateway
 {
     GameState Game { get; }
 
-    IApplicationRuntime Application { get; }
+    IGameApi Api { get; }
 
     GEarthExtension Extension { get; }
 

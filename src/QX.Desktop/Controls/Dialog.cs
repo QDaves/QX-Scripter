@@ -1,7 +1,7 @@
 using System.Windows.Input;
-using Avalonia;
-using Avalonia.Controls;
 using Avalonia.Controls.Metadata;
+using Avalonia.Controls;
+using Avalonia;
 using Qx.Presentation.Dialogs;
 using Qx.Presentation.Visuals;
 

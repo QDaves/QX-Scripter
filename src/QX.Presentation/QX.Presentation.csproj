@@ -12,15 +12,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Flazzy\Flazzy.csproj" />
-    <ProjectReference Include="..\QX.Core\QX.Core.csproj" />
-    <ProjectReference Include="..\QX.Game\QX.Game.csproj" />
-    <ProjectReference Include="..\QX.Hosting\QX.Hosting.csproj" />
-    <ProjectReference Include="..\QX.Interception\QX.Interception.csproj" />
-    <ProjectReference Include="..\QX.Mcp\QX.Mcp.csproj" />
-    <ProjectReference Include="..\QX.Model\QX.Model.csproj" />
-    <ProjectReference Include="..\QX.Protocol\QX.Protocol.csproj" />
-    <ProjectReference Include="..\QX.Scripting\QX.Scripting.csproj" />
+    <PackageReference Include="QX" Version="$(QxFrameworkVersion)" />
+    <ProjectReference Include="..\QX.Scripter\QX.Scripter.csproj" />
+    <PackageReference Include="QX.Mcp" Version="$(QxFrameworkVersion)" />
+    <PackageReference Include="QX.Scripting" Version="$(QxFrameworkVersion)" />
   </ItemGroup>
 
 </Project>

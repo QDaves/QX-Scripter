@@ -4,6 +4,7 @@
     <OutputType>WinExe</OutputType>
     <RootNamespace>Qx.Desktop</RootNamespace>
     <AssemblyName>QX</AssemblyName>
+    <PackageId>QX.Scripter.Desktop</PackageId>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <ApplicationIcon>Assets\qx.ico</ApplicationIcon>
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
@@ -28,9 +29,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\QX.Core\QX.Core.csproj" />
+    <PackageReference Include="QX" Version="$(QxFrameworkVersion)" />
     <ProjectReference Include="..\QX.Presentation\QX.Presentation.csproj" />
-    <ProjectReference Include="..\QX.Scripting\QX.Scripting.csproj" />
+    <PackageReference Include="QX.Scripting" Version="$(QxFrameworkVersion)" />
   </ItemGroup>
 
   <Target Name="ExcludeNativeSymbolsFromPublish" AfterTargets="ComputeResolvedFilesToPublishList">

@@ -5,10 +5,10 @@ using System.Security.Cryptography;
 using System.Text;
 using Qx.Diagnostics;
 using Qx.Interception;
-using Qx.Messages;
 using Qx.Presentation.Platform;
 using Qx.Presentation.Runtime;
 using Qx.Presentation.Threading;
+using Qx.Protocol;
 
 namespace Qx.Presentation.Services.Logging;
 

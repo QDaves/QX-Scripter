@@ -1,18 +1,18 @@
 using System.Reflection;
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.Classification;
 using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.Classification;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Scripting;
 using Microsoft.CodeAnalysis.Text;
+using Microsoft.CodeAnalysis;
 using Qx.Protocol;
-using Qx.Scripting;
 using Qx.Scripting.Hosting;
-using RoslynPad.Roslyn;
+using Qx.Scripting;
 using RoslynPad.Roslyn.BraceMatching;
 using RoslynPad.Roslyn.Formatting;
 using RoslynPad.Roslyn.QuickInfo;
 using RoslynPad.Roslyn.Structure;
+using RoslynPad.Roslyn;
 
 namespace Qx.Desktop.Editor;
 

@@ -4,7 +4,7 @@ public sealed class AppPaths : IAppPaths
 {
     public AppPaths()
         : this(
-            StoragePaths.Configuration,
+            Qx.Scripter.ScripterPaths.Configuration,
             StoragePaths.Cache,
             Path.GetTempPath())
     {

@@ -1,7 +1,8 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Qx.Diagnostics;
-using Qx.Game.Application;
+using Qx.Game.Api;
+using Qx.Game.Rooms;
 using Qx.Model;
 using Qx.Presentation.Collections;
 using Qx.Presentation.Mvvm;
@@ -61,7 +62,7 @@ public sealed partial class RoomBansViewModel : ViewModelBase
 
     public void Start()
     {
-        _subscription ??= _context.Gateway.SubscribeSignal(ApplicationMemberIds.RoomModerationChanged, _moderation);
+        _subscription ??= _context.Gateway.SubscribeSignal(ApiIds.RoomModerationChanged, _moderation);
     }
 
     public void Stop()
@@ -192,7 +193,7 @@ public sealed partial class RoomBansViewModel : ViewModelBase
                 if (row.RoomGeneration != state.RoomGeneration)
                     throw new InvalidOperationException("The selected ban belongs to an earlier room session.");
                 await _context.Gateway.InvokeAsync<RoomModerationUnbanRequest, RoomModerationDispatchResult>(
-                    ApplicationMemberIds.RoomModerationUnban,
+                    ApiIds.RoomModerationUnban,
                     new RoomModerationUnbanRequest(
                         row.UserId,
                         state.RoomId,

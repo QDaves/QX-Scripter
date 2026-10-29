@@ -1,5 +1,7 @@
+using Qx.Game.Api;
+using Qx.Game.Profiles;
+using Qx.Game.Rooms;
 using Qx.Game;
-using Qx.Game.Application;
 using Qx.Hosting;
 using Qx.Interception.GEarth;
 using Qx.Model;
@@ -8,6 +10,7 @@ using Qx.Presentation.Runtime;
 using Qx.Presentation.Services.Game;
 using Qx.Presentation.Services.Runs;
 using Qx.Presentation.Threading;
+using Qx.Scripter;
 using GameSession = Qx.Interception.Session;
 
 namespace Qx.Presentation.Services.Status;
@@ -66,7 +69,7 @@ public sealed class SessionStatusService : ISessionStatusService, IAlwaysOn, IDi
         room.WallItemRemoved += OnItemRemoved;
         runs.Changed += OnRunsChanged;
         gateway.SessionChanged += OnGatewaySession;
-        _profile_subscription = gateway.SubscribeSignal(ApplicationMemberIds.ProfileChanged, _profile_changed);
+        _profile_subscription = gateway.SubscribeSignal(ApiIds.ProfileChanged, _profile_changed);
         _activity = time.CreateTimer(OnActivityTick, null, ActivityInterval, ActivityInterval);
         Current = Snapshot();
     }
@@ -79,16 +82,16 @@ public sealed class SessionStatusService : ISessionStatusService, IAlwaysOn, IDi
     {
         if (_stopped)
             return;
-        RuntimeServiceStatus mcp = _runtime.Status.Mcp;
+        HostServiceStatus mcp = _runtime.Status.Mcp;
         int port = _runtime.Mcp.Port;
         lock (_gate)
         {
-            _mcp_running = mcp.Phase == RuntimeServicePhase.Running;
+            _mcp_running = mcp.Phase == HostServicePhase.Running;
             _mcp_port = port;
             _mcp_failure = mcp.Phase switch
             {
-                RuntimeServicePhase.Running => "",
-                RuntimeServicePhase.Disabled or RuntimeServicePhase.Pending => "",
+                HostServicePhase.Running => "",
+                HostServicePhase.Disabled or HostServicePhase.Pending => "",
                 _ => mcp.Error?.Message ?? $"MCP server failed to start on port {port}."
             };
         }
@@ -174,7 +177,7 @@ public sealed class SessionStatusService : ISessionStatusService, IAlwaysOn, IDi
             string? name = null;
             try
             {
-                ProfileStateView view = await _gateway.QueryAsync<ProfileStateRequest, ProfileStateView>(ApplicationMemberIds.ProfileState, new ProfileStateRequest(), lease.Token);
+                ProfileStateView view = await _gateway.QueryAsync<ProfileStateRequest, ProfileStateView>(ApiIds.ProfileState, new ProfileStateRequest(), lease.Token);
                 name = view.Identity?.Name;
             }
             catch (GameUnavailableException)

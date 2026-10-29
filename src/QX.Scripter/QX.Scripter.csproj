@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>Qx.Scripter</RootNamespace>
+    <AssemblyName>QX.Scripter</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="QX" Version="$(QxFrameworkVersion)" />
+    <PackageReference Include="QX.Mcp" Version="$(QxFrameworkVersion)" />
+    <PackageReference Include="QX.Scripting" Version="$(QxFrameworkVersion)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="..\..\website\docs\*.md;..\..\website\docs\toc.yml" LogicalName="Qx.Docs.%(Filename)%(Extension)" />
+    <EmbeddedResource Include="Knowledge/qx-wired.skill" LogicalName="Qx.WiredSkill" />
+  </ItemGroup>
+
+</Project>

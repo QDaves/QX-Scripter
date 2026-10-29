@@ -1,3 +1,4 @@
+using Qx.Game.Data;
 using Qx.Presentation.Visuals;
 
 namespace Qx.Presentation.Navigation;

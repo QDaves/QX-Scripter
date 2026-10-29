@@ -2,9 +2,10 @@ using System.ComponentModel;
 using System.Globalization;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using Qx.Game.Application;
-using Qx.Model;
+using Qx.Game.Api;
+using Qx.Game.Marketplace;
 using Qx.Model.Messages.Incoming;
+using Qx.Model;
 using Qx.Presentation.Dialogs;
 using Qx.Presentation.Services.Game;
 using Qx.Presentation.Services.Marketplace;
@@ -189,7 +190,7 @@ public sealed partial class SellDialogViewModel : DialogViewModel<SellOutcome>, 
         try
         {
             MarketplaceMakeOfferResult? result = await _gateway.InvokeAsync<MarketplaceMakeOfferRequest, MarketplaceMakeOfferResult>(
-                ApplicationMemberIds.MarketplaceOfferMake,
+                ApiIds.MarketplaceOfferMake,
                 new MarketplaceMakeOfferRequest(row.Price, category, items, OfferTimeoutMs),
                 cancellation_token);
             if (result is { Result: Accepted })

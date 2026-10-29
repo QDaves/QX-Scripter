@@ -1,4 +1,5 @@
-using Qx.Game.Application;
+using Qx.Game.Api;
+using Qx.Game.Profiles;
 using Qx.Model.Messages.Incoming;
 using Qx.Presentation.Services.Game;
 
@@ -12,7 +13,7 @@ public static class WardrobeReader
     {
         ArgumentNullException.ThrowIfNull(gateway);
         ProfileWardrobePage first = await gateway.InvokeAsync<ProfileWardrobeRequest, ProfileWardrobePage>(
-            ApplicationMemberIds.ProfileWardrobeGet,
+            ApiIds.ProfileWardrobeGet,
             new ProfileWardrobeRequest(Limit: PageSize),
             cancellationToken);
         var outfits = new List<WardrobeOutfit>(first.Outfits);
@@ -24,7 +25,7 @@ public static class WardrobeReader
                 throw new InvalidOperationException(WardrobeText.SnapshotChanged);
             offset = next;
             page = await gateway.InvokeAsync<ProfileWardrobeRequest, ProfileWardrobePage>(
-                ApplicationMemberIds.ProfileWardrobeGet,
+                ApiIds.ProfileWardrobeGet,
                 new ProfileWardrobeRequest(offset, PageSize, SnapshotRevision: first.SnapshotRevision),
                 cancellationToken);
             if (!Continues(first, page, offset))
@@ -34,7 +35,7 @@ public static class WardrobeReader
         if (outfits.Count != first.Total)
             throw new InvalidOperationException(WardrobeText.IncompleteResult);
         ProfileStateView state = await gateway.QueryAsync<ProfileStateRequest, ProfileStateView>(
-            ApplicationMemberIds.ProfileState,
+            ApiIds.ProfileState,
             new ProfileStateRequest(),
             cancellationToken);
         if (!state.Connected || state.Generation != first.Generation)

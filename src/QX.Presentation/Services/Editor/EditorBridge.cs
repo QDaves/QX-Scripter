@@ -8,6 +8,7 @@ using Qx.Presentation.Services.Notifications;
 using Qx.Presentation.Services.Runs;
 using Qx.Presentation.Services.Workspace;
 using Qx.Presentation.Threading;
+using Qx.Scripter;
 
 namespace Qx.Presentation.Services.Editor;
 

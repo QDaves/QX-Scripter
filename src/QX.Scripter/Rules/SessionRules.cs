@@ -1,0 +1,1517 @@
+using System.IO;
+using System.Text.Json.Serialization;
+using System.Text.Json;
+using System.Threading;
+using Qx.Game.Api;
+using Qx.Game.Data;
+using Qx.Game.Friends;
+using Qx.Game.Messages;
+using Qx.Game.Profiles;
+using Qx.Game.Rooms;
+using Qx.Game.Trading;
+using Qx.Game;
+using Qx.Interception;
+using Qx.Model.Messages.Incoming;
+using Qx.Model.Messages.Outgoing;
+using Qx.Model;
+using Qx.Protocol;
+using Qx;
+
+namespace Qx.Scripter.Rules;
+
+/// <summary>Specifies what clicking another user in the room does.</summary>
+public enum ClickAction
+{
+    /// <summary>No action; the click is sent as an ordinary turn.</summary>
+    None,
+
+    /// <summary>A room mute for <see cref="SessionRules.ClickMuteMinutes"/> minutes.</summary>
+    Mute,
+    /// <summary>A kick from the room.</summary>
+    Kick,
+    /// <summary>A room ban for <see cref="SessionRules.ClickBanLength"/>.</summary>
+    Ban,
+
+    /// <summary>A one hour ban followed at once by its unban, which removes the user without a kick notice.</summary>
+    Bounce
+}
+
+/// <summary>
+/// Provides the client-side session rules, such as anti-idle, chat muting and click actions,
+/// applied by intercepting packets.
+/// </summary>
+/// <remarks>
+/// Settings are loaded from a JSON file when the instance is created and written back by
+/// <see cref="Save"/>. Remembered room passwords are kept in <c>passwords.json</c> in the same
+/// directory. Every rule is bound once by <see cref="Bind()"/> and checked per packet, so changing a
+/// switch takes effect immediately.
+/// </remarks>
+public sealed partial class SessionRules : IDisposable
+{
+    /// <summary>The default anti-idle interval in seconds.</summary>
+    public const int DefaultAntiIdleSeconds = 260;
+
+    private sealed record Document
+    {
+        public bool AntiIdle { get; init; }
+        public bool BlockTrades { get; init; }
+        public bool LetFriendsIn { get; init; }
+        public bool NoWalk { get; init; }
+        public bool NoTurn { get; init; }
+        public bool AlwaysShout { get; init; }
+        public bool NoTyping { get; init; }
+        public bool MuteBots { get; init; }
+        public bool MutePets { get; init; }
+        public bool MuteWired { get; init; }
+        public bool PreventFurniUse { get; init; }
+        public bool MuteAll { get; init; }
+        public bool MuteRespects { get; init; }
+        public bool BlockRoomAds { get; init; }
+        public bool BlockClubGifts { get; init; }
+        public bool BlockNotifications { get; init; }
+        public bool DropHandItems { get; init; }
+        public bool BlockRoomInvites { get; init; }
+        public bool BlockFriendRequests { get; init; }
+        public bool AutoAcceptFriendRequests { get; init; }
+        public int AntiIdleSeconds { get; init; } = DefaultAntiIdleSeconds;
+        public bool AntiIdleOut { get; init; }
+        public bool TurnOnReselect { get; init; }
+        public bool TurnTowardsClickedTile { get; init; }
+        public ClickAction ClickTo { get; init; }
+        public int ClickMuteMinutes { get; init; } = 5;
+        public BanLength ClickBanLength { get; init; }
+        public bool ClickExcludesFriends { get; init; } = true;
+        public bool RememberPasswords { get; init; }
+        public bool FlattenFloor { get; init; }
+        public bool HideAvatars { get; init; }
+        public bool MutePetCommands { get; init; }
+        public bool ShowRespectCount { get; init; }
+        public bool? ShiftClickShowsInfo { get; init; }
+        public bool? ShiftClickHides { get; init; }
+        public bool? ShiftClickFindsLink { get; init; }
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+        public bool CtrlClickShowsInfo { get; init; }
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+        public bool CtrlClickHides { get; init; }
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+        public bool CtrlClickFindsLink { get; init; }
+        public bool ReturnHandItems { get; init; }
+        public bool KeepDirection { get; init; }
+    }
+
+    [JsonSourceGenerationOptions(
+        WriteIndented = true,
+        PropertyNameCaseInsensitive = true,
+        PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase,
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonSerializable(typeof(Document))]
+    [JsonSerializable(typeof(Dictionary<string, string>))]
+    private sealed partial class JsonContext : JsonSerializerContext;
+
+    private const int WrongPasswordErrorCode = -100002;
+
+    private readonly IInterceptor _interceptor;
+    private readonly IGameApi _application;
+    private readonly Func<bool> _shift_pressed;
+    private readonly string _path;
+    private readonly string _passwords_path;
+    private readonly List<IDisposable> _bindings = [];
+    private string? _password_room;
+    private Timer? _idle;
+    private bool _let_friends_in;
+    private bool _click_excludes_friends = true;
+    private ClickAction _click_to;
+    private int _anti_idle_seconds = DefaultAntiIdleSeconds;
+    private bool _bound;
+    private int _last_respecter_index = -1;
+    private DateTimeOffset _last_respect;
+
+    /// <summary>
+    /// Gets the mirrored game state, for the rules that need to know more than the packet says.
+    /// </summary>
+    /// <remarks>
+    /// Chat carries a room index rather than a name, and a doorbell carries a name rather than
+    /// whether you know them, so muting and letting friends in are impossible without it.
+    /// </remarks>
+    public GameState Game { get; }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="SessionRules"/> class and loads its saved
+    /// settings and room passwords.
+    /// </summary>
+    /// <remarks>
+    /// A missing or unreadable settings file leaves every rule at its default. The rules are not
+    /// active until <see cref="Bind()"/> is called.
+    /// </remarks>
+    /// <param name="interceptor">The interceptor whose packets the rules inspect and rewrite.</param>
+    /// <param name="game">The mirrored game state the rules consult.</param>
+    /// <param name="application">The application runtime used for trade and room moderation commands.</param>
+    /// <param name="path">
+    /// The path of the JSON settings file. Remembered passwords are stored in
+    /// <c>passwords.json</c> in the same directory.
+    /// </param>
+    /// <param name="shiftPressed">
+    /// A callback that reports whether the shift key is held, or <see langword="null"/> when it
+    /// cannot be read, in which case the shift-click rules never fire.
+    /// </param>
+    /// <exception cref="ArgumentNullException">
+    /// Thrown when <paramref name="interceptor"/>, <paramref name="game"/>,
+    /// <paramref name="application"/> or <paramref name="path"/> is <see langword="null"/>.
+    /// </exception>
+    /// <exception cref="ArgumentException">
+    /// Thrown when <paramref name="path"/> is empty or consists only of white space.
+    /// </exception>
+    public SessionRules(
+        IInterceptor interceptor,
+        GameState game,
+        IGameApi application,
+        string path,
+        Func<bool>? shiftPressed = null)
+    {
+        _interceptor = interceptor ?? throw new ArgumentNullException(nameof(interceptor));
+        _application = application ?? throw new ArgumentNullException(nameof(application));
+        ArgumentException.ThrowIfNullOrWhiteSpace(path);
+        _path = Path.GetFullPath(path);
+        _passwords_path = Path.Combine(Path.GetDirectoryName(_path)!, "passwords.json");
+        _shift_pressed = shiftPressed ?? (() => false);
+        Load();
+        LoadPasswords();
+        Game = game ?? throw new ArgumentNullException(nameof(game));
+        RequestFriends();
+    }
+
+    /// <summary>
+    /// Gets or sets whether an avatar expression is sent every <see cref="AntiIdleSeconds"/>
+    /// seconds to keep the session from going idle.
+    /// </summary>
+    /// <remarks>
+    /// The hotel decides you have gone away after a quiet stretch and, later, disconnects you. An
+    /// expression counts as being at the keyboard without moving the avatar, saying anything or
+    /// touching the room. The timer only runs while the rules are bound.
+    /// </remarks>
+    public bool AntiIdle { get; set; }
+    /// <summary>Gets or sets whether every trade that opens is closed at once and hidden from the client.</summary>
+    public bool BlockTrades { get; set; }
+    /// <summary>
+    /// Gets or sets whether users on the friend list who ring the doorbell are let in automatically.
+    /// </summary>
+    /// <remarks>
+    /// Friends are matched by name, ignoring case. Anyone else still rings and waits. Turning it on
+    /// starts loading the friend list if it is not loaded yet.
+    /// </remarks>
+    public bool LetFriendsIn
+    {
+        get => _let_friends_in;
+        set
+        {
+            _let_friends_in = value;
+            RequestFriends();
+        }
+    }
+    /// <summary>Gets or sets whether the local user's outgoing walk requests are blocked.</summary>
+    /// <remarks>
+    /// With <see cref="TurnTowardsClickedTile"/> on, the blocked walk is replaced by a turn
+    /// towards the clicked tile.
+    /// </remarks>
+    public bool NoWalk { get; set; }
+    /// <summary>Gets or sets whether the local user's outgoing turn requests are blocked.</summary>
+    /// <remarks>
+    /// Clicking another user is a turn on the wire, so it is blocked too unless
+    /// <see cref="TurnOnReselect"/> lets a second click on the same user through.
+    /// </remarks>
+    public bool NoTurn { get; set; }
+    /// <summary>
+    /// Gets or sets whether outgoing talk messages are rewritten as shouts, keeping the text and bubble style.
+    /// </summary>
+    public bool AlwaysShout { get; set; }
+    /// <summary>Gets or sets whether the outgoing typing indicator is blocked.</summary>
+    public bool NoTyping { get; set; }
+    /// <summary>Gets or sets whether chat from bots is hidden.</summary>
+    public bool MuteBots { get; set; }
+    /// <summary>Gets or sets whether chat from pets is hidden.</summary>
+    public bool MutePets { get; set; }
+    /// <summary>
+    /// Gets or sets whether chat from a room index with no avatar, which is how wired speaks, is hidden.
+    /// </summary>
+    public bool MuteWired { get; set; }
+    /// <summary>Gets or sets whether the local user's outgoing floor and wall item use requests are blocked.</summary>
+    /// <remarks>A shift-click answered by one of the shift-click rules takes precedence.</remarks>
+    public bool PreventFurniUse { get; set; }
+
+    /// <summary>Gets or sets whether all incoming talk, shout and whisper chat is hidden.</summary>
+    public bool MuteAll { get; set; }
+
+    /// <summary>
+    /// Gets or sets whether the notifications for user respects and pet respects are hidden.
+    /// </summary>
+    /// <remarks>Takes precedence over <see cref="ShowRespectCount"/>.</remarks>
+    public bool MuteRespects { get; set; }
+
+    /// <summary>Gets or sets whether the advertisement a room shows on entry is blocked.</summary>
+    public bool BlockRoomAds { get; set; }
+
+    /// <summary>Gets or sets whether the club gift notification is blocked.</summary>
+    public bool BlockClubGifts { get; set; }
+
+    /// <summary>Gets or sets whether hotel notification dialogs are blocked.</summary>
+    public bool BlockNotifications { get; set; }
+
+    /// <summary>Gets or sets whether any hand item the local user receives is dropped at once.</summary>
+    /// <remarks>Takes precedence over <see cref="ReturnHandItems"/>.</remarks>
+    public bool DropHandItems { get; set; }
+
+    /// <summary>Gets or sets whether invitations to other rooms are blocked.</summary>
+    public bool BlockRoomInvites { get; set; }
+
+    /// <summary>Gets or sets whether incoming friend requests are blocked.</summary>
+    public bool BlockFriendRequests { get; set; }
+
+    /// <summary>
+    /// Gets or sets whether every incoming friend request is accepted as soon as it arrives.
+    /// </summary>
+    /// <remarks>
+    /// Ignored while <see cref="BlockFriendRequests"/> is on: accepting something you refused to
+    /// look at is a contradiction, and the two switches say so rather than fighting.
+    /// </remarks>
+    public bool AutoAcceptFriendRequests { get; set; }
+
+
+
+
+
+    /// <summary>
+    /// Gets or sets whether the local user is woken with an avatar expression as soon as the
+    /// hotel marks the avatar as sleeping.
+    /// </summary>
+    /// <remarks>
+    /// The opposite trade from anti-idle: your avatar is allowed to fall asleep, and only the
+    /// moment the hotel acts on it is answered. It sends less than <see cref="AntiIdle"/> and
+    /// leaves you looking idle to everybody else. Has no effect while <see cref="AntiIdle"/> is on.
+    /// </remarks>
+    public bool AntiIdleOut { get; set; }
+
+
+    /// <summary>
+    /// Gets or sets whether a second consecutive click on the same user lets the turn through
+    /// while <see cref="NoTurn"/> is on.
+    /// </summary>
+    public bool TurnOnReselect { get; set; }
+
+    /// <summary>
+    /// Gets or sets whether a walk blocked by <see cref="NoWalk"/> still turns the avatar to face
+    /// the clicked tile.
+    /// </summary>
+    public bool TurnTowardsClickedTile { get; set; }
+
+
+    /// <summary>Gets or sets what clicking another user in the room does.</summary>
+    /// <remarks>
+    /// The action is sent through room moderation, and the click itself is blocked when the
+    /// action was sent. Clicks on yourself and on users spared by
+    /// <see cref="ClickExcludesFriends"/> are left alone.
+    /// </remarks>
+    public ClickAction ClickTo
+    {
+        get => _click_to;
+        set
+        {
+            _click_to = value;
+            RequestFriends();
+        }
+    }
+
+    /// <summary>Gets or sets how long a click mute lasts, in minutes.</summary>
+    /// <remarks>
+    /// Defaults to 5. A saved value outside 1 to 1440 is replaced with the default when the
+    /// settings are loaded.
+    /// </remarks>
+    public int ClickMuteMinutes { get; set; } = 5;
+
+    /// <summary>Gets or sets how long a click ban lasts.</summary>
+    public BanLength ClickBanLength { get; set; } = BanLength.Hour;
+
+    /// <summary>Gets or sets whether friends are never the target of a click action.</summary>
+    /// <remarks>
+    /// Defaults to <see langword="true"/>. While the friend list has not loaded, every user is
+    /// spared and the list is requested.
+    /// </remarks>
+    public bool ClickExcludesFriends
+    {
+        get => _click_excludes_friends;
+        set
+        {
+            _click_excludes_friends = value;
+            RequestFriends();
+        }
+    }
+
+
+    /// <summary>
+    /// Gets or sets whether room passwords are remembered and sent again without being retyped.
+    /// </summary>
+    /// <remarks>
+    /// A password is saved per hotel and room when it is typed, filled in when the room is opened
+    /// without one, and forgotten when the hotel rejects it as wrong.
+    /// </remarks>
+    public bool RememberPasswords { get; set; }
+
+    /// <summary>
+    /// Gets or sets whether every floor tile is reported to the client at the same height.
+    /// </summary>
+    /// <remarks>
+    /// Only what this client is told changes; the room itself and what other users see are untouched.
+    /// </remarks>
+    public bool FlattenFloor { get; set; }
+
+    /// <summary>
+    /// Gets or sets whether incoming room avatar lists are emptied, so the client draws no avatars.
+    /// </summary>
+    public bool HideAvatars { get; set; }
+
+
+    /// <summary>
+    /// Gets or sets whether pet chat that echoes a command, which starts with the pet's name, is hidden.
+    /// </summary>
+    public bool MutePetCommands { get; set; }
+
+    /// <summary>
+    /// Gets or sets whether a local line naming who respected whom, with the running total, is
+    /// shown when a respect arrives.
+    /// </summary>
+    /// <remarks>The line is visible only to the local user. Has no effect while <see cref="MuteRespects"/> is on.</remarks>
+    public bool ShowRespectCount { get; set; }
+
+
+    /// <summary>
+    /// Gets or sets whether a shift-click on furni shows its name, identifier and id instead of using it.
+    /// </summary>
+    public bool ShiftClickShowsInfo { get; set; }
+
+    /// <summary>Gets or sets whether a shift-click on furni hides it locally instead of using it.</summary>
+    /// <remarks>Takes precedence over the other shift-click rules.</remarks>
+    public bool ShiftClickHides { get; set; }
+
+    /// <summary>
+    /// Gets or sets whether a shift-click on a teleport shows the position of the teleport it is paired with.
+    /// </summary>
+    public bool ShiftClickFindsLink { get; set; }
+
+
+    /// <summary>Gets or sets whether any hand item the local user receives is passed back to the giver.</summary>
+    public bool ReturnHandItems { get; set; }
+
+    /// <summary>
+    /// Gets or sets whether the avatar turns back to its previous direction after being handed an item.
+    /// </summary>
+    /// <remarks>
+    /// Being handed an item turns you towards whoever handed it, which is a nuisance while you are
+    /// standing somewhere deliberately. The direction is read before the turn arrives and a turn
+    /// back is sent 400 milliseconds later, so the avatar swings and returns rather than staying
+    /// where it was put.
+    /// </remarks>
+    public bool KeepDirection { get; set; }
+
+    /// <summary>
+    /// Gets or sets the interval between anti-idle expressions, in seconds.
+    /// </summary>
+    /// <remarks>
+    /// Defaults to <see cref="DefaultAntiIdleSeconds"/>. A saved value outside 15 to 900 is
+    /// replaced with the default when the settings are loaded. Changing it while the rules are
+    /// bound restarts the timer.
+    /// </remarks>
+    public int AntiIdleSeconds
+    {
+        get => _anti_idle_seconds;
+        set
+        {
+            if (_anti_idle_seconds == value)
+                return;
+            _anti_idle_seconds = value;
+            if (_bound)
+                AntiIdleLoop();
+        }
+    }
+
+    /// <summary>Gets the number of rules that are switched on.</summary>
+    /// <remarks>
+    /// <see cref="ClickTo"/> counts when it is not <see cref="ClickAction.None"/>.
+    /// <see cref="TurnOnReselect"/> and <see cref="ClickExcludesFriends"/> are not counted.
+    /// </remarks>
+    public int Active =>
+        (AntiIdle ? 1 : 0) + (BlockTrades ? 1 : 0) + (LetFriendsIn ? 1 : 0) +
+        (NoWalk ? 1 : 0) + (NoTurn ? 1 : 0) + (AlwaysShout ? 1 : 0) + (NoTyping ? 1 : 0) +
+        (MuteBots ? 1 : 0) + (MutePets ? 1 : 0) + (MuteWired ? 1 : 0) + (PreventFurniUse ? 1 : 0) +
+        (MuteAll ? 1 : 0) + (MuteRespects ? 1 : 0) + (BlockRoomAds ? 1 : 0) +
+        (BlockClubGifts ? 1 : 0) + (BlockNotifications ? 1 : 0) + (DropHandItems ? 1 : 0) +
+        (BlockRoomInvites ? 1 : 0) + (BlockFriendRequests ? 1 : 0) +
+        (AutoAcceptFriendRequests ? 1 : 0) +
+        (AntiIdleOut ? 1 : 0) + (TurnTowardsClickedTile ? 1 : 0) +
+        (ClickTo is not ClickAction.None ? 1 : 0) + (RememberPasswords ? 1 : 0) +
+        (FlattenFloor ? 1 : 0) + (HideAvatars ? 1 : 0) + (MutePetCommands ? 1 : 0) +
+        (ShowRespectCount ? 1 : 0) +
+        (ShiftClickShowsInfo ? 1 : 0) + (ShiftClickHides ? 1 : 0) + (ShiftClickFindsLink ? 1 : 0) +
+        (ReturnHandItems ? 1 : 0) + (KeepDirection ? 1 : 0);
+
+    /// <summary>
+    /// Binds every rule to the interceptor and starts the anti-idle timer.
+    /// </summary>
+    /// <remarks>
+    /// Any existing bindings are removed first. Rules are bound once and consulted per packet
+    /// rather than bound and unbound as switches move: the interceptors are keyed by name and
+    /// rebinding them on every toggle would race the read loop. A rule that is off costs one
+    /// boolean read. A rule whose message the current client does not carry is skipped.
+    /// </remarks>
+    public void Bind()
+    {
+        Unbind();
+        _bound = true;
+
+        // A blocked walk can still turn you to face where you clicked, which is the difference
+        // between standing still and standing still facing the wrong way.
+        Bind(MessageContracts.Room.Movement.Walk.Key, intercept =>
+        {
+            if (!NoWalk)
+                return;
+
+            intercept.Block();
+            if (!TurnTowardsClickedTile)
+                return;
+
+            WalkRequest request;
+            try
+            {
+                PacketReader reader = intercept.Packet.Reader();
+                request = MessageContracts.Room.Movement.Walk.Parse(in reader);
+                if (reader.Available != 0)
+                    return;
+            }
+            catch
+            {
+                return;
+            }
+
+            Try(() => _application.Invoke<RoomAvatarLookRequest, RoomAvatarDispatchResult>(
+                ApiIds.RoomAvatarLook, new RoomAvatarLookRequest(request.X, request.Y)));
+        });
+
+        // Clicking somebody in the room is a turn-towards on the wire, so this is the only place a
+        // click on a person can be recognised at all. The tile is turned back into whoever is
+        // standing on it; a click on empty floor is left alone.
+        OutOf(MessageContracts.Room.Movement.LookTo, (request, intercept) =>
+        {
+            var tile = new Point(request.X, request.Y);
+            ClickAction action = ClickTo;
+            (User? target, long room_generation) target_scope = Game.Room.Capture(room =>
+                (room.Avatars
+                    .OfType<User>()
+                    .FirstOrDefault(user => user.X == tile.X && user.Y == tile.Y),
+                room.Generation));
+            User? target = target_scope.target;
+
+            if (action is not ClickAction.None && target is not null &&
+                !IsSelf(target) && !Spared(target))
+            {
+                int mute_minutes = ClickMuteMinutes;
+                BanLength ban_length = ClickBanLength;
+                if (ActOn(
+                    target,
+                    target_scope.room_generation,
+                    action,
+                    mute_minutes,
+                    ban_length))
+                {
+                    intercept.Block();
+                    return;
+                }
+            }
+
+            if (!NoTurn)
+                return;
+
+            // Turning is allowed again on the second click on the same person, which is the gesture
+            // people use deliberately when they do mean to face somebody.
+            bool again = TurnOnReselect && target is not null && target.Id == _lastClicked;
+            _lastClicked = target?.Id ?? 0;
+
+            if (!again)
+                intercept.Block();
+        });
+
+        Bind(MessageContracts.Room.Typing.Start.Key, intercept =>
+        {
+            if (NoTyping)
+                intercept.Block();
+        });
+
+        OutOf(MessageContracts.Room.FloorItem.Use, (message, intercept) =>
+        {
+            if (ShiftClickedFurni(intercept, message.ItemId))
+                return;
+            if (PreventFurniUse)
+                intercept.Block();
+        });
+
+        OutOf(MessageContracts.Room.WallItem.Use, (message, intercept) =>
+        {
+            if (ShiftClickedFurni(intercept, message.ItemId))
+                return;
+            if (PreventFurniUse)
+                intercept.Block();
+        });
+
+        Bind(MessageContracts.Room.Chat.TalkSend.Key, intercept =>
+        {
+            if (!AlwaysShout)
+                return;
+
+            TalkRequest message;
+            try
+            {
+                PacketReader reader = intercept.Packet.Reader();
+                message = MessageContracts.Room.Chat.TalkSend.Parse(in reader);
+                if (reader.Available != 0)
+                    return;
+            }
+            catch
+            {
+                return;
+            }
+
+            if (!_interceptor.Messages.TryGetHeader(
+                    MessageContracts.Room.Chat.ShoutSend.Key,
+                    out Header shout))
+                return;
+
+            var louder = new Packet(shout)
+            {
+                Context = intercept.Packet.Context
+            };
+            try
+            {
+                PacketWriter writer = louder.Writer();
+                MessageContracts.Room.Chat.ShoutSend.Compose(
+                    new ShoutRequest(message.Text, message.BubbleStyle),
+                    in writer);
+            }
+            catch
+            {
+                louder.Dispose();
+                return;
+            }
+            intercept.Packet = louder;
+        });
+
+        // Someone at the door who is on your friend list is let in without you having to be at the
+        // keyboard. Anyone else still rings and waits.
+        In(MessageContracts.Room.Access.Doorbell, ring =>
+        {
+            if (!LetFriendsIn || ring.UserName.Length == 0)
+                return;
+            _ = LetFriendInAsync(ring);
+        });
+
+        Bind(MessageContracts.Trade.Opened.Key, intercept =>
+        {
+            if (!BlockTrades)
+                return;
+            try
+            {
+                TradeStateView state = _application.Invoke<TradeStateRequest, TradeStateView>(
+                    ApiIds.TradeState,
+                    new TradeStateRequest());
+                if (state.Active is { } trade)
+                {
+                    _application.Invoke<TradeCommandRequest, TradeDispatchResult>(
+                        ApiIds.TradeClose,
+                        new TradeCommandRequest(
+                            state.SessionGeneration,
+                            state.Revision,
+                            trade.Epoch));
+                }
+            }
+            catch
+            {
+            }
+            intercept.Block();
+        });
+
+        MuteChat(MessageContracts.Room.Chat.Talk);
+        MuteChat(MessageContracts.Room.Chat.Shout);
+        MuteChat(MessageContracts.Room.Chat.Whisper);
+
+        Swallow(MessageKeys.Gifts.ClubNotification, () => BlockClubGifts);
+        Swallow(MessageKeys.Notifications.Dialog, () => BlockNotifications);
+        Swallow(MessageKeys.Room.Occupants.Pet.Respect, () => MuteRespects);
+        Swallow(MessageKeys.Friends.RoomInvite, () => BlockRoomInvites);
+        Swallow(MessageKeys.Room.Advertisement, () => BlockRoomAds);
+        Bind(MessageContracts.Room.Occupants.Snapshot.Key, intercept =>
+        {
+            if (!HideAvatars)
+                return;
+
+            var packet = new Packet(intercept.Packet.Header)
+            {
+                Context = intercept.Packet.Context
+            };
+            packet.Writer().WriteLength(0);
+            intercept.Packet = packet;
+        });
+
+        // Every tile reported at the same height. The room itself is untouched; only what this
+        // client is told about it changes, so nobody else can see any of this.
+        Bind(MessageContracts.Room.Environment.FloorPlan.Key, intercept =>
+        {
+            if (!FlattenFloor)
+                return;
+
+            Try(() =>
+            {
+                PacketReader reader = intercept.Packet.Reader();
+                bool legacy_scale = reader.ReadBool();
+                int wall_height = reader.ReadInt();
+                string map = reader.ReadString();
+                ReadOnlySpan<byte> tail = reader.ReadSpan(reader.Available).ToArray();
+                var packet = new Packet(intercept.Packet.Header)
+                {
+                    Context = intercept.Packet.Context
+                };
+                PacketWriter writer = packet.Writer();
+                writer.WriteBool(legacy_scale);
+                writer.WriteInt(wall_height);
+                writer.WriteString(Levelled(map));
+                writer.WriteSpan(tail);
+                intercept.Packet = packet;
+            });
+        });
+
+        In(MessageContracts.Room.Heightmap.Snapshot, (map, intercept) =>
+        {
+            if (!FlattenFloor)
+                return;
+
+            Try(() =>
+            {
+                var flat = new Heightmap(map.Width, [.. Flattened(map)]);
+                var packet = new Packet(intercept.Packet.Header)
+                {
+                    Context = intercept.Packet.Context
+                };
+                packet.Writer().Compose(flat);
+                intercept.Packet = packet;
+            });
+        });
+
+        // The password you typed, kept against the room you typed it for. Watched on the way out
+        // rather than asked for: the hotel never sends it back, so the only chance to learn it is
+        // the moment it goes past.
+        OutOf(MessageContracts.Room.Access.OpenRequest, (entry, intercept) =>
+        {
+            if (!RememberPasswords)
+                return;
+
+            string key = PasswordKey(entry.RoomId);
+            if (entry.Password.Length > 0)
+            {
+                _password_room = key;
+                if (_passwords.TryGetValue(key, out string? known) && known == entry.Password)
+                    return;
+                _passwords[key] = entry.Password;
+                SavePasswords();
+                return;
+            }
+            if (!_passwords.TryGetValue(key, out string? password))
+                return;
+
+            _password_room = key;
+            var packet = new Packet(intercept.Packet.Header)
+            {
+                Context = intercept.Packet.Context
+            };
+            packet.Writer().Compose(entry with { Password = password });
+            intercept.Packet = packet;
+        });
+
+        In(MessageContracts.Errors.Generic, error =>
+        {
+            if (error.ErrorCode != WrongPasswordErrorCode || _password_room is not { } key)
+                return;
+
+            _password_room = null;
+            if (_passwords.Remove(key))
+                SavePasswords();
+        });
+
+        In(MessageContracts.Room.Occupants.Action.Expression, action =>
+        {
+            if (action.Action != 7)
+                return;
+
+            _last_respecter_index = action.Index;
+            _last_respect = DateTimeOffset.UtcNow;
+        });
+
+        Bind(MessageContracts.Room.Occupants.Respect.Key, intercept =>
+        {
+            if (MuteRespects)
+            {
+                intercept.Block();
+                return;
+            }
+            if (!ShowRespectCount)
+                return;
+
+            Try(() =>
+            {
+                PacketReader reader = intercept.Packet.Reader();
+                RespectNotification message = MessageContracts.Room.Occupants.Respect.Parse(in reader);
+                if (reader.Available != 0)
+                    return;
+
+                string respected = Game?.Room.AvatarById(message.RespectedUserId)?.Name
+                    ?? $"#{message.RespectedUserId}";
+                Avatar? source = DateTimeOffset.UtcNow - _last_respect < TimeSpan.FromMilliseconds(750)
+                    ? Game?.Room.AvatarByIndex(_last_respecter_index)
+                    : null;
+                _last_respecter_index = -1;
+
+                Say(RespectLine(respected, source?.Name, message.TotalRespect));
+            });
+        });
+
+        // Something handed to you goes back on the floor, or back to whoever gave it, and you go
+        // back to facing whichever way you were.
+        In(MessageContracts.Room.HandItem.Received, (received, intercept) =>
+        {
+            if (!DropHandItems && !ReturnHandItems && !KeepDirection)
+                return;
+
+            Try(() =>
+            {
+                // Read here and sent later: the direction is still the old one at this moment,
+                // because the turn towards the giver has not been handled yet, and asking to turn
+                // back before it happens would only be undone by it.
+                if (KeepDirection && FacedTile() is { } facing)
+                    TurnBackTo(facing);
+
+                if (DropHandItems)
+                {
+                    _application.Invoke<RoomHandItemDropRequest, RoomControlDispatchResult>(
+                        ApiIds.RoomHandItemDrop, new RoomHandItemDropRequest());
+                    return;
+                }
+
+                if (!ReturnHandItems || Game is not { } game)
+                    return;
+
+                Avatar? giver = game.Room.AvatarByIndex(checked((int)received.GiverId)) as User;
+                if (giver is { } avatar)
+                {
+                    _application.Invoke<RoomHandItemPassRequest, RoomControlDispatchResult>(
+                        ApiIds.RoomHandItemPass, new RoomHandItemPassRequest(avatar.Id));
+                }
+            });
+        });
+        Swallow(MessageKeys.Friends.FriendRequestReceived, () => BlockFriendRequests);
+
+        // A request answered before you have seen it. Blocked requests are left alone: accepting
+        // something you refused to look at is a contradiction.
+        In(MessageContracts.Friends.FriendRequestReceived, request =>
+        {
+            Session? expected_session = _interceptor.Session;
+            if (!AutoAcceptFriendRequests ||
+                BlockFriendRequests ||
+                expected_session is null ||
+                Game is not { } game)
+            {
+                return;
+            }
+            _application.Invoke<FriendRequestIdsRequest, FriendOperationResult>(
+                ApiIds.FriendRequestAccept, new FriendRequestIdsRequest([request.RequestId]));
+        });
+
+        // Left to idle, but woken the instant the hotel says so. The cheaper half of anti-idle:
+        // nothing goes out until something needs to.
+        In(MessageContracts.Room.Occupants.Action.Sleep, _ =>
+        {
+            if (AntiIdleOut && !AntiIdle)
+            {
+                Try(() => _application.Invoke<RoomAvatarExpressionRequest, RoomAvatarDispatchResult>(
+                    ApiIds.RoomAvatarExpression, new RoomAvatarExpressionRequest(0)));
+            }
+        });
+
+        AntiIdleLoop();
+    }
+
+
+
+    /// <summary>Who was clicked last, so a second click on the same person can be told apart.</summary>
+    private Id _lastClicked;
+
+    /// <summary>Room passwords by hotel and room, kept next to the rules so they survive a restart.</summary>
+    private readonly Dictionary<string, string> _passwords = new(StringComparer.Ordinal);
+
+    private string PasswordKey(Id room_id)
+    {
+        string host = _interceptor.Session?.Host.Trim().ToLowerInvariant() ?? "";
+        return $"{host}/{(long)room_id}";
+    }
+
+    private void LoadPasswords()
+    {
+        try
+        {
+            if (!File.Exists(_passwords_path))
+                return;
+
+            if (JsonSerializer.Deserialize(File.ReadAllText(_passwords_path), JsonContext.Default.DictionaryStringString) is not { } saved)
+                return;
+
+            foreach ((string key, string password) in saved)
+            {
+                if (password.Length > 0)
+                    _passwords[key] = password;
+            }
+        }
+        catch
+        {
+        }
+    }
+
+    private void SavePasswords()
+    {
+        try
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(_passwords_path)!);
+            File.WriteAllText(_passwords_path, JsonSerializer.Serialize(_passwords, JsonContext.Default.DictionaryStringString));
+        }
+        catch
+        {
+        }
+    }
+
+    /// <summary>
+    /// Runs something that touches the wire, and swallows what goes wrong.
+    /// </summary>
+    /// <remarks>
+    /// These run inside the read loop. An exception here would take the packet down with it, and a
+    /// rule failing is never worth losing traffic over.
+    /// </remarks>
+    private static void Try(Action work)
+    {
+        try
+        {
+            work();
+        }
+        catch
+        {
+        }
+    }
+
+    private bool IsSelf(Avatar avatar) =>
+        _application.Invoke<ProfileStateRequest, ProfileStateView>(
+            ApiIds.ProfileState, new ProfileStateRequest()).Identity?.Id == avatar.Id;
+
+    /// <summary>
+    /// Asks to face a tile again once the hotel has finished turning you away from it.
+    /// </summary>
+    /// <remarks>
+    /// A short wait rather than an immediate answer: the turn arrives a moment after the item does,
+    /// and a request sent before it would be overwritten by it. Long enough to land second,
+    /// short enough that the avatar looks like it glanced and went back.
+    /// </remarks>
+    private void TurnBackTo((int X, int Y) tile) => _ = TurnBackToAsync(tile);
+
+    private async Task TurnBackToAsync((int X, int Y) tile)
+    {
+        await Task.Delay(400).ConfigureAwait(false);
+        Try(() => _application.Invoke<RoomAvatarLookRequest, RoomAvatarDispatchResult>(
+            ApiIds.RoomAvatarLook, new RoomAvatarLookRequest(tile.X, tile.Y)));
+    }
+
+    /// <summary>
+    /// The tile one step ahead of where you are facing.
+    /// </summary>
+    /// <remarks>
+    /// There is no message for "face this way": turning is asked for by naming a tile and letting
+    /// the client work out the direction, so a direction has to be turned back into a tile to be
+    /// asked for at all. Eight directions from north, clockwise, as the hotel numbers them.
+    /// </remarks>
+    private (int X, int Y)? FacedTile()
+    {
+        if (Game?.Room.Avatars.FirstOrDefault(IsSelf) is not { } me)
+            return null;
+
+        (int x, int y) = me.Direction switch
+        {
+            0 => (0, -1),
+            1 => (1, -1),
+            2 => (1, 0),
+            3 => (1, 1),
+            4 => (0, 1),
+            5 => (-1, 1),
+            6 => (-1, 0),
+            7 => (-1, -1),
+            _ => (0, 0)
+        };
+
+        return (x, y) is (0, 0) ? null : (me.X + x, me.Y + y);
+    }
+
+    /// <summary>Whether somebody is spared from a click-to action for being a friend.</summary>
+    private bool Spared(Avatar avatar)
+    {
+        if (!ClickExcludesFriends)
+            return false;
+        if (Game?.Friends is not { } friends || !friends.IsLoaded)
+        {
+            RequestFriends();
+            return true;
+        }
+        return friends.Friends.Any(friend => friend.Id == avatar.Id);
+    }
+
+    private void RequestFriends()
+    {
+        if (Game is not { } game || !LetFriendsIn && !(ClickExcludesFriends && ClickTo is not ClickAction.None))
+            return;
+        _ = LoadFriendsAsync(game);
+    }
+
+    private async Task LoadFriendsAsync(GameState game)
+    {
+        try
+        {
+            if (!game.Friends.IsLoaded)
+                await _application.InvokeAsync<FriendsRefreshRequest, FriendListPage>(
+                    ApiIds.FriendsRefresh, new FriendsRefreshRequest()).ConfigureAwait(false);
+        }
+        catch
+        {
+        }
+    }
+
+    private async Task LetFriendInAsync(Doorbell ring)
+    {
+        if (Game is not { } game)
+            return;
+        try
+        {
+            IReadOnlyCollection<Friend> friends;
+            if (game.Friends.IsLoaded)
+            {
+                friends = game.Friends.Friends;
+            }
+            else
+            {
+                await LoadFriendsAsync(game).ConfigureAwait(false);
+                friends = game.Friends.Friends;
+            }
+            if (LetFriendsIn && FriendAtDoor(ring, friends))
+                _application.Invoke<RoomDoorbellAnswerRequest, RoomControlDispatchResult>(
+                    ApiIds.RoomDoorbellAnswer, new RoomDoorbellAnswerRequest(ring.UserName));
+        }
+        catch
+        {
+        }
+    }
+
+    /// <summary>Does to somebody whatever clicking them is set to do.</summary>
+    private bool ActOn(
+        User target,
+        long room_generation,
+        ClickAction action,
+        int mute_minutes,
+        BanLength ban_length)
+    {
+        try
+        {
+            RoomModerationStateView state = _application.Invoke<
+                RoomModerationStateRequest,
+                RoomModerationStateView>(
+                    ApiIds.RoomModerationState,
+                    new RoomModerationStateRequest());
+            if (!state.RoomReady ||
+                state.RoomId <= 0 ||
+                state.RoomGeneration != room_generation)
+            {
+                return false;
+            }
+            RoomModerationDispatchResult result;
+            switch (action)
+            {
+                case ClickAction.Mute:
+                    result = _application.Invoke<
+                        RoomModerationMuteRequest,
+                        RoomModerationDispatchResult>(
+                            ApiIds.RoomModerationMute,
+                            new RoomModerationMuteRequest(
+                                target.Id,
+                                mute_minutes,
+                                state.SessionGeneration,
+                                state.RoomId,
+                                room_generation,
+                                target.Index));
+                    break;
+                case ClickAction.Kick:
+                    result = _application.Invoke<
+                        RoomModerationTargetRequest,
+                        RoomModerationDispatchResult>(
+                            ApiIds.RoomModerationKick,
+                            new RoomModerationTargetRequest(
+                                target.Id,
+                                state.SessionGeneration,
+                                state.RoomId,
+                                room_generation,
+                                target.Index));
+                    break;
+                case ClickAction.Ban:
+                    result = _application.Invoke<
+                        RoomModerationBanRequest,
+                        RoomModerationDispatchResult>(
+                            ApiIds.RoomModerationBan,
+                            new RoomModerationBanRequest(
+                                target.Id,
+                                ban_length,
+                                state.SessionGeneration,
+                                state.RoomId,
+                                room_generation,
+                                target.Index));
+                    break;
+                case ClickAction.Bounce:
+                    result = _application.Invoke<
+                        RoomModerationTargetRequest,
+                        RoomModerationDispatchResult>(
+                            ApiIds.RoomModerationBounce,
+                            new RoomModerationTargetRequest(
+                                target.Id,
+                                state.SessionGeneration,
+                                state.RoomId,
+                                room_generation,
+                                target.Index));
+                    break;
+                default:
+                    return false;
+            }
+            return result.MessagesDispatched > 0;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Answers a shift-click on furni instead of using it.
+    /// </summary>
+    /// <remarks>
+    /// The modifier is read from the keyboard rather than from the packet, because nothing about a
+    /// use message says how it was clicked. Returns whether the click was answered, so the caller
+    /// knows not to fall through to preventing it.
+    /// </remarks>
+    private bool ShiftClickedFurni(Intercept intercept, Id id)
+    {
+        if (!ShiftClickShowsInfo && !ShiftClickHides && !ShiftClickFindsLink)
+            return false;
+        if (!_shift_pressed())
+            return false;
+        if (Game is not { } game)
+            return false;
+
+        Furni? item = game.Room.FloorItems.FirstOrDefault(one => one.Id == id)
+            ?? (Furni?)game.Room.WallItems.FirstOrDefault(one => one.Id == id);
+        if (item is null)
+            return false;
+
+        intercept.Block();
+
+        if (ShiftClickHides)
+        {
+            game.RoomActions.Hide(item);
+            return true;
+        }
+
+        if (ShiftClickFindsLink && item is FloorItem tele && Linked(game, tele) is { } other)
+        {
+            Say($"That teleport is paired with the one at {other.X}, {other.Y}");
+            return true;
+        }
+
+        if (ShiftClickShowsInfo)
+        {
+            FurniInfo? info = game.GameData.Furni?.GetInfo(item);
+            string name = info?.Name is { Length: > 0 } named ? named : $"kind {item.Kind}";
+            Say($"{name} · {info?.Identifier ?? "unknown"} · id {item.Id}");
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    /// The other end of a teleport.
+    /// </summary>
+    /// <remarks>
+    /// A pair carries each other's identifier in its own data, which is the only thing in the room
+    /// that says which two belong together.
+    /// </remarks>
+    private static FloorItem? Linked(GameState game, FloorItem tele)
+    {
+        if (tele.Extra <= 0)
+            return null;
+
+        return game.Room.FloorItems.FirstOrDefault(one => one.Id == (Id)tele.Extra && one.Id != tele.Id);
+    }
+
+    private static string Levelled(string map)
+    {
+        char[] tiles = map.ToCharArray();
+        for (int index = 0; index < tiles.Length; index++)
+        {
+            if (tiles[index] != 'x' && tiles[index] != 'X' && !char.IsWhiteSpace(tiles[index]))
+                tiles[index] = '0';
+        }
+        return new string(tiles);
+    }
+
+    /// <summary>Every walkable tile at the same height, and the blocked ones left blocked.</summary>
+    private static IEnumerable<short> Flattened(Heightmap map)
+    {
+        foreach (HeightmapTile tile in map.Tiles)
+            yield return tile.IsFree ? (short)0 : (short)-1;
+    }
+
+    internal static bool FriendAtDoor(Doorbell ring, IEnumerable<Friend> friends)
+    {
+        return friends.Any(friend =>
+            string.Equals(friend.Name, ring.UserName, StringComparison.OrdinalIgnoreCase));
+    }
+
+    internal static string RespectLine(string respected, string? respecter, int total)
+    {
+        string line = respecter is { Length: > 0 }
+            ? $"{respecter} respected {respected}"
+            : $"{respected} was respected";
+        return total >= 0 ? $"{line} ({total} total)" : line;
+    }
+
+    /// <summary>
+    /// Puts a line in front of you that only you can see.
+    /// </summary>
+    /// <remarks>
+    /// Written to the client as a whisper from yourself, so nothing is said in the room and nobody
+    /// else is sent anything at all.
+    /// </remarks>
+    private void Say(string line)
+    {
+        if (Game?.Room.Avatars.FirstOrDefault(IsSelf) is not { } me)
+            return;
+
+        Try(() => Game.People.Find(me, line));
+    }
+
+    /// <summary>Binds one outgoing message and parses it into a model.</summary>
+    private void OutOf<T>(string name, Action<T> handler) where T : IParserComposer<T> =>
+        OutOf<T>(name, (message, _) => handler(message));
+
+    private void OutOf<T>(string name, Action<T, Intercept> handler) where T : IParserComposer<T> =>
+        Bind(MessageDirection.Out, name, intercept =>
+        {
+            T message;
+            try
+            {
+                message = intercept.Packet.Reader().Parse<T>();
+            }
+            catch
+            {
+                return;
+            }
+
+            handler(message, intercept);
+        });
+
+    private void OutOf<T>(MessageContract<T> contract, Action<T, Intercept> handler)
+        where T : IParserComposer<T> =>
+        Bind(contract.Key, intercept =>
+        {
+            T message;
+            try
+            {
+                PacketReader reader = intercept.Packet.Reader();
+                message = contract.Parse(in reader);
+                if (reader.Available != 0)
+                    return;
+            }
+            catch
+            {
+                return;
+            }
+
+            handler(message, intercept);
+        });
+
+    /// <summary>Swallows one incoming message whenever the switch behind it is on.</summary>
+    private void Swallow(string name, Func<bool> when) =>
+        Bind(MessageDirection.In, name, intercept =>
+        {
+            if (when())
+                intercept.Block();
+        });
+
+    private void Swallow(MessageKey key, Func<bool> when) =>
+        Bind(key, intercept =>
+        {
+            if (when())
+                intercept.Block();
+        });
+
+    /// <summary>
+    /// Drops chat from whatever is switched off, before it reaches the screen.
+    /// </summary>
+    /// <remarks>
+    /// The packet says who is speaking only by room index, so what is speaking has to be looked up
+    /// in the room. Wired has no avatar at all. It speaks through the room itself, which is the
+    /// index the room never handed out.
+    /// </remarks>
+    private void MuteChat(MessageContract<AvatarChat> contract) =>
+        In(contract, (chat, intercept) =>
+        {
+            if (MuteAll)
+            {
+                intercept.Block();
+                return;
+            }
+
+            if (!MuteBots && !MutePets && !MuteWired && !MutePetCommands)
+                return;
+
+            Avatar? speaker = Game?.Room.AvatarByIndex(chat.Index);
+            bool muted = speaker switch
+            {
+                Bot => MuteBots,
+                Pet pet => MutePets || (MutePetCommands && IsCommand(pet, chat.Message)),
+                null => MuteWired,
+                _ => false
+            };
+
+            if (muted)
+                intercept.Block();
+        });
+
+    /// <summary>
+    /// Whether a line from a pet is one of its commands rather than something it said.
+    /// </summary>
+    /// <remarks>
+    /// A command is echoed back with the pet's own name in front of it, which is the only thing
+    /// separating "sit" from a pet saying something of its own accord.
+    /// </remarks>
+    private static bool IsCommand(Pet pet, string line) =>
+        pet.Name.Length > 0 &&
+        line.StartsWith(pet.Name, StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// Keeps the session awake.
+    /// </summary>
+    /// <remarks>
+    /// The hotel decides you have gone away after a quiet stretch and, later, disconnects you. A
+    /// gesture is the cheapest thing that counts as being at the keyboard and the only one that
+    /// does not move you, say anything or touch what is in the room.
+    /// </remarks>
+    private void AntiIdleLoop()
+    {
+        _idle?.Dispose();
+        _idle = new Timer(
+            _ =>
+            {
+                if (!AntiIdle || Game is null)
+                    return;
+                try
+                {
+                    _application.Invoke<RoomAvatarExpressionRequest, RoomAvatarDispatchResult>(
+                        ApiIds.RoomAvatarExpression, new RoomAvatarExpressionRequest(0));
+                }
+                catch
+                {
+                    // Between sessions there is nothing to send to. The next tick will find one.
+                }
+            },
+            null,
+            TimeSpan.FromSeconds(AntiIdleSeconds),
+            TimeSpan.FromSeconds(AntiIdleSeconds));
+    }
+
+    /// <summary>Removes every rule binding and stops the anti-idle timer.</summary>
+    public void Unbind()
+    {
+        _bound = false;
+        _idle?.Dispose();
+        _idle = null;
+        foreach (IDisposable binding in _bindings)
+            binding.Dispose();
+        _bindings.Clear();
+    }
+
+    /// <summary>Unbinds every rule and stops the anti-idle timer without saving the settings.</summary>
+    public void Dispose() => Unbind();
+
+    private void Out(string name, Action<Intercept> handler) => Bind(MessageDirection.Out, name, handler);
+
+    private void In(string name, Action handler) =>
+        Bind(MessageDirection.In, name, _ => handler());
+
+    private void In<T>(MessageContract<T> contract, Action<T> handler)
+        where T : IParserComposer<T> =>
+        In(contract, (message, _) => handler(message));
+
+    private void In<T>(MessageContract<T> contract, Action<T, Intercept> handler)
+        where T : IParserComposer<T> =>
+        Bind(contract.Key, intercept =>
+        {
+            try
+            {
+                PacketReader reader = intercept.Packet.Reader();
+                T message = contract.Parse(in reader);
+                if (reader.Available == 0)
+                    handler(message, intercept);
+            }
+            catch
+            {
+            }
+        });
+
+    private void Bind(MessageKey key, Action<Intercept> handler)
+    {
+        try
+        {
+            _bindings.Add(_interceptor.Intercept(key, handler));
+        }
+        catch
+        {
+        }
+    }
+
+    private void Bind(MessageDirection direction, string name, Action<Intercept> handler)
+    {
+        try
+        {
+            _bindings.Add(_interceptor.Intercept(
+                new Identifier(direction, name),
+                handler));
+        }
+        catch
+        {
+            // A build that does not carry the message simply does not get the rule. Better a switch
+            // that does nothing than a session that will not start.
+        }
+    }
+
+    private void Load()
+    {
+        try
+        {
+            if (!File.Exists(_path))
+                return;
+
+            if (JsonSerializer.Deserialize(File.ReadAllText(_path), JsonContext.Default.Document) is not { } document)
+                return;
+
+            AntiIdle = document.AntiIdle;
+            BlockTrades = document.BlockTrades;
+            LetFriendsIn = document.LetFriendsIn;
+            NoWalk = document.NoWalk;
+            NoTurn = document.NoTurn;
+            AlwaysShout = document.AlwaysShout;
+            NoTyping = document.NoTyping;
+            MuteBots = document.MuteBots;
+            MutePets = document.MutePets;
+            MuteWired = document.MuteWired;
+            PreventFurniUse = document.PreventFurniUse;
+            MuteAll = document.MuteAll;
+            MuteRespects = document.MuteRespects;
+            BlockRoomAds = document.BlockRoomAds;
+            BlockClubGifts = document.BlockClubGifts;
+            BlockNotifications = document.BlockNotifications;
+            DropHandItems = document.DropHandItems;
+            BlockRoomInvites = document.BlockRoomInvites;
+            BlockFriendRequests = document.BlockFriendRequests;
+            AutoAcceptFriendRequests = document.AutoAcceptFriendRequests;
+            AntiIdleSeconds = document.AntiIdleSeconds is >= 15 and <= 900 ? document.AntiIdleSeconds : DefaultAntiIdleSeconds;
+            AntiIdleOut = document.AntiIdleOut;
+            TurnOnReselect = document.TurnOnReselect;
+            TurnTowardsClickedTile = document.TurnTowardsClickedTile;
+            ClickTo = document.ClickTo;
+            ClickMuteMinutes = document.ClickMuteMinutes is >= 1 and <= 1440 ? document.ClickMuteMinutes : 5;
+            ClickBanLength = document.ClickBanLength;
+            ClickExcludesFriends = document.ClickExcludesFriends;
+            RememberPasswords = document.RememberPasswords;
+            FlattenFloor = document.FlattenFloor;
+            HideAvatars = document.HideAvatars;
+            MutePetCommands = document.MutePetCommands;
+            ShowRespectCount = document.ShowRespectCount;
+            ShiftClickShowsInfo = document.ShiftClickShowsInfo ?? document.CtrlClickShowsInfo;
+            ShiftClickHides = document.ShiftClickHides ?? document.CtrlClickHides;
+            ShiftClickFindsLink = document.ShiftClickFindsLink ?? document.CtrlClickFindsLink;
+            ReturnHandItems = document.ReturnHandItems;
+            KeepDirection = document.KeepDirection;
+        }
+        catch
+        {
+        }
+    }
+
+    /// <summary>Writes the current settings to the settings file as JSON.</summary>
+    /// <remarks>
+    /// The directory is created when missing, and a failed write is ignored. Remembered passwords
+    /// are saved separately as they change.
+    /// </remarks>
+    public void Save()
+    {
+        try
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(_path)!);
+            File.WriteAllText(_path, JsonSerializer.Serialize(new Document
+            {
+                AntiIdle = AntiIdle,
+                BlockTrades = BlockTrades,
+                LetFriendsIn = LetFriendsIn,
+                NoWalk = NoWalk,
+                NoTurn = NoTurn,
+                AlwaysShout = AlwaysShout,
+                NoTyping = NoTyping,
+                MuteBots = MuteBots,
+                MutePets = MutePets,
+                MuteWired = MuteWired,
+                PreventFurniUse = PreventFurniUse,
+                MuteAll = MuteAll,
+                MuteRespects = MuteRespects,
+                BlockRoomAds = BlockRoomAds,
+                BlockClubGifts = BlockClubGifts,
+                BlockNotifications = BlockNotifications,
+                DropHandItems = DropHandItems,
+                BlockRoomInvites = BlockRoomInvites,
+                BlockFriendRequests = BlockFriendRequests,
+                AutoAcceptFriendRequests = AutoAcceptFriendRequests,
+                AntiIdleSeconds = AntiIdleSeconds,
+                AntiIdleOut = AntiIdleOut,
+                TurnOnReselect = TurnOnReselect,
+                TurnTowardsClickedTile = TurnTowardsClickedTile,
+                ClickTo = ClickTo,
+                ClickMuteMinutes = ClickMuteMinutes,
+                ClickBanLength = ClickBanLength,
+                ClickExcludesFriends = ClickExcludesFriends,
+                RememberPasswords = RememberPasswords,
+                FlattenFloor = FlattenFloor,
+                HideAvatars = HideAvatars,
+                MutePetCommands = MutePetCommands,
+                ShowRespectCount = ShowRespectCount,
+                ShiftClickShowsInfo = ShiftClickShowsInfo,
+                ShiftClickHides = ShiftClickHides,
+                ShiftClickFindsLink = ShiftClickFindsLink,
+                ReturnHandItems = ReturnHandItems,
+                KeepDirection = KeepDirection
+            }, JsonContext.Default.Document));
+        }
+        catch
+        {
+        }
+    }
+}

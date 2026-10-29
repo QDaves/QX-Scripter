@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using Qx.Diagnostics;
+using Qx.Game.Data;
 using Qx.Game;
 using Qx.Presentation.Dialogs;
 using Qx.Presentation.Mvvm;

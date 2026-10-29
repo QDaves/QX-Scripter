@@ -1,15 +1,15 @@
 using System.Collections.Specialized;
 using System.ComponentModel;
-using Avalonia;
-using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Controls.Templates;
+using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
+using Avalonia;
 using Qx.Presentation.Services.Panels;
 
 namespace Qx.Desktop.Views.ScriptPanels;

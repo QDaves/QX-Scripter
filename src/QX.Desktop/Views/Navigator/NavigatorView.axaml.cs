@@ -1,8 +1,8 @@
-using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.VisualTree;
+using Avalonia;
 using Qx.Presentation.ViewModels.Navigator;
 
 namespace Qx.Desktop.Views.Navigator;

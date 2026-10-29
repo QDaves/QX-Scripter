@@ -1,7 +1,8 @@
+using Qx.Game.Api;
+using Qx.Game.Marketplace;
 using Qx.Game;
-using Qx.Game.Application;
-using Qx.Model;
 using Qx.Model.Messages.Incoming;
+using Qx.Model;
 using Qx.Presentation.Services.Game;
 
 namespace Qx.Presentation.Services.GameCatalog;
@@ -23,7 +24,7 @@ public sealed class MarketplaceTrade
             for (int attempt = 0; attempt < SearchAttempts; attempt++)
             {
                 MarketplaceOfferPage first = await _gateway.InvokeAsync<MarketplaceSearchRequest, MarketplaceOfferPage>(
-                    ApplicationMemberIds.MarketplaceSearch,
+                    ApiIds.MarketplaceSearch,
                     new MarketplaceSearchRequest(
                         SearchQuery: query,
                         SortOrder: MarketplaceSortOrder.LowestPrice,
@@ -38,7 +39,7 @@ public sealed class MarketplaceTrade
                 for (int page = 1; page < pages; page++)
                 {
                     MarketplaceStateView state = await _gateway.QueryAsync<MarketplaceStateRequest, MarketplaceStateView>(
-                        ApplicationMemberIds.MarketplaceState,
+                        ApiIds.MarketplaceState,
                         new MarketplaceStateRequest(page, first.PageSize),
                         cancellationToken);
                     if (state.Generation != first.Generation || state.Revision != first.Revision ||
@@ -60,7 +61,7 @@ public sealed class MarketplaceTrade
 
     public async Task<MarketplaceBuyResult> BuyAsync(Id offerId, CancellationToken cancellationToken) =>
         await _gateway.InvokeAsync<MarketplaceBuyRequest, MarketplaceBuyResult>(
-            ApplicationMemberIds.MarketplaceOfferBuy,
+            ApiIds.MarketplaceOfferBuy,
             new MarketplaceBuyRequest(offerId),
             cancellationToken);
 

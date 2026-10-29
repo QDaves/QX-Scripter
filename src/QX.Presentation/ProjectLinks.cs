@@ -5,6 +5,7 @@ public static class ProjectLinks
 {
     /// <summary>The GitHub repository in <c>owner/name</c> form.</summary>
     public const string Repository = "QDaves/QX-Scripter";
+    public const string FrameworkRepository = "QDaves/QX";
     /// <summary>The title of the application's entry in the G-ExtensionStore.</summary>
     public const string StoreTitle = "QX Scripter";
     /// <summary>Gets the URL of the repository's releases page.</summary>

@@ -1,3 +1,5 @@
+using System.Reflection;
+using Qx.Hosting;
 using Qx.Presentation.Mvvm;
 using Qx.Presentation.Navigation;
 using Qx.Presentation.Platform;
@@ -19,6 +21,10 @@ public sealed class AboutViewModel : PageViewModel
         Subtitle = "What this is and what it is made of.";
         Notices = Own(new NoticeLine(dispatcher, time));
         VersionText = $"Version {ProductVersion.Current}";
+        FrameworkVersionText = typeof(GameHost).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?
+            .InformationalVersion.Split('+')[0] ?? typeof(GameHost).Assembly.GetName().Version?.ToString() ?? "Unknown";
+        Framework = new AboutLink("QX Framework", new Uri($"https://github.com/{ProjectLinks.FrameworkRepository}"),
+            "Open the QX Framework repository on GitHub", OpenAsync);
         Author = Credit("QDave", "QDaves");
         Xabbo = Credit("b7", "b7c");
         Contributors =
@@ -37,6 +43,10 @@ public sealed class AboutViewModel : PageViewModel
     public string Wordmark => "Scripter";
 
     public string VersionText { get; }
+
+    public string FrameworkVersionText { get; }
+
+    public AboutLink Framework { get; }
 
     public string Description => "A C# scripting console for Habbo that runs as a G-Earth extension.";
 

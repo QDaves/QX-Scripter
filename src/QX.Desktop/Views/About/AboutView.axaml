@@ -20,6 +20,14 @@
             </StackPanel>
           </StackPanel>
           <TextBlock Text="{Binding Description}" Classes="body secondary" TextWrapping="Wrap" />
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <TextBlock Text="Built with" Classes="body secondary" VerticalAlignment="Center" />
+            <Button Theme="{StaticResource QxLinkButton}"
+                    Content="{Binding Framework.Text}"
+                    Command="{Binding Framework.OpenCommand}"
+                    ToolTip.Tip="{Binding Framework.Tooltip}" />
+            <TextBlock Text="{Binding FrameworkVersionText}" Classes="body secondary" VerticalAlignment="Center" />
+          </StackPanel>
         </StackPanel>
 
         <c:Section Title="People">

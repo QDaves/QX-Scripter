@@ -7,7 +7,7 @@ namespace Qx.Presentation.Services.Updates;
 
 public sealed class UpdateNoticeCoordinator : IDisposable
 {
-    public const string RepositoryPrefix = "qxscripter/QX-Scripter/";
+    public const string RepositoryPrefix = "qxtools/QX-Scripter/";
     public static readonly TimeSpan CheckTimeout = TimeSpan.FromSeconds(5);
 
     readonly Func<CancellationToken, Task<Release?>> _fetch;

@@ -1,7 +1,7 @@
 <Project>
   <PropertyGroup>
     <QxFrameworkVersion>0.1.2</QxFrameworkVersion>
-    <QxDocumentationRevision>2f5f96c4ae35e813033f8d2709ce876da5333e1e</QxDocumentationRevision>
+    <QxDocumentationRevision>84b4e13cbe4770ce718ffa1713b5644226ee7a7d</QxDocumentationRevision>
     <QxDocumentationSource>$(MSBuildThisFileDirectory)artifacts/framework-docs/$(QxDocumentationRevision)/website/docs</QxDocumentationSource>
     <IsPackable>false</IsPackable>
   </PropertyGroup>

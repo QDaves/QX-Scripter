@@ -71,7 +71,7 @@
           <ColumnDefinition Width="Auto" />
         </Grid.ColumnDefinitions>
         <Panel Grid.Column="0">
-          <ed:EditorSurface Name="Surface" Document="{Binding Active}" IsVisible="{Binding !IsPanelView}" />
+          <ed:EditorSurface Name="Surface" Document="{Binding CodeDocument}" IsVisible="{Binding !IsPanelView}" />
           <ContentControl Name="PanelHost" Content="{Binding PanelSurface}" IsVisible="{Binding IsPanelView}" />
         </Panel>
         <GridSplitter Name="ApiSplitter"

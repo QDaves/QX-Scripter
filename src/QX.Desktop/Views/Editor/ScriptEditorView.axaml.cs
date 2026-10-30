@@ -15,6 +15,7 @@ using Qx.Presentation.Services.Editor;
 using Qx.Presentation.Services.Workspace;
 using Qx.Presentation.Threading;
 using RoslynPad.Editor;
+using RoslynPad.Roslyn;
 
 namespace Qx.Desktop.Views.Editor;
 
@@ -27,6 +28,10 @@ public sealed partial class ScriptEditorView : UserControl
     EditorBufferAdapter? _buffer;
     TextEditor? _surface;
     bool _started;
+    bool _released;
+    bool _initializing;
+    QxRoslynHost? _roslyn;
+    DocumentId? _roslyn_document;
 
     public ScriptEditorView()
     {
@@ -52,6 +57,9 @@ public sealed partial class ScriptEditorView : UserControl
 
     public void Release()
     {
+        if (_released)
+            return;
+        _released = true;
         ActualThemeVariantChanged -= OnThemeChanged;
         if (_preferences is { } preferences)
             preferences.PropertyChanged -= OnPreferencesChanged;
@@ -65,12 +73,14 @@ public sealed partial class ScriptEditorView : UserControl
         _buffer = null;
         _surface = null;
         _document = null;
+        if (!_initializing)
+            CloseDocument();
     }
 
     protected override void OnLoaded(RoutedEventArgs e)
     {
         base.OnLoaded(e);
-        if (_started || _document is null || _hosts is null)
+        if (_released || _started || _document is null || _hosts is null)
             return;
         _started = true;
         StartAsync(_document, _hosts).Observe("editor");
@@ -87,13 +97,27 @@ public sealed partial class ScriptEditorView : UserControl
         {
             Diag.Warn($"Editor code-intelligence unavailable ({error.Message}); scripts still run.", "editor");
         }
+        if (_released || document.IsClosed)
+            return;
         if (host is not null)
         {
+            _initializing = true;
+            _roslyn = host;
+            void CreateDocument(object? sender, CreatingDocumentEventArgs args)
+            {
+                _roslyn_document = host.AddDocument(new DocumentCreationArgs(
+                    args.TextContainer, hosts.WorkingDirectory, SourceCodeKind.Script,
+                    args.TextContainer.UpdateText));
+                args.DocumentId = _roslyn_document;
+            }
+            Code.CreatingDocument += CreateDocument;
             try
             {
                 Directory.CreateDirectory(hosts.WorkingDirectory);
                 Code.TextArea.SelectionCornerRadius = 2;
                 _ = await Code.InitializeAsync(host, ThemeColors(), hosts.WorkingDirectory, document.Text, SourceCodeKind.Script);
+                if (_released || document.IsClosed)
+                    return;
                 if (Code.CompletionProvider is { } completions)
                     Code.CompletionProvider = new GuardedCompletionProvider(new UiDirectiveCompletionProvider(completions, Code), Code);
                 Adopt(Code);
@@ -101,9 +125,19 @@ public sealed partial class ScriptEditorView : UserControl
             }
             catch (Exception error) when (error is not OutOfMemoryException)
             {
+                CloseDocument();
                 Diag.Warn($"Editor code-intelligence unavailable ({error.Message}); scripts still run.", "editor");
             }
+            finally
+            {
+                Code.CreatingDocument -= CreateDocument;
+                _initializing = false;
+                if (_released || document.IsClosed)
+                    CloseDocument();
+            }
         }
+        if (_released || document.IsClosed)
+            return;
         Plain.SyntaxHighlighting = HighlightingManager.Instance.GetDefinition("C#");
         Plain.Document = new AvaloniaEdit.Document.TextDocument(document.Text);
         Fallback.Notice = new Notice(NoticeSeverity.Warning, "Code completion is unavailable. Scripts still run.", DateTimeOffset.UtcNow);
@@ -111,6 +145,14 @@ public sealed partial class ScriptEditorView : UserControl
         Code.IsVisible = false;
         Plain.IsVisible = true;
         Adopt(Plain);
+    }
+
+    void CloseDocument()
+    {
+        if (_roslyn_document is { } id)
+            _roslyn?.CloseDocument(id);
+        _roslyn_document = null;
+        _roslyn = null;
     }
 
     void Adopt(TextEditor editor)

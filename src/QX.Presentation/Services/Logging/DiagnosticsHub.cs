@@ -56,7 +56,6 @@ public sealed class DiagnosticsHub : IApplicationLog, IDisposable
         Diag.Enabled = true;
         Diag.MinLevel = DiagLevel.Info;
         var hub = new DiagnosticsHub(paths.LogFile);
-        hub.Rotate();
         hub._writer.Start();
         Diag.Emitted += hub.Record;
         return hub;
@@ -188,6 +187,7 @@ public sealed class DiagnosticsHub : IApplicationLog, IDisposable
         var batch = new StringBuilder();
         try
         {
+            Rotate();
             foreach (string line in _lines.GetConsumingEnumerable())
             {
                 batch.Append(line);

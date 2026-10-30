@@ -82,9 +82,9 @@ public static class PanelValueFormats
     {
         ArgumentNullException.ThrowIfNull(code);
         var key = new StringBuilder();
-        foreach (string line in code.Split('\n'))
+        foreach (Range line in code.AsSpan().Split('\n'))
         {
-            string trimmed = line.Trim();
+            ReadOnlySpan<char> trimmed = code.AsSpan(line).Trim();
             if (trimmed.StartsWith("//", StringComparison.Ordinal) && trimmed.Contains("@ui:", StringComparison.OrdinalIgnoreCase))
                 key.Append(trimmed).Append('\n');
         }

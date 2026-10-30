@@ -38,6 +38,7 @@ public sealed partial class WorkspaceViewModel : PageViewModel, IApiInsertTarget
     readonly ILauncherService _launcher;
     readonly IScriptPanelFactory _panels;
     readonly IUiDispatcher _dispatcher;
+    readonly IApiBrowserFactory _browsers;
     ScriptDocument? _watched;
     ScriptRunController? _watched_run;
     int _error_index = -1;
@@ -68,11 +69,10 @@ public sealed partial class WorkspaceViewModel : PageViewModel, IApiInsertTarget
         _launcher = launcher ?? throw new ArgumentNullException(nameof(launcher));
         _panels = panels ?? throw new ArgumentNullException(nameof(panels));
         _dispatcher = dispatcher ?? throw new ArgumentNullException(nameof(dispatcher));
-        ArgumentNullException.ThrowIfNull(browsers);
+        _browsers = browsers ?? throw new ArgumentNullException(nameof(browsers));
         Editor = editor ?? throw new ArgumentNullException(nameof(editor));
         Output = output ?? throw new ArgumentNullException(nameof(output));
         Documents = workspace.Documents;
-        ApiBrowser = browsers.Create(this);
         _workspace.ActiveChanged += OnActiveChanged;
         _workspace.DocumentsChanged += OnDocumentsChanged;
         Own(() =>
@@ -90,7 +90,8 @@ public sealed partial class WorkspaceViewModel : PageViewModel, IApiInsertTarget
 
     public OutputPreferences Output { get; }
 
-    public ApiBrowserViewModel ApiBrowser { get; }
+    [ObservableProperty]
+    public partial ApiBrowserViewModel? ApiBrowser { get; private set; }
 
     public ScriptDocument? Active
     {
@@ -98,8 +99,10 @@ public sealed partial class WorkspaceViewModel : PageViewModel, IApiInsertTarget
         set => _workspace.Active = value;
     }
 
+    public ScriptDocument? CodeDocument => ActiveView == DocumentView.Code ? Active : null;
+
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(IsPanelView), nameof(ConsoleVisible), nameof(ToolbarTitle))]
+    [NotifyPropertyChangedFor(nameof(IsPanelView), nameof(ConsoleVisible), nameof(ToolbarTitle), nameof(CodeDocument))]
     public partial DocumentView ActiveView { get; private set; }
 
     [ObservableProperty]
@@ -322,7 +325,10 @@ public sealed partial class WorkspaceViewModel : PageViewModel, IApiInsertTarget
     {
         IsApiBrowserOpen = !IsApiBrowserOpen;
         if (IsApiBrowserOpen)
+        {
+            ApiBrowser ??= _browsers.Create(this);
             _dispatcher.Post(ApiBrowser.Activate, UiPriority.Input);
+        }
     }
 
     [RelayCommand]
@@ -397,6 +403,7 @@ public sealed partial class WorkspaceViewModel : PageViewModel, IApiInsertTarget
             PanelSurface = _panels.Create(document);
         Watch(document);
         OnPropertyChanged(nameof(Active));
+        OnPropertyChanged(nameof(CodeDocument));
         OnPropertyChanged(nameof(ConsoleVisible));
         OnPropertyChanged(nameof(CanUsePanelView));
         OnPropertyChanged(nameof(PanelTip));

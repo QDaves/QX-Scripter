@@ -1,4 +1,3 @@
-using System.Collections.Concurrent;
 using System.Collections.ObjectModel;
 using Qx.Presentation.Threading;
 
@@ -11,7 +10,8 @@ public sealed class OutputBuffer
     public const int Capacity = 5000;
     public const int TrimBlock = 500;
 
-    readonly ConcurrentQueue<OutputLine> _incoming = new();
+    readonly Queue<OutputLine> _incoming = new();
+    readonly Lock _gate = new();
     readonly ObservableCollection<OutputLine> _lines = [];
     readonly CoalescingSignal _drain;
     readonly TimeProvider _time;
@@ -36,7 +36,12 @@ public sealed class OutputBuffer
     public void Write(string text, OutputLevel level)
     {
         ArgumentNullException.ThrowIfNull(text);
-        _incoming.Enqueue(new OutputLine(Interlocked.Increment(ref _sequence), text, level, _time.GetUtcNow()));
+        lock (_gate)
+        {
+            _incoming.Enqueue(new OutputLine(Interlocked.Increment(ref _sequence), text, level, _time.GetUtcNow()));
+            while (_incoming.Count > Capacity)
+                _incoming.Dequeue();
+        }
         _drain.Raise();
     }
 
@@ -53,10 +58,13 @@ public sealed class OutputBuffer
     {
         long cleared = Volatile.Read(ref _cleared_through);
         List<OutputLine> batch = [];
-        while (_incoming.TryDequeue(out OutputLine? line))
+        lock (_gate)
         {
-            if (line.Sequence > cleared)
-                batch.Add(line);
+            while (_incoming.TryDequeue(out OutputLine? line))
+            {
+                if (line.Sequence > cleared)
+                    batch.Add(line);
+            }
         }
         if (batch.Count == 0)
             return;

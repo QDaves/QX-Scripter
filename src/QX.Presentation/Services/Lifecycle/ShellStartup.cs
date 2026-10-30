@@ -87,8 +87,11 @@ public sealed class ShellStartup
         });
         await StepAsync("editor warm-up", () =>
         {
-            foreach (IEditorWarmup warmup in _warmups)
-                warmup.WarmUp();
+            if (_workspace.IsCodeViewActive)
+            {
+                foreach (IEditorWarmup warmup in _warmups)
+                    warmup.WarmUp();
+            }
             return Task.CompletedTask;
         });
         await StepAsync("updates", () =>

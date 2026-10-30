@@ -36,12 +36,12 @@ Compile a script without running it:
 Requires the .NET SDK version in [global.json](global.json).
 
 ```powershell
-git clone https://github.com/QDaves/QX-Scripter.git
+git clone https://github.com/qxscripter/QX-Scripter.git
 cd QX-Scripter
 ./tools/build-scripter.ps1
 ```
 
-The build restores the published [QX Framework](https://github.com/QDaves/QX) packages from NuGet and fetches the matching scripting documentation. QX Scripter contains only the application; it does not rebuild the framework.
+The build restores the published [QX Framework](https://github.com/qxscripter/QX) packages from NuGet and fetches the matching scripting documentation. QX Scripter contains only the application; it does not rebuild the framework.
 
 Desktop:
 

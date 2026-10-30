@@ -16,7 +16,7 @@ if (!(Test-Path -LiteralPath (Join-Path $source '.git'))) {
 if ($LASTEXITCODE -ne 0) { throw 'Could not configure the documentation checkout.' }
 $actual = & git -C $source rev-parse --verify HEAD 2>$null
 if ($LASTEXITCODE -ne 0 -or $actual -ne $revision) {
-    & git -C $source fetch --quiet --depth 1 --filter=blob:none https://github.com/QDaves/QX.git $revision
+    & git -C $source fetch --quiet --depth 1 --filter=blob:none https://github.com/qxscripter/QX.git $revision
     if ($LASTEXITCODE -ne 0) { throw 'Could not download the pinned documentation.' }
     & git -C $source checkout --quiet --detach FETCH_HEAD
     if ($LASTEXITCODE -ne 0) { throw 'Could not check out the pinned documentation.' }
